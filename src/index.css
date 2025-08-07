@@ -17,8 +17,14 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Brand palette (HSL) */
+    --brand: 265 85% 60%;           /* electric purple */
+    --brand-2: 195 85% 55%;         /* bright cyan */
+    --brand-3: 320 80% 60%;         /* magenta */
+
+    /* Primary system */
+    --primary: var(--brand);
+    --primary-foreground: 0 0% 100%;
 
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
@@ -36,23 +42,21 @@ All colors MUST be HSL.
     --input: 214.3 31.8% 91.4%;
     --ring: 222.2 84% 4.9%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Gradients & shadows */
+    --gradient-hero: linear-gradient(135deg, hsl(var(--brand)), hsl(var(--brand-2)) 60%, hsl(var(--brand-3)));
+    --gradient-choice: linear-gradient(135deg, hsl(var(--brand-2)), hsl(var(--brand)) 60%, hsl(var(--brand-3)));
+    --shadow-glow: 0 10px 30px -10px hsl(var(--brand) / 0.5), 0 0 40px hsl(var(--brand-2) / 0.35);
   }
 
   .dark {
@@ -65,8 +69,8 @@ All colors MUST be HSL.
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: var(--brand);
+    --primary-foreground: 0 0% 100%;
 
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
@@ -91,6 +95,10 @@ All colors MUST be HSL.
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    --gradient-hero: linear-gradient(135deg, hsl(var(--brand) / 0.95), hsl(var(--brand-2) / 0.95) 60%, hsl(var(--brand-3) / 0.95));
+    --gradient-choice: linear-gradient(135deg, hsl(var(--brand-2) / 0.95), hsl(var(--brand) / 0.95) 60%, hsl(var(--brand-3) / 0.95));
+    --shadow-glow: 0 10px 30px -10px hsl(var(--brand) / 0.5), 0 0 40px hsl(var(--brand-2) / 0.35);
   }
 }
 
@@ -100,6 +108,26 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-body;
+  }
+}
+
+@layer components {
+  .bg-gradient-hero {
+    background-image: var(--gradient-hero);
+  }
+  .bg-gradient-choice {
+    background-image: var(--gradient-choice);
+  }
+  .btn-glow {
+    box-shadow: var(--shadow-glow);
+  }
+  .hover-scale {
+    @apply transition-transform duration-200 hover:scale-105;
+  }
+  .glass-panel {
+    background-color: hsl(var(--card) / 0.08);
+    border: 1px solid hsl(var(--border) / 0.5);
+    backdrop-filter: blur(8px);
   }
 }
