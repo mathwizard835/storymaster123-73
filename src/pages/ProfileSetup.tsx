@@ -21,6 +21,7 @@ import {
   Eye,
   Compass,
 } from "lucide-react";
+import { saveProfileToLocal } from "@/lib/story";
 
 const badges = [
   { id: "beast", label: "Beast Master", icon: PawPrint },
@@ -51,6 +52,12 @@ const ProfileSetup = () => {
     setSelectedBadges((prev) =>
       prev.includes(id) ? prev.filter((b) => b !== id) : [...prev, id]
     );
+  };
+
+  const handleStart = () => {
+    const profile = { age, reading, selectedBadges, mode, topic };
+    saveProfileToLocal(profile);
+    navigate("/mission");
   };
 
   return (
@@ -180,7 +187,7 @@ const ProfileSetup = () => {
           </div>
 
           <div className="mt-8 flex justify-center">
-            <Button size="xl" variant="hero" onClick={() => navigate("/mission")}>
+            <Button size="xl" variant="hero" onClick={handleStart}>
               Start My Quest
             </Button>
           </div>
