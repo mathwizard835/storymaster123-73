@@ -1,8 +1,14 @@
 import { Seo } from "@/components/Seo";
 import { Button } from "@/components/ui/button";
 import spaceStation from "@/assets/space-station.jpg";
+import mysticMageBg from "@/assets/mystic-mage-bg.jpg";
+import beastMasterBg from "@/assets/beast-master-bg.jpg";
+import detectiveBg from "@/assets/detective-bg.jpg";
+import actionHeroBg from "@/assets/action-hero-bg.jpg";
+import socialChampionBg from "@/assets/social-champion-bg.jpg";
+import creativeGeniusBg from "@/assets/creative-genius-bg.jpg";
 import { useNavigate } from "react-router-dom";
-import { Zap, Timer, Star } from "lucide-react";
+import { Zap, Timer, Star, Heart, Shield, Eye, Wand2, PawPrint, Crosshair, Users, Palette } from "lucide-react";
 import { useEffect, useState } from "react";
 import { generateNextScene, loadProfile, type Scene } from "@/lib/story";
 import { useToast } from "@/components/ui/use-toast";
@@ -14,6 +20,25 @@ const Mission = () => {
   const [loading, setLoading] = useState<boolean>(false);
 
   const profile = loadProfile();
+
+  // Background and theme mapping
+  const getThemeByBadge = (badges: string[]) => {
+    const themeMap: Record<string, { bg: string; alt: string; color: string; icon: any }> = {
+      mystic: { bg: mysticMageBg, alt: "Mystical fantasy landscape with magical crystals and glowing runes", color: "text-purple-300", icon: Wand2 },
+      beast: { bg: beastMasterBg, alt: "Jungle adventure scene with mystical creatures and ancient totems", color: "text-green-300", icon: PawPrint },
+      detective: { bg: detectiveBg, alt: "Noir detective office with rain-streaked windows at night", color: "text-blue-300", icon: Eye },
+      action: { bg: actionHeroBg, alt: "Dynamic urban action scene with skyscrapers and dramatic lighting", color: "text-red-300", icon: Crosshair },
+      social: { bg: socialChampionBg, alt: "Vibrant community gathering in a festive town square", color: "text-amber-300", icon: Users },
+      creative: { bg: creativeGeniusBg, alt: "Inspiring artist studio with colorful artwork and creative tools", color: "text-pink-300", icon: Palette },
+      space: { bg: spaceStation, alt: "Futuristic space station control room with asteroid field outside", color: "text-cyan-300", icon: Zap },
+    };
+
+    // Find the first matching badge, default to space
+    const primaryBadge = badges.find(badge => themeMap[badge]) || 'space';
+    return themeMap[primaryBadge] || themeMap.space;
+  };
+
+  const theme = profile ? getThemeByBadge(profile.selectedBadges) : getThemeByBadge(['space']);
 
   useEffect(() => {
     if (!profile) {
@@ -57,6 +82,9 @@ const Mission = () => {
   const energy = scene?.hud?.energy ?? 75;
   const time = scene?.hud?.time ?? "--";
   const choicePoints = scene?.hud?.choicePoints ?? 0;
+  const uiElements = scene?.hud?.ui || [];
+
+  const ThemeIcon = theme.icon;
 
   return (
     <>
@@ -73,18 +101,18 @@ const Mission = () => {
       />
       <main className="relative min-h-screen w-full overflow-hidden">
         <img
-          src={spaceStation}
-          alt="Futuristic space station control room with asteroid field outside"
+          src={theme.bg}
+          alt={theme.alt}
           className="absolute inset-0 h-full w-full object-cover"
           loading="lazy"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-background/40 to-background/70" />
 
-        {/* HUD */}
+        {/* Enhanced HUD */}
         <aside className="relative z-10 px-6 pt-6">
-          <div className="glass-panel rounded-xl px-4 py-3 inline-flex items-center gap-6">
-            <div className="flex items-center gap-2">
-              <Zap className="h-5 w-5" />
+          <div className="glass-panel rounded-xl px-4 py-3 inline-flex items-center gap-4 flex-wrap">
+            <div className={`flex items-center gap-2 ${theme.color}`}>
+              <ThemeIcon className="h-5 w-5" />
               <span className="text-sm font-semibold">Energy:</span>
               <span className="text-sm">{energy}%</span>
             </div>
@@ -98,6 +126,13 @@ const Mission = () => {
               <span className="text-sm font-semibold">Choice Points:</span>
               <span className="text-sm">{choicePoints}</span>
             </div>
+            {/* Dynamic UI elements from AI */}
+            {uiElements.map((element, index) => (
+              <div key={index} className="flex items-center gap-2 text-sm">
+                <Heart className="h-4 w-4 opacity-70" />
+                <span className="opacity-90">{element}</span>
+              </div>
+            ))}
           </div>
         </aside>
 
