@@ -185,7 +185,7 @@ serve(async (req) => {
     const profile = body?.profile ?? {};
     const scene = body?.scene ?? null; // optional current scene context
     const megastory = Boolean(body?.megastory ?? false);
-    const max_tokens = Math.min(Number(body?.max_tokens ?? 900), 1600);
+    const max_tokens = Math.min(Number(body?.max_tokens ?? 1000), 1200);
 
     const profileSummary = `\nPlayer Profile\n- Age: ${profile.age ?? "unknown"}\n- Reading Skill: ${profile.reading ?? profile.readingSkill ?? "unknown"}\n- Interest Badges: ${(profile.selectedBadges || profile.interests || []).join(", ") || "none"}\n- Quest Mode: ${profile.mode ?? "unknown"}${profile.topic ? `\n- Learning Topic: ${profile.topic}` : ""}\n- Megastory: ${megastory}`;
 
@@ -195,11 +195,20 @@ serve(async (req) => {
       ? "Megastory Mode: Provide an advanced HUD (include multiple stats in hud.ui) and 4-6 tactical choices."
       : "Provide 3-4 exciting choices.";
 
+    const styleEnforcement = `\nSTYLE ENFORCEMENT - MANDATORY:
+- Use cinematic camera angles and vivid sensory detail
+- Create high-stakes tension with layered threats
+- Escalate danger/tension every 2-3 paragraphs
+- Include unique sensory details (sounds, textures, smells)
+- Show don't tell - use action and description over exposition
+- Create memorable visual moments that feel like movie scenes`;
+
     const userPrompt = [
       "Create the NEXT mission segment (intro or continuation) in the video-game style.",
       profileSummary,
       scene ? `\nCurrent Scene Context (continue coherently):\n${JSON.stringify(scene)}` : "",
       `\nConstraints:\n- Keep paragraphs short, cinematic, and urgent.\n- Format like a mission, not prose; include UI flavor in hud.ui.\n- Choices must be clearly distinct with emoji-enhanced labels.\n- Do NOT close the story; set \"end\": false.\n- Match tone and difficulty to the profile.\n- No copyrighted references.\n- ${complexityNote}`,
+      styleEnforcement,
       outputSchema,
     ].join("\n");
 
@@ -213,7 +222,8 @@ serve(async (req) => {
       body: JSON.stringify({
         model: "claude-3-5-sonnet-20241022",
         max_tokens,
-        temperature: 0.8,
+        temperature: 1.0,
+        top_p: 0.9,
         system: SYSTEM_PROMPT,
         messages: [
           { role: "user", content: userPrompt }
