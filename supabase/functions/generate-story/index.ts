@@ -8,6 +8,39 @@ const corsHeaders = {
 
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
 
+// Enhanced JSON extraction function to handle markdown-wrapped responses
+function extractJSON(text: string): unknown | null {
+  if (!text) return null;
+  
+  // Try direct parsing first
+  try {
+    return JSON.parse(text);
+  } catch (_) {
+    // Try extracting from markdown code blocks
+    const codeBlockMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+    if (codeBlockMatch) {
+      try {
+        return JSON.parse(codeBlockMatch[1]);
+      } catch (_) {
+        // Continue to other extraction methods
+      }
+    }
+    
+    // Try finding JSON object boundaries
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      try {
+        return JSON.parse(jsonMatch[0]);
+      } catch (_) {
+        // Final fallback
+      }
+    }
+    
+    console.log("Failed to extract JSON from response:", text.substring(0, 200));
+    return null;
+  }
+}
+
 const SYSTEM_PROMPT = `You are StoryMaster AI, a creative, emotionally intelligent storyteller designed to help children explore exciting, personalized, and age-appropriate choose-your-own-adventure stories. Your mission is to guide the player through thrilling, interactive narratives that adapt to their preferences, skills, and imagination.
 
 Your stories should feel immersive, cinematic, and game-like FOR ALL AGES. Every segment should be short, high-stakes, and end with a critical choice. The tone and difficulty of each story should match the player's profile, and each decision should influence the path of the adventure.
@@ -215,24 +248,35 @@ serve(async (req) => {
     const megastory = Boolean(body?.megastory ?? false);
     const max_tokens = Math.min(Number(body?.max_tokens ?? 1000), 1200);
 
-    const profileSummary = `\nPlayer Profile\n- Age: ${profile.age ?? "unknown"}\n- Reading Skill: ${profile.reading ?? profile.readingSkill ?? "unknown"}\n- Interest Badges: ${(profile.selectedBadges || profile.interests || []).join(", ") || "none"}\n- Quest Mode: ${profile.mode ?? "unknown"}${profile.topic ? `\n- Learning Topic: ${profile.topic}` : ""}\n- Megastory: ${megastory}`;
+    const profileSummary = `Player Profile:
+- Age: ${profile.age ?? "unknown"}
+- Reading Level: ${profile.reading ?? profile.readingSkill ?? "unknown"}
+- Interest: ${(profile.selectedBadges || profile.interests || []).join(", ") || "none"}
+- Mode: ${profile.mode ?? "unknown"}${profile.topic ? `\n- Topic: ${profile.topic}` : ""}`;
 
-    const outputSchema = `\nRespond ONLY as strict JSON with this schema:\n{\n  "sceneTitle": string,\n  "hud": {\n    "energy": number,\n    "time": string,\n    "choicePoints": number,\n    "ui": string[]\n  },\n  "narrative": string,\n  "choices": [\n    { "id": string, "label": string, "impact": string }\n  ],\n  "end": boolean\n}`;
+    const sceneContext = scene ? `\nContinue from: ${JSON.stringify(scene)}` : "\nCreate a new adventure opening.";
 
-    const complexityNote = megastory
-      ? "Megastory Mode: Provide an advanced HUD (include multiple stats in hud.ui) and 4-6 tactical choices."
-      : "Provide 3-4 exciting choices.";
+    const userPrompt = `Create an exciting story segment for this player:
 
-    const styleEnforcement = ``;
+${profileSummary}${sceneContext}
 
-    const userPrompt = [
-      "Create the NEXT mission segment (intro or continuation) in the video-game style.",
-      profileSummary,
-      scene ? `\nCurrent Scene Context (continue coherently):\n${JSON.stringify(scene)}` : "",
-      `\nConstraints:\n- Keep paragraphs short, cinematic, and urgent.\n- Format like a mission, not prose; include UI flavor in hud.ui.\n- Choices must be clearly distinct with emoji-enhanced labels.\n- Do NOT close the story; set \"end\": false.\n- Match tone and difficulty to the profile.\n- No copyrighted references.\n- ${complexityNote}`,
-      styleEnforcement,
-      outputSchema,
-    ].join("\n");
+${megastory ? "Advanced Mode: Include rich HUD details and 4-6 strategic choices." : "Standard Mode: 3-4 engaging choices."}
+
+Tell an amazing story! Focus on:
+- Immersive storytelling and compelling narrative
+- Age-appropriate excitement and wonder  
+- Clear, vivid writing that draws the reader in
+- Meaningful choices that feel important
+- Game-like elements (HUD, progress tracking, etc.)
+
+Return as valid JSON:
+{
+  "sceneTitle": "Scene title",
+  "hud": {"energy": number, "time": "text", "choicePoints": number, "ui": ["status1", "status2"]},
+  "narrative": "The story text",
+  "choices": [{"id": "A", "label": "Choice text", "impact": "What happens"}],
+  "end": false
+}`;
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -264,16 +308,24 @@ serve(async (req) => {
 
     const data = await response.json();
     const text: string = data?.content?.[0]?.text ?? "";
+    
+    console.log("Claude response (first 200 chars):", text.substring(0, 200));
 
-    let parsed: unknown = null;
-    try {
-      parsed = JSON.parse(text);
-    } catch (_) {
-      // Fallback: return raw text if not valid JSON
+    // Use enhanced JSON extraction
+    const parsed = extractJSON(text);
+    
+    if (!parsed) {
+      console.error("Failed to parse JSON from response. Raw text:", text);
     }
 
     return new Response(
-      JSON.stringify({ ok: true, model: data?.model, usage: data?.usage ?? null, resultText: text, result: parsed }),
+      JSON.stringify({ 
+        ok: true, 
+        model: data?.model, 
+        usage: data?.usage ?? null, 
+        resultText: text, 
+        result: parsed 
+      }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
