@@ -10,7 +10,7 @@ import creativeGeniusBg from "@/assets/creative-genius-bg.jpg";
 import { useNavigate } from "react-router-dom";
 import { Zap, Timer, Star, Heart, Shield, Eye, Wand2, PawPrint, Crosshair, Users, Palette } from "lucide-react";
 import { useEffect, useState } from "react";
-import { generateNextScene, loadProfile, type Scene } from "@/lib/story";
+import { generateNextScene, loadProfile, checkStoryLimit, markStoryCompleted, type Scene } from "@/lib/story";
 import { useToast } from "@/components/ui/use-toast";
 
 const Mission = () => {
@@ -18,6 +18,8 @@ const Mission = () => {
   const { toast } = useToast();
   const [scene, setScene] = useState<Scene | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
+  const [storyLimitReached, setStoryLimitReached] = useState(false);
+  const [completedCount, setCompletedCount] = useState(0);
 
   const profile = loadProfile();
 
@@ -48,6 +50,17 @@ const Mission = () => {
     const init = async () => {
       try {
         setLoading(true);
+        
+        // Check story completion limit first
+        const limitCheck = await checkStoryLimit();
+        setCompletedCount(limitCheck.completedCount);
+        
+        if (!limitCheck.canPlay) {
+          setStoryLimitReached(true);
+          setLoading(false);
+          return;
+        }
+
         const { parsed, text } = await generateNextScene(profile);
         if (!parsed) {
           throw new Error("Invalid AI response: " + text.slice(0, 140));
@@ -70,6 +83,13 @@ const Mission = () => {
       setLoading(true);
       const { parsed, text } = await generateNextScene(profile, { ...scene, selectedChoiceId: choiceId });
       if (!parsed) throw new Error("Invalid AI response: " + text.slice(0, 140));
+      
+      // If this is the end of the story, mark it as completed
+      if (parsed.end && profile) {
+        await markStoryCompleted(profile);
+        setCompletedCount(1); // Update the count since they just completed one
+      }
+      
       setScene(parsed);
     } catch (e: any) {
       console.error(e);
@@ -85,6 +105,60 @@ const Mission = () => {
   const uiElements = scene?.hud?.ui || [];
 
   const ThemeIcon = theme.icon;
+
+  // If story limit is reached, show limit message
+  if (storyLimitReached) {
+    return (
+      <>
+        <Seo
+          title="StoryMaster Quest – Story Limit Reached"
+          description="You've completed your free story! Discover what's coming next."
+          canonical="/mission"
+        />
+        
+        <main className="relative min-h-screen w-full overflow-hidden">
+          <img
+            src={theme.bg}
+            alt={theme.alt}
+            className="absolute inset-0 h-full w-full object-cover"
+            loading="lazy"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-background/40 to-background/70" />
+
+          <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-6">
+            <div className="glass-panel max-w-2xl rounded-xl p-8 text-center">
+              <h1 className="text-3xl font-bold mb-4">
+                🎭 Story Limit Reached
+              </h1>
+              <p className="text-muted-foreground mb-6">
+                You've completed <strong>{completedCount}</strong> story! 
+                We're preparing a subscription service that will unlock unlimited adventures.
+              </p>
+              <p className="text-sm text-muted-foreground mb-8">
+                Thank you for testing StoryMaster Quest. Stay tuned for more epic adventures!
+              </p>
+              <div className="flex justify-center gap-4">
+                <Button
+                  onClick={() => navigate("/")}
+                  variant="hero"
+                  size="lg"
+                >
+                  Return Home
+                </Button>
+                <Button
+                  onClick={() => navigate("/coming-soon")}
+                  variant="outline"
+                  size="lg"
+                >
+                  Learn More
+                </Button>
+              </div>
+            </div>
+          </div>
+        </main>
+      </>
+    );
+  }
 
   return (
     <>
@@ -160,9 +234,19 @@ const Mission = () => {
               )}
 
               {scene?.end && (
-                <div className="mt-4 grid grid-cols-2 gap-3">
-                  <Button variant="game" size="lg" onClick={() => navigate("/profile")}>Create New Hero</Button>
-                  <Button variant="hero" size="lg" onClick={() => navigate("/")}>Home</Button>
+                <div className="mt-4 space-y-3">
+                  <div className="glass-panel rounded-lg p-4 text-center">
+                    <p className="text-sm text-muted-foreground mb-2">
+                      🎉 Story completed! You've used your free story.
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Subscription service coming soon for unlimited adventures!
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Button variant="game" size="lg" onClick={() => navigate("/")}>Return Home</Button>
+                    <Button variant="hero" size="lg" onClick={() => navigate("/coming-soon")}>Learn More</Button>
+                  </div>
                 </div>
               )}
             </nav>

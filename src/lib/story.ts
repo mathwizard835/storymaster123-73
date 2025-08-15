@@ -19,6 +19,7 @@ export type Scene = {
 };
 
 const PROFILE_KEY = "smq.profile";
+const DEVICE_ID_KEY = "smq.device_id";
 
 export const saveProfileToLocal = (profile: Profile) => {
   try {
@@ -35,6 +36,59 @@ export const loadProfile = (): Profile | null => {
   } catch (e) {
     console.error("Failed to load profile", e);
     return null;
+  }
+};
+
+// Get or create a unique device ID for tracking story completions
+export const getDeviceId = (): string => {
+  try {
+    let deviceId = localStorage.getItem(DEVICE_ID_KEY);
+    if (!deviceId) {
+      deviceId = crypto.randomUUID();
+      localStorage.setItem(DEVICE_ID_KEY, deviceId);
+    }
+    return deviceId;
+  } catch (e) {
+    console.error("Failed to get/create device ID", e);
+    return crypto.randomUUID(); // Fallback to temporary ID
+  }
+};
+
+// Check if the player has reached the story completion limit
+export const checkStoryLimit = async (): Promise<{ canPlay: boolean; completedCount: number }> => {
+  try {
+    const deviceId = getDeviceId();
+    const { data, error } = await supabase
+      .from('story_completions')
+      .select('id')
+      .eq('device_id', deviceId);
+
+    if (error) throw error;
+
+    const completedCount = data?.length || 0;
+    return { canPlay: completedCount < 1, completedCount };
+  } catch (e) {
+    console.error("Failed to check story limit", e);
+    return { canPlay: true, completedCount: 0 }; // Allow play on error to avoid blocking
+  }
+};
+
+// Mark a story as completed
+export const markStoryCompleted = async (profile: Profile): Promise<void> => {
+  try {
+    const deviceId = getDeviceId();
+    const { error } = await supabase
+      .from('story_completions')
+      .insert([
+        {
+          device_id: deviceId,
+          profile: profile,
+        },
+      ]);
+
+    if (error) throw error;
+  } catch (e) {
+    console.error("Failed to mark story as completed", e);
   }
 };
 
