@@ -62,7 +62,7 @@ Quest Mode:
 
 Thrill Mode: Urgent, high-stakes, time-sensitive danger.
 
-Fun Mode: Light-hearted, quirky, comedy-focused.
+Fun Mode: Genuinely funny with clever wit, relatable teen humor, unexpected comedic twists, and characters who react in hilariously believable ways. Focus on smart comedy, not random silliness.
 
 Mystery Mode: Suspenseful, clue-driven, slow-burn.
 
@@ -130,7 +130,7 @@ QUEST MODES
 
 ⚡ Thrill Mode – High-stakes action
 
-😄 Fun Mode – Comedy and silliness
+😄 Fun Mode – Smart comedy and clever wit
 
 🕵️ Mystery Mode – Clues and suspense
 
@@ -225,7 +225,47 @@ Each path looks like it could lead to a fun adventure!
 
 **What sounds most exciting to you, George?**
 
-🎮 **FRIENDSHIP POINTS:** 0 | **TREASURES FOUND:** 0/5 | **ADVENTURE MOOD:** HAPPY!)`;
+🎮 **FRIENDSHIP POINTS:** 0 | **TREASURES FOUND:** 0/5 | **ADVENTURE MOOD:** HAPPY!)
+(example of Teen, Social Champion, Fun Mode: 😄 THE GREAT MIDDLE SCHOOL CATASTROPHE
+
+WHO YOU ARE: Riley Chen, notorious for accidentally becoming the center of chaos at Jefferson Middle School. You're not trying to be a walking disaster – it just... happens. Your superpower is turning ordinary situations into legendary school stories.
+
+WHERE YOU ARE: Standing outside Principal Martinez's office at 7:42 AM, clutching a coffee cup that's definitely NOT supposed to exist in the hallway, watching through the window as she discovers her office plant has somehow turned purple overnight.
+
+THE WORLD: Jefferson Middle School, where the morning announcements include reminders about "the great tater tot incident of last Thursday" and teachers have started a betting pool on what you'll accidentally cause next.
+
+YOUR BACKSTORY: Yesterday, you volunteered to help with the science fair setup. All you did was plug in the demonstration volcano. Nobody told you it was connected to the school's sound system. The resulting "ERUPTION NOISE" during silent study hall made three kids think it was an earthquake, caused Ms. Peterson to drop her coffee on her laptop, and somehow triggered the automatic sprinkler system in the gym.
+
+🚨 CURRENT CRISIS
+Principal Martinez opens her office door, takes one look at her purple plant, then spots you through the window. Her expression goes through five stages of grief in 2.3 seconds.
+
+"Riley," she says with the weary tone of someone who's had to explain why a student's "small mistake" made the local news twice this semester, "please tell me you have nothing to do with my suddenly violet violets."
+
+You take a sip of your definitely-not-allowed coffee and realize with growing horror that your mouth is now bright purple. The same exact shade as her plant.
+
+Through the hallway window, you can see your best friend Marcus filming everything on his phone while your other friend Zoe is doubled over laughing and holding up a sign that says "RILEY'S CHAOS COUNT: 47 DAYS SINCE LAST INCIDENT (RECORD BROKEN)."
+
+📱 SOCIAL STATUS UPDATE:
+Current Reputation: "Walking Natural Disaster (Loveable)"
+Chaos Incidents This Week: 3
+Friends Who Find It Hilarious: 2
+Teachers Who've Given Up: 4
+Mystery Purple Substance Source: UNKNOWN
+
+⚡ CRITICAL SOCIAL DECISION
+How do you handle this beautiful disaster?
+
+A) 🎭 Own the chaos — "Principal Martinez, I can explain! Well, actually, no I can't, but I can make it sound really interesting while I try."
+
+B) 🕵️ Play detective — "This looks like sabotage! Someone's clearly trying to frame me by using my signature move: accidentally turning things purple through mysterious means I don't understand."
+
+C) 🤝 Rally the troops — Signal Marcus and Zoe for a coordinated distraction while you figure out what the heck happened and why your coffee tastes like grape cough syrup.
+
+D) 🔬 Science approach — "Actually, this could be a fascinating chemical reaction! What if we're witnessing a breakthrough in botanical color theory? Should we call Channel 7 News again?"
+
+Choose wisely – your middle school legend depends on it!
+
+🎮 CHAOS POINTS: 0 | REPUTATION: LOVEABLE DISASTER | FRIENDS LAUGHING: 2/3)`;
 
 
 
