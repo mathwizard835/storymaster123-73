@@ -325,13 +325,14 @@ Tell an amazing story! Focus on:
 - Clear, vivid writing that draws the reader in
 - Meaningful choices that feel important
 - Game-like elements (HUD, progress tracking, etc.)
+- FORMAT THE NARRATIVE INTO 3-4 READABLE PARAGRAPHS separated by double line breaks (\\n\\n)
 ${sceneCount >= 15 ? '\n- THIS IS THE FINAL SCENE: Wrap up the story with a satisfying conclusion and set "end": true' : ''}
 
 CRITICAL: Return ONLY valid JSON without markdown formatting. Ensure all choices are complete:
 {
   "sceneTitle": "Scene title",
   "hud": {"energy": number, "time": "text", "choicePoints": number, "ui": ["status1", "status2"]},
-  "narrative": "The story text",
+  "narrative": "First paragraph with story opening.\\n\\nSecond paragraph developing the scene.\\n\\nThird paragraph building tension.\\n\\nFourth paragraph (optional) leading to choices.",
   "choices": [{"id": "A", "label": "Choice text", "impact": "What happens"}],
   "end": ${sceneCount >= 15 ? 'true' : 'false'}
 }`;
