@@ -96,10 +96,11 @@ export const generateNextScene = async (
   profile: Profile,
   scene?: unknown,
   megastory: boolean = false,
-  maxTokens: number = 900
+  maxTokens: number = 900,
+  sceneCount: number = 1
 ): Promise<{ text: string; parsed: Scene | null; raw: any }> => {
   const { data, error } = await supabase.functions.invoke("generate-story", {
-    body: { profile, scene, megastory, max_tokens: maxTokens },
+    body: { profile, scene, megastory, max_tokens: maxTokens, scene_count: sceneCount },
   });
 
   if (error) throw error;

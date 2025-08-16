@@ -302,6 +302,7 @@ serve(async (req) => {
     const scene = body?.scene ?? null; // optional current scene context
     const megastory = Boolean(body?.megastory ?? false);
     const max_tokens = Math.min(Number(body?.max_tokens ?? 1500), 2000);
+    const sceneCount = Number(body?.scene_count ?? 1);
 
     const profileSummary = `Player Profile:
 - Age: ${profile.age ?? "unknown"}
@@ -310,10 +311,11 @@ serve(async (req) => {
 - Mode: ${profile.mode ?? "unknown"}${profile.topic ? `\n- Topic: ${profile.topic}` : ""}`;
 
     const sceneContext = scene ? `\nContinue from: ${JSON.stringify(scene)}` : "\nCreate a new adventure opening.";
+    const storyProgressContext = `\nSTORY PROGRESS: This is scene ${sceneCount} of the story.${sceneCount >= 15 ? ' END THE STORY NOW.' : sceneCount >= 12 ? ' Build toward a climactic conclusion within the next few scenes.' : ''}`;
 
     const userPrompt = `Create an exciting story segment for this player:
 
-${profileSummary}${sceneContext}
+${profileSummary}${sceneContext}${storyProgressContext}
 
 ${megastory ? "Advanced Mode: Include rich HUD details and 4-6 strategic choices." : "Standard Mode: 3-4 engaging choices."}
 
@@ -323,6 +325,7 @@ Tell an amazing story! Focus on:
 - Clear, vivid writing that draws the reader in
 - Meaningful choices that feel important
 - Game-like elements (HUD, progress tracking, etc.)
+${sceneCount >= 15 ? '\n- THIS IS THE FINAL SCENE: Wrap up the story with a satisfying conclusion and set "end": true' : ''}
 
 CRITICAL: Return ONLY valid JSON without markdown formatting. Ensure all choices are complete:
 {
@@ -330,7 +333,7 @@ CRITICAL: Return ONLY valid JSON without markdown formatting. Ensure all choices
   "hud": {"energy": number, "time": "text", "choicePoints": number, "ui": ["status1", "status2"]},
   "narrative": "The story text",
   "choices": [{"id": "A", "label": "Choice text", "impact": "What happens"}],
-  "end": false
+  "end": ${sceneCount >= 15 ? 'true' : 'false'}
 }`;
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {

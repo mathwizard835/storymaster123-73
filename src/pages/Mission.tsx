@@ -20,6 +20,7 @@ const Mission = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [storyLimitReached, setStoryLimitReached] = useState(false);
   const [completedCount, setCompletedCount] = useState(0);
+  const [sceneCount, setSceneCount] = useState(0);
 
   const profile = loadProfile();
 
@@ -61,11 +62,12 @@ const Mission = () => {
           return;
         }
 
-        const { parsed, text } = await generateNextScene(profile);
+        const { parsed, text } = await generateNextScene(profile, undefined, false, 900, 1);
         if (!parsed) {
           throw new Error("Invalid AI response: " + text.slice(0, 140));
         }
         setScene(parsed);
+        setSceneCount(1);
       } catch (e: any) {
         console.error(e);
         toast({ title: "Story error", description: e.message ?? "Failed to start mission", variant: "destructive" });
@@ -81,7 +83,8 @@ const Mission = () => {
     if (!profile || !scene) return;
     try {
       setLoading(true);
-      const { parsed, text } = await generateNextScene(profile, { ...scene, selectedChoiceId: choiceId });
+      const nextSceneCount = sceneCount + 1;
+      const { parsed, text } = await generateNextScene(profile, { ...scene, selectedChoiceId: choiceId }, false, 900, nextSceneCount);
       if (!parsed) throw new Error("Invalid AI response: " + text.slice(0, 140));
       
       // If this is the end of the story, mark it as completed
@@ -91,6 +94,7 @@ const Mission = () => {
       }
       
       setScene(parsed);
+      setSceneCount(nextSceneCount);
     } catch (e: any) {
       console.error(e);
       toast({ title: "Story error", description: e.message ?? "Failed to continue", variant: "destructive" });
