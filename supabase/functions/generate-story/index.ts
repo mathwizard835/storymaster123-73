@@ -326,6 +326,7 @@ Tell an amazing story! Focus on:
 - Meaningful choices that feel important
 - Game-like elements (HUD, progress tracking, etc.)
 - FORMAT THE NARRATIVE INTO 3-4 READABLE PARAGRAPHS separated by double line breaks (\\n\\n)
+- KEEP THE NARRATIVE TO EXACTLY 215 WORDS OR FEWER
 ${sceneCount >= 15 ? '\n- THIS IS THE FINAL SCENE: Wrap up the story with a satisfying conclusion and set "end": true' : ''}
 
 CRITICAL: Return ONLY valid JSON without markdown formatting. Ensure all choices are complete:
