@@ -26,17 +26,32 @@ function extractJSON(text: string): unknown | null {
       }
     }
     
-    // Try finding JSON object boundaries
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      try {
-        return JSON.parse(jsonMatch[0]);
-      } catch (_) {
-        // Final fallback
+    // Try finding JSON object boundaries - look for complete objects only
+    const jsonStart = text.indexOf('{');
+    if (jsonStart !== -1) {
+      let braceCount = 0;
+      let jsonEnd = -1;
+      
+      for (let i = jsonStart; i < text.length; i++) {
+        if (text[i] === '{') braceCount++;
+        if (text[i] === '}') braceCount--;
+        if (braceCount === 0) {
+          jsonEnd = i;
+          break;
+        }
+      }
+      
+      if (jsonEnd !== -1) {
+        try {
+          const jsonStr = text.substring(jsonStart, jsonEnd + 1);
+          return JSON.parse(jsonStr);
+        } catch (_) {
+          // Continue to fallback
+        }
       }
     }
     
-    console.log("Failed to extract JSON from response:", text.substring(0, 200));
+    console.log("Failed to extract JSON from response:", text.substring(0, 500));
     return null;
   }
 }
@@ -286,7 +301,7 @@ serve(async (req) => {
     const profile = body?.profile ?? {};
     const scene = body?.scene ?? null; // optional current scene context
     const megastory = Boolean(body?.megastory ?? false);
-    const max_tokens = Math.min(Number(body?.max_tokens ?? 1000), 1200);
+    const max_tokens = Math.min(Number(body?.max_tokens ?? 1500), 2000);
 
     const profileSummary = `Player Profile:
 - Age: ${profile.age ?? "unknown"}
@@ -309,7 +324,7 @@ Tell an amazing story! Focus on:
 - Meaningful choices that feel important
 - Game-like elements (HUD, progress tracking, etc.)
 
-Return as valid JSON:
+CRITICAL: Return ONLY valid JSON without markdown formatting. Ensure all choices are complete:
 {
   "sceneTitle": "Scene title",
   "hud": {"energy": number, "time": "text", "choicePoints": number, "ui": ["status1", "status2"]},
