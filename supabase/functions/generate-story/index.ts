@@ -327,6 +327,8 @@ Tell an amazing story! Focus on:
 - Game-like elements (HUD, progress tracking, etc.)
 - FORMAT THE NARRATIVE INTO 3-4 READABLE PARAGRAPHS separated by double line breaks (\\n\\n)
 - KEEP THE NARRATIVE TO EXACTLY 215 WORDS OR FEWER
+- CRITICAL: MAINTAIN CONSISTENT CHARACTER IDENTITY - Never change the protagonist's name, appearance, or core identity once established
+- LIMIT STORY OUTCOMES: Keep choices focused and outcomes manageable, avoid branching into too many different storylines
 ${sceneCount >= 15 ? '\n- THIS IS THE FINAL SCENE: Wrap up the story with a satisfying conclusion and set "end": true' : ''}
 
 CRITICAL: Return ONLY valid JSON without markdown formatting. Ensure all choices are complete:
