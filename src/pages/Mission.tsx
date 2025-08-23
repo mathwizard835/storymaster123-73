@@ -143,8 +143,28 @@ const Mission = () => {
       
       // If this is the end of the story, mark it as completed
       if (parsed.end && profile) {
-        await markStoryCompleted(profile);
+        const { newAchievements, characterProgress } = await markStoryCompleted(profile, updatedChoices.length);
         setCompletedCount(1);
+        
+        // Show achievement notifications
+        if (newAchievements.length > 0) {
+          newAchievements.forEach(achievement => {
+            toast({
+              title: "🎉 Achievement Unlocked!",
+              description: `${achievement.icon} ${achievement.name}`,
+              duration: 5000,
+            });
+          });
+        }
+        
+        // Show character progression
+        if (characterProgress?.leveledUp) {
+          toast({
+            title: "🌟 Level Up!",
+            description: `You are now level ${characterProgress.character.level}!`,
+            duration: 5000,
+          });
+        }
         
         // Save to completed stories gallery
         const completedStory = {

@@ -1,10 +1,13 @@
 import { supabase } from "@/integrations/supabase/client";
+import { updateProgress } from "@/lib/achievements";
+import { gainExperience } from "@/lib/character";
 
 export type Profile = {
   age: number;
   reading: string; // apprentice | adventurer | hero
   selectedBadges: string[];
   mode: string; // thrill | fun | mystery | explore
+  storyLength?: 'short' | 'medium' | 'epic';
   topic?: string;
 };
 
@@ -146,7 +149,10 @@ export const getCompletedStories = (): CompletedStory[] => {
 };
 
 // Mark a story as completed
-export const markStoryCompleted = async (profile: Profile): Promise<void> => {
+export const markStoryCompleted = async (
+  profile: Profile,
+  choiceCount: number = 0
+): Promise<{ newAchievements: any[]; characterProgress: any }> => {
   try {
     const deviceId = getDeviceId();
     const { error } = await supabase
@@ -159,8 +165,20 @@ export const markStoryCompleted = async (profile: Profile): Promise<void> => {
       ]);
 
     if (error) throw error;
+
+    // Update achievements and character progression
+    const newAchievements = updateProgress(profile.selectedBadges, profile.mode, choiceCount);
+    const characterProgress = gainExperience(
+      profile.selectedBadges,
+      profile.mode,
+      choiceCount,
+      profile.storyLength || 'medium'
+    );
+
+    return { newAchievements, characterProgress };
   } catch (e) {
     console.error("Failed to mark story as completed", e);
+    return { newAchievements: [], characterProgress: null };
   }
 };
 
@@ -171,8 +189,12 @@ export const generateNextScene = async (
   maxTokens: number = 900,
   sceneCount: number = 1
 ): Promise<{ text: string; parsed: Scene | null; raw: any }> => {
+  // Adjust max tokens based on story length
+  const lengthMultiplier = profile.storyLength === 'short' ? 0.7 : profile.storyLength === 'epic' ? 1.5 : 1;
+  const adjustedTokens = Math.floor(maxTokens * lengthMultiplier);
+  
   const { data, error } = await supabase.functions.invoke("generate-story", {
-    body: { profile, scene, megastory, max_tokens: maxTokens, scene_count: sceneCount },
+    body: { profile, scene, megastory, max_tokens: adjustedTokens, scene_count: sceneCount },
   });
 
   if (error) throw error;

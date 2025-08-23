@@ -46,6 +46,7 @@ const ProfileSetup = () => {
   const [reading, setReading] = useState<string>("adventurer");
   const [selectedBadges, setSelectedBadges] = useState<string[]>([]);
   const [mode, setMode] = useState<string>("thrill");
+  const [storyLength, setStoryLength] = useState<string>("medium");
   const [topic, setTopic] = useState<string>("");
 
   const toggleBadge = (id: string) => {
@@ -55,7 +56,7 @@ const ProfileSetup = () => {
   };
 
   const handleStart = () => {
-    const profile = { age, reading, selectedBadges, mode, topic };
+    const profile = { age, reading, selectedBadges, mode, storyLength: storyLength as 'short' | 'medium' | 'epic', topic };
     saveProfileToLocal(profile);
     navigate("/mission");
   };
@@ -143,6 +144,28 @@ const ProfileSetup = () => {
               </div>
             </article>
 
+            {/* Story Length */}
+            <article className="glass-panel rounded-xl p-6">
+              <h2 className="font-heading text-xl md:text-2xl font-bold">Story Length</h2>
+              <RadioGroup
+                className="mt-4 grid gap-3"
+                value={storyLength}
+                onValueChange={setStoryLength}
+              >
+                <div className="flex items-center gap-3 rounded-lg border p-3">
+                  <RadioGroupItem id="short" value="short" />
+                  <Label htmlFor="short">⚡ Short (3-5 scenes)</Label>
+                </div>
+                <div className="flex items-center gap-3 rounded-lg border p-3">
+                  <RadioGroupItem id="medium" value="medium" />
+                  <Label htmlFor="medium">⚔️ Medium (5-8 scenes)</Label>
+                </div>
+                <div className="flex items-center gap-3 rounded-lg border p-3">
+                  <RadioGroupItem id="epic" value="epic" />
+                  <Label htmlFor="epic">🏆 Epic (8-12 scenes)</Label>
+                </div>
+              </RadioGroup>
+            </article>
             {/* Quest Mode */}
             <article className="glass-panel rounded-xl p-6 md:col-span-2">
               <h2 className="font-heading text-xl md:text-2xl font-bold">Quest Mode</h2>

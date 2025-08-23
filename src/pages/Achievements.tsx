@@ -1,0 +1,179 @@
+import { useNavigate } from "react-router-dom";
+import { Seo } from "@/components/Seo";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { loadAchievements, ALL_ACHIEVEMENTS, type Achievement } from "@/lib/achievements";
+import { loadCharacter } from "@/lib/character";
+import { ArrowLeft, Trophy, Star, Lock } from "lucide-react";
+
+const Achievements = () => {
+  const navigate = useNavigate();
+  const progress = loadAchievements();
+  const character = loadCharacter();
+
+  const getRarityColor = (rarity: Achievement['rarity']) => {
+    switch (rarity) {
+      case 'common':
+        return 'bg-gray-100 text-gray-800';
+      case 'rare':
+        return 'bg-blue-100 text-blue-800';
+      case 'epic':
+        return 'bg-purple-100 text-purple-800';
+      case 'legendary':
+        return 'bg-amber-100 text-amber-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const unlockedAchievements = progress.achievements;
+  const lockedAchievements = ALL_ACHIEVEMENTS.filter(
+    a => !unlockedAchievements.some(ua => ua.id === a.id)
+  );
+
+  const completionRate = Math.round((unlockedAchievements.length / ALL_ACHIEVEMENTS.length) * 100);
+
+  return (
+    <>
+      <Seo
+        title="StoryMaster Quest – Achievements"
+        description="View your achievements and character progression."
+        canonical="/achievements"
+      />
+      
+      <main className="min-h-screen bg-background">
+        <div className="container py-8">
+          <div className="flex items-center gap-4 mb-8">
+            <Button 
+              variant="ghost" 
+              onClick={() => navigate("/")}
+              className="flex items-center gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to Home
+            </Button>
+          </div>
+
+          <div className="mb-8">
+            <h1 className="font-heading text-3xl md:text-4xl font-extrabold flex items-center gap-3">
+              <Trophy className="h-8 w-8 text-amber-500" />
+              Achievements
+            </h1>
+            <p className="text-muted-foreground mt-2">
+              Your progress and accomplishments
+            </p>
+          </div>
+
+          {/* Character Stats */}
+          <Card className="glass-panel border-0 mb-8">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Star className="h-5 w-5" />
+                Character Progress
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <div>
+                  <div className="text-2xl font-bold">{character.level}</div>
+                  <div className="text-sm text-muted-foreground">Level</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold">{progress.totalStories}</div>
+                  <div className="text-sm text-muted-foreground">Stories Completed</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold">{progress.totalChoices}</div>
+                  <div className="text-sm text-muted-foreground">Choices Made</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold">{completionRate}%</div>
+                  <div className="text-sm text-muted-foreground">Achievement Rate</div>
+                </div>
+              </div>
+              
+              <div className="mt-6">
+                <div className="flex justify-between text-sm mb-2">
+                  <span>Experience Progress</span>
+                  <span>{character.experience} / {character.experienceToNext}</span>
+                </div>
+                <Progress 
+                  value={(character.experience / character.experienceToNext) * 100} 
+                  className="h-2"
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Achievements Grid */}
+          <div className="space-y-6">
+            {/* Unlocked Achievements */}
+            {unlockedAchievements.length > 0 && (
+              <section>
+                <h2 className="font-heading text-2xl font-bold mb-4 flex items-center gap-2">
+                  <Trophy className="h-6 w-6 text-amber-500" />
+                  Unlocked ({unlockedAchievements.length})
+                </h2>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {unlockedAchievements.map((achievement) => (
+                    <Card key={achievement.id} className="glass-panel border-0">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-start justify-between">
+                          <div className="text-3xl">{achievement.icon}</div>
+                          <Badge className={getRarityColor(achievement.rarity)} variant="secondary">
+                            {achievement.rarity}
+                          </Badge>
+                        </div>
+                        <CardTitle className="text-lg">{achievement.name}</CardTitle>
+                        <CardDescription>{achievement.description}</CardDescription>
+                      </CardHeader>
+                      <CardContent className="pt-0">
+                        <div className="text-xs text-muted-foreground">
+                          Unlocked: {achievement.unlockedAt ? 
+                            new Date(achievement.unlockedAt).toLocaleDateString() : 'Recently'
+                          }
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Locked Achievements */}
+            {lockedAchievements.length > 0 && (
+              <section>
+                <h2 className="font-heading text-2xl font-bold mb-4 flex items-center gap-2">
+                  <Lock className="h-6 w-6 text-muted-foreground" />
+                  Locked ({lockedAchievements.length})
+                </h2>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {lockedAchievements.map((achievement) => (
+                    <Card key={achievement.id} className="glass-panel border-0 opacity-60">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-start justify-between">
+                          <div className="text-3xl grayscale">{achievement.icon}</div>
+                          <Badge className="bg-muted text-muted-foreground" variant="secondary">
+                            {achievement.rarity}
+                          </Badge>
+                        </div>
+                        <CardTitle className="text-lg text-muted-foreground">{achievement.name}</CardTitle>
+                        <CardDescription className="text-muted-foreground/80">
+                          {achievement.description}
+                        </CardDescription>
+                      </CardHeader>
+                    </Card>
+                  ))}
+                </div>
+              </section>
+            )}
+          </div>
+        </div>
+      </main>
+    </>
+  );
+};
+
+export default Achievements;

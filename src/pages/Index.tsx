@@ -53,16 +53,25 @@ const Index = () => {
                 Create My Hero
               </Button>
               {completedStories.length > 0 && (
-                <Button
-                  size="xl"
-                  variant="outline"
-                  onClick={() => navigate("/gallery")}
-                  className="flex items-center gap-2"
-                  aria-label="View story gallery"
-                >
-                  <BookOpen className="h-4 w-4" />
-                  Story Gallery ({completedStories.length})
-                </Button>
+                <>
+                  <Button
+                    size="xl"
+                    variant="outline"
+                    onClick={() => navigate("/gallery")}
+                    className="flex items-center gap-2"
+                    aria-label="View story gallery"
+                  >
+                    <BookOpen className="h-4 w-4" />
+                    Story Gallery ({completedStories.length})
+                  </Button>
+                  <Button
+                    onClick={() => navigate("/achievements")}
+                    variant="outline"
+                    size="xl"
+                  >
+                    🏆 Achievements
+                  </Button>
+                </>
               )}
             </div>
           </div>

@@ -9,6 +9,7 @@ import ProfileSetup from "./pages/ProfileSetup";
 import Mission from "./pages/Mission";
 import ComingSoon from "./pages/ComingSoon";
 import StoryGallery from "./pages/StoryGallery";
+import Achievements from "./pages/Achievements";
 import ErrorBoundary from "./components/ErrorBoundary";
 
 const queryClient = new QueryClient();
@@ -25,6 +26,7 @@ const App = () => (
             <Route path="/profile" element={<ProfileSetup />} />
             <Route path="/mission" element={<Mission />} />
             <Route path="/gallery" element={<StoryGallery />} />
+            <Route path="/achievements" element={<Achievements />} />
             <Route path="/coming-soon" element={<ComingSoon />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
