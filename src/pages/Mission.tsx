@@ -113,8 +113,17 @@ const Mission = () => {
   }, []);
 
   const onChoose = async (choiceId: string) => {
-    if (!profile || !scene || !savedStory) return;
+    console.log("onChoose called with:", choiceId);
+    console.log("profile:", profile);
+    console.log("scene:", scene);
+    console.log("savedStory:", savedStory);
+    
+    if (!profile || !scene || !savedStory) {
+      console.log("Missing required data, returning early");
+      return;
+    }
     try {
+      console.log("Setting loading to true");
       setLoading(true);
       setError(null);
       
