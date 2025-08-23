@@ -2,9 +2,12 @@ import { Button } from "@/components/ui/button";
 import { Seo } from "@/components/Seo";
 import heroPortal from "@/assets/hero-portal.jpg";
 import { useNavigate } from "react-router-dom";
+import { getCompletedStories } from "@/lib/story";
+import { BookOpen } from "lucide-react";
 
 const Index = () => {
   const navigate = useNavigate();
+  const completedStories = getCompletedStories();
 
   return (
     <>
@@ -40,7 +43,7 @@ const Index = () => {
             <p className="mt-4 text-lg md:text-xl text-muted-foreground">
               Build your hero. Launch your mission. Your choices shape the story.
             </p>
-            <div className="mt-8 flex justify-center">
+            <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
               <Button
                 size="xl"
                 variant="hero"
@@ -49,6 +52,18 @@ const Index = () => {
               >
                 Create My Hero
               </Button>
+              {completedStories.length > 0 && (
+                <Button
+                  size="xl"
+                  variant="outline"
+                  onClick={() => navigate("/gallery")}
+                  className="flex items-center gap-2"
+                  aria-label="View story gallery"
+                >
+                  <BookOpen className="h-4 w-4" />
+                  Story Gallery ({completedStories.length})
+                </Button>
+              )}
             </div>
           </div>
         </section>

@@ -10,8 +10,9 @@ import creativeGeniusBg from "@/assets/creative-genius-bg.jpg";
 import { useNavigate } from "react-router-dom";
 import { Zap, Timer, Star, Heart, Shield, Eye, Wand2, PawPrint, Crosshair, Users, Palette } from "lucide-react";
 import { useEffect, useState } from "react";
-import { generateNextScene, loadProfile, checkStoryLimit, markStoryCompleted, type Scene } from "@/lib/story";
+import { generateNextScene, loadProfile, checkStoryLimit, markStoryCompleted, type Scene, saveCurrentStory, loadCurrentStory, clearCurrentStory, saveCompletedStory, type SavedStory } from "@/lib/story";
 import { useToast } from "@/components/ui/use-toast";
+import { RefreshCw, Save, Play } from "lucide-react";
 
 const Mission = () => {
   const navigate = useNavigate();
@@ -21,6 +22,10 @@ const Mission = () => {
   const [storyLimitReached, setStoryLimitReached] = useState(false);
   const [completedCount, setCompletedCount] = useState(0);
   const [sceneCount, setSceneCount] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+  const [savedStory, setSavedStory] = useState<SavedStory | null>(null);
+  const [allScenes, setAllScenes] = useState<Scene[]>([]);
+  const [choicesMade, setChoicesMade] = useState<string[]>([]);
 
   const profile = loadProfile();
 
@@ -48,9 +53,22 @@ const Mission = () => {
       navigate("/profile");
       return;
     }
+    
+    // Check for saved story first
+    const saved = loadCurrentStory();
+    if (saved && saved.profile.age === profile.age && 
+        JSON.stringify(saved.profile.selectedBadges.sort()) === JSON.stringify(profile.selectedBadges.sort())) {
+      setSavedStory(saved);
+      setScene(saved.scenes[saved.currentSceneIndex]);
+      setAllScenes(saved.scenes);
+      setSceneCount(saved.currentSceneIndex + 1);
+      return;
+    }
+    
     const init = async () => {
       try {
         setLoading(true);
+        setError(null);
         
         // Check story completion limit first
         const limitCheck = await checkStoryLimit();
@@ -67,10 +85,25 @@ const Mission = () => {
           throw new Error("Invalid AI response: " + text.slice(0, 140));
         }
         setScene(parsed);
+        setAllScenes([parsed]);
         setSceneCount(1);
+        
+        // Save initial story
+        const newStory: SavedStory = {
+          id: crypto.randomUUID(),
+          profile,
+          scenes: [parsed],
+          currentSceneIndex: 0,
+          startedAt: new Date().toISOString(),
+          lastPlayedAt: new Date().toISOString(),
+          completed: false,
+        };
+        setSavedStory(newStory);
+        saveCurrentStory(newStory);
+        
       } catch (e: any) {
         console.error(e);
-        toast({ title: "Story error", description: e.message ?? "Failed to start mission", variant: "destructive" });
+        setError(e.message ?? "Failed to start mission");
       } finally {
         setLoading(false);
       }
@@ -80,27 +113,112 @@ const Mission = () => {
   }, []);
 
   const onChoose = async (choiceId: string) => {
-    if (!profile || !scene) return;
+    if (!profile || !scene || !savedStory) return;
     try {
       setLoading(true);
+      setError(null);
+      
       const nextSceneCount = sceneCount + 1;
+      const updatedChoices = [...choicesMade, choiceId];
+      setChoicesMade(updatedChoices);
+      
       const { parsed, text } = await generateNextScene(profile, { ...scene, selectedChoiceId: choiceId }, false, 900, nextSceneCount);
       if (!parsed) throw new Error("Invalid AI response: " + text.slice(0, 140));
+      
+      const updatedScenes = [...allScenes, parsed];
+      setAllScenes(updatedScenes);
+      setScene(parsed);
+      setSceneCount(nextSceneCount);
+      
+      // Update saved story
+      const updatedStory: SavedStory = {
+        ...savedStory,
+        scenes: updatedScenes,
+        currentSceneIndex: nextSceneCount - 1,
+        lastPlayedAt: new Date().toISOString(),
+        completed: parsed.end || false,
+      };
+      setSavedStory(updatedStory);
+      saveCurrentStory(updatedStory);
       
       // If this is the end of the story, mark it as completed
       if (parsed.end && profile) {
         await markStoryCompleted(profile);
-        setCompletedCount(1); // Update the count since they just completed one
+        setCompletedCount(1);
+        
+        // Save to completed stories gallery
+        const completedStory = {
+          id: updatedStory.id,
+          title: allScenes[0]?.sceneTitle || "Untitled Adventure",
+          profile,
+          completedAt: new Date().toISOString(),
+          sceneCount: nextSceneCount,
+          choicesMade: updatedChoices,
+        };
+        saveCompletedStory(completedStory);
+        
+        // Clear current story
+        clearCurrentStory();
       }
       
-      setScene(parsed);
-      setSceneCount(nextSceneCount);
     } catch (e: any) {
       console.error(e);
-      toast({ title: "Story error", description: e.message ?? "Failed to continue", variant: "destructive" });
+      setError(e.message ?? "Failed to continue");
     } finally {
       setLoading(false);
     }
+  };
+
+  const retryInit = async () => {
+    if (!profile) return;
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const { parsed, text } = await generateNextScene(profile, undefined, false, 900, 1);
+      if (!parsed) throw new Error("Invalid AI response: " + text.slice(0, 140));
+      
+      setScene(parsed);
+      setAllScenes([parsed]);
+      setSceneCount(1);
+      
+      const newStory: SavedStory = {
+        id: crypto.randomUUID(),
+        profile,
+        scenes: [parsed],
+        currentSceneIndex: 0,
+        startedAt: new Date().toISOString(),
+        lastPlayedAt: new Date().toISOString(),
+        completed: false,
+      };
+      setSavedStory(newStory);
+      saveCurrentStory(newStory);
+      
+    } catch (e: any) {
+      console.error(e);
+      setError(e.message ?? "Failed to retry");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const retryChoice = async (choiceId: string) => {
+    await onChoose(choiceId);
+  };
+
+  const resumeSavedStory = () => {
+    if (savedStory) {
+      setScene(savedStory.scenes[savedStory.currentSceneIndex]);
+      setAllScenes(savedStory.scenes);
+      setSceneCount(savedStory.currentSceneIndex + 1);
+      setSavedStory(null); // Clear the resume prompt
+    }
+  };
+
+  const startNewStory = () => {
+    clearCurrentStory();
+    setSavedStory(null);
+    retryInit();
   };
 
   const energy = scene?.hud?.energy ?? 75;
@@ -109,6 +227,61 @@ const Mission = () => {
   const uiElements = scene?.hud?.ui || [];
 
   const ThemeIcon = theme.icon;
+
+  // Show resume story option if available
+  if (savedStory && scene && !loading) {
+    return (
+      <>
+        <Seo
+          title="StoryMaster Quest – Resume Story"
+          description="Continue your saved adventure where you left off."
+          canonical="/mission"
+        />
+        
+        <main className="relative min-h-screen w-full overflow-hidden">
+          <img
+            src={theme.bg}
+            alt={theme.alt}
+            className="absolute inset-0 h-full w-full object-cover"
+            loading="lazy"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-background/40 to-background/70" />
+
+          <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-6">
+            <div className="glass-panel max-w-2xl rounded-xl p-8 text-center">
+              <h1 className="text-3xl font-bold mb-4">
+                📖 Resume Your Story
+              </h1>
+              <p className="text-muted-foreground mb-2">
+                You have a story in progress from {new Date(savedStory.lastPlayedAt).toLocaleDateString()}.
+              </p>
+              <p className="text-sm text-muted-foreground mb-6">
+                Scene {savedStory.currentSceneIndex + 1} of your adventure: <strong>{savedStory.scenes[0]?.sceneTitle}</strong>
+              </p>
+              <div className="flex justify-center gap-4">
+                <Button
+                  onClick={resumeSavedStory}
+                  variant="hero"
+                  size="lg"
+                  className="flex items-center gap-2"
+                >
+                  <Play className="h-4 w-4" />
+                  Continue Story
+                </Button>
+                <Button
+                  onClick={startNewStory}
+                  variant="outline"
+                  size="lg"
+                >
+                  Start New Story
+                </Button>
+              </div>
+            </div>
+          </div>
+        </main>
+      </>
+    );
+  }
 
   // If story limit is reached, show limit message
   if (storyLimitReached) {
@@ -218,17 +391,70 @@ const Mission = () => {
         <section className="relative z-10 min-h-[70vh] flex items-center">
           <div className="container grid gap-6 md:grid-cols-5 py-10 md:py-16">
             <article className="md:col-span-3 glass-panel rounded-2xl p-6 md:p-8 animate-enter">
-              <h1 className="font-heading text-2xl md:text-4xl font-extrabold">{scene?.sceneTitle ?? "Initializing Mission..."}</h1>
-              <p className="mt-4 text-base md:text-lg whitespace-pre-line">
-                {scene?.narrative ?? (loading ? "Generating your first scene..." : "Click Start again if this persists.")}
-              </p>
+              <div className="flex items-center justify-between mb-4">
+                <h1 className="font-heading text-2xl md:text-4xl font-extrabold">
+                  {scene?.sceneTitle ?? "Initializing Mission..."}
+                </h1>
+                {sceneCount > 1 && (
+                  <div className="text-sm text-muted-foreground">
+                    Scene {sceneCount}
+                  </div>
+                )}
+              </div>
+              
+              {error ? (
+                <div className="space-y-4">
+                  <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20">
+                    <p className="text-destructive font-semibold mb-2">Story Error</p>
+                    <p className="text-sm text-muted-foreground">{error}</p>
+                  </div>
+                  <Button 
+                    onClick={retryInit}
+                    variant="outline"
+                    className="flex items-center gap-2"
+                    disabled={loading}
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                    {loading ? "Retrying..." : "Try Again"}
+                  </Button>
+                </div>
+              ) : (
+                <p className="mt-4 text-base md:text-lg whitespace-pre-line">
+                  {scene?.narrative ?? (loading ? "Generating your scene..." : "Click Start again if this persists.")}
+                </p>
+              )}
             </article>
 
             <nav className="md:col-span-2 grid gap-3 content-start">
-              {scene?.choices?.length ? (
+              {error ? (
+                <Button 
+                  onClick={retryInit}
+                  variant="destructive"
+                  size="lg"
+                  disabled={loading}
+                  className="flex items-center gap-2"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  {loading ? "Retrying..." : "Retry Story"}
+                </Button>
+              ) : scene?.choices?.length ? (
                 scene.choices.map((c) => (
-                  <Button key={c.id} variant="choice" size="xl" onClick={() => onChoose(c.id)} disabled={loading}>
-                    {c.label}
+                  <Button 
+                    key={c.id} 
+                    variant="choice" 
+                    size="xl" 
+                    onClick={() => retryChoice(c.id)} 
+                    disabled={loading}
+                    className="relative"
+                  >
+                    {loading ? (
+                      <span className="flex items-center gap-2">
+                        <RefreshCw className="h-4 w-4 animate-spin" />
+                        Generating...
+                      </span>
+                    ) : (
+                      c.label
+                    )}
                   </Button>
                 ))
               ) : (

@@ -20,6 +20,27 @@ export type Scene = {
 
 const PROFILE_KEY = "smq.profile";
 const DEVICE_ID_KEY = "smq.device_id";
+const CURRENT_STORY_KEY = "smq.current_story";
+const COMPLETED_STORIES_KEY = "smq.completed_stories";
+
+export type SavedStory = {
+  id: string;
+  profile: Profile;
+  scenes: Scene[];
+  currentSceneIndex: number;
+  startedAt: string;
+  lastPlayedAt: string;
+  completed: boolean;
+};
+
+export type CompletedStory = {
+  id: string;
+  title: string;
+  profile: Profile;
+  completedAt: string;
+  sceneCount: number;
+  choicesMade: string[];
+};
 
 export const saveProfileToLocal = (profile: Profile) => {
   try {
@@ -70,6 +91,57 @@ export const checkStoryLimit = async (): Promise<{ canPlay: boolean; completedCo
   } catch (e) {
     console.error("Failed to check story limit", e);
     return { canPlay: true, completedCount: 0 }; // Allow play on error to avoid blocking
+  }
+};
+
+// Save current story progress
+export const saveCurrentStory = (story: SavedStory): void => {
+  try {
+    localStorage.setItem(CURRENT_STORY_KEY, JSON.stringify(story));
+  } catch (e) {
+    console.error("Failed to save current story", e);
+  }
+};
+
+// Load current story progress
+export const loadCurrentStory = (): SavedStory | null => {
+  try {
+    const raw = localStorage.getItem(CURRENT_STORY_KEY);
+    return raw ? (JSON.parse(raw) as SavedStory) : null;
+  } catch (e) {
+    console.error("Failed to load current story", e);
+    return null;
+  }
+};
+
+// Clear current story progress
+export const clearCurrentStory = (): void => {
+  try {
+    localStorage.removeItem(CURRENT_STORY_KEY);
+  } catch (e) {
+    console.error("Failed to clear current story", e);
+  }
+};
+
+// Save completed story to local gallery
+export const saveCompletedStory = (completedStory: CompletedStory): void => {
+  try {
+    const existing = getCompletedStories();
+    const updated = [completedStory, ...existing.slice(0, 9)]; // Keep last 10
+    localStorage.setItem(COMPLETED_STORIES_KEY, JSON.stringify(updated));
+  } catch (e) {
+    console.error("Failed to save completed story", e);
+  }
+};
+
+// Get completed stories from local storage
+export const getCompletedStories = (): CompletedStory[] => {
+  try {
+    const raw = localStorage.getItem(COMPLETED_STORIES_KEY);
+    return raw ? (JSON.parse(raw) as CompletedStory[]) : [];
+  } catch (e) {
+    console.error("Failed to load completed stories", e);
+    return [];
   }
 };
 
