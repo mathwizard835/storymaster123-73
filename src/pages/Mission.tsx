@@ -463,7 +463,7 @@ const Mission = () => {
                     key={c.id} 
                     variant="choice" 
                     size="xl" 
-                    onClick={() => retryChoice(c.id)} 
+                    onClick={() => onChoose(c.id)} 
                     disabled={loading}
                     className="relative"
                   >
