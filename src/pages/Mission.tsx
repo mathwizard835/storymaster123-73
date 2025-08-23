@@ -257,8 +257,11 @@ const Mission = () => {
 
   const ThemeIcon = theme.icon;
 
+  console.log("Mission render state:", { savedStory: !!savedStory, scene: !!scene, loading, storyLimitReached, error });
+  
   // Show resume story option if available
   if (savedStory && scene && !loading) {
+    console.log("Rendering resume story UI");
     return (
       <>
         <Seo
