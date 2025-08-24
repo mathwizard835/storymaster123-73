@@ -26,6 +26,7 @@ const Mission = () => {
   const [savedStory, setSavedStory] = useState<SavedStory | null>(null);
   const [allScenes, setAllScenes] = useState<Scene[]>([]);
   const [choicesMade, setChoicesMade] = useState<string[]>([]);
+  const [hasResumed, setHasResumed] = useState(false);
 
   const profile = loadProfile();
 
@@ -240,6 +241,7 @@ const Mission = () => {
       setScene(savedStory.scenes[savedStory.currentSceneIndex]);
       setAllScenes(savedStory.scenes);
       setSceneCount(savedStory.currentSceneIndex + 1);
+      setHasResumed(true);
       // Don't clear savedStory - onChoose needs it
     }
   };
@@ -260,7 +262,7 @@ const Mission = () => {
   console.log("Mission render state:", { savedStory: !!savedStory, scene: !!scene, loading, storyLimitReached, error });
   
   // Show resume story option if available
-  if (savedStory && scene && !loading) {
+  if (savedStory && scene && !loading && !hasResumed) {
     console.log("Rendering resume story UI");
     return (
       <>
