@@ -114,14 +114,14 @@ const Index = () => {
         };
       case 'teen':
         return {
-          title: "🔥 Finally! Stories That Don't Treat You Like a Little Kid",
-          subtitle: "Mature adventures, complex choices, real consequences. Build your character, make tough decisions, and experience stories that actually challenge you.",
-          heroText: "Your Choices. Your Story. Your Legend.",
-          ctaButton: "🎮 Claim My Adventure",
+          title: "🔥 The Most Addictive Storytelling Experience Ever Built",
+          subtitle: "Daily story drops, evolving avatars, choice chains, squad missions, and viral story clips. This isn't just reading - it's the future of gaming.",
+          heroText: "Your Choices Build Legends",
+          ctaButton: "🎮 Join The Story Revolution",
           benefits: [
-            { icon: <Brain className="h-5 w-5 text-cyan-400" />, text: "Smart stories that respect your intelligence" },
-            { icon: <Crown className="h-5 w-5 text-purple-400" />, text: "Unlock exclusive teen-only content" },
-            { icon: <Gamepad2 className="h-5 w-5 text-green-400" />, text: "Complex moral choices & consequences" }
+            { icon: <Zap className="h-5 w-5 text-cyan-400" />, text: "Daily story drops + evolving avatar system" },
+            { icon: <Users className="h-5 w-5 text-purple-400" />, text: "Squad missions + spectator mode with friends" },
+            { icon: <Crown className="h-5 w-5 text-yellow-400" />, text: "Choice chains + Hall of Legends ranking" }
           ]
         };
       case 'parent':
@@ -207,7 +207,7 @@ const Index = () => {
                   <Zap className="h-8 w-8" />
                   <div>
                     <div>I'm a Teen (Ages 12-17)</div>
-                    <div className="text-sm opacity-75">I want mature stories!</div>
+                    <div className="text-sm opacity-75">I want addictive gameplay!</div>
                   </div>
                 </div>
               </Button>
@@ -253,7 +253,7 @@ const Index = () => {
               <strong className="text-foreground text-2xl">{content.subtitle}</strong><br />
               {audience === 'parent' && <span className="text-lg">🛡️ 100% Safe • 🧠 Builds Critical Thinking • ⚡ Instant Results</span>}
               {audience === 'kid' && <span className="text-lg">🌟 Be The Hero • 🏆 Earn Rewards • 🎮 Choose Your Path</span>}
-              {audience === 'teen' && <span className="text-lg">🔥 Mature Content • 🧠 Real Choices • 👑 Exclusive Access</span>}
+              {audience === 'teen' && <span className="text-lg">⚡ Daily Drops • 🎮 Squad Missions • 👑 Hall of Legends</span>}
               {!audience && <span className="text-lg">🛡️ 100% Safe • 🧠 Builds Critical Thinking • ⚡ Instant Engagement</span>}
             </p>
             
