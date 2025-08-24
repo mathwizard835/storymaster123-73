@@ -348,9 +348,10 @@ CRITICAL: Return ONLY valid JSON without markdown formatting. Ensure all choices
         "content-type": "application/json",
       },
       body: JSON.stringify({
-        model: "claude-3-5-haiku-20241022",
-        max_tokens: Math.min(max_tokens, 800),
-        temperature: 0.8,
+        model: "claude-sonnet-4-20250514",
+        max_tokens,
+        temperature: 1.0,
+        top_p: 0.9,
         system: SYSTEM_PROMPT,
         messages: [
           { role: "user", content: userPrompt }
