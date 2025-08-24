@@ -240,7 +240,7 @@ const Mission = () => {
       setScene(savedStory.scenes[savedStory.currentSceneIndex]);
       setAllScenes(savedStory.scenes);
       setSceneCount(savedStory.currentSceneIndex + 1);
-      setSavedStory(null); // Clear the resume prompt
+      // Don't clear savedStory - onChoose needs it
     }
   };
 
