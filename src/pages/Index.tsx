@@ -204,7 +204,7 @@ const Index = () => {
               </div>
               <h3 className="text-2xl font-bold mb-4">🛡️ 100% Parent-Approved</h3>
               <p className="text-muted-foreground">
-                <strong>Guaranteed safe:</strong> Zero inappropriate content, no ads, no social features. Just pure, educational storytelling that builds character and values.
+                <strong>Guaranteed safe:</strong> Zero inappropriate content, no ads. Pure educational storytelling with progress tracking, vocabulary building, and character development.
               </p>
             </div>
             
@@ -256,7 +256,7 @@ const Index = () => {
                   </div>
                   <div>
                     <h3 className="font-semibold text-lg mb-2">Complete Safety</h3>
-                    <p className="text-muted-foreground">No inappropriate content, no ads, no social features. Just pure storytelling.</p>
+                    <p className="text-muted-foreground">Zero inappropriate content, no ads. Safe storytelling with parental progress insights.</p>
                   </div>
                 </div>
                 
@@ -349,7 +349,53 @@ const Index = () => {
             </Button>
           </div>
           
-          <p className="text-sm text-muted-foreground">
+          <div className="bg-muted/30 rounded-2xl p-8 max-w-4xl mx-auto">
+            <h3 className="text-2xl font-bold mb-6 text-center">🎯 Core Features Kids & Parents Love</h3>
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center">
+                    <Users className="h-4 w-4 text-primary" />
+                  </div>
+                  <span><strong>Be The Hero:</strong> Your child stars in every adventure</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center">
+                    <Gamepad2 className="h-4 w-4 text-primary" />
+                  </div>
+                  <span><strong>Choose Your Path:</strong> Every decision shapes the story</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center">
+                    <Star className="h-4 w-4 text-primary" />
+                  </div>
+                  <span><strong>Unlock Achievements:</strong> Rewards for reading milestones</span>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center">
+                    <Brain className="h-4 w-4 text-primary" />
+                  </div>
+                  <span><strong>Builds Vocabulary:</strong> Age-perfect word learning</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center">
+                    <Sparkles className="h-4 w-4 text-primary" />
+                  </div>
+                  <span><strong>Endless Genres:</strong> Space, fantasy, mystery & more</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center">
+                    <Shield className="h-4 w-4 text-primary" />
+                  </div>
+                  <span><strong>Progress Tracking:</strong> Watch skills develop daily</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <p className="text-sm text-muted-foreground mt-8">
             ✅ Instant access • ✅ No payment required • ✅ Cancel anytime
           </p>
         </div>
