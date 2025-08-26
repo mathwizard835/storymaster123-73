@@ -6,6 +6,7 @@ import { Slider } from "@/components/ui/slider";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Toggle } from "@/components/ui/toggle";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
@@ -48,6 +49,7 @@ const ProfileSetup = () => {
   const [mode, setMode] = useState<string>("thrill");
   const [storyLength, setStoryLength] = useState<string>("medium");
   const [topic, setTopic] = useState<string>("");
+  const [interests, setInterests] = useState<string>("");
 
   const toggleBadge = (id: string) => {
     setSelectedBadges((prev) =>
@@ -56,7 +58,7 @@ const ProfileSetup = () => {
   };
 
   const handleStart = () => {
-    const profile = { age, reading, selectedBadges, mode, storyLength: storyLength as 'short' | 'medium' | 'epic', topic };
+    const profile = { age, reading, selectedBadges, mode, storyLength: storyLength as 'short' | 'medium' | 'epic', topic, interests };
     saveProfileToLocal(profile);
     navigate("/mission");
   };
@@ -187,6 +189,20 @@ const ProfileSetup = () => {
                   </ToggleGroupItem>
                 ))}
               </ToggleGroup>
+            </article>
+
+            {/* Personal Interests */}
+            <article className="glass-panel rounded-xl p-6 md:col-span-2">
+              <h2 className="font-heading text-xl md:text-2xl font-bold">Things You Love (optional)</h2>
+              <p className="mt-1 text-sm text-muted-foreground">Tell us about your hobbies, interests, or favorite things you'd like to see in your stories</p>
+              <div className="mt-3">
+                <Textarea
+                  placeholder="e.g., soccer, video games, cats, pizza, Marvel superheroes, skateboarding..."
+                  value={interests}
+                  onChange={(e) => setInterests(e.target.value)}
+                  className="min-h-[80px]"
+                />
+              </div>
             </article>
 
             {/* Topic */}

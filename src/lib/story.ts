@@ -9,6 +9,7 @@ export type Profile = {
   mode: string; // thrill | fun | mystery | explore
   storyLength?: 'short' | 'medium' | 'epic';
   topic?: string;
+  interests?: string;
 };
 
 export type SceneChoice = { id: string; label: string; impact: string };
