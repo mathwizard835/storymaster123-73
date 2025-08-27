@@ -43,7 +43,7 @@ const modes = [
 
 const ProfileSetup = () => {
   const navigate = useNavigate();
-  const [age, setAge] = useState<number>(12);
+  const [age, setAge] = useState<number>(8);
   const [reading, setReading] = useState<string>("adventurer");
   const [selectedBadges, setSelectedBadges] = useState<string[]>([]);
   const [mode, setMode] = useState<string>("thrill");
@@ -95,10 +95,10 @@ const ProfileSetup = () => {
                   <Slider
                     id="age"
                     defaultValue={[age]}
-                    min={10}
-                    max={15}
+                    min={6}
+                    max={11}
                     step={1}
-                    onValueChange={(v) => setAge(v[0] ?? 12)}
+                    onValueChange={(v) => setAge(v[0] ?? 8)}
                   />
                 </div>
               </div>
