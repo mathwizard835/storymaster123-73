@@ -14,6 +14,69 @@ export type Database = {
   }
   public: {
     Tables: {
+      daily_streaks: {
+        Row: {
+          bonus_stories_earned: number | null
+          created_at: string
+          current_streak: number | null
+          device_id: string
+          id: string
+          last_story_date: string | null
+          longest_streak: number | null
+          updated_at: string
+        }
+        Insert: {
+          bonus_stories_earned?: number | null
+          created_at?: string
+          current_streak?: number | null
+          device_id: string
+          id?: string
+          last_story_date?: string | null
+          longest_streak?: number | null
+          updated_at?: string
+        }
+        Update: {
+          bonus_stories_earned?: number | null
+          created_at?: string
+          current_streak?: number | null
+          device_id?: string
+          id?: string
+          last_story_date?: string | null
+          longest_streak?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      referrals: {
+        Row: {
+          bonus_stories_earned: number | null
+          completed_at: string | null
+          created_at: string
+          id: string
+          referred_device_id: string
+          referrer_device_id: string
+          status: string
+        }
+        Insert: {
+          bonus_stories_earned?: number | null
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          referred_device_id: string
+          referrer_device_id: string
+          status?: string
+        }
+        Update: {
+          bonus_stories_earned?: number | null
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          referred_device_id?: string
+          referrer_device_id?: string
+          status?: string
+        }
+        Relationships: []
+      }
       story_completions: {
         Row: {
           completed_at: string
@@ -35,6 +98,128 @@ export type Database = {
           device_id?: string
           id?: string
           profile?: Json | null
+        }
+        Relationships: []
+      }
+      story_shares: {
+        Row: {
+          created_at: string
+          device_id: string
+          id: string
+          platform: string | null
+          share_type: string
+          story_id: string
+        }
+        Insert: {
+          created_at?: string
+          device_id: string
+          id?: string
+          platform?: string | null
+          share_type: string
+          story_id: string
+        }
+        Update: {
+          created_at?: string
+          device_id?: string
+          id?: string
+          platform?: string | null
+          share_type?: string
+          story_id?: string
+        }
+        Relationships: []
+      }
+      subscription_plans: {
+        Row: {
+          created_at: string
+          features: Json
+          id: string
+          name: string
+          price_monthly: number | null
+          story_limit: number | null
+        }
+        Insert: {
+          created_at?: string
+          features: Json
+          id?: string
+          name: string
+          price_monthly?: number | null
+          story_limit?: number | null
+        }
+        Update: {
+          created_at?: string
+          features?: Json
+          id?: string
+          name?: string
+          price_monthly?: number | null
+          story_limit?: number | null
+        }
+        Relationships: []
+      }
+      user_subscriptions: {
+        Row: {
+          created_at: string
+          device_id: string
+          expires_at: string | null
+          id: string
+          plan_id: string
+          starts_at: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          device_id: string
+          expires_at?: string | null
+          id?: string
+          plan_id: string
+          starts_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          device_id?: string
+          expires_at?: string | null
+          id?: string
+          plan_id?: string
+          starts_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      waitlist: {
+        Row: {
+          created_at: string
+          device_id: string | null
+          email: string
+          id: string
+          position: number | null
+          referral_code: string | null
+        }
+        Insert: {
+          created_at?: string
+          device_id?: string | null
+          email: string
+          id?: string
+          position?: number | null
+          referral_code?: string | null
+        }
+        Update: {
+          created_at?: string
+          device_id?: string | null
+          email?: string
+          id?: string
+          position?: number | null
+          referral_code?: string | null
         }
         Relationships: []
       }
