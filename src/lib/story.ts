@@ -79,19 +79,23 @@ export const getDeviceId = (): string => {
   }
 };
 
-// Check if the player has reached the story completion limit
-export const checkStoryLimit = async (): Promise<{ canPlay: boolean; completedCount: number }> => {
+// Check if the player can start a new story based on subscription and daily limits
+export const checkStoryLimit = async (): Promise<{ canPlay: boolean; completedCount: number; reason?: string }> => {
   try {
-    const deviceId = getDeviceId();
-    const { data, error } = await supabase
-      .from('story_completions')
-      .select('id')
-      .eq('device_id', deviceId);
+    const { getStoriesRemaining } = await import("@/lib/subscription");
+    const { storiesUsedToday, dailyLimit, bonusStories, canPlay } = await getStoriesRemaining();
+    
+    if (!canPlay) {
+      let reason = `You've used ${storiesUsedToday}/${dailyLimit} daily stories.`;
+      if (bonusStories > 0) {
+        reason += ` (${bonusStories} bonus stories included)`;
+      }
+      reason += " Upgrade for unlimited stories or wait until tomorrow!";
+      
+      return { canPlay: false, completedCount: storiesUsedToday, reason };
+    }
 
-    if (error) throw error;
-
-    const completedCount = data?.length || 0;
-    return { canPlay: completedCount < 1, completedCount };
+    return { canPlay: true, completedCount: storiesUsedToday };
   } catch (e) {
     console.error("Failed to check story limit", e);
     return { canPlay: true, completedCount: 0 }; // Allow play on error to avoid blocking
@@ -166,6 +170,15 @@ export const markStoryCompleted = async (
       ]);
 
     if (error) throw error;
+
+    // Update streak and complete referral if applicable
+    const { updateDailyStreak } = await import("@/lib/streaks");
+    const { completeReferral } = await import("@/lib/referrals");
+    
+    await Promise.all([
+      updateDailyStreak(),
+      completeReferral()
+    ]);
 
     // Update achievements and character progression
     const newAchievements = updateProgress(profile.selectedBadges, profile.mode, choiceCount);
