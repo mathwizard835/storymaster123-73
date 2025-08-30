@@ -40,7 +40,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
   { id: "thrill_seeker", name: "Thrill Seeker", description: "Complete 3 stories in Thrill Mode", icon: "⚡", rarity: "rare" },
   { id: "mystery_solver", name: "Mystery Solver", description: "Complete 3 stories in Mystery Mode", icon: "🕵️", rarity: "rare" },
   { id: "explorer", name: "Explorer", description: "Complete 3 stories in Explore Mode", icon: "🗺️", rarity: "rare" },
-  { id: "fun_master", name: "Fun Master", description: "Complete 3 stories in Fun Mode", icon: "🎉", rarity: "rare" },
+  { id: "comedy_master", name: "Comedy Master", description: "Complete 3 stories in Comedy Mode", icon: "🎉", rarity: "rare" },
   
   // Special achievements
   { id: "versatile", name: "Versatile Hero", description: "Use all 7 different badges", icon: "🌟", rarity: "epic" },
@@ -146,8 +146,8 @@ export const updateProgress = (
       case "explorer":
         unlocked = (progress.modeUsage["explore"] || 0) >= 3;
         break;
-      case "fun_master":
-        unlocked = (progress.modeUsage["fun"] || 0) >= 3;
+      case "comedy_master":
+        unlocked = (progress.modeUsage["comedy"] || 0) >= 3;
         break;
       case "versatile":
         unlocked = Object.keys(progress.badgeUsage).length >= 7;

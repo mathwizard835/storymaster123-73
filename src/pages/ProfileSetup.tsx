@@ -37,7 +37,7 @@ const badges = [
 
 const modes = [
   { id: "thrill", label: "Thrill Mode", icon: Zap },
-  { id: "fun", label: "Fun Mode", icon: Smile },
+  { id: "comedy", label: "Comedy Mode", icon: Smile },
   { id: "mystery", label: "Mystery Mode", icon: Eye },
   { id: "explore", label: "Explore Mode", icon: Compass },
   { id: "learning", label: "Learning Quest", icon: GraduationCap },

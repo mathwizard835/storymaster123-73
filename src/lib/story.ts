@@ -6,7 +6,7 @@ export type Profile = {
   age: number;
   reading: string; // apprentice | adventurer | hero
   selectedBadges: string[];
-  mode: string; // thrill | fun | mystery | explore
+  mode: string; // thrill | comedy | mystery | explore
   storyLength?: 'short' | 'medium' | 'epic';
   topic?: string;
   interests?: string;
