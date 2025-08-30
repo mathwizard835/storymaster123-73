@@ -21,6 +21,7 @@ import {
   Smile,
   Eye,
   Compass,
+  GraduationCap,
 } from "lucide-react";
 import { saveProfileToLocal } from "@/lib/story";
 
@@ -39,6 +40,7 @@ const modes = [
   { id: "fun", label: "Fun Mode", icon: Smile },
   { id: "mystery", label: "Mystery Mode", icon: Eye },
   { id: "explore", label: "Explore Mode", icon: Compass },
+  { id: "learning", label: "Learning Quest", icon: GraduationCap },
 ];
 
 const ProfileSetup = () => {

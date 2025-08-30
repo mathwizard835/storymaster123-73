@@ -83,6 +83,15 @@ Mystery Mode: Suspenseful, clue-driven, slow-burn.
 
 Explore Mode: Imaginative, open-ended, free exploration.
 
+Learning Mode: ADAPTIVE STEALTH LEARNING - Seamlessly weave educational content into thrilling adventures where kids learn naturally without realizing it. Use adaptive AI to:
+- Dynamically adjust complexity based on player responses and age
+- Embed curriculum concepts (math, science, history, language arts) as natural story elements (e.g., solving puzzles with fractions, using historical knowledge to navigate ancient civilizations)
+- Present learning challenges as game mechanics (decoding messages = reading comprehension, resource management = math, character decisions = emotional intelligence)
+- Adapt difficulty in real-time based on success patterns
+- Reinforce learning through story consequences and character growth
+- Include interactive elements like mini-experiments, word games, logic puzzles disguised as adventure challenges
+- Track learning progress through choice patterns and adjust future content accordingly
+
 📖 Story structure and behavior guidelines:
 Open every scene with a powerful, strong, immediate hook — drop the player right into the action IMMEDIATELY. Answer the following questions in the beginning: 
 - Where am I?
@@ -159,6 +168,8 @@ QUEST MODES
 🕵️ Mystery Mode – Clues and suspense
 
 🌈 Explore Mode – Imagination and wonder
+
+🎓 Learning Quest – Adaptive stealth learning adventures
 
 🎮 Game features unlocked during play:
 
@@ -322,9 +333,22 @@ serve(async (req) => {
     const sceneContext = scene ? `\nContinue from: ${JSON.stringify(scene)}` : "\nCreate a new adventure opening.";
     const storyProgressContext = `\nSTORY PROGRESS: This is scene ${sceneCount} of the story.${sceneCount >= 15 ? ' END THE STORY NOW.' : sceneCount >= 12 ? ' Build toward a climactic conclusion within the next few scenes.' : ''}`;
 
+    const learningModeInstructions = profile.mode === 'learning' ? `
+
+LEARNING MODE ACTIVATED - ADAPTIVE STEALTH LEARNING:
+- Seamlessly embed age-appropriate educational concepts as natural story elements
+- Age ${profile.age}: ${profile.age <= 7 ? 'Focus on basic counting, colors, shapes, letters, simple problem-solving' : profile.age <= 9 ? 'Include basic math, reading comprehension, science concepts, geography, social skills' : 'Integrate advanced math, critical thinking, history, complex science, emotional intelligence'}
+- Present learning as adventure challenges: puzzles to solve, codes to crack, problems to overcome
+- Adapt difficulty based on age: ${profile.age <= 7 ? 'Very simple, visual, concrete concepts' : profile.age <= 9 ? 'Moderate complexity with clear explanations' : 'Higher complexity with nuanced thinking'}
+- Make learning feel like gameplay: "To open this ancient door, you must arrange these numbered stones in order..." (math), "The wise old owl speaks in riddles about the water cycle..." (science)
+- Include interactive elements: mini-experiments, word puzzles, logic challenges disguised as story obstacles
+- Reinforce concepts through consequences: correct understanding leads to success, mistakes create new learning opportunities
+- Track patterns: if player struggles with certain concepts, adapt future content to reinforce those areas
+${profile.topic ? `- FOCUS TOPIC: Weave "${profile.topic}" naturally throughout the adventure as key story elements` : ''}` : '';
+
     const userPrompt = `Create an exciting story segment for this player:
 
-${profileSummary}${sceneContext}${storyProgressContext}
+${profileSummary}${sceneContext}${storyProgressContext}${learningModeInstructions}
 
 ${megastory ? "Advanced Mode: Include rich HUD details and 4-6 strategic choices." : "Standard Mode: 3-4 engaging choices."}
 
@@ -334,6 +358,7 @@ Tell an amazing story! Focus on:
 - Clear, vivid writing that draws the reader in
 - Meaningful choices that feel important
 - Game-like elements (HUD, progress tracking, etc.)
+${profile.mode === 'learning' ? '- SEAMLESS EDUCATION: Learning challenges must feel like natural adventure obstacles, never like school lessons' : ''}
 - FORMAT THE NARRATIVE INTO 3-4 READABLE PARAGRAPHS separated by double line breaks (\\n\\n)
 - KEEP THE NARRATIVE TO EXACTLY 215 WORDS OR FEWER
 - CRITICAL: MAINTAIN CONSISTENT CHARACTER IDENTITY - Never change the protagonist's name, appearance, or core identity once established
