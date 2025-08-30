@@ -12,7 +12,7 @@ export type Profile = {
   interests?: string;
 };
 
-export type SceneChoice = { id: string; label: string; impact: string };
+export type SceneChoice = { id: string; text: string };
 
 export type Scene = {
   sceneTitle: string;

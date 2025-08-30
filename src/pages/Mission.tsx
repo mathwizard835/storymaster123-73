@@ -487,7 +487,7 @@ const Mission = () => {
                         Generating...
                       </span>
                     ) : (
-                      c.label
+                      c.text
                     )}
                   </Button>
                 ))
