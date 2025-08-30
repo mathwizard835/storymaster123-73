@@ -81,7 +81,7 @@ const Mission = () => {
           return;
         }
 
-        const { parsed, text } = await generateNextScene(profile, undefined, false, 900, 1);
+        const { parsed, text } = await generateNextScene(profile, undefined, false, undefined, 1); // Use smart token management
         if (!parsed) {
           throw new Error("Invalid AI response: " + text.slice(0, 140));
         }
@@ -132,7 +132,7 @@ const Mission = () => {
       const updatedChoices = [...choicesMade, choiceId];
       setChoicesMade(updatedChoices);
       
-      const { parsed, text } = await generateNextScene(profile, { ...scene, selectedChoiceId: choiceId }, false, 900, nextSceneCount);
+      const { parsed, text } = await generateNextScene(profile, { ...scene, selectedChoiceId: choiceId }, false, undefined, nextSceneCount); // Use smart token management
       if (!parsed) throw new Error("Invalid AI response: " + text.slice(0, 140));
       
       const updatedScenes = [...allScenes, parsed];
@@ -205,7 +205,7 @@ const Mission = () => {
       setLoading(true);
       setError(null);
       
-      const { parsed, text } = await generateNextScene(profile, undefined, false, 900, 1);
+      const { parsed, text } = await generateNextScene(profile, undefined, false, undefined, 1); // Use smart token management
       if (!parsed) throw new Error("Invalid AI response: " + text.slice(0, 140));
       
       setScene(parsed);

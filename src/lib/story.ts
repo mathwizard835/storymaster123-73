@@ -196,6 +196,9 @@ export const markStoryCompleted = async (
   }
 };
 
+// Simple cache for identical requests (5 minute TTL)
+const sceneCache = new Map<string, { data: { parsed: Scene | null; text: string }, timestamp: number }>();
+
 export const generateNextScene = async (
   profile: Profile,
   scene?: unknown,
@@ -203,17 +206,45 @@ export const generateNextScene = async (
   maxTokens: number = 900,
   sceneCount: number = 1
 ): Promise<{ text: string; parsed: Scene | null; raw: any }> => {
+  // Create cache key for identical requests
+  const cacheKey = JSON.stringify({ profile, scene, megastory, maxTokens, sceneCount });
+  const cached = sceneCache.get(cacheKey);
+  
+  // Check cache (5 minute TTL)
+  if (cached && Date.now() - cached.timestamp < 300000) {
+    console.log("Using cached scene generation");
+    return { ...cached.data, raw: null };
+  }
+
+  // Smart token calculation based on story type
+  const optimizedTokens = maxTokens || (sceneCount === 1 ? 800 : sceneCount >= 12 ? 500 : 400);
+  
   // Adjust max tokens based on story length
   const lengthMultiplier = profile.storyLength === 'short' ? 0.7 : profile.storyLength === 'epic' ? 1.5 : 1;
-  const adjustedTokens = Math.floor(maxTokens * lengthMultiplier);
+  const adjustedTokens = Math.floor(optimizedTokens * lengthMultiplier);
   
   const { data, error } = await supabase.functions.invoke("generate-story", {
     body: { profile, scene, megastory, max_tokens: adjustedTokens, scene_count: sceneCount },
   });
 
   if (error) throw error;
+  
+  if (!data?.success && !data?.ok) {
+    throw new Error(data?.error || "Failed to generate scene");
+  }
 
-  const text: string = data?.resultText ?? "";
-  const parsed: Scene | null = data?.result ?? null;
-  return { text, parsed, raw: data };
+  const text: string = data?.resultText ?? data?.text ?? "";
+  const parsed: Scene | null = data?.result ?? data?.parsed ?? null;
+  const result = { text, parsed, raw: data };
+  
+  // Cache the result
+  sceneCache.set(cacheKey, { data: { parsed, text }, timestamp: Date.now() });
+  
+  // Clean old cache entries (keep only last 10)
+  if (sceneCache.size > 10) {
+    const oldestKey = Array.from(sceneCache.keys())[0];
+    sceneCache.delete(oldestKey);
+  }
+
+  return result;
 };
