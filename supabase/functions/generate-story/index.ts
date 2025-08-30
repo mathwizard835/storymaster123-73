@@ -133,7 +133,7 @@ JSON format: {"sceneTitle":"...","hud":{"energy":0-100,"time":"...","choicePoint
 
 Requirements: ${scene ? 'Continue story' : 'New adventure opening'}, 3-4 choices, 215 words max, 3-4 paragraph narrative with \\n\\n breaks${profile.mode === 'learning' ? ', embed learning naturally' : ''}.`;
 
-    console.log(`Making request to Claude (${max_tokens} tokens) with model: claude-3-5-haiku-20241022`);
+    console.log(`Making request to Claude (${max_tokens} tokens) with model: claude-sonnet-4-20250514`);
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -143,7 +143,7 @@ Requirements: ${scene ? 'Continue story' : 'New adventure opening'}, 3-4 choices
         "content-type": "application/json",
       },
       body: JSON.stringify({
-        model: "claude-3-5-haiku-20241022", // Using fastest model for better performance
+        model: "claude-sonnet-4-20250514", // Using high-performance model
         max_tokens,
         system: SYSTEM_PROMPT,
         messages: [
