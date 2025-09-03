@@ -8,11 +8,15 @@ import actionHeroBg from "@/assets/action-hero-bg.jpg";
 import socialChampionBg from "@/assets/social-champion-bg.jpg";
 import creativeGeniusBg from "@/assets/creative-genius-bg.jpg";
 import { useNavigate } from "react-router-dom";
-import { Zap, Timer, Star, Heart, Shield, Eye, Wand2, PawPrint, Crosshair, Users, Palette } from "lucide-react";
+import { Zap, Timer, Star, Heart, Shield, Eye, Wand2, PawPrint, Crosshair, Users, Palette, RefreshCw, Play } from "lucide-react";
 import { useEffect, useState } from "react";
-import { generateNextScene, loadProfile, checkStoryLimit, markStoryCompleted, type Scene, saveCurrentStory, loadCurrentStory, clearCurrentStory, saveCompletedStory, type SavedStory } from "@/lib/story";
+import { generateNextScene, loadProfile, checkStoryLimit, markStoryCompleted, type Scene, saveCurrentStory, loadCurrentStory, clearCurrentStory, saveCompletedStory, type SavedStory, type InventoryItem, saveProfileToLocal } from "@/lib/story";
+import { loadInventory, saveInventory, addItemToInventory, useItem, clearInventory, updateProfileInventory } from "@/lib/inventory";
+import { InventoryPanel } from "@/components/InventoryPanel";
+import { InteractiveObjects } from "@/components/InteractiveObjects";
 import { useToast } from "@/components/ui/use-toast";
-import { RefreshCw, Save, Play } from "lucide-react";
+import { validateChoice } from "@/lib/interactionHandlers";
+import { Badge } from "@/components/ui/badge";
 
 const Mission = () => {
   const navigate = useNavigate();
@@ -27,6 +31,8 @@ const Mission = () => {
   const [allScenes, setAllScenes] = useState<Scene[]>([]);
   const [choicesMade, setChoicesMade] = useState<string[]>([]);
   const [hasResumed, setHasResumed] = useState(false);
+  const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [interactingWithObject, setInteractingWithObject] = useState<string | null>(null);
 
   const profile = loadProfile();
 
@@ -55,6 +61,16 @@ const Mission = () => {
       return;
     }
     
+    // Load inventory
+    const savedInventory = loadInventory();
+    setInventory(savedInventory);
+    
+    // Update profile with current inventory if needed
+    if (!profile.inventory || profile.inventory.length !== savedInventory.length) {
+      const updatedProfile = updateProfileInventory(profile, savedInventory);
+      saveProfileToLocal(updatedProfile);
+    }
+    
     // Check for saved story first
     const saved = loadCurrentStory();
     if (saved && saved.profile.age === profile.age && 
@@ -81,10 +97,30 @@ const Mission = () => {
           return;
         }
 
-        const { parsed, text } = await generateNextScene(profile, undefined, false, undefined, 1); // Use smart token management
+        // Update profile with current inventory for AI context
+        const profileWithInventory = updateProfileInventory(profile, savedInventory);
+        
+        const { parsed, text } = await generateNextScene(profileWithInventory, undefined, false, undefined, 1);
         if (!parsed) {
           throw new Error("Invalid AI response: " + text.slice(0, 140));
         }
+        
+        // Handle any items found in the first scene
+        if (parsed.itemsFound && parsed.itemsFound.length > 0) {
+          let newInventory = savedInventory;
+          for (const item of parsed.itemsFound) {
+            newInventory = addItemToInventory(item, newInventory);
+          }
+          setInventory(newInventory);
+          
+          // Show toast for items found
+          toast({
+            title: "🎒 Items Found!",
+            description: `Added: ${parsed.itemsFound.map(i => i.name).join(", ")}`,
+            duration: 4000,
+          });
+        }
+        
         setScene(parsed);
         setAllScenes([parsed]);
         setSceneCount(1);
@@ -92,7 +128,7 @@ const Mission = () => {
         // Save initial story
         const newStory: SavedStory = {
           id: crypto.randomUUID(),
-          profile,
+          profile: profileWithInventory,
           scenes: [parsed],
           currentSceneIndex: 0,
           startedAt: new Date().toISOString(),
@@ -123,6 +159,7 @@ const Mission = () => {
       console.log("Missing required data, returning early");
       return;
     }
+    
     try {
       console.log("Setting loading to true");
       setLoading(true);
@@ -132,8 +169,42 @@ const Mission = () => {
       const updatedChoices = [...choicesMade, choiceId];
       setChoicesMade(updatedChoices);
       
-      const { parsed, text } = await generateNextScene(profile, { ...scene, selectedChoiceId: choiceId }, false, undefined, nextSceneCount); // Use smart token management
+      // Find the chosen choice to check if it consumes items
+      const chosenChoice = scene.choices.find(choice => choice.id === choiceId);
+      if (chosenChoice?.consumesItem && chosenChoice.requiresItem) {
+        const { item, newInventory } = useItem(chosenChoice.requiresItem, inventory);
+        if (item) {
+          setInventory(newInventory);
+          saveInventory(newInventory);
+          toast({
+            title: `Used ${item.name}`,
+            description: item.consumable ? "Item consumed" : "Item used successfully",
+            duration: 3000,
+          });
+        }
+      }
+      
+      // Update profile with current inventory for AI context
+      const profileWithInventory = updateProfileInventory(profile, inventory);
+      
+      const { parsed, text } = await generateNextScene(profileWithInventory, { ...scene, selectedChoiceId: choiceId }, false, undefined, nextSceneCount);
       if (!parsed) throw new Error("Invalid AI response: " + text.slice(0, 140));
+      
+      // Handle any items found in the new scene
+      if (parsed.itemsFound && parsed.itemsFound.length > 0) {
+        let newInventory = inventory;
+        for (const item of parsed.itemsFound) {
+          newInventory = addItemToInventory(item, newInventory);
+        }
+        setInventory(newInventory);
+        
+        // Show toast for items found
+        toast({
+          title: "🎒 Items Found!",
+          description: `Added: ${parsed.itemsFound.map(i => i.name).join(", ")}`,
+          duration: 4000,
+        });
+      }
       
       const updatedScenes = [...allScenes, parsed];
       setAllScenes(updatedScenes);
@@ -187,8 +258,10 @@ const Mission = () => {
         };
         saveCompletedStory(completedStory);
         
-        // Clear current story
+        // Clear current story and inventory
         clearCurrentStory();
+        clearInventory();
+        setInventory([]);
       }
       
     } catch (e: any) {
@@ -248,6 +321,8 @@ const Mission = () => {
 
   const startNewStory = () => {
     clearCurrentStory();
+    clearInventory();
+    setInventory([]);
     setSavedStory(null);
     retryInit();
   };
@@ -393,31 +468,54 @@ const Mission = () => {
         />
         <div className="absolute inset-0 bg-gradient-to-b from-background/40 to-background/70" />
 
-        {/* Enhanced HUD */}
+        {/* Enhanced HUD with Inventory */}
         <aside className="relative z-10 px-6 pt-6">
-          <div className="glass-panel rounded-xl px-4 py-3 inline-flex items-center gap-4 flex-wrap">
-            <div className={`flex items-center gap-2 ${theme.color}`}>
-              <ThemeIcon className="h-5 w-5" />
-              <span className="text-sm font-semibold">Energy:</span>
-              <span className="text-sm">{energy}%</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Timer className="h-5 w-5" />
-              <span className="text-sm font-semibold">Time:</span>
-              <span className="text-sm">{time}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Star className="h-5 w-5" />
-              <span className="text-sm font-semibold">Choice Points:</span>
-              <span className="text-sm">{choicePoints}</span>
-            </div>
-            {/* Dynamic UI elements from AI */}
-            {uiElements.map((element, index) => (
-              <div key={index} className="flex items-center gap-2 text-sm">
-                <Heart className="h-4 w-4 opacity-70" />
-                <span className="opacity-90">{element}</span>
+          <div className="glass-panel rounded-xl px-4 py-3 flex items-center justify-between flex-wrap gap-4">
+            <div className="flex items-center gap-4 flex-wrap">
+              <div className={`flex items-center gap-2 ${theme.color}`}>
+                <ThemeIcon className="h-5 w-5" />
+                <span className="text-sm font-semibold">Energy:</span>
+                <span className="text-sm">{energy}%</span>
               </div>
-            ))}
+              <div className="flex items-center gap-2">
+                <Timer className="h-5 w-5" />
+                <span className="text-sm font-semibold">Time:</span>
+                <span className="text-sm">{time}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Star className="h-5 w-5" />
+                <span className="text-sm font-semibold">Choice Points:</span>
+                <span className="text-sm">{choicePoints}</span>
+              </div>
+              {/* Dynamic UI elements from AI */}
+              {uiElements.map((element, index) => (
+                <div key={index} className="flex items-center gap-2 text-sm">
+                  <Heart className="h-4 w-4 opacity-70" />
+                  <span className="opacity-90">{element}</span>
+                </div>
+              ))}
+            </div>
+            
+            {/* Inventory Panel */}
+            <InventoryPanel 
+              inventory={inventory}
+              onUseItem={(item) => {
+                if (scene?.interactiveObjects && scene.interactiveObjects.length > 0) {
+                  toast({
+                    title: `Select an object to use ${item.name}`,
+                    description: "Look for interactive objects in the scene",
+                    duration: 3000,
+                  });
+                } else {
+                  toast({
+                    title: `${item.name} selected`,
+                    description: "This item might be useful for story choices",
+                    duration: 3000,
+                  });
+                }
+              }}
+              disabled={loading}
+            />
           </div>
         </aside>
 
@@ -459,7 +557,26 @@ const Mission = () => {
               )}
             </article>
 
-            <nav className="md:col-span-2 grid gap-3 content-start">
+            <nav className="md:col-span-2 space-y-4">
+              {/* Interactive Objects Section */}
+              {scene?.interactiveObjects && scene.interactiveObjects.length > 0 && (
+                <InteractiveObjects
+                  objects={scene.interactiveObjects}
+                  inventory={inventory}
+                  onObjectInteract={async (objectId, action, itemId) => {
+                    setInteractingWithObject(objectId);
+                    
+                    // Handle object interaction by generating a contextual choice
+                    const interactionChoice = `interact_${objectId}_${action}${itemId ? `_with_${itemId}` : ''}`;
+                    await onChoose(interactionChoice);
+                    
+                    setInteractingWithObject(null);
+                  }}
+                  disabled={loading || !!interactingWithObject}
+                />
+              )}
+              
+              {/* Story Choices */}
               {error ? (
                 <Button 
                   onClick={retryInit}
@@ -472,25 +589,46 @@ const Mission = () => {
                   {loading ? "Retrying..." : "Retry Story"}
                 </Button>
               ) : scene?.choices?.length ? (
-                scene.choices.map((c) => (
-                  <Button 
-                    key={c.id} 
-                    variant="choice" 
-                    size="xl" 
-                    onClick={() => onChoose(c.id)} 
-                    disabled={loading}
-                    className="relative"
-                  >
-                    {loading ? (
-                      <span className="flex items-center gap-2">
-                        <RefreshCw className="h-4 w-4 animate-spin" />
-                        Generating...
-                      </span>
-                    ) : (
-                      c.text
-                    )}
-                  </Button>
-                ))
+                scene.choices.map((choice) => {
+                  const validation = validateChoice(choice.id, scene, inventory);
+                  
+                  return (
+                    <div key={choice.id} className="space-y-2">
+                      <Button
+                        onClick={() => onChoose(choice.id)}
+                        disabled={loading || !validation.valid}
+                        variant={choice.type === 'item_use' ? "secondary" : choice.type === 'object_interact' ? "outline" : "hero"}
+                        size="lg"
+                        className="w-full text-left h-auto p-4 flex items-start gap-3"
+                      >
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-semibold">{choice.text}</span>
+                            {choice.requiresItem && (
+                              <Badge 
+                                variant={validation.valid ? "default" : "destructive"} 
+                                className="text-xs"
+                              >
+                                {validation.valid ? `✓ Has ${choice.requiresItem}` : `Needs ${choice.requiresItem}`}
+                              </Badge>
+                            )}
+                          </div>
+                          {choice.consumesItem && (
+                            <div className="text-xs text-amber-600">
+                              ⚠️ This will consume the item
+                            </div>
+                          )}
+                        </div>
+                      </Button>
+                      
+                      {!validation.valid && validation.reason && (
+                        <div className="text-xs text-destructive bg-destructive/10 rounded-lg px-3 py-2">
+                          {validation.reason}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
               ) : (
                 <Button variant="game" size="lg" disabled>
                   {loading ? "Generating..." : "No choices available"}

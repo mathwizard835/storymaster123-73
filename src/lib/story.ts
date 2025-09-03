@@ -2,6 +2,25 @@ import { supabase } from "@/integrations/supabase/client";
 import { updateProgress } from "@/lib/achievements";
 import { gainExperience } from "@/lib/character";
 
+export type InventoryItem = {
+  id: string;
+  name: string;
+  description: string;
+  type: 'tool' | 'key' | 'consumable' | 'document' | 'weapon' | 'potion';
+  usable: boolean;
+  consumable: boolean;
+  icon?: string;
+};
+
+export type InteractiveObject = {
+  id: string;
+  name: string;
+  description: string;
+  requiresItem?: string;
+  actions: string[];
+  highlighted?: boolean;
+};
+
 export type Profile = {
   age: number;
   reading: string; // apprentice | adventurer | hero
@@ -10,15 +29,24 @@ export type Profile = {
   storyLength?: 'short' | 'medium' | 'epic';
   topic?: string;
   interests?: string;
+  inventory?: InventoryItem[];
 };
 
-export type SceneChoice = { id: string; text: string };
+export type SceneChoice = { 
+  id: string; 
+  text: string; 
+  type?: 'standard' | 'item_use' | 'object_interact';
+  requiresItem?: string;
+  consumesItem?: boolean;
+};
 
 export type Scene = {
   sceneTitle: string;
   hud: { energy: number; time: string; choicePoints: number; ui: string[] };
   narrative: string;
   choices: SceneChoice[];
+  interactiveObjects?: InteractiveObject[];
+  itemsFound?: InventoryItem[];
   end: boolean;
 };
 

@@ -56,13 +56,13 @@ function extractJSON(text: string): unknown | null {
   }
 }
 
-const SYSTEM_PROMPT = `You are StoryMaster AI, a creative storyteller for children's choose-your-own-adventure stories. Create immersive, age-appropriate narratives with meaningful choices.
+const SYSTEM_PROMPT = `You are StoryMaster AI, a creative storyteller for children's choose-your-own-adventure stories. Create immersive, age-appropriate narratives with meaningful choices and interactive objects.
 
 🧾 Player Profile Adaptation:
 - Age determines complexity and vocabulary
 - Reading Level: Apprentice (simple), Adventurer (moderate), Hero (advanced)
 - Interest Badge: Match story theme to their preferences (space, fantasy, mystery, animals, etc.)
-- Quest Mode: Thrill (urgent action), Fun (clever humor), Mystery (clues/suspense), Explore (imagination), Learning (stealth education)
+- Quest Mode: Thrill (urgent action), Comedy (clever humor), Mystery (clues/suspense), Explore (imagination), Learning (stealth education)
 
 📖 Story Structure:
 - Open with immediate action hook answering: Where am I? What world? Who am I? What's my backstory?
@@ -71,6 +71,15 @@ const SYSTEM_PROMPT = `You are StoryMaster AI, a creative storyteller for childr
 - End with 2-4 strategic choices that influence the story
 - Include morally complex decisions appropriate for age
 - Add game-like elements (HUD, progress tracking, countdowns)
+
+🎒 Interactive Object System:
+- Include "interactiveObjects" array with objects players can examine/interact with
+- Objects have: id, name, description, actions array, optional requiresItem
+- Add "itemsFound" array when players discover new inventory items
+- Items have: id, name, description, type (key/tool/consumable/document/weapon/potion), usable, consumable
+- Create choices that reference specific items: "Use [ItemName]" or object interactions
+- Consider player's current inventory when generating contextual choices
+- Make object interactions feel meaningful and advance the story
 
 🎓 Learning Mode Special Instructions:
 When mode is "learning", seamlessly embed educational content:
@@ -82,7 +91,7 @@ When mode is "learning", seamlessly embed educational content:
 
 🧠 Tone: Natural, engaging, respectful of reader intelligence. Be cinematic and let choices matter.
 
-FORMAT: Return valid JSON with sceneTitle, hud{energy, time, choicePoints, ui[]}, narrative (formatted in 3-4 paragraphs), choices[{id, text}], and end boolean.`;
+FORMAT: Return valid JSON with sceneTitle, hud{energy, time, choicePoints, ui[]}, narrative (formatted in 3-4 paragraphs), choices[{id, text, type?, requiresItem?, consumesItem?}], interactiveObjects?[{id, name, description, actions[], requiresItem?}], itemsFound?[{id, name, description, type, usable, consumable}], and end boolean.`;
 
 
 
@@ -112,11 +121,15 @@ serve(async (req) => {
     const max_tokens = Math.min(Number(body?.max_tokens ?? getOptimalTokens(sceneCount, !scene)), 2000);
     const sceneCount = Number(body?.scene_count ?? 1);
 
+    const inventoryContext = profile.inventory && profile.inventory.length > 0 ? 
+      `\nCurrent Inventory: ${profile.inventory.map(item => `${item.name} (${item.type})`).join(", ")}` : 
+      "\nInventory: Empty";
+
     const profileSummary = `Player Profile:
 - Age: ${profile.age ?? "unknown"}
 - Reading Level: ${profile.reading ?? profile.readingSkill ?? "unknown"}
 - Interest: ${(profile.selectedBadges || profile.interests || []).join(", ") || "none"}
-- Mode: ${profile.mode ?? "unknown"}${profile.topic ? `\n- Topic: ${profile.topic}` : ""}`;
+- Mode: ${profile.mode ?? "unknown"}${profile.topic ? `\n- Topic: ${profile.topic}` : ""}${inventoryContext}`;
 
     const sceneContext = scene ? `\nContinue from: ${JSON.stringify(scene)}` : "\nCreate a new adventure opening.";
     const storyProgressContext = `\nSTORY PROGRESS: This is scene ${sceneCount} of the story.${sceneCount >= 15 ? ' END THE STORY NOW.' : sceneCount >= 12 ? ' Build toward a climactic conclusion within the next few scenes.' : ''}`;
@@ -129,9 +142,9 @@ LEARNING: Age ${profile.age} - ${profile.age <= 7 ? 'Basic math/letters via puzz
     const contextSize = scene ? "CONTINUATION" : "NEW";
     const userPrompt = `${contextSize}: ${profileSummary}${sceneContext}${storyProgressContext}${learningModeInstructions}
 
-JSON format: {"sceneTitle":"...","hud":{"energy":0-100,"time":"...","choicePoints":0-50,"ui":["..."]},"narrative":"...","choices":[{"id":"a","text":"..."}],"end":false}
+JSON format: {"sceneTitle":"...","hud":{"energy":0-100,"time":"...","choicePoints":0-50,"ui":["..."]},"narrative":"...","choices":[{"id":"a","text":"...","type":"standard|item_use|object_interact","requiresItem":"...","consumesItem":true}],"interactiveObjects":[{"id":"...","name":"...","description":"...","actions":["Examine","Search"],"requiresItem":"..."}],"itemsFound":[{"id":"...","name":"...","description":"...","type":"key|tool|consumable|document|weapon|potion","usable":true,"consumable":false}],"end":false}
 
-Requirements: ${scene ? 'Continue story' : 'New adventure opening'}, 3-4 choices, 215 words max, 3-4 paragraph narrative with \\n\\n breaks${profile.mode === 'learning' ? ', embed learning naturally' : ''}.`;
+Requirements: ${scene ? 'Continue story and consider inventory context' : 'New adventure opening with discoverable objects/items'}, 3-4 choices, 215 words max, 3-4 paragraph narrative with \\n\\n breaks${profile.mode === 'learning' ? ', embed learning naturally' : ''}, include interactive objects when appropriate.`;
 
     console.log(`Making request to Claude (${max_tokens} tokens) with model: claude-sonnet-4-20250514`);
 
