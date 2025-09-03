@@ -245,7 +245,7 @@ export const generateNextScene = async (
   }
 
   // Smart token calculation based on story type
-  const optimizedTokens = maxTokens || (sceneCount === 1 ? 800 : sceneCount >= 12 ? 500 : 400);
+  const optimizedTokens = maxTokens || (sceneCount === 1 ? 1200 : sceneCount >= 12 ? 800 : 600);
   
   // Adjust max tokens based on story length
   const lengthMultiplier = profile.storyLength === 'short' ? 0.7 : profile.storyLength === 'epic' ? 1.5 : 1;

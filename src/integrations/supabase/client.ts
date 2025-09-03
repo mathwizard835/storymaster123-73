@@ -31,29 +31,4 @@ const getDeviceId = (): string => {
   }
 };
 
-// Create a proxy that automatically sets the device_id session variable
-const createSecureClient = () => {
-  return new Proxy(baseClient, {
-    get(target, prop) {
-      const originalMethod = target[prop as keyof typeof target];
-      
-      if (prop === 'from') {
-        return (table: string) => {
-          const deviceId = getDeviceId();
-          // Set the session variable for RLS policies
-          baseClient.rpc('set_config', {
-            setting_name: 'app.device_id',
-            setting_value: deviceId,
-            is_local: true
-          }).then(() => {}).catch(() => {}); // Silent fail to not block operations
-          
-          return target.from(table);
-        };
-      }
-      
-      return originalMethod;
-    }
-  });
-};
-
-export const supabase = createSecureClient() as typeof baseClient;
+export const supabase = baseClient;

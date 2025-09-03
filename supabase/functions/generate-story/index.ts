@@ -16,44 +16,48 @@ function extractJSON(text: string): unknown | null {
   try {
     return JSON.parse(text);
   } catch (_) {
-    // Try extracting from markdown code blocks
-    const codeBlockMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-    if (codeBlockMatch) {
-      try {
-        return JSON.parse(codeBlockMatch[1]);
-      } catch (_) {
-        // Continue to other extraction methods
-      }
-    }
-    
-    // Try finding JSON object boundaries - look for complete objects only
-    const jsonStart = text.indexOf('{');
-    if (jsonStart !== -1) {
-      let braceCount = 0;
-      let jsonEnd = -1;
-      
-      for (let i = jsonStart; i < text.length; i++) {
-        if (text[i] === '{') braceCount++;
-        if (text[i] === '}') braceCount--;
-        if (braceCount === 0) {
-          jsonEnd = i;
-          break;
-        }
-      }
-      
-      if (jsonEnd !== -1) {
-        try {
-          const jsonStr = text.substring(jsonStart, jsonEnd + 1);
-          return JSON.parse(jsonStr);
-        } catch (_) {
-          // Continue to fallback
-        }
-      }
-    }
-    
-    console.log("Failed to extract JSON from response:", text.substring(0, 500));
-    return null;
+    console.log("Direct JSON parse failed, trying extraction methods...");
   }
+  
+  // Try extracting from markdown code blocks
+  const codeBlockMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+  if (codeBlockMatch) {
+    try {
+      console.log("Found code block, parsing...");
+      return JSON.parse(codeBlockMatch[1]);
+    } catch (e) {
+      console.log("Code block parsing failed:", e);
+    }
+  }
+  
+  // Try finding JSON object boundaries - look for complete objects only
+  const jsonStart = text.indexOf('{');
+  if (jsonStart !== -1) {
+    let braceCount = 0;
+    let jsonEnd = -1;
+    
+    for (let i = jsonStart; i < text.length; i++) {
+      if (text[i] === '{') braceCount++;
+      if (text[i] === '}') braceCount--;
+      if (braceCount === 0) {
+        jsonEnd = i;
+        break;
+      }
+    }
+    
+    if (jsonEnd !== -1) {
+      try {
+        const jsonStr = text.substring(jsonStart, jsonEnd + 1);
+        console.log("Extracted JSON string length:", jsonStr.length);
+        return JSON.parse(jsonStr);
+      } catch (e) {
+        console.log("Extracted JSON parsing failed:", e);
+      }
+    }
+  }
+  
+  console.log("All JSON extraction methods failed. Raw response preview:", text.substring(0, 500));
+  return null;
 }
 
 const SYSTEM_PROMPT = `You are StoryMaster AI, a creative storyteller for children's choose-your-own-adventure stories. Create immersive, age-appropriate narratives with meaningful choices and interactive objects.
@@ -114,9 +118,9 @@ serve(async (req) => {
     const megastory = Boolean(body?.megastory ?? false);
     // Smart token management based on story type
     const getOptimalTokens = (sceneCount: number, isNewStory: boolean) => {
-      if (isNewStory) return 1000; // New stories need setup
-      if (sceneCount >= 12) return 600; // Ending scenes
-      return 450; // Continuation scenes
+      if (isNewStory) return 1500; // New stories need more setup
+      if (sceneCount >= 12) return 1000; // Ending scenes need more detail
+      return 800; // Continuation scenes - increased from 450
     };
     const max_tokens = Math.min(Number(body?.max_tokens ?? getOptimalTokens(sceneCount, !scene)), 2000);
     const sceneCount = Number(body?.scene_count ?? 1);
