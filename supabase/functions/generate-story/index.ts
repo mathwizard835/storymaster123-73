@@ -118,11 +118,11 @@ serve(async (req) => {
     const megastory = Boolean(body?.megastory ?? false);
     // Smart token management based on story type
     const getOptimalTokens = (sceneCount: number, isNewStory: boolean) => {
-      if (isNewStory) return 1500; // New stories need more setup
-      if (sceneCount >= 12) return 1000; // Ending scenes need more detail
-      return 800; // Continuation scenes - increased from 450
+      if (isNewStory) return 2000; // New stories need complete JSON
+      if (sceneCount >= 12) return 1500; // Ending scenes need more detail
+      return 1200; // Continuation scenes - ensure complete responses
     };
-    const max_tokens = Math.min(Number(body?.max_tokens ?? getOptimalTokens(sceneCount, !scene)), 2000);
+    const max_tokens = Math.min(Number(body?.max_tokens ?? getOptimalTokens(sceneCount, !scene)), 4000);
     const sceneCount = Number(body?.scene_count ?? 1);
 
     const inventoryContext = profile.inventory && profile.inventory.length > 0 ? 
@@ -187,7 +187,19 @@ Requirements: ${scene ? 'Continue story and consider inventory context' : 'New a
     const parsed = extractJSON(text);
     
     if (!parsed) {
-      console.error("Failed to parse JSON from response. Raw text:", text);
+      console.error("Failed to parse JSON from response. Raw text length:", text.length);
+      console.error("Response preview:", text.substring(0, 200));
+      console.error("Response ending:", text.substring(Math.max(0, text.length - 200)));
+      
+      // Return error response for better debugging
+      return new Response(
+        JSON.stringify({ 
+          error: "Failed to parse AI response as valid JSON",
+          details: `Response was ${text.length} characters but could not be parsed`,
+          preview: text.substring(0, 500)
+        }),
+        { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     return new Response(

@@ -100,7 +100,7 @@ const Mission = () => {
         // Update profile with current inventory for AI context
         const profileWithInventory = updateProfileInventory(profile, savedInventory);
         
-        const { parsed, text } = await generateNextScene(profileWithInventory, undefined, false, undefined, 1);
+        const { parsed, text } = await generateNextScene(profileWithInventory, undefined, false, 1800, 1);
         if (!parsed) {
           throw new Error("Invalid AI response: " + text.slice(0, 140));
         }
@@ -187,7 +187,7 @@ const Mission = () => {
       // Update profile with current inventory for AI context
       const profileWithInventory = updateProfileInventory(profile, inventory);
       
-      const { parsed, text } = await generateNextScene(profileWithInventory, { ...scene, selectedChoiceId: choiceId }, false, undefined, nextSceneCount);
+      const { parsed, text } = await generateNextScene(profileWithInventory, { ...scene, selectedChoiceId: choiceId }, false, 1200, nextSceneCount);
       if (!parsed) throw new Error("Invalid AI response: " + text.slice(0, 140));
       
       // Handle any items found in the new scene
@@ -278,7 +278,7 @@ const Mission = () => {
       setLoading(true);
       setError(null);
       
-      const { parsed, text } = await generateNextScene(profile, undefined, false, undefined, 1); // Use smart token management
+      const { parsed, text } = await generateNextScene(profile, undefined, false, 1800, 1); // Use high token limit for retry
       if (!parsed) throw new Error("Invalid AI response: " + text.slice(0, 140));
       
       setScene(parsed);
