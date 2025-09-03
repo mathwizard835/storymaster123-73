@@ -1,6 +1,3 @@
-import { Seo } from "@/components/Seo";
-import { Button } from "@/components/ui/button";
-import spaceStation from "@/assets/space-station.jpg";
 import mysticMageBg from "@/assets/mystic-mage-bg.jpg";
 import beastMasterBg from "@/assets/beast-master-bg.jpg";
 import detectiveBg from "@/assets/detective-bg.jpg";
@@ -8,115 +5,203 @@ import actionHeroBg from "@/assets/action-hero-bg.jpg";
 import socialChampionBg from "@/assets/social-champion-bg.jpg";
 import creativeGeniusBg from "@/assets/creative-genius-bg.jpg";
 import { useNavigate } from "react-router-dom";
-import { Zap, Timer, Star, Heart, Shield, Eye, Wand2, PawPrint, Crosshair, Users, Palette, RefreshCw, Play } from "lucide-react";
+import { Zap, Timer, Star, Heart, Shield, Eye, Wand2, PawPrint, Crosshair, Users, Palette, RefreshCw, Play, BookOpen, Trophy, Target } from "lucide-react";
 import { useEffect, useState } from "react";
 import { generateNextScene, loadProfile, checkStoryLimit, markStoryCompleted, type Scene, saveCurrentStory, loadCurrentStory, clearCurrentStory, saveCompletedStory, type SavedStory, type InventoryItem, saveProfileToLocal } from "@/lib/story";
 import { loadInventory, saveInventory, addItemToInventory, useItem, clearInventory, updateProfileInventory } from "@/lib/inventory";
+import { 
+  LearningSession, 
+  saveLearningProgress, 
+  loadLearningProgress, 
+  updateConceptMastery, 
+  generateLearningChallenges,
+  calculateLearningScore,
+  getNextLearningGoal 
+} from "@/lib/learningSystem";
 import { InventoryPanel } from "@/components/InventoryPanel";
 import { InteractiveObjects } from "@/components/InteractiveObjects";
+import { LearningProgress, type LearningConcept } from "@/components/LearningProgress";
+import { LearningChallengeComponent, type LearningChallenge } from "@/components/LearningChallenge";
 import { useToast } from "@/components/ui/use-toast";
 import { validateChoice } from "@/lib/interactionHandlers";
 import { Badge } from "@/components/ui/badge";
 
 const Mission = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const [profile, setProfile] = useState(null);
   const [scene, setScene] = useState<Scene | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [storyLimitReached, setStoryLimitReached] = useState(false);
-  const [completedCount, setCompletedCount] = useState(0);
-  const [sceneCount, setSceneCount] = useState(0);
-  const [error, setError] = useState<string | null>(null);
-  const [savedStory, setSavedStory] = useState<SavedStory | null>(null);
   const [allScenes, setAllScenes] = useState<Scene[]>([]);
-  const [choicesMade, setChoicesMade] = useState<string[]>([]);
-  const [hasResumed, setHasResumed] = useState(false);
+  const [sceneCount, setSceneCount] = useState(1);
+  const [savedStory, setSavedStory] = useState<SavedStory | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [storyLimitReached, setStoryLimitReached] = useState(false);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
-  const [interactingWithObject, setInteractingWithObject] = useState<string | null>(null);
+  
+  // Learning system state
+  const [learningSession, setLearningSession] = useState<LearningSession | null>(null);
+  const [currentChallenge, setCurrentChallenge] = useState<LearningChallenge | null>(null);
+  const [showLearningProgress, setShowLearningProgress] = useState(false);
+  
+  const { toast } = useToast();
 
-  const profile = loadProfile();
-
-  // Background and theme mapping
-  const getThemeByBadge = (badges: string[]) => {
-    const themeMap: Record<string, { bg: string; alt: string; color: string; icon: any }> = {
-      mystic: { bg: mysticMageBg, alt: "Mystical fantasy landscape with magical crystals and glowing runes", color: "text-purple-300", icon: Wand2 },
-      beast: { bg: beastMasterBg, alt: "Jungle adventure scene with mystical creatures and ancient totems", color: "text-green-300", icon: PawPrint },
-      detective: { bg: detectiveBg, alt: "Noir detective office with rain-streaked windows at night", color: "text-blue-300", icon: Eye },
-      action: { bg: actionHeroBg, alt: "Dynamic urban action scene with skyscrapers and dramatic lighting", color: "text-red-300", icon: Crosshair },
-      social: { bg: socialChampionBg, alt: "Vibrant community gathering in a festive town square", color: "text-amber-300", icon: Users },
-      creative: { bg: creativeGeniusBg, alt: "Inspiring artist studio with colorful artwork and creative tools", color: "text-pink-300", icon: Palette },
-      space: { bg: spaceStation, alt: "Futuristic space station control room with asteroid field outside", color: "text-cyan-300", icon: Zap },
-    };
-
-    // Find the first matching badge, default to space
-    const primaryBadge = badges.find(badge => themeMap[badge]) || 'space';
-    return themeMap[primaryBadge] || themeMap.space;
+  // Initialize learning session for learning mode
+  const initializeLearningSession = (profile: any) => {
+    if (profile.mode !== 'learning') return;
+    
+    let session = loadLearningProgress();
+    if (!session || session.topic !== profile.topic) {
+      session = {
+        id: crypto.randomUUID(),
+        topic: profile.topic || 'general',
+        startedAt: new Date().toISOString(),
+        concepts: [],
+        challenges: generateLearningChallenges(profile.topic || 'math', profile.age || 8),
+        totalPoints: 0,
+        completedChallenges: []
+      };
+      saveLearningProgress(session);
+    }
+    setLearningSession(session);
+    setShowLearningProgress(true);
   };
 
-  const theme = profile ? getThemeByBadge(profile.selectedBadges) : getThemeByBadge(['space']);
+  // Add new learning concept
+  const addLearningConcept = (name: string, category: string) => {
+    if (!learningSession) return;
+    
+    const existingConcept = learningSession.concepts.find(c => c.name === name);
+    if (existingConcept) return;
+    
+    const newConcept: LearningConcept = {
+      id: crypto.randomUUID(),
+      name,
+      category: category as any,
+      mastery: 0,
+      attempts: 0,
+      lastPracticed: new Date().toISOString()
+    };
+    
+    const updatedSession = {
+      ...learningSession,
+      concepts: [...learningSession.concepts, newConcept]
+    };
+    
+    setLearningSession(updatedSession);
+    saveLearningProgress(updatedSession);
+  };
+
+  // Handle learning challenge completion
+  const handleChallengeComplete = (correct: boolean, answer: string) => {
+    if (!currentChallenge || !learningSession) return;
+    
+    let updatedSession = updateConceptMastery(currentChallenge.concept, correct, learningSession);
+    
+    if (correct) {
+      updatedSession.totalPoints += currentChallenge.points;
+      updatedSession.completedChallenges.push(currentChallenge.id);
+    }
+    
+    setLearningSession(updatedSession);
+    saveLearningProgress(updatedSession);
+    setCurrentChallenge(null);
+    
+    const score = calculateLearningScore(updatedSession);
+    const nextGoal = getNextLearningGoal(updatedSession);
+    
+    toast({
+      title: correct ? "Great job! 🎉" : "Keep learning! 📚",
+      description: `Learning Score: ${score}% • ${nextGoal}`,
+      duration: 5000,
+    });
+  };
+
+  const getBackgroundForBadge = (badges: string[] = []) => {
+    if (badges.includes("mystic")) return mysticMageBg;
+    if (badges.includes("beast")) return beastMasterBg;
+    if (badges.includes("detective")) return detectiveBg;
+    if (badges.includes("action")) return actionHeroBg;
+    if (badges.includes("social")) return socialChampionBg;
+    if (badges.includes("creative")) return creativeGeniusBg;
+    return mysticMageBg;
+  };
+
+  const getIconForBadge = (badge: string, size: string = "h-6 w-6") => {
+    switch (badge) {
+      case "mystic": return <Wand2 className={size} />;
+      case "beast": return <PawPrint className={size} />;
+      case "detective": return <Eye className={size} />;
+      case "action": return <Crosshair className={size} />;
+      case "social": return <Users className={size} />;
+      case "creative": return <Palette className={size} />;
+      default: return <Star className={size} />;
+    }
+  };
 
   useEffect(() => {
-    if (!profile) {
-      navigate("/profile");
-      return;
-    }
-    
-    // Load inventory
-    const savedInventory = loadInventory();
-    setInventory(savedInventory);
-    
-    // Update profile with current inventory if needed
-    if (!profile.inventory || profile.inventory.length !== savedInventory.length) {
-      const updatedProfile = updateProfileInventory(profile, savedInventory);
-      saveProfileToLocal(updatedProfile);
-    }
-    
-    // Check for saved story first
-    const saved = loadCurrentStory();
-    if (saved && saved.profile.age === profile.age && 
-        JSON.stringify(saved.profile.selectedBadges.sort()) === JSON.stringify(profile.selectedBadges.sort())) {
-      setSavedStory(saved);
-      setScene(saved.scenes[saved.currentSceneIndex]);
-      setAllScenes(saved.scenes);
-      setSceneCount(saved.currentSceneIndex + 1);
-      return;
-    }
-    
     const init = async () => {
       try {
-        setLoading(true);
-        setError(null);
-        
-        // Check story completion limit first
+        const savedProfile = loadProfile();
+        if (!savedProfile) {
+          navigate("/profile");
+          return;
+        }
+        setProfile(savedProfile);
+
+        const existingStory = loadCurrentStory();
+        if (existingStory && existingStory.scenes.length > 0) {
+          setSavedStory(existingStory);
+          setAllScenes(existingStory.scenes);
+          setScene(existingStory.scenes[existingStory.currentSceneIndex || 0]);
+          setSceneCount(existingStory.scenes.length);
+          
+          const savedInventory = loadInventory();
+          setInventory(savedInventory);
+          
+          if (savedProfile.mode === 'learning') {
+            initializeLearningSession(savedProfile);
+          }
+          
+          setLoading(false);
+          return;
+        }
+
         const limitCheck = await checkStoryLimit();
-        setCompletedCount(limitCheck.completedCount);
-        
         if (!limitCheck.canPlay) {
           setStoryLimitReached(true);
           setLoading(false);
           return;
         }
 
-        // Update profile with current inventory for AI context
-        const profileWithInventory = updateProfileInventory(profile, savedInventory);
+        const savedInventory = loadInventory();
+        setInventory(savedInventory);
+
+        if (savedProfile.mode === 'learning') {
+          initializeLearningSession(savedProfile);
+        }
+
+        const profileWithInventory = updateProfileInventory(savedProfile, savedInventory);
         
         const { parsed, text } = await generateNextScene(profileWithInventory, undefined, false, 1800, 1);
         if (!parsed) {
           throw new Error("Invalid AI response: " + text.slice(0, 140));
         }
         
-        // Handle any items found in the first scene
         if (parsed.itemsFound && parsed.itemsFound.length > 0) {
           let newInventory = savedInventory;
           for (const item of parsed.itemsFound) {
             newInventory = addItemToInventory(item, newInventory);
+            
+            if (savedProfile.mode === 'learning' && item.type === 'document') {
+              addLearningConcept(item.name, savedProfile.topic || 'general');
+            }
           }
           setInventory(newInventory);
+          saveInventory(newInventory);
           
-          // Show toast for items found
           toast({
-            title: "🎒 Items Found!",
-            description: `Added: ${parsed.itemsFound.map(i => i.name).join(", ")}`,
+            title: "Items discovered!",
+            description: `Found ${parsed.itemsFound.length} new item(s)`,
             duration: 4000,
           });
         }
@@ -125,7 +210,6 @@ const Mission = () => {
         setAllScenes([parsed]);
         setSceneCount(1);
         
-        // Save initial story
         const newStory: SavedStory = {
           id: crypto.randomUUID(),
           profile: profileWithInventory,
@@ -146,518 +230,405 @@ const Mission = () => {
       }
     };
     init();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const onChoose = async (choiceId: string) => {
-    console.log("onChoose called with:", choiceId);
-    console.log("profile:", profile);
-    console.log("scene:", scene);
-    console.log("savedStory:", savedStory);
-    
-    if (!profile || !scene || !savedStory) {
-      console.log("Missing required data, returning early");
-      return;
+    if (!profile || !scene || !savedStory) return;
+
+    if (profile.mode === 'learning' && learningSession) {
+      const availableChallenge = learningSession.challenges.find(
+        c => !learningSession.completedChallenges.includes(c.id)
+      );
+      
+      if (availableChallenge && Math.random() < 0.3) {
+        setCurrentChallenge(availableChallenge);
+        return;
+      }
     }
-    
+
     try {
-      console.log("Setting loading to true");
-      setLoading(true);
-      setError(null);
-      
-      const nextSceneCount = sceneCount + 1;
-      const updatedChoices = [...choicesMade, choiceId];
-      setChoicesMade(updatedChoices);
-      
-      // Find the chosen choice to check if it consumes items
-      const chosenChoice = scene.choices.find(choice => choice.id === choiceId);
-      if (chosenChoice?.consumesItem && chosenChoice.requiresItem) {
-        const { item, newInventory } = useItem(chosenChoice.requiresItem, inventory);
+      const choice = scene.choices.find(c => c.id === choiceId);
+      if (!choice) return;
+
+      const validation = validateChoice(choiceId, scene, inventory);
+      if (!validation.valid) {
+        toast({
+          title: validation.reason,
+          description: "Try examining your inventory or the environment for clues.",
+          variant: "destructive",
+          duration: 4000,
+        });
+        return;
+      }
+
+      if (choice.consumesItem && choice.requiresItem) {
+        const { item, newInventory } = useItem(choice.requiresItem, inventory);
         if (item) {
           setInventory(newInventory);
           saveInventory(newInventory);
           toast({
-            title: `Used ${item.name}`,
-            description: item.consumable ? "Item consumed" : "Item used successfully",
+            title: "Item used",
+            description: choice.consumesItem ? "Item consumed" : "Item used successfully",
             duration: 3000,
           });
         }
       }
       
-      // Update profile with current inventory for AI context
+      const nextSceneCount = sceneCount + 1;
       const profileWithInventory = updateProfileInventory(profile, inventory);
       
       const { parsed, text } = await generateNextScene(profileWithInventory, { ...scene, selectedChoiceId: choiceId }, false, 1200, nextSceneCount);
       if (!parsed) throw new Error("Invalid AI response: " + text.slice(0, 140));
       
-      // Handle any items found in the new scene
       if (parsed.itemsFound && parsed.itemsFound.length > 0) {
         let newInventory = inventory;
         for (const item of parsed.itemsFound) {
           newInventory = addItemToInventory(item, newInventory);
+          
+          if (profile.mode === 'learning' && item.type === 'document') {
+            addLearningConcept(item.name, profile.topic || 'general');
+          }
         }
         setInventory(newInventory);
+        saveInventory(newInventory);
         
-        // Show toast for items found
         toast({
-          title: "🎒 Items Found!",
-          description: `Added: ${parsed.itemsFound.map(i => i.name).join(", ")}`,
+          title: "Items discovered!",
+          description: `Found ${parsed.itemsFound.length} new item(s)`,
           duration: 4000,
         });
       }
       
-      const updatedScenes = [...allScenes, parsed];
-      setAllScenes(updatedScenes);
       setScene(parsed);
+      setAllScenes(prev => [...prev, parsed]);
       setSceneCount(nextSceneCount);
-      
-      // Update saved story
+
       const updatedStory: SavedStory = {
         ...savedStory,
-        scenes: updatedScenes,
-        currentSceneIndex: nextSceneCount - 1,
+        scenes: [...allScenes, parsed],
+        currentSceneIndex: allScenes.length,
         lastPlayedAt: new Date().toISOString(),
-        completed: parsed.end || false,
       };
       setSavedStory(updatedStory);
       saveCurrentStory(updatedStory);
-      
-      // If this is the end of the story, mark it as completed
-      if (parsed.end && profile) {
-        const { newAchievements, characterProgress } = await markStoryCompleted(profile, updatedChoices.length);
-        setCompletedCount(1);
+
+      if (parsed.end) {
+        const { newAchievements, characterProgress } = await markStoryCompleted(profile, nextSceneCount);
         
-        // Show achievement notifications
-        if (newAchievements.length > 0) {
-          newAchievements.forEach(achievement => {
-            toast({
-              title: "🎉 Achievement Unlocked!",
-              description: `${achievement.icon} ${achievement.name}`,
-              duration: 5000,
-            });
-          });
-        }
-        
-        // Show character progression
-        if (characterProgress?.leveledUp) {
-          toast({
-            title: "🌟 Level Up!",
-            description: `You are now level ${characterProgress.character.level}!`,
-            duration: 5000,
-          });
-        }
-        
-        // Save to completed stories gallery
-        const completedStory = {
+        const completedStoryData = {
           id: updatedStory.id,
-          title: allScenes[0]?.sceneTitle || "Untitled Adventure",
-          profile,
+          title: scene.sceneTitle || "Untitled Adventure",
           completedAt: new Date().toISOString(),
           sceneCount: nextSceneCount,
-          choicesMade: updatedChoices,
+          choicesMade: [],
+          profile: updatedStory.profile,
         };
-        saveCompletedStory(completedStory);
         
-        // Clear current story and inventory
+        saveCompletedStory(completedStoryData);
         clearCurrentStory();
         clearInventory();
         setInventory([]);
+
+        toast({
+          title: "🎉 Adventure Complete!",
+          description: `Amazing work! You completed your ${nextSceneCount}-scene adventure.`,
+          duration: 8000,
+        });
+
+        setTimeout(() => navigate('/'), 3000);
       }
       
-    } catch (e: any) {
-      console.error(e);
-      setError(e.message ?? "Failed to continue");
-    } finally {
-      setLoading(false);
+    } catch (error: any) {
+      console.error("Error in onChoose:", error);
+      setError(error.message ?? "Failed to continue story");
     }
   };
 
-  const retryInit = async () => {
-    if (!profile) return;
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const { parsed, text } = await generateNextScene(profile, undefined, false, 1800, 1); // Use high token limit for retry
-      if (!parsed) throw new Error("Invalid AI response: " + text.slice(0, 140));
-      
-      setScene(parsed);
-      setAllScenes([parsed]);
-      setSceneCount(1);
-      
-      const newStory: SavedStory = {
-        id: crypto.randomUUID(),
-        profile,
-        scenes: [parsed],
-        currentSceneIndex: 0,
-        startedAt: new Date().toISOString(),
-        lastPlayedAt: new Date().toISOString(),
-        completed: false,
-      };
-      setSavedStory(newStory);
-      saveCurrentStory(newStory);
-      
-    } catch (e: any) {
-      console.error(e);
-      setError(e.message ?? "Failed to retry");
-    } finally {
-      setLoading(false);
-    }
-  };
+  if (!profile) return null;
 
-  const retryChoice = async (choiceId: string) => {
-    await onChoose(choiceId);
-  };
+  const backgroundImage = getBackgroundForBadge(profile.selectedBadges);
 
-  const resumeSavedStory = () => {
-    if (savedStory) {
-      setScene(savedStory.scenes[savedStory.currentSceneIndex]);
-      setAllScenes(savedStory.scenes);
-      setSceneCount(savedStory.currentSceneIndex + 1);
-      setHasResumed(true);
-      // Don't clear savedStory - onChoose needs it
-    }
-  };
-
-  const startNewStory = () => {
-    clearCurrentStory();
-    clearInventory();
-    setInventory([]);
-    setSavedStory(null);
-    retryInit();
-  };
-
-  const energy = scene?.hud?.energy ?? 75;
-  const time = scene?.hud?.time ?? "--";
-  const choicePoints = scene?.hud?.choicePoints ?? 0;
-  const uiElements = scene?.hud?.ui || [];
-
-  const ThemeIcon = theme.icon;
-
-  console.log("Mission render state:", { savedStory: !!savedStory, scene: !!scene, loading, storyLimitReached, error });
-  
-  // Show resume story option if available
-  if (savedStory && scene && !loading && !hasResumed) {
-    console.log("Rendering resume story UI");
+  if (loading) {
     return (
-      <>
-        <Seo
-          title="StoryMaster Quest – Resume Story"
-          description="Continue your saved adventure where you left off."
-          canonical="/mission"
-        />
-        
-        <main className="relative min-h-screen w-full overflow-hidden">
-          <img
-            src={theme.bg}
-            alt={theme.alt}
-            className="absolute inset-0 h-full w-full object-cover"
-            loading="lazy"
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-background/40 to-background/70" />
-
-          <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-6">
-            <div className="glass-panel max-w-2xl rounded-xl p-8 text-center">
-              <h1 className="text-3xl font-bold mb-4">
-                📖 Resume Your Story
-              </h1>
-              <p className="text-muted-foreground mb-2">
-                You have a story in progress from {new Date(savedStory.lastPlayedAt).toLocaleDateString()}.
-              </p>
-              <p className="text-sm text-muted-foreground mb-6">
-                Scene {savedStory.currentSceneIndex + 1} of your adventure: <strong>{savedStory.scenes[0]?.sceneTitle}</strong>
-              </p>
-              <div className="flex justify-center gap-4">
-                <Button
-                  onClick={resumeSavedStory}
-                  variant="hero"
-                  size="lg"
-                  className="flex items-center gap-2"
-                >
-                  <Play className="h-4 w-4" />
-                  Continue Story
-                </Button>
-                <Button
-                  onClick={startNewStory}
-                  variant="outline"
-                  size="lg"
-                >
-                  Start New Story
-                </Button>
-              </div>
+      <div className="min-h-screen bg-gradient-to-b from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center">
+        <div className="text-center space-y-6">
+          <div className="relative">
+            <div className="w-20 h-20 border-4 border-purple-300 border-t-transparent rounded-full animate-spin mx-auto"></div>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Wand2 className="h-8 w-8 text-purple-300 animate-pulse" />
             </div>
           </div>
-        </main>
-      </>
+          <div className="space-y-2">
+            <h2 className="text-2xl font-bold text-white">Preparing Your Adventure</h2>
+            <p className="text-purple-200">The StoryMaster is weaving your tale...</p>
+            {profile.mode === 'learning' && (
+              <p className="text-blue-200">🎓 Setting up interactive learning experience...</p>
+            )}
+          </div>
+        </div>
+      </div>
     );
   }
 
-  // If story limit is reached, show limit message
   if (storyLimitReached) {
     return (
-      <>
-        <Seo
-          title="StoryMaster Quest – Story Limit Reached"
-          description="You've completed your free story! Discover what's coming next."
-          canonical="/mission"
-        />
-        
-        <main className="relative min-h-screen w-full overflow-hidden">
-          <img
-            src={theme.bg}
-            alt={theme.alt}
-            className="absolute inset-0 h-full w-full object-cover"
-            loading="lazy"
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-background/40 to-background/70" />
-
-          <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-6">
-            <div className="glass-panel max-w-2xl rounded-xl p-8 text-center">
-              <h1 className="text-3xl font-bold mb-4">
-                🎭 Story Limit Reached
-              </h1>
-              <p className="text-muted-foreground mb-6">
-                You've completed <strong>{completedCount}</strong> story! 
-                We're preparing a subscription service that will unlock unlimited adventures.
-              </p>
-              <p className="text-sm text-muted-foreground mb-8">
-                Thank you for testing StoryMaster Quest. Stay tuned for more epic adventures!
-              </p>
-              <div className="flex justify-center gap-4">
-                <Button
-                  onClick={() => navigate("/")}
-                  variant="hero"
-                  size="lg"
-                >
-                  Return Home
-                </Button>
-                <Button
-                  onClick={() => navigate("/coming-soon")}
-                  variant="outline"
-                  size="lg"
-                >
-                  Learn More
-                </Button>
-              </div>
-            </div>
-          </div>
-        </main>
-      </>
+      <div className="min-h-screen bg-gradient-to-b from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center p-4">
+        <div className="bg-white/10 backdrop-blur-md rounded-lg p-8 max-w-md text-center space-y-4">
+          <Timer className="h-16 w-16 text-yellow-400 mx-auto" />
+          <h2 className="text-2xl font-bold text-white">Daily Adventure Limit Reached</h2>
+          <button onClick={() => navigate('/')} className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors">
+            Return Home
+          </button>
+        </div>
+      </div>
     );
   }
 
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center p-4">
+        <div className="bg-white/10 backdrop-blur-md rounded-lg p-8 max-w-md text-center space-y-4">
+          <RefreshCw className="h-16 w-16 text-red-400 mx-auto" />
+          <h2 className="text-2xl font-bold text-white">Oops! Something went wrong</h2>
+          <p className="text-purple-200 text-sm">{error}</p>
+          <button onClick={() => navigate('/')} className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors w-full">
+            Return Home
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!scene) return null;
+
   return (
-    <>
-      <Seo
-        title="StoryMaster Quest – Mission"
-        description="Dynamic, AI-powered mission with choices and live HUD."
-        canonical="/mission"
-        jsonLd={{
-          "@context": "https://schema.org",
-          "@type": "VideoGame",
-          name: scene?.sceneTitle || "StoryMaster Quest – Mission",
-          gamePlatform: "Web",
-        }}
-      />
-      <main className="relative min-h-screen w-full overflow-hidden">
-        <img
-          src={theme.bg}
-          alt={theme.alt}
-          className="absolute inset-0 h-full w-full object-cover"
-          loading="lazy"
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-background/40 to-background/70" />
-
-        {/* Enhanced HUD with Inventory */}
-        <aside className="relative z-10 px-6 pt-6">
-          <div className="glass-panel rounded-xl px-4 py-3 flex items-center justify-between flex-wrap gap-4">
-            <div className="flex items-center gap-4 flex-wrap">
-              <div className={`flex items-center gap-2 ${theme.color}`}>
-                <ThemeIcon className="h-5 w-5" />
-                <span className="text-sm font-semibold">Energy:</span>
-                <span className="text-sm">{energy}%</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Timer className="h-5 w-5" />
-                <span className="text-sm font-semibold">Time:</span>
-                <span className="text-sm">{time}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Star className="h-5 w-5" />
-                <span className="text-sm font-semibold">Choice Points:</span>
-                <span className="text-sm">{choicePoints}</span>
-              </div>
-              {/* Dynamic UI elements from AI */}
-              {uiElements.map((element, index) => (
-                <div key={index} className="flex items-center gap-2 text-sm">
-                  <Heart className="h-4 w-4 opacity-70" />
-                  <span className="opacity-90">{element}</span>
-                </div>
-              ))}
-            </div>
-            
-            {/* Inventory Panel */}
-            <InventoryPanel 
-              inventory={inventory}
-              onUseItem={(item) => {
-                if (scene?.interactiveObjects && scene.interactiveObjects.length > 0) {
-                  toast({
-                    title: `Select an object to use ${item.name}`,
-                    description: "Look for interactive objects in the scene",
-                    duration: 3000,
-                  });
-                } else {
-                  toast({
-                    title: `${item.name} selected`,
-                    description: "This item might be useful for story choices",
-                    duration: 3000,
-                  });
-                }
-              }}
-              disabled={loading}
-            />
-          </div>
-        </aside>
-
-        {/* Mission content */}
-        <section className="relative z-10 min-h-[70vh] flex items-center">
-          <div className="container grid gap-6 md:grid-cols-5 py-10 md:py-16">
-            <article className="md:col-span-3 glass-panel rounded-2xl p-6 md:p-8 animate-enter">
-              <div className="flex items-center justify-between mb-4">
-                <h1 className="font-heading text-2xl md:text-4xl font-extrabold">
-                  {scene?.sceneTitle ?? "Initializing Mission..."}
-                </h1>
-                {sceneCount > 1 && (
-                  <div className="text-sm text-muted-foreground">
-                    Scene {sceneCount}
-                  </div>
-                )}
-              </div>
-              
-              {error ? (
-                <div className="space-y-4">
-                  <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20">
-                    <p className="text-destructive font-semibold mb-2">Story Error</p>
-                    <p className="text-sm text-muted-foreground">{error}</p>
-                  </div>
-                  <Button 
-                    onClick={retryInit}
-                    variant="outline"
-                    className="flex items-center gap-2"
-                    disabled={loading}
-                  >
-                    <RefreshCw className="h-4 w-4" />
-                    {loading ? "Retrying..." : "Try Again"}
-                  </Button>
-                </div>
-              ) : (
-                <p className="mt-4 text-base md:text-lg whitespace-pre-line">
-                  {scene?.narrative ?? (loading ? "Generating your scene..." : "Click Start again if this persists.")}
-                </p>
+    <div 
+      className="min-h-screen bg-cover bg-center bg-no-repeat relative"
+      style={{ backgroundImage: `url(${backgroundImage})` }}
+    >
+      <div className="absolute inset-0 bg-black/40"></div>
+      <div className="relative z-10 min-h-screen flex flex-col">
+        {/* Header */}
+        <div className="bg-black/30 backdrop-blur-sm border-b border-white/20 p-4">
+          <div className="max-w-6xl mx-auto flex justify-between items-center">
+            <div className="flex items-center space-x-4">
+              <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+                {getIconForBadge(profile.selectedBadges?.[0] || "mystic", "h-6 w-6")}
+                {scene.sceneTitle}
+              </h1>
+              {profile.mode === 'learning' && (
+                <Badge variant="secondary" className="bg-blue-600/80 text-white">
+                  <BookOpen className="h-3 w-3 mr-1" />
+                  Learning Quest
+                </Badge>
               )}
-            </article>
+            </div>
+            <div className="flex items-center space-x-4">
+              {profile.mode === 'learning' && learningSession && (
+                <button
+                  onClick={() => setShowLearningProgress(!showLearningProgress)}
+                  className="flex items-center gap-2 bg-blue-600/80 hover:bg-blue-700/80 text-white px-3 py-2 rounded-lg transition-colors"
+                >
+                  <Trophy className="h-4 w-4" />
+                  Score: {calculateLearningScore(learningSession)}%
+                </button>
+              )}
+              <div className="text-white text-sm">Scene {sceneCount}</div>
+            </div>
+          </div>
+        </div>
 
-            <nav className="md:col-span-2 space-y-4">
-              {/* Interactive Objects Section */}
-              {scene?.interactiveObjects && scene.interactiveObjects.length > 0 && (
+        {/* Main Content */}
+        <div className="flex-1 p-4 overflow-y-auto">
+          <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Story Content */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Current Challenge */}
+              {currentChallenge && (
+                <div className="mb-6">
+                  <LearningChallengeComponent
+                    challenge={currentChallenge}
+                    onComplete={handleChallengeComplete}
+                    onSkip={() => setCurrentChallenge(null)}
+                  />
+                </div>
+              )}
+
+              {/* HUD */}
+              <div className="bg-black/50 backdrop-blur-sm rounded-lg p-4 border border-white/20">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                  <div className="flex items-center justify-center space-x-2">
+                    <Zap className="h-5 w-5 text-yellow-400" />
+                    <span className="text-white font-semibold">{scene.hud.energy}</span>
+                  </div>
+                  <div className="flex items-center justify-center space-x-2">
+                    <Timer className="h-5 w-5 text-blue-400" />
+                    <span className="text-white font-semibold">{scene.hud.time}</span>
+                  </div>
+                  <div className="flex items-center justify-center space-x-2">
+                    <Star className="h-5 w-5 text-purple-400" />
+                    <span className="text-white font-semibold">{scene.hud.choicePoints}</span>
+                  </div>
+                  <div className="flex items-center justify-center space-x-2">
+                    <Heart className="h-5 w-5 text-red-400" />
+                    <span className="text-white font-semibold text-sm">
+                      {scene.hud.ui?.join(" • ") || "Ready"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Narrative */}
+              <div className="bg-white/10 backdrop-blur-md rounded-lg p-6 border border-white/20">
+                <div className="prose prose-invert max-w-none">
+                  {scene.narrative.split('\n\n').map((paragraph, index) => (
+                    <p key={index} className="text-white mb-4 leading-relaxed text-lg">
+                      {paragraph}
+                    </p>
+                  ))}
+                </div>
+              </div>
+
+              {/* Interactive Objects */}
+              {scene.interactiveObjects && scene.interactiveObjects.length > 0 && (
                 <InteractiveObjects
                   objects={scene.interactiveObjects}
                   inventory={inventory}
-                  onObjectInteract={async (objectId, action, itemId) => {
-                    setInteractingWithObject(objectId);
-                    
-                    // Handle object interaction by generating a contextual choice
-                    const interactionChoice = `interact_${objectId}_${action}${itemId ? `_with_${itemId}` : ''}`;
-                    await onChoose(interactionChoice);
-                    
-                    setInteractingWithObject(null);
+                  onObjectInteract={(objectId, action) => {
+                    toast({
+                      title: `${action} completed`,
+                      description: "You examine the object carefully...",
+                      duration: 3000,
+                    });
                   }}
-                  disabled={loading || !!interactingWithObject}
                 />
               )}
-              
-              {/* Story Choices */}
-              {error ? (
-                <Button 
-                  onClick={retryInit}
-                  variant="destructive"
-                  size="lg"
-                  disabled={loading}
-                  className="flex items-center gap-2"
-                >
-                  <RefreshCw className="h-4 w-4" />
-                  {loading ? "Retrying..." : "Retry Story"}
-                </Button>
-              ) : scene?.choices?.length ? (
-                scene.choices.map((choice) => {
-                  const validation = validateChoice(choice.id, scene, inventory);
-                  
-                  return (
-                    <div key={choice.id} className="space-y-2">
-                      <Button
+
+              {/* Choices */}
+              <div className="bg-black/50 backdrop-blur-sm rounded-lg p-6 border border-white/20">
+                <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                  <Target className="h-5 w-5" />
+                  What do you choose?
+                </h3>
+                <div className="grid gap-3">
+                  {scene.choices.map((choice, index) => {
+                    const validation = validateChoice(choice.id, scene, inventory);
+                    return (
+                      <button
+                        key={choice.id}
                         onClick={() => onChoose(choice.id)}
-                        disabled={loading || !validation.valid}
-                        variant={choice.type === 'item_use' ? "secondary" : choice.type === 'object_interact' ? "outline" : "hero"}
-                        size="lg"
-                        className="w-full text-left h-auto p-4 flex items-start gap-3"
+                        disabled={!validation.valid}
+                        className={`p-4 rounded-lg text-left transition-all transform hover:scale-[1.02] ${
+                          validation.valid
+                            ? 'bg-white/20 hover:bg-white/30 text-white border-2 border-transparent hover:border-white/30'
+                            : 'bg-gray-600/50 text-gray-400 border-2 border-gray-500/50 cursor-not-allowed'
+                        }`}
                       >
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="font-semibold">{choice.text}</span>
+                        <div className="flex items-start space-x-3">
+                          <span className="bg-purple-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold text-sm flex-shrink-0 mt-1">
+                            {String.fromCharCode(65 + index)}
+                          </span>
+                          <div className="flex-1">
+                            <p className="font-medium">{choice.text}</p>
                             {choice.requiresItem && (
-                              <Badge 
-                                variant={validation.valid ? "default" : "destructive"} 
-                                className="text-xs"
-                              >
-                                {validation.valid ? `✓ Has ${choice.requiresItem}` : `Needs ${choice.requiresItem}`}
-                              </Badge>
+                              <p className="text-sm mt-1 opacity-75">
+                                Requires: {choice.requiresItem}
+                              </p>
+                            )}
+                            {!validation.valid && (
+                              <p className="text-sm mt-1 text-red-300">
+                                {validation.reason}
+                              </p>
                             )}
                           </div>
-                          {choice.consumesItem && (
-                            <div className="text-xs text-amber-600">
-                              ⚠️ This will consume the item
-                            </div>
-                          )}
                         </div>
-                      </Button>
-                      
-                      {!validation.valid && validation.reason && (
-                        <div className="text-xs text-destructive bg-destructive/10 rounded-lg px-3 py-2">
-                          {validation.reason}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })
-              ) : (
-                <Button variant="game" size="lg" disabled>
-                  {loading ? "Generating..." : "No choices available"}
-                </Button>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* Sidebar */}
+            <div className="space-y-6">
+              {/* Learning Progress */}
+              {profile.mode === 'learning' && learningSession && showLearningProgress && (
+                <LearningProgress
+                  concepts={learningSession.concepts}
+                  currentTopic={learningSession.topic}
+                  onConceptClick={(concept) => {
+                    toast({
+                      title: concept.name,
+                      description: `Mastery: ${concept.mastery}% • ${concept.attempts} attempts`,
+                      duration: 3000,
+                    });
+                  }}
+                />
               )}
 
-              {scene?.end && (
-                <div className="mt-4 space-y-3">
-                  <div className="glass-panel rounded-lg p-4 text-center">
-                    <p className="text-sm text-muted-foreground mb-2">
-                      🎉 Story completed! You've used your free story.
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Subscription service coming soon for unlimited adventures!
-                    </p>
+              {/* Inventory */}
+              <InventoryPanel
+                inventory={inventory}
+                onUseItem={(itemId) => {
+                  const { item, newInventory } = useItem(itemId, inventory);
+                  if (item) {
+                    setInventory(newInventory);
+                    saveInventory(newInventory);
+                    toast({
+                      title: "Item used",
+                      description: "Item used successfully",
+                      duration: 3000,
+                    });
+                  }
+                }}
+              />
+
+              {/* Story Progress */}
+              <div className="bg-white/10 backdrop-blur-md rounded-lg p-4 border border-white/20">
+                <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
+                  <Shield className="h-5 w-5" />
+                  Adventure Progress
+                </h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-white text-sm">
+                    <span>Scenes Explored:</span>
+                    <span className="font-semibold">{sceneCount}</span>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <Button variant="game" size="lg" onClick={() => navigate("/")}>Return Home</Button>
-                    <Button variant="hero" size="lg" onClick={() => navigate("/coming-soon")}>Learn More</Button>
+                  <div className="flex justify-between text-white text-sm">
+                    <span>Items Found:</span>
+                    <span className="font-semibold">{inventory.length}</span>
                   </div>
+                  {profile.mode === 'learning' && learningSession && (
+                    <>
+                      <div className="flex justify-between text-white text-sm">
+                        <span>Learning Points:</span>
+                        <span className="font-semibold">{learningSession.totalPoints}</span>
+                      </div>
+                      <div className="flex justify-between text-white text-sm">
+                        <span>Challenges Done:</span>
+                        <span className="font-semibold">{learningSession.completedChallenges.length}</span>
+                      </div>
+                    </>
+                  )}
                 </div>
-              )}
-            </nav>
+              </div>
+
+              {/* Navigation */}
+              <div className="bg-white/10 backdrop-blur-md rounded-lg p-4 border border-white/20">
+                <button
+                  onClick={() => navigate('/')}
+                  className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 px-4 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
+                >
+                  <Shield className="h-4 w-4" />
+                  Save & Exit
+                </button>
+              </div>
+            </div>
           </div>
-        </section>
-      </main>
-    </>
+        </div>
+      </div>
+    </div>
   );
 };
 
 export default Mission;
-
