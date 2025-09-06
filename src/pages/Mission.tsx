@@ -19,7 +19,6 @@ import {
   getNextLearningGoal 
 } from "@/lib/learningSystem";
 import { InventoryPanel } from "@/components/InventoryPanel";
-import { InteractiveObjects } from "@/components/InteractiveObjects";
 import { LearningProgress, type LearningConcept } from "@/components/LearningProgress";
 import { LearningChallengeComponent, type LearningChallenge } from "@/components/LearningChallenge";
 import { useToast } from "@/components/ui/use-toast";
@@ -44,6 +43,35 @@ const Mission = () => {
   const [showLearningProgress, setShowLearningProgress] = useState(false);
   
   const { toast } = useToast();
+
+  // Background mapping for interest badges
+  const getBackgroundImage = (badges: string[]) => {
+    if (!badges || badges.length === 0) return null;
+    
+    const badgeMap: { [key: string]: string } = {
+      'mystic': mysticMageBg,
+      'fantasy': mysticMageBg,
+      'magic': mysticMageBg,
+      'beast': beastMasterBg,
+      'animals': beastMasterBg,
+      'nature': beastMasterBg,
+      'detective': detectiveBg,
+      'mystery': detectiveBg,
+      'action': actionHeroBg,
+      'hero': actionHeroBg,
+      'space': actionHeroBg,
+      'social': socialChampionBg,
+      'creative': creativeGeniusBg,
+      'art': creativeGeniusBg
+    };
+    
+    for (const badge of badges) {
+      if (badgeMap[badge.toLowerCase()]) {
+        return badgeMap[badge.toLowerCase()];
+      }
+    }
+    return actionHeroBg; // default
+  };
 
   // Initialize learning session for learning mode
   const initializeLearningSession = (profile: any) => {
@@ -91,7 +119,6 @@ const Mission = () => {
     saveLearningProgress(updatedSession);
   };
 
-  // Handle learning challenge completion
   const handleChallengeComplete = (correct: boolean, answer: string) => {
     if (!currentChallenge || !learningSession) return;
     
@@ -114,16 +141,6 @@ const Mission = () => {
       description: `Learning Score: ${score}% • ${nextGoal}`,
       duration: 5000,
     });
-  };
-
-  const getBackgroundForBadge = (badges: string[] = []) => {
-    if (badges.includes("mystic")) return mysticMageBg;
-    if (badges.includes("beast")) return beastMasterBg;
-    if (badges.includes("detective")) return detectiveBg;
-    if (badges.includes("action")) return actionHeroBg;
-    if (badges.includes("social")) return socialChampionBg;
-    if (badges.includes("creative")) return creativeGeniusBg;
-    return mysticMageBg;
   };
 
   const getIconForBadge = (badge: string, size: string = "h-6 w-6") => {
@@ -346,7 +363,7 @@ const Mission = () => {
 
   if (!profile) return null;
 
-  const backgroundImage = getBackgroundForBadge(profile.selectedBadges);
+  const backgroundImage = getBackgroundImage(profile.selectedBadges || []);
 
   if (loading) {
     return (
@@ -359,10 +376,10 @@ const Mission = () => {
             </div>
           </div>
           <div className="space-y-2">
-            <h2 className="text-2xl font-bold text-white">Preparing Your Adventure</h2>
-            <p className="text-purple-200">The StoryMaster is weaving your tale...</p>
+            <h2 className="text-2xl font-bold text-white">Starting Adventure</h2>
+            <p className="text-purple-200">Almost ready!</p>
             {profile.mode === 'learning' && (
-              <p className="text-blue-200">🎓 Setting up interactive learning experience...</p>
+              <p className="text-blue-200">🎓 Preparing learning experience...</p>
             )}
           </div>
         </div>
@@ -488,21 +505,6 @@ const Mission = () => {
                   ))}
                 </div>
               </div>
-
-              {/* Interactive Objects */}
-              {scene.interactiveObjects && scene.interactiveObjects.length > 0 && (
-                <InteractiveObjects
-                  objects={scene.interactiveObjects}
-                  inventory={inventory}
-                  onObjectInteract={(objectId, action) => {
-                    toast({
-                      title: `${action} completed`,
-                      description: "You examine the object carefully...",
-                      duration: 3000,
-                    });
-                  }}
-                />
-              )}
 
               {/* Choices */}
               <div className="bg-black/50 backdrop-blur-sm rounded-lg p-6 border border-white/20">

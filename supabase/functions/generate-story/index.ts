@@ -60,7 +60,7 @@ function extractJSON(text: string): unknown | null {
   return null;
 }
 
-const SYSTEM_PROMPT = `You are StoryMaster AI, a creative storyteller for children's choose-your-own-adventure stories. Create immersive, age-appropriate narratives with meaningful choices and interactive objects.
+const SYSTEM_PROMPT = `You are StoryMaster AI, a creative storyteller for children's choose-your-own-adventure stories. Create immersive, age-appropriate narratives with meaningful choices.
 
 🧾 Player Profile Adaptation:
 - Age determines complexity and vocabulary
@@ -70,54 +70,22 @@ const SYSTEM_PROMPT = `You are StoryMaster AI, a creative storyteller for childr
 
 📖 Story Structure:
 - Open with immediate action hook answering: Where am I? What world? Who am I? What's my backstory?
-- Keep passages short, vivid, and impactful (215 words max)
+- Keep passages short, vivid, and impactful (200 words max)
 - Build escalating stakes and tension
 - End with 2-4 strategic choices that influence the story
 - Include morally complex decisions appropriate for age
 - Add game-like elements (HUD, progress tracking, countdowns)
 
-🎒 Interactive Object System:
-- Include "interactiveObjects" array with objects players can examine/interact with
-- Objects have: id, name, description, actions array, optional requiresItem
-- Add "itemsFound" array when players discover new inventory items
-- Items have: id, name, description, type (key/tool/consumable/document/weapon/potion), usable, consumable
-- Create choices that reference specific items: "Use [ItemName]" or object interactions
-- Consider player's current inventory when generating contextual choices
-- Make object interactions feel meaningful and advance the story
-
-🎓 ENHANCED Learning Mode Instructions:
-When mode is "learning", create IMMERSIVE educational adventures:
-
-📚 **Pedagogical Framework:**
-- Use discovery-based learning: Let players figure things out through experimentation
-- Scaffold difficulty: Start with guided examples, progress to independent challenges  
-- Provide immediate feedback through story consequences and character reactions
-- Multiple learning modalities: Visual puzzles, hands-on experiments, logical reasoning
-- Spaced repetition: Revisit concepts in different contexts throughout the adventure
-
-🔬 **Subject Integration Strategies:**
-- **Math**: Magical formulas, treasure calculations, architectural puzzles, resource optimization
-- **Science**: Potion brewing (chemistry), ecosystem mysteries (biology), invention challenges (physics)
-- **Reading**: Ancient scrolls to decipher, character dialogue analysis, story prediction games
-- **History**: Time-travel scenarios, archaeological discoveries, cultural exploration quests
-- **Critical Thinking**: Detective mysteries, ethical dilemmas, strategy challenges
-
-🎮 **Gamified Learning Elements:**
-- **Knowledge Crystals**: Collectible items representing mastered concepts
-- **Skill Trees**: Unlock new abilities as understanding deepens
-- **Mentor Characters**: NPCs who guide learning and celebrate progress
-- **Learning Challenges**: Mini-games that test understanding before story progression
-- **Discovery Journals**: Track learned concepts and "aha!" moments
-
-🧠 **Assessment Through Storytelling:**
-- Embed assessment naturally: "Which spell formula would save the village?"
-- Use failure as learning: Wrong answers lead to educational consequences, not dead ends
-- Progress gates: Must demonstrate understanding to unlock new story areas
-- Peer teaching: Have player character explain concepts to story NPCs
+🎓 Learning Mode (when mode is "learning"):
+- Embed educational content naturally in the adventure
+- Use discovery-based learning through story consequences
+- Include knowledge challenges that feel like natural story choices
+- Focus on math, science, reading, or history based on player's topic
+- Make learning feel rewarding, not forced
 
 🧠 Tone: Natural, engaging, respectful of reader intelligence. Be cinematic and let choices matter.
 
-FORMAT: Return valid JSON with sceneTitle, hud{energy, time, choicePoints, ui[]}, narrative (formatted in 3-4 paragraphs), choices[{id, text, type?, requiresItem?, consumesItem?}], interactiveObjects?[{id, name, description, actions[], requiresItem?}], itemsFound?[{id, name, description, type, usable, consumable}], and end boolean.`;
+FORMAT: Return valid JSON with sceneTitle, hud{energy, time, choicePoints, ui[]}, narrative (formatted in 3-4 paragraphs), choices[{id, text, type}], and end boolean.`;
 
 
 
@@ -138,13 +106,13 @@ serve(async (req) => {
     const profile = body?.profile ?? {};
     const scene = body?.scene ?? null; // optional current scene context
     const megastory = Boolean(body?.megastory ?? false);
-    // Smart token management based on story type
+    // Faster token management for speed
     const getOptimalTokens = (sceneCount: number, isNewStory: boolean) => {
-      if (isNewStory) return 2000; // New stories need complete JSON
-      if (sceneCount >= 12) return 1500; // Ending scenes need more detail
-      return 1200; // Continuation scenes - ensure complete responses
+      if (isNewStory) return 1200; // Faster new stories
+      if (sceneCount >= 12) return 1000; // Quick endings
+      return 800; // Fast continuation scenes
     };
-    const max_tokens = Math.min(Number(body?.max_tokens ?? getOptimalTokens(sceneCount, !scene)), 4000);
+    const max_tokens = Math.min(Number(body?.max_tokens ?? getOptimalTokens(sceneCount, !scene)), 2000);
     const sceneCount = Number(body?.scene_count ?? 1);
 
     const inventoryContext = profile.inventory && profile.inventory.length > 0 ? 
@@ -164,13 +132,13 @@ serve(async (req) => {
     const learningModeInstructions = profile.mode === 'learning' ? `
 LEARNING: Age ${profile.age} - ${profile.age <= 7 ? 'Basic math/letters via puzzles' : profile.age <= 9 ? 'Math/science/reading challenges' : 'Advanced concepts through gameplay'}. ${profile.topic ? `Focus: ${profile.topic}` : ''}` : '';
 
-    // Optimized context based on scene type
-    const contextSize = scene ? "CONTINUATION" : "NEW";
+    // Simplified and fast context
+    const contextSize = scene ? "CONTINUE" : "START";
     const userPrompt = `${contextSize}: ${profileSummary}${sceneContext}${storyProgressContext}${learningModeInstructions}
 
-JSON format: {"sceneTitle":"...","hud":{"energy":0-100,"time":"...","choicePoints":0-50,"ui":["..."]},"narrative":"...","choices":[{"id":"a","text":"...","type":"standard|item_use|object_interact","requiresItem":"...","consumesItem":true}],"interactiveObjects":[{"id":"...","name":"...","description":"...","actions":["Examine","Search"],"requiresItem":"..."}],"itemsFound":[{"id":"...","name":"...","description":"...","type":"key|tool|consumable|document|weapon|potion","usable":true,"consumable":false}],"end":false}
+JSON: {"sceneTitle":"...","hud":{"energy":0-100,"time":"...","choicePoints":0-50,"ui":["..."]},"narrative":"...","choices":[{"id":"a","text":"...","type":"standard"}],"end":false}
 
-Requirements: ${scene ? 'Continue story and consider inventory context' : 'New adventure opening with discoverable objects/items'}, 3-4 choices, 215 words max, 3-4 paragraph narrative with \\n\\n breaks${profile.mode === 'learning' ? ', embed learning naturally' : ''}, include interactive objects when appropriate.`;
+Requirements: ${scene ? 'Continue story' : 'New adventure opening'}, 3-4 choices, 200 words max, engaging narrative${profile.mode === 'learning' ? ', natural learning' : ''}.`;
 
     console.log(`Making request to Claude (${max_tokens} tokens) with model: claude-sonnet-4-20250514`);
 
