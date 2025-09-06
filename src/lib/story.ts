@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { updateProgress } from "@/lib/achievements";
 import { gainExperience } from "@/lib/character";
+import { createUserStory, updateUserStory, completeUserStory, getActiveUserStory } from "./userStories";
 
 export type InventoryItem = {
   id: string;
@@ -131,15 +132,31 @@ export const checkStoryLimit = async (): Promise<{ canPlay: boolean; completedCo
 };
 
 // Save current story progress
-export const saveCurrentStory = (story: SavedStory): void => {
+export const saveCurrentStory = async (story: SavedStory): Promise<void> => {
   try {
-    localStorage.setItem(CURRENT_STORY_KEY, JSON.stringify(story));
+    // Check if user is authenticated
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (user && story.scenes.length > 0) {
+      // Save to database for authenticated users
+      await updateUserStory(
+        story.id,
+        story.scenes,
+        story.currentSceneIndex,
+        [] // choices_made will be updated when story is completed
+      );
+    } else {
+      // Fallback to localStorage for non-authenticated users or empty stories
+      localStorage.setItem(CURRENT_STORY_KEY, JSON.stringify(story));
+    }
   } catch (e) {
     console.error("Failed to save current story", e);
+    // Fallback to localStorage on error
+    localStorage.setItem(CURRENT_STORY_KEY, JSON.stringify(story));
   }
 };
 
-// Load current story progress
+// Load current story progress (synchronous version for compatibility)
 export const loadCurrentStory = (): SavedStory | null => {
   try {
     const raw = localStorage.getItem(CURRENT_STORY_KEY);
@@ -150,12 +167,69 @@ export const loadCurrentStory = (): SavedStory | null => {
   }
 };
 
+// Load current story progress (async version for authenticated users)
+export const loadCurrentStoryAsync = async (): Promise<SavedStory | null> => {
+  try {
+    // Check if user is authenticated
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (user) {
+      // Load from database for authenticated users
+      const { story, error } = await getActiveUserStory();
+      if (!error && story) {
+        return {
+          id: story.id,
+          profile: story.profile,
+          scenes: story.scenes,
+          currentSceneIndex: story.current_scene_index,
+          startedAt: story.started_at,
+          lastPlayedAt: story.last_played_at,
+          completed: story.status === 'completed'
+        };
+      }
+    }
+    
+    // Fallback to localStorage for non-authenticated users or if no database story
+    const raw = localStorage.getItem(CURRENT_STORY_KEY);
+    return raw ? (JSON.parse(raw) as SavedStory) : null;
+  } catch (e) {
+    console.error("Failed to load current story", e);
+    // Fallback to localStorage on error
+    const raw = localStorage.getItem(CURRENT_STORY_KEY);
+    return raw ? (JSON.parse(raw) as SavedStory) : null;
+  }
+};
+
 // Clear current story progress
 export const clearCurrentStory = (): void => {
   try {
     localStorage.removeItem(CURRENT_STORY_KEY);
   } catch (e) {
     console.error("Failed to clear current story", e);
+  }
+};
+
+// Clear current story progress (async version for authenticated users)
+export const clearCurrentStoryAsync = async (): Promise<void> => {
+  try {
+    // Always clear localStorage
+    localStorage.removeItem(CURRENT_STORY_KEY);
+    
+    // For authenticated users, mark active stories as abandoned
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { story } = await getActiveUserStory();
+      if (story) {
+        await supabase
+          .from('user_stories')
+          .update({ status: 'abandoned' })
+          .eq('id', story.id);
+      }
+    }
+  } catch (e) {
+    console.error("Failed to clear current story", e);
+    // Still clear localStorage even if database update fails
+    localStorage.removeItem(CURRENT_STORY_KEY);
   }
 };
 

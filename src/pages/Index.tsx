@@ -7,13 +7,15 @@ import storyGenres from "@/assets/story-genres.jpg";
 import heroPortal from "@/assets/hero-portal.jpg";
 import { useNavigate } from "react-router-dom";
 import { getCompletedStories, loadCurrentStory, clearCurrentStory } from "@/lib/story";
-import { BookOpen, Star, Shield, Zap, Heart, Brain, Gamepad2, Users, Sparkles, ChevronDown, Rocket, Crown, GraduationCap, PlayCircle, RotateCcw } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { BookOpen, Star, Shield, Zap, Heart, Brain, Gamepad2, Users, Sparkles, ChevronDown, Rocket, Crown, GraduationCap, PlayCircle, RotateCcw, LogIn, LogOut } from "lucide-react";
 import { useState, useEffect } from "react";
 
 type AudienceType = 'kid' | 'teen' | 'parent' | null;
 
 const Index = () => {
   const navigate = useNavigate();
+  const { user, signOut } = useAuth();
   const completedStories = getCompletedStories();
   const [showPitch, setShowPitch] = useState(true);
   const [audience, setAudience] = useState<AudienceType>(null);
@@ -64,6 +66,35 @@ const Index = () => {
           <div className="absolute inset-0 bg-gradient-to-b from-background/20 to-background/60" />
 
           <section className="relative z-10 flex min-h-screen items-center justify-center px-6">
+            <div className="absolute top-8 right-8">
+              {user ? (
+                <div className="flex items-center gap-4">
+                  <span className="text-sm text-muted-foreground">
+                    Welcome, {user.user_metadata?.display_name || user.email}!
+                  </span>
+                  <Button
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => signOut()}
+                    className="flex items-center gap-2"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Logout
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate("/auth")}
+                  className="flex items-center gap-2 backdrop-blur-sm bg-background/20"
+                >
+                  <LogIn className="h-4 w-4" />
+                  Login to Save Stories
+                </Button>
+              )}
+            </div>
+            
             <div className="max-w-3xl text-center animate-enter">
               <h2 className="font-heading text-4xl md:text-6xl font-extrabold tracking-tight drop-shadow-xl text-foreground">
                 Welcome to StoryMaster Quest! 🎮✨
