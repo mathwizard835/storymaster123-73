@@ -5,10 +5,10 @@ import actionHeroBg from "@/assets/action-hero-bg.jpg";
 import socialChampionBg from "@/assets/social-champion-bg.jpg";
 import creativeGeniusBg from "@/assets/creative-genius-bg.jpg";
 import { useNavigate } from "react-router-dom";
-import { Zap, Timer, Star, Heart, Shield, Eye, Wand2, PawPrint, Crosshair, Users, Palette, RefreshCw, Play, BookOpen, Trophy, Target } from "lucide-react";
+import { Zap, Timer, Star, Heart, Shield, Eye, Wand2, PawPrint, Crosshair, Users, Palette, RefreshCw, Play, BookOpen, Trophy, Target, RotateCcw } from "lucide-react";
 import { useEffect, useState } from "react";
 import { generateNextScene, loadProfile, checkStoryLimit, markStoryCompleted, type Scene, saveCurrentStory, loadCurrentStory, clearCurrentStory, saveCompletedStory, type SavedStory, type InventoryItem, saveProfileToLocal } from "@/lib/story";
-import { loadInventory, saveInventory, addItemToInventory, useItem, clearInventory, updateProfileInventory } from "@/lib/inventory";
+import { saveInventory, loadInventory, clearInventory, addItemToInventory, removeItemFromInventory, useItem, updateProfileInventory } from "@/lib/inventory";
 import { 
   LearningSession, 
   saveLearningProgress, 
@@ -616,13 +616,26 @@ const Mission = () => {
               </div>
 
               {/* Navigation */}
-              <div className="bg-white/10 backdrop-blur-md rounded-lg p-4 border border-white/20">
+              <div className="bg-white/10 backdrop-blur-md rounded-lg p-4 border border-white/20 space-y-3">
                 <button
                   onClick={() => navigate('/')}
                   className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 px-4 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
                 >
                   <Shield className="h-4 w-4" />
                   Save & Exit
+                </button>
+                <button
+                  onClick={() => {
+                    if (confirm("Are you sure? This will delete your current adventure and start fresh.")) {
+                      clearCurrentStory();
+                      clearInventory();
+                      navigate('/profile');
+                    }
+                  }}
+                  className="w-full bg-orange-600 hover:bg-orange-700 text-white py-2 px-4 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 text-sm"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                  New Adventure
                 </button>
               </div>
             </div>

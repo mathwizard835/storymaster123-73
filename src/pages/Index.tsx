@@ -6,9 +6,9 @@ import familyReading from "@/assets/family-reading.jpg";
 import storyGenres from "@/assets/story-genres.jpg";
 import heroPortal from "@/assets/hero-portal.jpg";
 import { useNavigate } from "react-router-dom";
-import { getCompletedStories } from "@/lib/story";
-import { BookOpen, Star, Shield, Zap, Heart, Brain, Gamepad2, Users, Sparkles, ChevronDown, Rocket, Crown, GraduationCap } from "lucide-react";
-import { useState } from "react";
+import { getCompletedStories, loadCurrentStory, clearCurrentStory } from "@/lib/story";
+import { BookOpen, Star, Shield, Zap, Heart, Brain, Gamepad2, Users, Sparkles, ChevronDown, Rocket, Crown, GraduationCap, PlayCircle, RotateCcw } from "lucide-react";
+import { useState, useEffect } from "react";
 
 type AudienceType = 'kid' | 'teen' | 'parent' | null;
 
@@ -18,6 +18,22 @@ const Index = () => {
   const [showPitch, setShowPitch] = useState(true);
   const [audience, setAudience] = useState<AudienceType>(null);
   const [showAudienceSelector, setShowAudienceSelector] = useState(true);
+  const [savedStory, setSavedStory] = useState(loadCurrentStory());
+
+  useEffect(() => {
+    // Check for saved story on component mount
+    setSavedStory(loadCurrentStory());
+  }, []);
+
+  const handleStartNewAdventure = () => {
+    clearCurrentStory();
+    setSavedStory(null);
+    navigate("/profile");
+  };
+
+  const handleContinueAdventure = () => {
+    navigate("/mission");
+  };
 
   // If user wants to skip to the original experience
   if (!showPitch) {
@@ -56,14 +72,39 @@ const Index = () => {
                 Build your hero. Launch your mission. Your choices shape the story.
               </p>
               <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
-                <Button
-                  size="xl"
-                  variant="hero"
-                  onClick={() => navigate("/profile")}
-                  aria-label="Create my hero"
-                >
-                  Create My Hero
-                </Button>
+                {savedStory ? (
+                  <>
+                    <Button
+                      size="xl"
+                      variant="hero"
+                      onClick={handleContinueAdventure}
+                      className="flex items-center gap-2"
+                      aria-label="Continue current adventure"
+                    >
+                      <PlayCircle className="h-5 w-5" />
+                      Continue Adventure
+                    </Button>
+                    <Button
+                      size="xl"
+                      variant="outline"
+                      onClick={handleStartNewAdventure}
+                      className="flex items-center gap-2"
+                      aria-label="Start new adventure"
+                    >
+                      <RotateCcw className="h-5 w-5" />
+                      Start New Adventure
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    size="xl"
+                    variant="hero"
+                    onClick={() => navigate("/profile")}
+                    aria-label="Create my hero"
+                  >
+                    Create My Hero
+                  </Button>
+                )}
                 {completedStories.length > 0 && (
                   <>
                     <Button
@@ -258,14 +299,37 @@ const Index = () => {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-              <Button
-                size="xl"
-                variant="hero"
-                onClick={() => setShowPitch(false)}
-                className="text-lg px-8 py-4 animate-pulse"
-              >
-                {content.ctaButton}
-              </Button>
+              {savedStory ? (
+                <>
+                  <Button
+                    size="xl"
+                    variant="hero"
+                    onClick={handleContinueAdventure}
+                    className="text-lg px-8 py-4 animate-pulse flex items-center gap-2"
+                  >
+                    <PlayCircle className="h-5 w-5" />
+                    Continue Your Adventure
+                  </Button>
+                  <Button
+                    size="xl"
+                    variant="outline"
+                    onClick={handleStartNewAdventure}
+                    className="text-lg px-8 py-4 flex items-center gap-2"
+                  >
+                    <RotateCcw className="h-5 w-5" />
+                    Start Fresh Adventure
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  size="xl"
+                  variant="hero"
+                  onClick={() => setShowPitch(false)}
+                  className="text-lg px-8 py-4 animate-pulse"
+                >
+                  {content.ctaButton}
+                </Button>
+              )}
               <Button
                 size="xl"
                 variant="outline"
