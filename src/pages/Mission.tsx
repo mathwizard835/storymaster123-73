@@ -569,14 +569,14 @@ const Mission = () => {
               {/* Inventory */}
               <InventoryPanel
                 inventory={inventory}
-                onUseItem={(itemId) => {
-                  const { item, newInventory } = useItem(itemId, inventory);
-                  if (item) {
+                onUseItem={(item) => {
+                  const { item: usedItem, newInventory } = useItem(item.id, inventory);
+                  if (usedItem) {
                     setInventory(newInventory);
                     saveInventory(newInventory);
                     toast({
                       title: "Item used",
-                      description: "Item used successfully",
+                      description: `${usedItem.name} used successfully`,
                       duration: 3000,
                     });
                   }
