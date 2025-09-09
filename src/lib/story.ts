@@ -330,6 +330,11 @@ export const generateNextScene = async (
   });
 
   if (error) throw error;
+
+  // Check for content safety blocks from server
+  if (data?.blocked || data?.error === "Content Safety Block") {
+    throw new Error(`CONTENT_BLOCKED: ${data?.message || "Content not allowed for safety reasons"}`);
+  }
   
   if (!data?.success && !data?.ok) {
     throw new Error(data?.error || "Failed to generate scene");

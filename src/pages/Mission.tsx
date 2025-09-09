@@ -23,6 +23,7 @@ import { LearningProgress, type LearningConcept } from "@/components/LearningPro
 import { LearningChallengeComponent, type LearningChallenge } from "@/components/LearningChallenge";
 import { useToast } from "@/components/ui/use-toast";
 import { validateChoice } from "@/lib/interactionHandlers";
+import { validateStoryContent } from "@/lib/contentSafety";
 import { Badge } from "@/components/ui/badge";
 
 const Mission = () => {
@@ -203,6 +204,18 @@ const Mission = () => {
         if (!parsed) {
           throw new Error("Invalid AI response: " + text.slice(0, 140));
         }
+
+        // Validate story content for safety
+        const contentValidation = validateStoryContent(parsed);
+        if (!contentValidation.isAllowed) {
+          navigate("/blocked", { 
+            state: { 
+              reason: contentValidation.reason,
+              blockedTerms: contentValidation.blockedTerms 
+            } 
+          });
+          return;
+        }
         
         if (parsed.itemsFound && parsed.itemsFound.length > 0) {
           let newInventory = savedInventory;
@@ -241,6 +254,17 @@ const Mission = () => {
         
       } catch (e: any) {
         console.error(e);
+        
+        // Check if it's a content safety block
+        if (e.message?.includes("CONTENT_BLOCKED")) {
+          navigate("/blocked", { 
+            state: { 
+              reason: e.message.replace("CONTENT_BLOCKED: ", "")
+            } 
+          });
+          return;
+        }
+        
         setError(e.message ?? "Failed to start mission");
       } finally {
         setLoading(false);
@@ -296,6 +320,18 @@ const Mission = () => {
       
       const { parsed, text } = await generateNextScene(profileWithInventory, { ...scene, selectedChoiceId: choiceId }, false, 1200, nextSceneCount);
       if (!parsed) throw new Error("Invalid AI response: " + text.slice(0, 140));
+
+      // Validate story content for safety
+      const contentValidation = validateStoryContent(parsed);
+      if (!contentValidation.isAllowed) {
+        navigate("/blocked", { 
+          state: { 
+            reason: contentValidation.reason,
+            blockedTerms: contentValidation.blockedTerms 
+          } 
+        });
+        return;
+      }
       
       if (parsed.itemsFound && parsed.itemsFound.length > 0) {
         let newInventory = inventory;
@@ -355,10 +391,21 @@ const Mission = () => {
         setTimeout(() => navigate('/'), 3000);
       }
       
-    } catch (error: any) {
-      console.error("Error in onChoose:", error);
-      setError(error.message ?? "Failed to continue story");
-    }
+      } catch (error: any) {
+        console.error("Error in onChoose:", error);
+        
+        // Check if it's a content safety block
+        if (error.message?.includes("CONTENT_BLOCKED")) {
+          navigate("/blocked", { 
+            state: { 
+              reason: error.message.replace("CONTENT_BLOCKED: ", "")
+            } 
+          });
+          return;
+        }
+        
+        setError(error.message ?? "Failed to continue story");
+      }
   };
 
   if (!profile) return null;

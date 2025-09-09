@@ -12,6 +12,7 @@ import ComingSoon from "./pages/ComingSoon";
 import StoryGallery from "./pages/StoryGallery";
 import Achievements from "./pages/Achievements";
 import Auth from "./pages/Auth";
+import ContentBlocked from "./pages/ContentBlocked";
 import ErrorBoundary from "./components/ErrorBoundary";
 
 const queryClient = new QueryClient();
@@ -31,6 +32,7 @@ const App = () => (
               <Route path="/mission" element={<Mission />} />
               <Route path="/gallery" element={<StoryGallery />} />
               <Route path="/achievements" element={<Achievements />} />
+              <Route path="/blocked" element={<ContentBlocked />} />
               <Route path="/coming-soon" element={<ComingSoon />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />

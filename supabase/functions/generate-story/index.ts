@@ -1,6 +1,49 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
+// Content safety validation for server-side protection
+const BLOCKED_TERMS = [
+  'kill', 'murder', 'death', 'blood', 'gun', 'weapon', 'knife', 'sword', 'fight', 'war',
+  'violence', 'violent', 'attack', 'hurt', 'harm', 'damage', 'destroy', 'bomb', 'explosion',
+  'adult', 'mature', 'sex', 'sexual', 'romantic', 'love', 'kiss', 'dating', 'relationship',
+  'horror', 'scary', 'frightening', 'terror', 'ghost', 'monster', 'demon', 'evil', 'dark',
+  'nightmare', 'haunted', 'creepy', 'spooky', 'vampire', 'zombie', 'witch',
+  'lie', 'lying', 'steal', 'cheat', 'trick', 'deceive', 'bad', 'naughty', 'trouble',
+  'hate', 'angry', 'rage', 'fury', 'mad', 'upset', 'cry', 'sad', 'depressed', 'lonely',
+  'afraid', 'scared', 'worried', 'anxious', 'stress', 'money', 'rich', 'poor', 'politics', 'religion'
+];
+
+// Server-side content validation
+function validateProfileContent(profile: any): { isValid: boolean; reason?: string } {
+  if (!profile) return { isValid: true };
+  
+  const textToCheck = [
+    profile.topic || '',
+    profile.interests || '',
+    ...(profile.selectedBadges || [])
+  ].join(' ').toLowerCase();
+
+  // Check age limits
+  if (profile.age && (profile.age < 6 || profile.age > 17)) {
+    return { 
+      isValid: false, 
+      reason: "StoryMaster Quest is designed for kids and teens ages 6-17." 
+    };
+  }
+
+  // Check for blocked terms
+  for (const term of BLOCKED_TERMS) {
+    if (textToCheck.includes(term.toLowerCase())) {
+      return { 
+        isValid: false, 
+        reason: "Profile contains inappropriate content for children's stories." 
+      };
+    }
+  }
+
+  return { isValid: true };
+}
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -62,19 +105,30 @@ function extractJSON(text: string): unknown | null {
 
 const SYSTEM_PROMPT = `You are StoryMaster AI, a creative storyteller for children's choose-your-own-adventure stories. Create immersive, age-appropriate narratives with meaningful choices.
 
+🛡️ CRITICAL CONTENT SAFETY REQUIREMENTS:
+- NEVER include violence, weapons, fighting, death, blood, or harmful content
+- NO scary, horror, frightening, or nightmare content
+- NO romantic, sexual, dating, or adult relationship content
+- NO inappropriate behaviors like lying, stealing, cheating, or rule-breaking
+- NO negative emotions like hate, anger, fear, or sadness
+- NO adult topics like money, politics, religion, or work
+- ALWAYS keep content positive, educational, fun, and completely safe for kids ages 6-17
+- If the user's profile suggests inappropriate content, create a wholesome alternative instead
+
 🧾 Player Profile Adaptation:
-- Age determines complexity and vocabulary
+- Age determines complexity and vocabulary (ages 6-17 only)
 - Reading Level: Apprentice (simple), Adventurer (moderate), Hero (advanced)
-- Interest Badge: Match story theme to their preferences (space, fantasy, mystery, animals, etc.)
-- Quest Mode: Thrill (urgent action), Comedy (clever humor), Mystery (clues/suspense), Explore (imagination), Learning (stealth education)
+- Interest Badge: Match story theme to their preferences (space, fantasy, mystery, animals, etc.) but keep 100% safe
+- Quest Mode: Thrill (exciting adventure), Comedy (clever humor), Mystery (safe puzzles), Explore (imagination), Learning (stealth education)
 
 📖 Story Structure:
-- Open with immediate action hook answering: Where am I? What world? Who am I? What's my backstory?
+- Open with immediate positive action hook answering: Where am I? What world? Who am I? What's my backstory?
 - Keep passages short, vivid, and impactful (200 words max)
-- Build escalating stakes and tension
+- Build excitement and wonder, never fear or danger
 - End with 2-4 strategic choices that influence the story
-- Include morally complex decisions appropriate for age
+- Include positive moral lessons appropriate for age
 - Add game-like elements (HUD, progress tracking, countdowns)
+- Focus on friendship, teamwork, discovery, creativity, and learning
 
 🎓 Learning Mode (when mode is "learning"):
 - Embed educational content naturally in the adventure
@@ -83,7 +137,7 @@ const SYSTEM_PROMPT = `You are StoryMaster AI, a creative storyteller for childr
 - Focus on math, science, reading, or history based on player's topic
 - Make learning feel rewarding, not forced
 
-🧠 Tone: Natural, engaging, respectful of reader intelligence. Be cinematic and let choices matter.
+🧠 Tone: Natural, engaging, respectful of reader intelligence. Be positive, uplifting, and completely safe. Focus on wonder, discovery, friendship, and growth.
 
 FORMAT: Return valid JSON with sceneTitle, hud{energy, time, choicePoints, ui[]}, narrative (formatted in 3-4 paragraphs), choices[{id, text, type}], and end boolean.`;
 
@@ -106,6 +160,20 @@ serve(async (req) => {
     const profile = body?.profile ?? {};
     const scene = body?.scene ?? null; // optional current scene context
     const megastory = Boolean(body?.megastory ?? false);
+
+    // SERVER-SIDE CONTENT VALIDATION - Critical safety check
+    const profileValidation = validateProfileContent(profile);
+    if (!profileValidation.isValid) {
+      console.log("Content blocked:", profileValidation.reason);
+      return new Response(
+        JSON.stringify({ 
+          error: "Content Safety Block",
+          message: profileValidation.reason,
+          blocked: true
+        }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
     // Faster token management for speed
     const getOptimalTokens = (sceneCount: number, isNewStory: boolean) => {
       if (isNewStory) return 1200; // Faster new stories

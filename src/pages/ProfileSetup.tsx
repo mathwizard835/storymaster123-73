@@ -24,6 +24,7 @@ import {
   GraduationCap,
 } from "lucide-react";
 import { saveProfileToLocal } from "@/lib/story";
+import { validateProfileSettings } from "@/lib/contentSafety";
 
 const badges = [
   { id: "beast", label: "Beast Master", icon: PawPrint },
@@ -61,6 +62,19 @@ const ProfileSetup = () => {
 
   const handleStart = () => {
     const profile = { age, reading, selectedBadges, mode, storyLength: storyLength as 'short' | 'medium' | 'epic', topic, interests };
+    
+    // Validate content safety
+    const validation = validateProfileSettings(profile);
+    if (!validation.isAllowed) {
+      navigate("/blocked", { 
+        state: { 
+          reason: validation.reason,
+          blockedTerms: validation.blockedTerms 
+        } 
+      });
+      return;
+    }
+    
     saveProfileToLocal(profile);
     navigate("/mission");
   };
