@@ -287,6 +287,14 @@ const Index = () => {
               </Button>
               <Button
                 size="xl"
+                variant="game"
+                onClick={() => navigate("/mission?trial=true")}
+                className="text-lg px-8 py-4"
+              >
+                🎮 Try 1 Story Free
+              </Button>
+              <Button
+                size="xl"
                 variant="outline"
                 onClick={() => document.getElementById('learn-more')?.scrollIntoView({ behavior: 'smooth' })}
                 className="text-lg px-8 py-4"

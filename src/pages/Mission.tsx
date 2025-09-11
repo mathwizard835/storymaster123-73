@@ -4,8 +4,9 @@ import detectiveBg from "@/assets/detective-bg.jpg";
 import actionHeroBg from "@/assets/action-hero-bg.jpg";
 import socialChampionBg from "@/assets/social-champion-bg.jpg";
 import creativeGeniusBg from "@/assets/creative-genius-bg.jpg";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Zap, Timer, Star, Heart, Shield, Eye, Wand2, PawPrint, Crosshair, Users, Palette, RefreshCw, Play, BookOpen, Trophy, Target } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 import { useEffect, useState } from "react";
 import { generateNextScene, loadProfile, checkStoryLimit, markStoryCompleted, type Scene, saveCurrentStory, loadCurrentStory, clearCurrentStory, saveCompletedStory, type SavedStory, type InventoryItem, saveProfileToLocal } from "@/lib/story";
 import { saveStoryToDatabase, loadCurrentStoryFromDatabase, clearCurrentStoryInDatabase } from "@/lib/databaseStory";
@@ -28,6 +29,9 @@ import { Badge } from "@/components/ui/badge";
 
 const Mission = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { user } = useAuth();
+  const isTrialMode = searchParams.get('trial') === 'true';
   const [profile, setProfile] = useState(null);
   const [scene, setScene] = useState<Scene | null>(null);
   const [allScenes, setAllScenes] = useState<Scene[]>([]);
@@ -141,36 +145,65 @@ const Mission = () => {
   useEffect(() => {
     const init = async () => {
       try {
-        const savedProfile = loadProfile();
-        if (!savedProfile) {
-          navigate("/profile");
-          return;
-        }
-        setProfile(savedProfile);
-
-        const existingStory = await loadCurrentStoryFromDatabase();
-        if (existingStory && existingStory.scenes.length > 0) {
-          setSavedStory(existingStory);
-          setAllScenes(existingStory.scenes);
-          setScene(existingStory.scenes[existingStory.currentSceneIndex || 0]);
-          setSceneCount(existingStory.scenes.length);
-          
-          const savedInventory = loadInventory();
-          setInventory(savedInventory);
-          
-          if (savedProfile.mode === 'learning') {
-            initializeLearningSession(savedProfile);
+        // Check if this is a trial and if trial is already used
+        if (isTrialMode && !user) {
+          const trialUsed = localStorage.getItem('trial_story_used');
+          if (trialUsed) {
+            navigate("/auth");
+            return;
           }
-          
-          setLoading(false);
-          return;
+        }
+        
+        let savedProfile;
+        
+        if (isTrialMode && !user) {
+          // Create a basic trial profile
+          savedProfile = {
+            name: "Guest Hero",
+            age: 12,
+            characterType: "action-hero",
+            interests: ["adventure"],
+            mode: "story"
+          };
+          setProfile(savedProfile);
+        } else {
+          savedProfile = loadProfile();
+          if (!savedProfile) {
+            navigate("/profile");
+            return;
+          }
+          setProfile(savedProfile);
         }
 
-        const limitCheck = await checkStoryLimit();
-        if (!limitCheck.canPlay) {
-          setStoryLimitReached(true);
-          setLoading(false);
-          return;
+        // Skip loading existing story for trial mode
+        if (!isTrialMode) {
+          const existingStory = await loadCurrentStoryFromDatabase();
+          if (existingStory && existingStory.scenes.length > 0) {
+            setSavedStory(existingStory);
+            setAllScenes(existingStory.scenes);
+            setScene(existingStory.scenes[existingStory.currentSceneIndex || 0]);
+            setSceneCount(existingStory.scenes.length);
+            
+            const savedInventory = loadInventory();
+            setInventory(savedInventory);
+            
+            if (savedProfile.mode === 'learning') {
+              initializeLearningSession(savedProfile);
+            }
+            
+            setLoading(false);
+            return;
+          }
+        }
+
+        // Check story limit (skip for trial mode)
+        if (!isTrialMode) {
+          const limitCheck = await checkStoryLimit();
+          if (!limitCheck.canPlay) {
+            setStoryLimitReached(true);
+            setLoading(false);
+            return;
+          }
         }
 
         const savedInventory = loadInventory();
@@ -220,7 +253,11 @@ const Mission = () => {
           completed: false,
         };
         setSavedStory(newStory);
-        await saveStoryToDatabase(newStory);
+        
+        // Only save to database if not in trial mode
+        if (!isTrialMode) {
+          await saveStoryToDatabase(newStory);
+        }
         
       } catch (e: any) {
         console.error(e);
@@ -230,7 +267,7 @@ const Mission = () => {
       }
     };
     init();
-  }, []);
+  }, [isTrialMode, user, navigate]);
 
   const onChoose = async (choiceId: string) => {
     if (!profile || !scene || !savedStory) return;
@@ -310,9 +347,25 @@ const Mission = () => {
         lastPlayedAt: new Date().toISOString(),
       };
       setSavedStory(updatedStory);
-      await saveStoryToDatabase(updatedStory);
+      if (!isTrialMode) {
+        await saveStoryToDatabase(updatedStory);
+      }
 
       if (parsed.end) {
+        // Mark trial as used if in trial mode
+        if (isTrialMode && !user) {
+          localStorage.setItem('trial_story_used', 'true');
+          toast({
+            title: "Trial Complete! 🎉",
+            description: "Sign up to continue your adventure and save your progress!",
+            variant: "default",
+          });
+          setTimeout(() => {
+            navigate("/auth");
+          }, 3000);
+          return;
+        }
+        
         const { newAchievements, characterProgress } = await markStoryCompleted(profile, nextSceneCount);
         
         const completedStoryData = {
