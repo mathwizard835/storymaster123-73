@@ -357,11 +357,11 @@ const Mission = () => {
           localStorage.setItem('trial_story_used', 'true');
           toast({
             title: "Trial Complete! 🎉",
-            description: "Sign up to continue your adventure and save your progress!",
+            description: "Create your profile to continue your adventure!",
             variant: "default",
           });
           setTimeout(() => {
-            navigate("/auth");
+            navigate("/profile");
           }, 3000);
           return;
         }
