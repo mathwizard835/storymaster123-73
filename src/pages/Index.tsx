@@ -6,18 +6,32 @@ import familyReading from "@/assets/family-reading.jpg";
 import storyGenres from "@/assets/story-genres.jpg";
 import heroPortal from "@/assets/hero-portal.jpg";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 import { getCompletedStories } from "@/lib/story";
-import { BookOpen, Star, Shield, Zap, Heart, Brain, Gamepad2, Users, Sparkles, ChevronDown, Rocket, Crown, GraduationCap } from "lucide-react";
+import { BookOpen, Star, Shield, Zap, Heart, Brain, Gamepad2, Users, Sparkles, ChevronDown, Rocket, Crown, GraduationCap, LogOut } from "lucide-react";
 import { useState } from "react";
 
 type AudienceType = 'kid' | 'teen' | 'parent' | null;
 
 const Index = () => {
   const navigate = useNavigate();
+  const { signOut } = useAuth();
   const completedStories = getCompletedStories();
   const [showPitch, setShowPitch] = useState(true);
   const [audience, setAudience] = useState<AudienceType>(null);
   const [showAudienceSelector, setShowAudienceSelector] = useState(true);
+
+  const SignOutButton = () => (
+    <Button
+      variant="ghost"
+      size="sm"
+      onClick={signOut}
+      className="text-white/70 hover:text-white hover:bg-white/10"
+    >
+      <LogOut className="h-4 w-4 mr-2" />
+      Sign Out
+    </Button>
+  );
 
   // If user wants to skip to the original experience
   if (!showPitch) {
@@ -49,6 +63,9 @@ const Index = () => {
 
           <section className="relative z-10 flex min-h-screen items-center justify-center px-6">
             <div className="max-w-3xl text-center animate-enter">
+              <div className="mb-8 flex items-center justify-end">
+                <SignOutButton />
+              </div>
               <h2 className="font-heading text-4xl md:text-6xl font-extrabold tracking-tight drop-shadow-xl text-foreground">
                 Welcome to StoryMaster Quest! 🎮✨
               </h2>

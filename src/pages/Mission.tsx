@@ -8,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { Zap, Timer, Star, Heart, Shield, Eye, Wand2, PawPrint, Crosshair, Users, Palette, RefreshCw, Play, BookOpen, Trophy, Target } from "lucide-react";
 import { useEffect, useState } from "react";
 import { generateNextScene, loadProfile, checkStoryLimit, markStoryCompleted, type Scene, saveCurrentStory, loadCurrentStory, clearCurrentStory, saveCompletedStory, type SavedStory, type InventoryItem, saveProfileToLocal } from "@/lib/story";
+import { saveStoryToDatabase, loadCurrentStoryFromDatabase, clearCurrentStoryInDatabase } from "@/lib/databaseStory";
 import { loadInventory, saveInventory, addItemToInventory, useItem, clearInventory, updateProfileInventory } from "@/lib/inventory";
 import { 
   LearningSession, 
@@ -19,7 +20,6 @@ import {
   getNextLearningGoal 
 } from "@/lib/learningSystem";
 import { InventoryPanel } from "@/components/InventoryPanel";
-import { InteractiveObjects } from "@/components/InteractiveObjects";
 import { LearningProgress, type LearningConcept } from "@/components/LearningProgress";
 import { LearningChallengeComponent, type LearningChallenge } from "@/components/LearningChallenge";
 import { useToast } from "@/components/ui/use-toast";
@@ -148,7 +148,7 @@ const Mission = () => {
         }
         setProfile(savedProfile);
 
-        const existingStory = loadCurrentStory();
+        const existingStory = await loadCurrentStoryFromDatabase();
         if (existingStory && existingStory.scenes.length > 0) {
           setSavedStory(existingStory);
           setAllScenes(existingStory.scenes);
@@ -220,7 +220,7 @@ const Mission = () => {
           completed: false,
         };
         setSavedStory(newStory);
-        saveCurrentStory(newStory);
+        await saveStoryToDatabase(newStory);
         
       } catch (e: any) {
         console.error(e);
@@ -310,7 +310,7 @@ const Mission = () => {
         lastPlayedAt: new Date().toISOString(),
       };
       setSavedStory(updatedStory);
-      saveCurrentStory(updatedStory);
+      await saveStoryToDatabase(updatedStory);
 
       if (parsed.end) {
         const { newAchievements, characterProgress } = await markStoryCompleted(profile, nextSceneCount);
@@ -325,7 +325,7 @@ const Mission = () => {
         };
         
         saveCompletedStory(completedStoryData);
-        clearCurrentStory();
+        await clearCurrentStoryInDatabase(updatedStory.id);
         clearInventory();
         setInventory([]);
 
@@ -488,21 +488,6 @@ const Mission = () => {
                   ))}
                 </div>
               </div>
-
-              {/* Interactive Objects */}
-              {scene.interactiveObjects && scene.interactiveObjects.length > 0 && (
-                <InteractiveObjects
-                  objects={scene.interactiveObjects}
-                  inventory={inventory}
-                  onObjectInteract={(objectId, action) => {
-                    toast({
-                      title: `${action} completed`,
-                      description: "You examine the object carefully...",
-                      duration: 3000,
-                    });
-                  }}
-                />
-              )}
 
               {/* Choices */}
               <div className="bg-black/50 backdrop-blur-sm rounded-lg p-6 border border-white/20">
