@@ -15,7 +15,7 @@ type AudienceType = 'kid' | 'teen' | 'parent' | null;
 
 const Index = () => {
   const navigate = useNavigate();
-  const { signOut } = useAuth();
+  const { user, signOut } = useAuth();
   const completedStories = getCompletedStories();
   const [showPitch, setShowPitch] = useState(true);
   const [audience, setAudience] = useState<AudienceType>(null);
@@ -63,9 +63,11 @@ const Index = () => {
 
           <section className="relative z-10 flex min-h-screen items-center justify-center px-6">
             <div className="max-w-3xl text-center animate-enter">
-              <div className="mb-8 flex items-center justify-end">
-                <SignOutButton />
-              </div>
+              {user && (
+                <div className="mb-8 flex items-center justify-end">
+                  <SignOutButton />
+                </div>
+              )}
               <h2 className="font-heading text-4xl md:text-6xl font-extrabold tracking-tight drop-shadow-xl text-foreground">
                 Welcome to StoryMaster Quest! 🎮✨
               </h2>
@@ -76,10 +78,10 @@ const Index = () => {
                 <Button
                   size="xl"
                   variant="hero"
-                  onClick={() => navigate("/profile")}
+                  onClick={() => navigate(user ? "/profile" : "/auth")}
                   aria-label="Create my hero"
                 >
-                  Create My Hero
+                  {user ? "Create My Hero" : "Play - Join Your Quest"}
                 </Button>
                 {completedStories.length > 0 && (
                   <>
@@ -278,10 +280,10 @@ const Index = () => {
               <Button
                 size="xl"
                 variant="hero"
-                onClick={() => setShowPitch(false)}
+                onClick={() => navigate(user ? "/profile" : "/auth")}
                 className="text-lg px-8 py-4 animate-pulse"
               >
-                {content.ctaButton}
+                {user ? "Continue Your Quest" : "Play - Join Your Quest"}
               </Button>
               <Button
                 size="xl"

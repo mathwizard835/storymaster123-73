@@ -61,7 +61,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/auth" element={<PublicRoute><Auth /></PublicRoute>} />
-            <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/" element={<Index />} />
             <Route path="/profile" element={<ProtectedRoute><ProfileSetup /></ProtectedRoute>} />
             <Route path="/mission" element={<ProtectedRoute><Mission /></ProtectedRoute>} />
             <Route path="/gallery" element={<ProtectedRoute><StoryGallery /></ProtectedRoute>} />
