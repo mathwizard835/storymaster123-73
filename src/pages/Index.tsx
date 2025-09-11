@@ -288,7 +288,7 @@ const Index = () => {
               <Button
                 size="xl"
                 variant="game"
-                onClick={() => navigate("/mission?trial=true")}
+                onClick={() => navigate("/profile?trial=true")}
                 className="text-lg px-8 py-4"
               >
                 🎮 Try 1 Story Free
