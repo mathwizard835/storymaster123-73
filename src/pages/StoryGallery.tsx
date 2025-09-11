@@ -1,58 +1,16 @@
-import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Seo } from "@/components/Seo";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { getCompletedUserStories, userStoryToCompletedStory } from "@/lib/userStories";
 import { getCompletedStories, type CompletedStory } from "@/lib/story";
-import { useAuth } from "@/contexts/AuthContext";
-import { Clock, Star, ArrowLeft, BookOpen, LogIn } from "lucide-react";
+import { Clock, Star, ArrowLeft, BookOpen } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const StoryGallery = () => {
   const navigate = useNavigate();
-  const { user, loading } = useAuth();
-  const [completedStories, setCompletedStories] = useState<CompletedStory[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const completedStories = getCompletedStories();
   const { toast } = useToast();
-
-  useEffect(() => {
-    const loadStories = async () => {
-      if (loading) return;
-      
-      if (!user) {
-        // Load from local storage for non-authenticated users
-        const localStories = getCompletedStories();
-        setCompletedStories(localStories);
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        // Load from database for authenticated users
-        const { stories, error } = await getCompletedUserStories();
-        if (error) {
-          console.error('Error loading stories:', error);
-          // Fallback to local storage
-          const localStories = getCompletedStories();
-          setCompletedStories(localStories);
-        } else {
-          const convertedStories = stories.map(userStoryToCompletedStory);
-          setCompletedStories(convertedStories);
-        }
-      } catch (e) {
-        console.error('Error loading stories:', e);
-        // Fallback to local storage
-        const localStories = getCompletedStories();
-        setCompletedStories(localStories);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadStories();
-  }, [user, loading]);
 
   const formatDate = (dateString: string) => {
     return new Intl.DateTimeFormat('en-US', {
@@ -100,31 +58,12 @@ const StoryGallery = () => {
             <h1 className="font-heading text-3xl md:text-4xl font-extrabold">
               📚 Story Gallery
             </h1>
-            <div className="flex items-center justify-between">
-              <p className="text-muted-foreground mt-2">
-                {user ? 'Your completed adventures and achievements' : 'Local completed adventures'}
-              </p>
-              {!user && (
-                <Button 
-                  variant="outline" 
-                  onClick={() => navigate("/auth")}
-                  className="flex items-center gap-2"
-                >
-                  <LogIn className="h-4 w-4" />
-                  Login to Save Stories
-                </Button>
-              )}
-            </div>
+            <p className="text-muted-foreground mt-2">
+              Your completed adventures and achievements
+            </p>
           </div>
 
-          {isLoading ? (
-            <div className="text-center py-12">
-              <div className="glass-panel rounded-xl p-8 max-w-md mx-auto">
-                <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-                <p className="text-muted-foreground">Loading your stories...</p>
-              </div>
-            </div>
-          ) : completedStories.length === 0 ? (
+          {completedStories.length === 0 ? (
             <div className="text-center py-12">
               <div className="glass-panel rounded-xl p-8 max-w-md mx-auto">
                 <BookOpen className="h-16 w-16 mx-auto text-muted-foreground mb-4" />

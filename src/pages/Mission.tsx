@@ -5,10 +5,10 @@ import actionHeroBg from "@/assets/action-hero-bg.jpg";
 import socialChampionBg from "@/assets/social-champion-bg.jpg";
 import creativeGeniusBg from "@/assets/creative-genius-bg.jpg";
 import { useNavigate } from "react-router-dom";
-import { Zap, Timer, Star, Heart, Shield, Eye, Wand2, PawPrint, Crosshair, Users, Palette, RefreshCw, Play, BookOpen, Trophy, Target, RotateCcw } from "lucide-react";
+import { Zap, Timer, Star, Heart, Shield, Eye, Wand2, PawPrint, Crosshair, Users, Palette, RefreshCw, Play, BookOpen, Trophy, Target } from "lucide-react";
 import { useEffect, useState } from "react";
 import { generateNextScene, loadProfile, checkStoryLimit, markStoryCompleted, type Scene, saveCurrentStory, loadCurrentStory, clearCurrentStory, saveCompletedStory, type SavedStory, type InventoryItem, saveProfileToLocal } from "@/lib/story";
-import { saveInventory, loadInventory, clearInventory, addItemToInventory, removeItemFromInventory, useItem, updateProfileInventory } from "@/lib/inventory";
+import { loadInventory, saveInventory, addItemToInventory, useItem, clearInventory, updateProfileInventory } from "@/lib/inventory";
 import { 
   LearningSession, 
   saveLearningProgress, 
@@ -19,11 +19,11 @@ import {
   getNextLearningGoal 
 } from "@/lib/learningSystem";
 import { InventoryPanel } from "@/components/InventoryPanel";
+import { InteractiveObjects } from "@/components/InteractiveObjects";
 import { LearningProgress, type LearningConcept } from "@/components/LearningProgress";
 import { LearningChallengeComponent, type LearningChallenge } from "@/components/LearningChallenge";
 import { useToast } from "@/components/ui/use-toast";
 import { validateChoice } from "@/lib/interactionHandlers";
-import { validateStoryContent } from "@/lib/contentSafety";
 import { Badge } from "@/components/ui/badge";
 
 const Mission = () => {
@@ -44,35 +44,6 @@ const Mission = () => {
   const [showLearningProgress, setShowLearningProgress] = useState(false);
   
   const { toast } = useToast();
-
-  // Background mapping for interest badges
-  const getBackgroundImage = (badges: string[]) => {
-    if (!badges || badges.length === 0) return null;
-    
-    const badgeMap: { [key: string]: string } = {
-      'mystic': mysticMageBg,
-      'fantasy': mysticMageBg,
-      'magic': mysticMageBg,
-      'beast': beastMasterBg,
-      'animals': beastMasterBg,
-      'nature': beastMasterBg,
-      'detective': detectiveBg,
-      'mystery': detectiveBg,
-      'action': actionHeroBg,
-      'hero': actionHeroBg,
-      'space': actionHeroBg,
-      'social': socialChampionBg,
-      'creative': creativeGeniusBg,
-      'art': creativeGeniusBg
-    };
-    
-    for (const badge of badges) {
-      if (badgeMap[badge.toLowerCase()]) {
-        return badgeMap[badge.toLowerCase()];
-      }
-    }
-    return actionHeroBg; // default
-  };
 
   // Initialize learning session for learning mode
   const initializeLearningSession = (profile: any) => {
@@ -120,6 +91,7 @@ const Mission = () => {
     saveLearningProgress(updatedSession);
   };
 
+  // Handle learning challenge completion
   const handleChallengeComplete = (correct: boolean, answer: string) => {
     if (!currentChallenge || !learningSession) return;
     
@@ -142,6 +114,16 @@ const Mission = () => {
       description: `Learning Score: ${score}% • ${nextGoal}`,
       duration: 5000,
     });
+  };
+
+  const getBackgroundForBadge = (badges: string[] = []) => {
+    if (badges.includes("mystic")) return mysticMageBg;
+    if (badges.includes("beast")) return beastMasterBg;
+    if (badges.includes("detective")) return detectiveBg;
+    if (badges.includes("action")) return actionHeroBg;
+    if (badges.includes("social")) return socialChampionBg;
+    if (badges.includes("creative")) return creativeGeniusBg;
+    return mysticMageBg;
   };
 
   const getIconForBadge = (badge: string, size: string = "h-6 w-6") => {
@@ -204,18 +186,6 @@ const Mission = () => {
         if (!parsed) {
           throw new Error("Invalid AI response: " + text.slice(0, 140));
         }
-
-        // Validate story content for safety
-        const contentValidation = validateStoryContent(parsed);
-        if (!contentValidation.isAllowed) {
-          navigate("/blocked", { 
-            state: { 
-              reason: contentValidation.reason,
-              blockedTerms: contentValidation.blockedTerms 
-            } 
-          });
-          return;
-        }
         
         if (parsed.itemsFound && parsed.itemsFound.length > 0) {
           let newInventory = savedInventory;
@@ -254,17 +224,6 @@ const Mission = () => {
         
       } catch (e: any) {
         console.error(e);
-        
-        // Check if it's a content safety block
-        if (e.message?.includes("CONTENT_BLOCKED")) {
-          navigate("/blocked", { 
-            state: { 
-              reason: e.message.replace("CONTENT_BLOCKED: ", "")
-            } 
-          });
-          return;
-        }
-        
         setError(e.message ?? "Failed to start mission");
       } finally {
         setLoading(false);
@@ -320,18 +279,6 @@ const Mission = () => {
       
       const { parsed, text } = await generateNextScene(profileWithInventory, { ...scene, selectedChoiceId: choiceId }, false, 1200, nextSceneCount);
       if (!parsed) throw new Error("Invalid AI response: " + text.slice(0, 140));
-
-      // Validate story content for safety
-      const contentValidation = validateStoryContent(parsed);
-      if (!contentValidation.isAllowed) {
-        navigate("/blocked", { 
-          state: { 
-            reason: contentValidation.reason,
-            blockedTerms: contentValidation.blockedTerms 
-          } 
-        });
-        return;
-      }
       
       if (parsed.itemsFound && parsed.itemsFound.length > 0) {
         let newInventory = inventory;
@@ -391,26 +338,15 @@ const Mission = () => {
         setTimeout(() => navigate('/'), 3000);
       }
       
-      } catch (error: any) {
-        console.error("Error in onChoose:", error);
-        
-        // Check if it's a content safety block
-        if (error.message?.includes("CONTENT_BLOCKED")) {
-          navigate("/blocked", { 
-            state: { 
-              reason: error.message.replace("CONTENT_BLOCKED: ", "")
-            } 
-          });
-          return;
-        }
-        
-        setError(error.message ?? "Failed to continue story");
-      }
+    } catch (error: any) {
+      console.error("Error in onChoose:", error);
+      setError(error.message ?? "Failed to continue story");
+    }
   };
 
   if (!profile) return null;
 
-  const backgroundImage = getBackgroundImage(profile.selectedBadges || []);
+  const backgroundImage = getBackgroundForBadge(profile.selectedBadges);
 
   if (loading) {
     return (
@@ -423,10 +359,10 @@ const Mission = () => {
             </div>
           </div>
           <div className="space-y-2">
-            <h2 className="text-2xl font-bold text-white">Starting Adventure</h2>
-            <p className="text-purple-200">Almost ready!</p>
+            <h2 className="text-2xl font-bold text-white">Preparing Your Adventure</h2>
+            <p className="text-purple-200">The StoryMaster is weaving your tale...</p>
             {profile.mode === 'learning' && (
-              <p className="text-blue-200">🎓 Preparing learning experience...</p>
+              <p className="text-blue-200">🎓 Setting up interactive learning experience...</p>
             )}
           </div>
         </div>
@@ -553,6 +489,21 @@ const Mission = () => {
                 </div>
               </div>
 
+              {/* Interactive Objects */}
+              {scene.interactiveObjects && scene.interactiveObjects.length > 0 && (
+                <InteractiveObjects
+                  objects={scene.interactiveObjects}
+                  inventory={inventory}
+                  onObjectInteract={(objectId, action) => {
+                    toast({
+                      title: `${action} completed`,
+                      description: "You examine the object carefully...",
+                      duration: 3000,
+                    });
+                  }}
+                />
+              )}
+
               {/* Choices */}
               <div className="bg-black/50 backdrop-blur-sm rounded-lg p-6 border border-white/20">
                 <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
@@ -663,26 +614,13 @@ const Mission = () => {
               </div>
 
               {/* Navigation */}
-              <div className="bg-white/10 backdrop-blur-md rounded-lg p-4 border border-white/20 space-y-3">
+              <div className="bg-white/10 backdrop-blur-md rounded-lg p-4 border border-white/20">
                 <button
                   onClick={() => navigate('/')}
                   className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 px-4 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
                 >
                   <Shield className="h-4 w-4" />
                   Save & Exit
-                </button>
-                <button
-                  onClick={() => {
-                    if (confirm("Are you sure? This will delete your current adventure and start fresh.")) {
-                      clearCurrentStory();
-                      clearInventory();
-                      navigate('/profile');
-                    }
-                  }}
-                  className="w-full bg-orange-600 hover:bg-orange-700 text-white py-2 px-4 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 text-sm"
-                >
-                  <RotateCcw className="h-4 w-4" />
-                  New Adventure
                 </button>
               </div>
             </div>

@@ -47,30 +47,6 @@ export type Database = {
         }
         Relationships: []
       }
-      profiles: {
-        Row: {
-          created_at: string
-          display_name: string | null
-          email: string | null
-          id: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          display_name?: string | null
-          email?: string | null
-          id: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          display_name?: string | null
-          email?: string | null
-          id?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       referrals: {
         Row: {
           bonus_stories_earned: number | null
@@ -176,51 +152,6 @@ export type Database = {
           name?: string
           price_monthly?: number | null
           story_limit?: number | null
-        }
-        Relationships: []
-      }
-      user_stories: {
-        Row: {
-          choices_made: Json | null
-          completed_at: string | null
-          current_scene_index: number | null
-          id: string
-          last_played_at: string
-          profile: Json
-          scene_count: number | null
-          scenes: Json | null
-          started_at: string
-          status: string
-          title: string | null
-          user_id: string
-        }
-        Insert: {
-          choices_made?: Json | null
-          completed_at?: string | null
-          current_scene_index?: number | null
-          id?: string
-          last_played_at?: string
-          profile: Json
-          scene_count?: number | null
-          scenes?: Json | null
-          started_at?: string
-          status?: string
-          title?: string | null
-          user_id: string
-        }
-        Update: {
-          choices_made?: Json | null
-          completed_at?: string | null
-          current_scene_index?: number | null
-          id?: string
-          last_played_at?: string
-          profile?: Json
-          scene_count?: number | null
-          scenes?: Json | null
-          started_at?: string
-          status?: string
-          title?: string | null
-          user_id?: string
         }
         Relationships: []
       }
