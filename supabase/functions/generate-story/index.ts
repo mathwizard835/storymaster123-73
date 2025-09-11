@@ -174,11 +174,11 @@ serve(async (req) => {
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-    // Faster token management for speed
+    // Quality-focused token management for rich storytelling
     const getOptimalTokens = (sceneCount: number, isNewStory: boolean) => {
-      if (isNewStory) return 1200; // Faster new stories
-      if (sceneCount >= 12) return 1000; // Quick endings
-      return 800; // Fast continuation scenes
+      if (isNewStory) return 2000; // Rich story openings
+      if (sceneCount >= 12) return 1800; // Detailed endings
+      return 1600; // Full continuation scenes
     };
     const max_tokens = Math.min(Number(body?.max_tokens ?? getOptimalTokens(sceneCount, !scene)), 2000);
     const sceneCount = Number(body?.scene_count ?? 1);
@@ -196,17 +196,60 @@ serve(async (req) => {
     const sceneContext = scene ? `\nContinue from: ${JSON.stringify(scene)}` : "\nCreate a new adventure opening.";
     const storyProgressContext = `\nSTORY PROGRESS: This is scene ${sceneCount} of the story.${sceneCount >= 15 ? ' END THE STORY NOW.' : sceneCount >= 12 ? ' Build toward a climactic conclusion within the next few scenes.' : ''}`;
 
-    // Optimized learning mode instructions (compressed for speed)
+    // Rich learning mode instructions for immersive education
     const learningModeInstructions = profile.mode === 'learning' ? `
-LEARNING: Age ${profile.age} - ${profile.age <= 7 ? 'Basic math/letters via puzzles' : profile.age <= 9 ? 'Math/science/reading challenges' : 'Advanced concepts through gameplay'}. ${profile.topic ? `Focus: ${profile.topic}` : ''}` : '';
 
-    // Simplified and fast context
-    const contextSize = scene ? "CONTINUE" : "START";
-    const userPrompt = `${contextSize}: ${profileSummary}${sceneContext}${storyProgressContext}${learningModeInstructions}
+🎓 LEARNING MODE ACTIVE - EDUCATIONAL STORYTELLING:
+- Age-appropriate learning for ${profile.age} year old: ${profile.age <= 7 ? 'Introduce basic concepts through interactive discovery - simple counting, letters, colors, shapes, and cause-and-effect through story choices' : profile.age <= 9 ? 'Embed elementary concepts naturally - basic math problems, reading comprehension, simple science facts, and logical reasoning through adventure scenarios' : 'Integrate advanced learning seamlessly - complex problem solving, critical thinking, historical contexts, scientific principles, and mathematical challenges woven into the narrative'}
+- Educational Focus: ${profile.topic ? `Emphasize ${profile.topic} concepts through story elements, challenges, and character interactions` : 'General knowledge building through discovery and exploration'}
+- Make learning feel like natural story progression, not forced lessons
+- Reward correct understanding with story advancement and positive outcomes
+- Use discovery-based learning where the child learns through making story choices and seeing consequences` : '';
 
-JSON: {"sceneTitle":"...","hud":{"energy":0-100,"time":"...","choicePoints":0-50,"ui":["..."]},"narrative":"...","choices":[{"id":"a","text":"...","type":"standard"}],"end":false}
+    // Rich narrative context for quality storytelling  
+    const storytellingGuidance = `
+📝 NARRATIVE QUALITY REQUIREMENTS:
+- Create vivid, immersive scene descriptions that make the reader feel present
+- Develop compelling characters with distinct personalities and motivations  
+- Build emotional engagement through relatable situations and meaningful stakes
+- Use sensory details (sights, sounds, textures) to bring scenes to life
+- Maintain narrative consistency and continuity from previous scenes
+- Create authentic dialogue that sounds natural for the character's age and situation
+- Balance action, description, and character development
+- End with choices that feel meaningful and lead to different story paths
+- Aim for 300-400 words of rich narrative content`;
 
-Requirements: ${scene ? 'Continue story' : 'New adventure opening'}, 3-4 choices, 200 words max, engaging narrative${profile.mode === 'learning' ? ', natural learning' : ''}.`;
+    const userPrompt = `${scene ? 'CONTINUE ADVENTURE' : 'BEGIN NEW ADVENTURE'}: 
+
+${profileSummary}${sceneContext}${storyProgressContext}${learningModeInstructions}${storytellingGuidance}
+
+RESPONSE FORMAT (Valid JSON):
+{
+  "sceneTitle": "Engaging chapter/scene title",
+  "hud": {
+    "energy": 0-100,
+    "time": "Time of day or progress indicator", 
+    "choicePoints": 0-50,
+    "ui": ["Status items", "Inventory hints", "Progress markers"]
+  },
+  "narrative": "Rich, immersive story content with vivid descriptions, character development, and engaging plot progression. Use multiple paragraphs to create depth.",
+  "choices": [
+    {"id": "a", "text": "Meaningful choice that advances story", "type": "standard"},
+    {"id": "b", "text": "Alternative path with different outcomes", "type": "standard"},
+    {"id": "c", "text": "Creative or learning-focused option", "type": "special"}
+  ],
+  "end": false
+}
+
+STORY REQUIREMENTS:
+✨ ${scene ? 'Continue the existing story with rich detail and character development' : 'Create an engaging opening that immediately draws the reader into an exciting world'}
+✨ Develop 3-4 meaningful choices that feel significantly different
+✨ Write 300-400 words of immersive narrative content
+✨ Include vivid sensory details and emotional depth
+✨ Build suspense and wonder while maintaining age-appropriate content${profile.mode === 'learning' ? '\n✨ Naturally integrate educational elements that enhance rather than interrupt the story flow' : ''}
+✨ Create characters the reader cares about and situations that matter
+✨ Use rich vocabulary appropriate for the reading level
+✨ End with a compelling moment that makes the reader eager for the next choice`;
 
     console.log(`Making request to Claude (${max_tokens} tokens) with model: claude-sonnet-4-20250514`);
 
