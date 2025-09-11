@@ -262,7 +262,7 @@ const Mission = () => {
       }
 
       if (choice.consumesItem && choice.requiresItem) {
-        const { item, newInventory } = useItem(choice.requiresItem, inventory);
+        const { item, newInventory } = useItem(choice.requiresItem!, inventory);
         if (item) {
           setInventory(newInventory);
           saveInventory(newInventory);
