@@ -18,6 +18,8 @@ const queryClient = new QueryClient();
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
+  const searchParams = new URLSearchParams(window.location.search);
+  const isTrialMode = searchParams.get('trial') === 'true';
   
   if (loading) {
     return (
@@ -27,7 +29,8 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     );
   }
   
-  if (!user) {
+  // Allow access in trial mode even without authentication
+  if (!user && !isTrialMode) {
     return <Navigate to="/auth" replace />;
   }
   
