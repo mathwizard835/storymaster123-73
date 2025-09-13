@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Seo } from "@/components/Seo";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog as NewStoryDialog, DialogContent as NewDialogContent, DialogHeader as NewDialogHeader, DialogTitle as NewDialogTitle, DialogDescription } from "@/components/ui/dialog";
 import heroLanding from "@/assets/hero-landing.jpg";
 import familyReading from "@/assets/family-reading.jpg";
 import storyGenres from "@/assets/story-genres.jpg";
@@ -8,8 +9,9 @@ import heroPortal from "@/assets/hero-portal.jpg";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { getCompletedStories } from "@/lib/story";
-import { BookOpen, Star, Shield, Zap, Heart, Brain, Gamepad2, Users, Sparkles, ChevronDown, Rocket, Crown, GraduationCap, LogOut } from "lucide-react";
-import { useState } from "react";
+import { loadCurrentStoryFromDatabase } from "@/lib/databaseStory";
+import { BookOpen, Star, Shield, Zap, Heart, Brain, Gamepad2, Users, Sparkles, ChevronDown, Rocket, Crown, GraduationCap, LogOut, Play } from "lucide-react";
+import { useState, useEffect } from "react";
 
 type AudienceType = 'kid' | 'teen' | 'parent' | null;
 
@@ -20,6 +22,23 @@ const Index = () => {
   const [showPitch, setShowPitch] = useState(true);
   const [audience, setAudience] = useState<AudienceType>(null);
   const [showAudienceSelector, setShowAudienceSelector] = useState(true);
+  const [hasActiveStory, setHasActiveStory] = useState(false);
+  const [showNewStoryDialog, setShowNewStoryDialog] = useState(false);
+  
+  // Check for active story when component mounts
+  useEffect(() => {
+    const checkActiveStory = async () => {
+      if (user) {
+        try {
+          const activeStory = await loadCurrentStoryFromDatabase();
+          setHasActiveStory(!!activeStory && activeStory.scenes.length > 0);
+        } catch (e) {
+          setHasActiveStory(false);
+        }
+      }
+    };
+    checkActiveStory();
+  }, [user]);
 
   const SignOutButton = () => (
     <Button
@@ -75,14 +94,38 @@ const Index = () => {
                 Build your hero. Launch your mission. Your choices shape the story.
               </p>
               <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
-                <Button
-                  size="xl"
-                  variant="hero"
-                  onClick={() => navigate(user ? "/profile?new=true" : "/auth")}
-                  aria-label="Create my hero"
-                >
-                  {user ? "Start New Adventure" : "Play - Join Your Quest"}
-                </Button>
+                {/* Continue or Start New Button */}
+                {hasActiveStory ? (
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <Button
+                      size="xl"
+                      variant="hero"
+                      onClick={() => navigate("/mission")}
+                      aria-label="Continue current adventure"
+                    >
+                      Continue Adventure
+                    </Button>
+                    <Button
+                      size="xl" 
+                      variant="outline"
+                      onClick={() => setShowNewStoryDialog(true)}
+                      aria-label="Start new adventure"
+                      className="flex items-center gap-2"
+                    >
+                      <Play className="h-4 w-4" />
+                      Start New Story
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    size="xl"
+                    variant="hero"
+                    onClick={() => navigate(user ? "/profile?new=true" : "/auth")}
+                    aria-label="Create my hero"
+                  >
+                    {user ? "Start New Adventure" : "Play - Join Your Quest"}
+                  </Button>
+                )}
               </div>
               
               {/* Big Access Buttons for Logged In Users */}
@@ -272,6 +315,36 @@ const Index = () => {
         </DialogContent>
       </Dialog>
       
+      {/* New Story Confirmation Dialog */}
+      <NewStoryDialog open={showNewStoryDialog} onOpenChange={setShowNewStoryDialog}>
+        <NewDialogContent className="max-w-md">
+          <NewDialogHeader>
+            <NewDialogTitle>Start New Adventure?</NewDialogTitle>
+            <DialogDescription>
+              You have an adventure in progress. Starting a new one will save your current progress and begin a fresh story.
+            </DialogDescription>
+          </NewDialogHeader>
+          <div className="flex gap-3 mt-6">
+            <Button
+              variant="outline"
+              onClick={() => setShowNewStoryDialog(false)}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                setShowNewStoryDialog(false);
+                navigate('/profile?new=true');
+              }}
+              className="flex-1"
+            >
+              Start New Adventure
+            </Button>
+          </div>
+        </NewDialogContent>
+      </NewStoryDialog>
+      
       {/* Hero Section - The Big Pitch */}
       <section className="relative min-h-screen w-full overflow-hidden">
         <img
@@ -299,14 +372,37 @@ const Index = () => {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-              <Button
-                size="xl"
-                variant="hero"
-                onClick={() => navigate(user ? "/mission" : "/auth")}
-                className="text-lg px-8 py-4 animate-pulse"
-              >
-                {user ? "Continue Your Quest" : "Play - Join Your Quest"}
-              </Button>
+              {/* Continue or Start New Button */}
+              {hasActiveStory ? (
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <Button
+                    size="xl"
+                    variant="hero"
+                    onClick={() => navigate("/mission")}
+                    className="text-lg px-8 py-4"
+                  >
+                    Continue Your Quest
+                  </Button>
+                  <Button
+                    size="xl"
+                    variant="outline"
+                    onClick={() => setShowNewStoryDialog(true)}
+                    className="text-lg px-8 py-4 flex items-center gap-2"
+                  >
+                    <Play className="h-4 w-4" />
+                    Start New Story
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  size="xl"
+                  variant="hero"
+                  onClick={() => navigate(user ? "/mission" : "/auth")}
+                  className="text-lg px-8 py-4 animate-pulse"
+                >
+                  {user ? "Continue Your Quest" : "Play - Join Your Quest"}
+                </Button>
+              )}
               <Button
                 size="xl"
                 variant="game"
