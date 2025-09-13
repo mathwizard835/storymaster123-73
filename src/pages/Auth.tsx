@@ -57,7 +57,7 @@ const Auth = () => {
       } else {
         toast({
           title: "Account created successfully!",
-          description: "Check your email for the confirmation link. If the link doesn't work, the Supabase URL settings need to be updated.",
+          description: "You can now sign in with your credentials.",
         });
       }
     } catch (err: any) {
@@ -214,12 +214,6 @@ const Auth = () => {
                     </Alert>
                   )}
                   
-                  <Alert className="bg-blue-900/50 border-blue-500/50 text-blue-200">
-                    <AlertDescription>
-                      📧 Email confirmation required. If the confirmation link shows "localhost not responding", 
-                      you need to update your Supabase URL configuration to use: {window.location.origin}
-                    </AlertDescription>
-                  </Alert>
                   
                   <Button 
                     type="submit" 
