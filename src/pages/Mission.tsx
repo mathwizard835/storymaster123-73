@@ -5,7 +5,7 @@ import actionHeroBg from "@/assets/action-hero-bg.jpg";
 import socialChampionBg from "@/assets/social-champion-bg.jpg";
 import creativeGeniusBg from "@/assets/creative-genius-bg.jpg";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Zap, Timer, Star, Heart, Shield, Eye, Wand2, PawPrint, Crosshair, Users, Palette, RefreshCw, Play, BookOpen, Trophy, Target } from "lucide-react";
+import { Zap, Timer, Star, Heart, Shield, Eye, Wand2, PawPrint, Crosshair, Users, Palette, RefreshCw, Play, BookOpen, Trophy, Target, ArrowLeft } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect, useState } from "react";
 import { generateNextScene, loadProfile, checkStoryLimit, markStoryCompleted, type Scene, saveCurrentStory, loadCurrentStory, clearCurrentStory, saveCompletedStory, type SavedStory, type InventoryItem, saveProfileToLocal } from "@/lib/story";
@@ -41,6 +41,7 @@ const Mission = () => {
   const [error, setError] = useState<string | null>(null);
   const [storyLimitReached, setStoryLimitReached] = useState(false);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [goBacksUsed, setGoBacksUsed] = useState(0);
   
   // Learning system state
   const [learningSession, setLearningSession] = useState<LearningSession | null>(null);
@@ -428,6 +429,37 @@ const Mission = () => {
     }
   };
 
+  const goBack = () => {
+    if (!savedStory || allScenes.length <= 1 || goBacksUsed >= 5) return;
+    
+    const currentIndex = savedStory.currentSceneIndex || allScenes.length - 1;
+    if (currentIndex <= 0) return;
+    
+    const previousIndex = currentIndex - 1;
+    const previousScene = allScenes[previousIndex];
+    
+    setScene(previousScene);
+    setGoBacksUsed(prev => prev + 1);
+    setSceneCount(previousIndex + 1);
+    
+    const updatedStory: SavedStory = {
+      ...savedStory,
+      currentSceneIndex: previousIndex,
+      lastPlayedAt: new Date().toISOString(),
+    };
+    setSavedStory(updatedStory);
+    
+    if (!isTrialMode) {
+      saveStoryToDatabase(updatedStory);
+    }
+    
+    toast({
+      title: "Went back to previous scene",
+      description: `Go-backs remaining: ${5 - goBacksUsed - 1}`,
+      duration: 3000,
+    });
+  };
+
   if (!profile) return null;
 
   const backgroundImage = getBackgroundForBadge(profile.selectedBadges);
@@ -579,6 +611,21 @@ const Mission = () => {
                   <Target className="h-5 w-5" />
                   What do you choose?
                 </h3>
+                
+                {/* Go Back Button */}
+                {allScenes.length > 1 && goBacksUsed < 5 && (savedStory?.currentSceneIndex || allScenes.length - 1) > 0 && (
+                  <div className="mb-4">
+                    <button
+                      onClick={goBack}
+                      disabled={choiceLoading}
+                      className="w-full p-3 rounded-lg bg-gray-700/80 hover:bg-gray-600/80 text-white border-2 border-gray-500/50 hover:border-gray-400/50 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                      Go Back to Previous Scene ({5 - goBacksUsed} remaining)
+                    </button>
+                  </div>
+                )}
+                
                 <div className="grid gap-3">
                   {scene.choices.map((choice, index) => {
                     const validation = validateChoice(choice.id, scene, inventory);
