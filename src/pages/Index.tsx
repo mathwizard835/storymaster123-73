@@ -83,28 +83,50 @@ const Index = () => {
                 >
                   {user ? "Start New Adventure" : "Play - Join Your Quest"}
                 </Button>
-                {completedStories.length > 0 && (
-                  <>
-                    <Button
-                      size="xl"
-                      variant="outline"
-                      onClick={() => navigate("/gallery")}
-                      className="flex items-center gap-2"
-                      aria-label="View story gallery"
-                    >
-                      <BookOpen className="h-4 w-4" />
-                      Story Gallery ({completedStories.length})
-                    </Button>
-                    <Button
-                      onClick={() => navigate("/achievements")}
-                      variant="outline"
-                      size="xl"
-                    >
-                      🏆 Achievements
-                    </Button>
-                  </>
-                )}
               </div>
+              
+              {/* Big Access Buttons for Logged In Users */}
+              {user && (
+                <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-4xl mx-auto">
+                  <Button
+                    size="xl"
+                    variant="game"
+                    onClick={() => navigate("/gallery")}
+                    className="h-20 text-lg font-bold flex flex-col items-center gap-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+                    aria-label="View story gallery"
+                  >
+                    <BookOpen className="h-8 w-8" />
+                    <div>
+                      <div>Story Gallery</div>
+                      <div className="text-sm opacity-75">({completedStories.length} stories)</div>
+                    </div>
+                  </Button>
+                  <Button
+                    onClick={() => navigate("/achievements")}
+                    variant="game"
+                    size="xl"
+                    className="h-20 text-lg font-bold flex flex-col items-center gap-2 bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-700 hover:to-orange-700"
+                  >
+                    <Star className="h-8 w-8" />
+                    <div>
+                      <div>🏆 Achievements</div>
+                      <div className="text-sm opacity-75">View progress</div>
+                    </div>
+                  </Button>
+                  <Button
+                    onClick={() => navigate("/profile")}
+                    variant="game"
+                    size="xl"
+                    className="h-20 text-lg font-bold flex flex-col items-center gap-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+                  >
+                    <Crown className="h-8 w-8" />
+                    <div>
+                      <div>Hero Profile</div>
+                      <div className="text-sm opacity-75">Points & stats</div>
+                    </div>
+                  </Button>
+                </div>
+              )}
             </div>
           </section>
         </main>

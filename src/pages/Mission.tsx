@@ -5,7 +5,7 @@ import actionHeroBg from "@/assets/action-hero-bg.jpg";
 import socialChampionBg from "@/assets/social-champion-bg.jpg";
 import creativeGeniusBg from "@/assets/creative-genius-bg.jpg";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Zap, Timer, Star, Heart, Shield, Eye, Wand2, PawPrint, Crosshair, Users, Palette, RefreshCw, Play, BookOpen, Trophy, Target, ArrowLeft } from "lucide-react";
+import { Zap, Timer, Star, Heart, Shield, Eye, Wand2, PawPrint, Crosshair, Users, Palette, RefreshCw, Play, BookOpen, Trophy, Target, ArrowLeft, Crown } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect, useState } from "react";
 import { generateNextScene, loadProfile, checkStoryLimit, markStoryCompleted, type Scene, saveCurrentStory, loadCurrentStory, clearCurrentStory, saveCompletedStory, type SavedStory, type InventoryItem, saveProfileToLocal } from "@/lib/story";
@@ -26,6 +26,7 @@ import { LearningChallengeComponent, type LearningChallenge } from "@/components
 import { useToast } from "@/components/ui/use-toast";
 import { validateChoice } from "@/lib/interactionHandlers";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 const Mission = () => {
   const navigate = useNavigate();
@@ -47,6 +48,7 @@ const Mission = () => {
   const [learningSession, setLearningSession] = useState<LearningSession | null>(null);
   const [currentChallenge, setCurrentChallenge] = useState<LearningChallenge | null>(null);
   const [showLearningProgress, setShowLearningProgress] = useState(false);
+  const [storyReadyToFinish, setStoryReadyToFinish] = useState(false);
   
   const { toast } = useToast();
 
@@ -389,29 +391,8 @@ const Mission = () => {
           return;
         }
         
-        const { newAchievements, characterProgress } = await markStoryCompleted(profile, nextSceneCount);
-        
-        const completedStoryData = {
-          id: updatedStory.id,
-          title: scene.sceneTitle || "Untitled Adventure",
-          completedAt: new Date().toISOString(),
-          sceneCount: nextSceneCount,
-          choicesMade: [],
-          profile: updatedStory.profile,
-        };
-        
-        saveCompletedStory(completedStoryData);
-        await clearCurrentStoryInDatabase(updatedStory.id);
-        clearInventory();
-        setInventory([]);
-
-        toast({
-          title: "🎉 Adventure Complete!",
-          description: `Amazing work! You completed your ${nextSceneCount}-scene adventure.`,
-          duration: 8000,
-        });
-
-        setTimeout(() => navigate('/'), 3000);
+        // Don't auto-complete, just mark that the story is ready to finish
+        setStoryReadyToFinish(true);
       }
       
     } catch (error: any) {
@@ -669,6 +650,65 @@ const Mission = () => {
                   })}
                 </div>
               </div>
+              
+              {/* Finish Adventure Button (when story is complete) */}
+              {storyReadyToFinish && (
+                <div className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 backdrop-blur-md rounded-lg p-6 border border-yellow-400/30">
+                  <div className="text-center space-y-4">
+                    <h3 className="text-2xl font-bold text-yellow-200 flex items-center justify-center gap-2">
+                      <Crown className="h-8 w-8 text-yellow-400" />
+                      Adventure Complete!
+                    </h3>
+                    <p className="text-white/90">
+                      🎉 Congratulations! You've reached the end of your epic journey. 
+                      Ready to see your achievements and save this adventure to your gallery?
+                    </p>
+                    <Button 
+                      size="xl"
+                      variant="hero"
+                      onClick={async () => {
+                        try {
+                          const nextSceneCount = sceneCount;
+                          const { newAchievements, characterProgress } = await markStoryCompleted(profile, nextSceneCount);
+                          
+                          const completedStoryData = {
+                            id: savedStory.id,
+                            title: scene.sceneTitle || "Untitled Adventure",
+                            completedAt: new Date().toISOString(),
+                            sceneCount: nextSceneCount,
+                            choicesMade: [],
+                            profile: savedStory.profile,
+                          };
+                          
+                          saveCompletedStory(completedStoryData);
+                          await clearCurrentStoryInDatabase(savedStory.id);
+                          clearInventory();
+                          setInventory([]);
+
+                          toast({
+                            title: "🎉 Adventure Saved!",
+                            description: `Your ${nextSceneCount}-scene adventure has been added to your gallery!`,
+                            duration: 5000,
+                          });
+
+                          setTimeout(() => navigate('/'), 2000);
+                        } catch (error) {
+                          console.error("Error finishing adventure:", error);
+                          toast({
+                            title: "Error saving adventure",
+                            description: "There was an issue saving your progress. Please try again.",
+                            variant: "destructive",
+                          });
+                        }
+                      }}
+                      className="w-full max-w-xs mx-auto text-lg font-bold"
+                    >
+                      <Crown className="h-5 w-5 mr-2" />
+                      Finish Adventure
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Sidebar */}
