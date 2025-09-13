@@ -175,8 +175,11 @@ const Mission = () => {
           setProfile(savedProfile);
         }
 
-        // Skip loading existing story for trial mode
-        if (!isTrialMode) {
+        // Check if user wants to start fresh (from URL param)
+        const forceNew = searchParams.get('new') === 'true';
+        
+        // Skip loading existing story for trial mode or if forcing new story
+        if (!isTrialMode && !forceNew) {
           const existingStory = await loadCurrentStoryFromDatabase();
           if (existingStory && existingStory.scenes.length > 0) {
             setSavedStory(existingStory);
@@ -193,6 +196,19 @@ const Mission = () => {
             
             setLoading(false);
             return;
+          }
+        }
+        
+        // If forcing new story, clear any existing story first
+        if (forceNew) {
+          try {
+            const existingStory = await loadCurrentStoryFromDatabase();
+            if (existingStory) {
+              await clearCurrentStoryInDatabase(existingStory.id);
+            }
+            clearInventory();
+          } catch (e) {
+            console.log('No existing story to clear');
           }
         }
 

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Seo } from "@/components/Seo";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -45,6 +45,7 @@ const modes = [
 
 const ProfileSetup = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [age, setAge] = useState<number>(8);
   const [reading, setReading] = useState<string>("adventurer");
   const [selectedBadges, setSelectedBadges] = useState<string[]>([]);
@@ -62,7 +63,11 @@ const ProfileSetup = () => {
   const handleStart = () => {
     const profile = { age, reading, selectedBadges, mode, storyLength: storyLength as 'short' | 'medium' | 'epic', topic, interests };
     saveProfileToLocal(profile);
-    navigate("/mission");
+    
+    // Check if this should be a new story
+    const forceNew = searchParams.get('new') === 'true';
+    const missionUrl = forceNew ? '/mission?new=true' : '/mission';
+    navigate(missionUrl);
   };
 
   return (

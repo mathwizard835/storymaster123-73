@@ -78,10 +78,10 @@ const Index = () => {
                 <Button
                   size="xl"
                   variant="hero"
-                  onClick={() => navigate(user ? "/profile" : "/auth")}
+                  onClick={() => navigate(user ? "/profile?new=true" : "/auth")}
                   aria-label="Create my hero"
                 >
-                  {user ? "Create My Hero" : "Play - Join Your Quest"}
+                  {user ? "Start New Adventure" : "Play - Join Your Quest"}
                 </Button>
                 {completedStories.length > 0 && (
                   <>
@@ -280,7 +280,7 @@ const Index = () => {
               <Button
                 size="xl"
                 variant="hero"
-                onClick={() => navigate(user ? "/profile" : "/auth")}
+                onClick={() => navigate(user ? "/mission" : "/auth")}
                 className="text-lg px-8 py-4 animate-pulse"
               >
                 {user ? "Continue Your Quest" : "Play - Join Your Quest"}
