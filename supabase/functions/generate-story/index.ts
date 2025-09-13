@@ -82,7 +82,7 @@ const SYSTEM_PROMPT = `You are StoryMaster AI, a creative storyteller for childr
 - Present multiple valid approaches with different trade-offs
 - Use character motivations to explore different perspectives
 
-📖 Story Structure:
+📖 Story Structure & Pacing:
 - Open with immediate action hook answering: Where am I? What world? Who am I? What's my backstory?
 - Keep passages short, vivid, and impactful (215 words max)
 - Build escalating stakes and tension
@@ -90,6 +90,10 @@ const SYSTEM_PROMPT = `You are StoryMaster AI, a creative storyteller for childr
 - Include morally complex decisions appropriate for age
 - Add game-like elements (HUD, progress tracking, countdowns)
 - Weave critical thinking moments into plot naturally
+- **CRITICAL**: Pace story according to selected length:
+  * Short stories (4-5 scenes): Quick progression, immediate conflict resolution
+  * Medium stories (6-8 scenes): Balanced pacing with character development
+  * Epic stories (10-12 scenes): Rich world-building, complex character arcs, multiple plot threads
 
 🎒 Interactive Object System:
 - Include "interactiveObjects" array with objects players can examine/interact with
@@ -170,10 +174,41 @@ serve(async (req) => {
 - Age: ${profile.age ?? "unknown"}
 - Reading Level: ${profile.reading ?? profile.readingSkill ?? "unknown"}
 - Interest: ${(profile.selectedBadges || profile.interests || []).join(", ") || "none"}
-- Mode: ${profile.mode ?? "unknown"}${profile.topic ? `\n- Topic: ${profile.topic}` : ""}${inventoryContext}`;
+- Mode: ${profile.mode ?? "unknown"}
+- Story Length: ${profile.storyLength ?? "medium"}${profile.topic ? `\n- Topic: ${profile.topic}` : ""}${inventoryContext}`;
 
     const sceneContext = scene ? `\nContinue from: ${JSON.stringify(scene)}` : "\nCreate a new adventure opening.";
-    const storyProgressContext = `\nSTORY PROGRESS: This is scene ${sceneCount} of the story.${sceneCount >= 15 ? ' END THE STORY NOW.' : sceneCount >= 12 ? ' Build toward a climactic conclusion within the next few scenes.' : ''}`;
+    // Dynamic story progression based on selected length
+    const getStoryProgressContext = () => {
+      const storyLength = profile.storyLength || 'medium';
+      let endScene, conclusionScene;
+      
+      switch (storyLength) {
+        case 'short':
+          endScene = 5;
+          conclusionScene = 4;
+          break;
+        case 'epic':
+          endScene = 12;
+          conclusionScene = 9;
+          break;
+        case 'medium':
+        default:
+          endScene = 8;
+          conclusionScene = 6;
+          break;
+      }
+      
+      const progressMessage = sceneCount >= endScene 
+        ? ' END THE STORY NOW with a satisfying conclusion.' 
+        : sceneCount >= conclusionScene 
+        ? ' Build toward the climactic finale - story should end within the next 1-2 scenes.' 
+        : '';
+        
+      return `\nSTORY PROGRESS: This is scene ${sceneCount} of a ${storyLength} story (${storyLength === 'short' ? '4-5' : storyLength === 'epic' ? '10-12' : '6-8'} scenes total).${progressMessage}`;
+    };
+    
+    const storyProgressContext = getStoryProgressContext();
 
     // Optimized learning mode instructions (compressed for speed)
     const learningModeInstructions = profile.mode === 'learning' ? `
