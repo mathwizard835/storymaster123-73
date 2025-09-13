@@ -6,12 +6,19 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { loadAchievements, ALL_ACHIEVEMENTS, type Achievement } from "@/lib/achievements";
 import { loadCharacter } from "@/lib/character";
-import { ArrowLeft, Trophy, Star, Lock } from "lucide-react";
+import { ArrowLeft, Trophy, Star, Lock, Crown, Zap, TrendingUp } from "lucide-react";
+import { useState, useEffect } from "react";
 
 const Achievements = () => {
   const navigate = useNavigate();
-  const progress = loadAchievements();
-  const character = loadCharacter();
+  const [progress, setProgress] = useState(loadAchievements());
+  const [character, setCharacter] = useState(loadCharacter());
+  
+  // Refresh data when component mounts (in case returning from completed story)
+  useEffect(() => {
+    setProgress(loadAchievements());
+    setCharacter(loadCharacter());
+  }, []);
 
   const getRarityColor = (rarity: Achievement['rarity']) => {
     switch (rarity) {
@@ -34,6 +41,20 @@ const Achievements = () => {
   );
 
   const completionRate = Math.round((unlockedAchievements.length / ALL_ACHIEVEMENTS.length) * 100);
+  
+  // Sort achievements by unlock date (most recent first)
+  const sortedUnlockedAchievements = [...unlockedAchievements].sort((a, b) => {
+    const dateA = new Date(a.unlockedAt || 0).getTime();
+    const dateB = new Date(b.unlockedAt || 0).getTime();
+    return dateB - dateA;
+  });
+  
+  // Get recently unlocked achievements (within last 24 hours)
+  const oneDayAgo = Date.now() - (24 * 60 * 60 * 1000);
+  const recentAchievements = sortedUnlockedAchievements.filter(achievement => {
+    const unlockTime = new Date(achievement.unlockedAt || 0).getTime();
+    return unlockTime > oneDayAgo;
+  });
 
   return (
     <>
@@ -75,10 +96,20 @@ const Achievements = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
                 <div>
-                  <div className="text-2xl font-bold">{character.level}</div>
+                  <div className="text-2xl font-bold flex items-center gap-1">
+                    <Crown className="h-6 w-6 text-amber-500" />
+                    {character.level}
+                  </div>
                   <div className="text-sm text-muted-foreground">Level</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold flex items-center gap-1">
+                    <Zap className="h-6 w-6 text-blue-500" />
+                    {character.experience}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Experience Points</div>
                 </div>
                 <div>
                   <div className="text-2xl font-bold">{progress.totalStories}</div>
@@ -96,16 +127,59 @@ const Achievements = () => {
               
               <div className="mt-6">
                 <div className="flex justify-between text-sm mb-2">
-                  <span>Experience Progress</span>
+                  <span>Experience Progress to Level {character.level + 1}</span>
                   <span>{character.experience} / {character.experienceToNext}</span>
                 </div>
                 <Progress 
                   value={(character.experience / character.experienceToNext) * 100} 
-                  className="h-2"
+                  className="h-3"
                 />
               </div>
+              
+              {character.titles.length > 0 && (
+                <div className="mt-4">
+                  <div className="text-sm font-medium mb-2">Current Titles:</div>
+                  <div className="flex flex-wrap gap-2">
+                    {character.titles.slice(-3).map((title, index) => (
+                      <Badge key={index} variant="secondary" className="text-xs">
+                        {title}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
+          
+          {/* Recent Achievements */}
+          {recentAchievements.length > 0 && (
+            <Card className="glass-panel border-0 mb-8 bg-gradient-to-r from-amber-50/50 to-yellow-50/50 dark:from-amber-900/20 dark:to-yellow-900/20">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5 text-amber-500" />
+                  Recently Unlocked!
+                </CardTitle>
+                <CardDescription>
+                  Achievements earned in the last 24 hours
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                  {recentAchievements.map((achievement) => (
+                    <div key={achievement.id} className="flex items-center gap-3 p-3 bg-white/60 dark:bg-black/20 rounded-lg border border-amber-200/50">
+                      <div className="text-2xl">{achievement.icon}</div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-sm truncate">{achievement.name}</div>
+                        <Badge className={getRarityColor(achievement.rarity)} variant="secondary">
+                          {achievement.rarity}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Achievements Grid */}
           <div className="space-y-6">
@@ -117,7 +191,7 @@ const Achievements = () => {
                   Unlocked ({unlockedAchievements.length})
                 </h2>
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {unlockedAchievements.map((achievement) => (
+                  {sortedUnlockedAchievements.map((achievement) => (
                     <Card key={achievement.id} className="glass-panel border-0">
                       <CardHeader className="pb-3">
                         <div className="flex items-start justify-between">

@@ -685,6 +685,28 @@ const Mission = () => {
                           clearInventory();
                           setInventory([]);
 
+                          // Show level up notification if applicable
+                          if (characterProgress?.leveledUp) {
+                            toast({
+                              title: `🎉 Level Up! You're now Level ${characterProgress.character.level}!`,
+                              description: `You gained experience and unlocked new abilities!`,
+                              duration: 6000,
+                            });
+                          }
+
+                          // Show new achievements
+                          if (newAchievements?.length > 0) {
+                            newAchievements.forEach((achievement, index) => {
+                              setTimeout(() => {
+                                toast({
+                                  title: `🏆 Achievement Unlocked!`,
+                                  description: `${achievement.icon} ${achievement.name}`,
+                                  duration: 5000,
+                                });
+                              }, (index + 1) * 1000);
+                            });
+                          }
+
                           toast({
                             title: "🎉 Adventure Saved!",
                             description: `Your ${nextSceneCount}-scene adventure has been added to your gallery!`,
