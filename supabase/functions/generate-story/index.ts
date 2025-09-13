@@ -173,7 +173,7 @@ serve(async (req) => {
     const profileSummary = `Player Profile:
 - Age: ${profile.age ?? "unknown"}
 - Reading Level: ${profile.reading ?? profile.readingSkill ?? "unknown"}
-- Interest: ${(profile.selectedBadges || profile.interests || []).join(", ") || "none"}
+- Interest: ${(profile.selectedBadges || []).join(", ") || "none"}${profile.interests ? `\n- Personal Interests: ${profile.interests}` : ""}
 - Mode: ${profile.mode ?? "unknown"}
 - Story Length: ${profile.storyLength ?? "medium"}${profile.topic ? `\n- Topic: ${profile.topic}` : ""}${inventoryContext}`;
 
