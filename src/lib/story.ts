@@ -251,28 +251,50 @@ export const generateNextScene = async (
   const lengthMultiplier = profile.storyLength === 'short' ? 0.7 : profile.storyLength === 'epic' ? 1.5 : 1;
   const adjustedTokens = Math.floor(optimizedTokens * lengthMultiplier);
   
-  const { data, error } = await supabase.functions.invoke("generate-story", {
-    body: { profile, scene, megastory, max_tokens: adjustedTokens, scene_count: sceneCount },
-  });
+  try {
+    // Ensure the user is authenticated before calling the Edge Function
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      throw new Error("Not authenticated");
+    }
 
-  if (error) throw error;
-  
-  if (!data?.success && !data?.ok) {
-    throw new Error(data?.error || "Failed to generate scene");
+    const { data, error } = await supabase.functions.invoke("generate-story", {
+      body: { profile, scene, megastory, max_tokens: adjustedTokens, scene_count: sceneCount },
+    });
+
+    if (error) throw error;
+    
+    if (!data?.success && !data?.ok) {
+      throw new Error(data?.error || "Failed to generate scene");
+    }
+
+    const text: string = data?.resultText ?? data?.text ?? "";
+    const parsed: Scene | null = data?.result ?? data?.parsed ?? null;
+    const result = { text, parsed, raw: data };
+    
+    // Cache the result
+    sceneCache.set(cacheKey, { data: { parsed, text }, timestamp: Date.now() });
+    
+    // Clean old cache entries (keep only last 10)
+    if (sceneCache.size > 10) {
+      const oldestKey = Array.from(sceneCache.keys())[0];
+      sceneCache.delete(oldestKey);
+    }
+
+    return result;
+  } catch (error: any) {
+    console.error("Error in generateNextScene:", error);
+    
+    // Handle authentication errors specifically
+    if (error.message?.includes("authentication") || error.message?.includes("Not authenticated")) {
+      throw new Error("Authentication required. Please refresh the page and try again.");
+    }
+    
+    // Handle Edge Function errors
+    if (error.message?.includes("Edge Function")) {
+      throw new Error("Story generation service is temporarily unavailable. Please try again in a moment.");
+    }
+    
+    throw error;
   }
-
-  const text: string = data?.resultText ?? data?.text ?? "";
-  const parsed: Scene | null = data?.result ?? data?.parsed ?? null;
-  const result = { text, parsed, raw: data };
-  
-  // Cache the result
-  sceneCache.set(cacheKey, { data: { parsed, text }, timestamp: Date.now() });
-  
-  // Clean old cache entries (keep only last 10)
-  if (sceneCache.size > 10) {
-    const oldestKey = Array.from(sceneCache.keys())[0];
-    sceneCache.delete(oldestKey);
-  }
-
-  return result;
 };

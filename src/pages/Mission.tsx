@@ -285,8 +285,12 @@ const Mission = () => {
     init();
   }, [isTrialMode, user, navigate]);
 
+  const [choiceLoading, setChoiceLoading] = useState(false);
+
   const onChoose = async (choiceId: string) => {
-    if (!profile || !scene || !savedStory) return;
+    if (!profile || !scene || !savedStory || choiceLoading) return;
+
+    setChoiceLoading(true);
 
     if (profile.mode === 'learning' && learningSession) {
       const availableChallenge = learningSession.challenges.find(
@@ -295,6 +299,7 @@ const Mission = () => {
       
       if (availableChallenge && Math.random() < 0.3) {
         setCurrentChallenge(availableChallenge);
+        setChoiceLoading(false);
         return;
       }
     }
@@ -311,6 +316,7 @@ const Mission = () => {
           variant: "destructive",
           duration: 4000,
         });
+        setChoiceLoading(false);
         return;
       }
 
@@ -409,7 +415,16 @@ const Mission = () => {
       
     } catch (error: any) {
       console.error("Error in onChoose:", error);
-      setError(error.message ?? "Failed to continue story");
+      toast({
+        title: "Story Error",
+        description: error.message?.includes("authentication") || error.message?.includes("Not authenticated") 
+          ? "Authentication error. Please try refreshing the page." 
+          : "Failed to continue story. Please try again.",
+        variant: "destructive",
+        duration: 5000,
+      });
+    } finally {
+      setChoiceLoading(false);
     }
   };
 
@@ -567,17 +582,23 @@ const Mission = () => {
                 <div className="grid gap-3">
                   {scene.choices.map((choice, index) => {
                     const validation = validateChoice(choice.id, scene, inventory);
+                    const isDisabled = !validation.valid || choiceLoading;
                     return (
                       <button
                         key={choice.id}
                         onClick={() => onChoose(choice.id)}
-                        disabled={!validation.valid}
-                        className={`p-4 rounded-lg text-left transition-all transform hover:scale-[1.02] ${
-                          validation.valid
+                        disabled={isDisabled}
+                        className={`p-4 rounded-lg text-left transition-all transform hover:scale-[1.02] relative ${
+                          validation.valid && !choiceLoading
                             ? 'bg-white/20 hover:bg-white/30 text-white border-2 border-transparent hover:border-white/30'
                             : 'bg-gray-600/50 text-gray-400 border-2 border-gray-500/50 cursor-not-allowed'
-                        }`}
+                        } ${choiceLoading ? 'opacity-75' : ''}`}
                       >
+                        {choiceLoading && (
+                          <div className="absolute inset-0 bg-black/20 rounded-lg flex items-center justify-center">
+                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                          </div>
+                        )}
                         <div className="flex items-start space-x-3">
                           <span className="bg-purple-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold text-sm flex-shrink-0 mt-1">
                             {String.fromCharCode(65 + index)}
@@ -589,7 +610,7 @@ const Mission = () => {
                                 Requires: {choice.requiresItem}
                               </p>
                             )}
-                            {!validation.valid && (
+                            {!validation.valid && !choiceLoading && (
                               <p className="text-sm mt-1 text-red-300">
                                 {validation.reason}
                               </p>
