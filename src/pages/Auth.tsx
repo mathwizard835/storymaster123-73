@@ -37,6 +37,7 @@ const Auth = () => {
 
     try {
       const redirectUrl = `${window.location.origin}/`;
+      console.log('Signing up with redirect URL:', redirectUrl);
       
       const { error } = await supabase.auth.signUp({
         email,
@@ -47,6 +48,7 @@ const Auth = () => {
       });
 
       if (error) {
+        console.error('Signup error:', error);
         if (error.message.includes('User already registered')) {
           setError('An account with this email already exists. Please sign in instead.');
         } else {
@@ -55,10 +57,11 @@ const Auth = () => {
       } else {
         toast({
           title: "Account created successfully!",
-          description: "Please check your email to verify your account.",
+          description: "Check your email for the confirmation link. If the link doesn't work, the Supabase URL settings need to be updated.",
         });
       }
     } catch (err: any) {
+      console.error('Signup catch error:', err);
       setError('An unexpected error occurred');
     } finally {
       setLoading(false);
@@ -210,6 +213,13 @@ const Auth = () => {
                       <AlertDescription>{error}</AlertDescription>
                     </Alert>
                   )}
+                  
+                  <Alert className="bg-blue-900/50 border-blue-500/50 text-blue-200">
+                    <AlertDescription>
+                      📧 Email confirmation required. If the confirmation link shows "localhost not responding", 
+                      you need to update your Supabase URL configuration to use: {window.location.origin}
+                    </AlertDescription>
+                  </Alert>
                   
                   <Button 
                     type="submit" 
