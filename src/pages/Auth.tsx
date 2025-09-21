@@ -28,16 +28,7 @@ const Auth = () => {
       }
     };
     
-    // Check for email verification success
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('verified') === 'true') {
-      toast({
-        title: "Email verified successfully!",
-        description: "Welcome to StoryMaster Quest! Your adventure awaits.",
-      });
-      // Remove the query parameter
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
+    // Email verification is now handled in useAuth hook
     
     checkUser();
   }, [navigate, toast]);
@@ -48,7 +39,7 @@ const Auth = () => {
     setError('');
 
     try {
-      const redirectUrl = `${window.location.origin}/auth?verified=true`;
+      const redirectUrl = `${window.location.origin}/`;
       console.log('Signing up with redirect URL:', redirectUrl);
       
       const { data, error } = await supabase.auth.signUp({

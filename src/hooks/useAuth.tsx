@@ -20,6 +20,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        console.log('Auth event:', event, session?.user?.email);
+        
+        // Handle email verification success
+        if (event === 'SIGNED_IN' && session?.user?.email_confirmed_at) {
+          // Check if this is from email verification by looking at URL params
+          const urlParams = new URLSearchParams(window.location.search);
+          const isFromVerification = urlParams.has('type') && urlParams.get('type') === 'signup';
+          
+          if (isFromVerification) {
+            // Show success message
+            import('@/hooks/use-toast').then(({ toast }) => {
+              toast({
+                title: "Email verified successfully!",
+                description: "Welcome to StoryMaster Quest! Your adventure awaits.",
+              });
+            });
+            
+            // Clean up URL
+            window.history.replaceState({}, document.title, '/');
+          }
+        }
+        
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
