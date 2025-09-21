@@ -809,7 +809,7 @@ const Mission = () => {
                   Start New Adventure
                 </button>
                 <button
-                  onClick={() => navigate('/')}
+                  onClick={() => navigate('/dashboard')}
                   className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 px-4 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
                 >
                   <Shield className="h-4 w-4" />

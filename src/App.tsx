@@ -11,6 +11,7 @@ import Mission from "./pages/Mission";
 import ComingSoon from "./pages/ComingSoon";
 import StoryGallery from "./pages/StoryGallery";
 import Achievements from "./pages/Achievements";
+import Dashboard from "./pages/Dashboard";
 import ErrorBoundary from "./components/ErrorBoundary";
 import Auth from "./pages/Auth";
 
@@ -69,6 +70,7 @@ const App = () => (
             <Route path="/mission" element={<Mission />} />
             <Route path="/gallery" element={<ProtectedRoute><StoryGallery /></ProtectedRoute>} />
             <Route path="/achievements" element={<ProtectedRoute><Achievements /></ProtectedRoute>} />
+            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/coming-soon" element={<ProtectedRoute><ComingSoon /></ProtectedRoute>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
