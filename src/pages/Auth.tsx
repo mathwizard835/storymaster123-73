@@ -33,6 +33,39 @@ const Auth = () => {
     checkUser();
   }, [navigate, toast]);
 
+  const handleResendVerification = async () => {
+    if (!email) {
+      setError('Please enter your email address first');
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`
+        }
+      });
+      
+      if (error) {
+        console.error('Resend error:', error);
+        setError(error.message);
+      } else {
+        toast({
+          title: "Email resent!",
+          description: "Please check your email (including spam folder) for the verification link.",
+        });
+      }
+    } catch (err: any) {
+      console.error('Resend catch error:', err);
+      setError('Failed to resend email');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -41,6 +74,7 @@ const Auth = () => {
     try {
       const redirectUrl = `${window.location.origin}/`;
       console.log('Signing up with redirect URL:', redirectUrl);
+      console.log('Email domain:', email.split('@')[1]);
       
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -50,20 +84,41 @@ const Auth = () => {
         }
       });
 
+      console.log('Signup response:', { data, error });
+      console.log('User created:', data?.user?.id);
+      console.log('Email confirmed:', data?.user?.email_confirmed_at);
+      console.log('Confirmation sent at:', data?.user?.confirmation_sent_at);
+
       if (error) {
         console.error('Signup error:', error);
         if (error.message.includes('User already registered')) {
           setError('An account with this email already exists. Please sign in instead.');
+        } else if (error.message.includes('rate limit')) {
+          setError('Too many signup attempts. Please wait a few minutes before trying again.');
         } else {
-          setError(error.message);
+          setError(`Signup failed: ${error.message}`);
         }
       } else {
         if (data?.user && !data.session) {
+          // User created but needs email verification
+          console.log('User created, verification email should be sent');
           toast({
             title: "Check your email!",
-            description: "We sent you a verification link. Click it to activate your account and start your quest!",
+            description: "We sent you a verification link. Check your spam folder if you don't see it within a few minutes.",
+            duration: 8000,
           });
-        } else {
+          
+          // Show a helpful message about common email issues
+          setTimeout(() => {
+            toast({
+              title: "Email not received?",
+              description: "Check your spam folder or try resending the verification email.",
+              duration: 10000,
+            });
+          }, 10000);
+        } else if (data?.session) {
+          // User was automatically signed in (email confirmation disabled)
+          console.log('User automatically signed in');
           toast({
             title: "Account created successfully!",
             description: "You can now start your adventure.",
@@ -73,7 +128,7 @@ const Auth = () => {
       }
     } catch (err: any) {
       console.error('Signup catch error:', err);
-      setError('An unexpected error occurred');
+      setError('An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -234,6 +289,18 @@ const Auth = () => {
                     {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Create Account
                   </Button>
+                  
+                  <div className="text-center">
+                    <Button 
+                      type="button"
+                      variant="ghost"
+                      onClick={handleResendVerification}
+                      disabled={loading || !email}
+                      className="text-purple-200 hover:text-white text-sm"
+                    >
+                      Didn't receive email? Resend verification
+                    </Button>
+                  </div>
                 </form>
               </TabsContent>
             </Tabs>
