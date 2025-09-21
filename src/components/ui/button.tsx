@@ -28,6 +28,8 @@ const buttonVariants = cva(
         lg: "h-11 rounded-md px-8",
         xl: "h-14 rounded-lg px-10 text-lg",
         icon: "h-10 w-10",
+        mobile: "h-12 px-6 py-3 text-base", // Mobile-optimized touch target
+        "mobile-lg": "h-14 px-8 py-4 text-lg", // Large mobile touch target
       },
     },
     defaultVariants: {

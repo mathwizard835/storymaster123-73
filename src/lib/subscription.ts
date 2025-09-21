@@ -50,7 +50,7 @@ export const getUserSubscription = async (): Promise<{
   plan: SubscriptionPlan | null;
 }> => {
   try {
-    const deviceId = getDeviceId();
+    const deviceId = await getDeviceId();
     const { data, error } = await supabase
       .from('user_subscriptions')
       .select(`
@@ -81,7 +81,7 @@ export const getUserSubscription = async (): Promise<{
 
 export const upgradeSubscription = async (planId: string): Promise<boolean> => {
   try {
-    const deviceId = getDeviceId();
+    const deviceId = await getDeviceId();
     
     // Cancel existing subscription if any
     await supabase
@@ -114,7 +114,7 @@ export const getStoriesRemaining = async (): Promise<{
   canPlay: boolean;
 }> => {
   try {
-    const deviceId = getDeviceId();
+    const deviceId = await getDeviceId();
     const today = new Date().toISOString().split('T')[0];
     
     // Get current subscription plan

@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { updateProgress } from "@/lib/achievements";
 import { gainExperience } from "@/lib/character";
+import { mobileStorage } from "@/lib/mobileStorage";
 
 export type InventoryItem = {
   id: string;
@@ -74,17 +75,17 @@ export type CompletedStory = {
   choicesMade: string[];
 };
 
-export const saveProfileToLocal = (profile: Profile) => {
+export const saveProfileToLocal = async (profile: Profile) => {
   try {
-    localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+    await mobileStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
   } catch (e) {
     console.error("Failed to save profile", e);
   }
 };
 
-export const loadProfile = (): Profile | null => {
+export const loadProfile = async (): Promise<Profile | null> => {
   try {
-    const raw = localStorage.getItem(PROFILE_KEY);
+    const raw = await mobileStorage.getItem(PROFILE_KEY);
     return raw ? (JSON.parse(raw) as Profile) : null;
   } catch (e) {
     console.error("Failed to load profile", e);
@@ -93,12 +94,12 @@ export const loadProfile = (): Profile | null => {
 };
 
 // Get or create a unique device ID for tracking story completions
-export const getDeviceId = (): string => {
+export const getDeviceId = async (): Promise<string> => {
   try {
-    let deviceId = localStorage.getItem(DEVICE_ID_KEY);
+    let deviceId = await mobileStorage.getItem(DEVICE_ID_KEY);
     if (!deviceId) {
       deviceId = crypto.randomUUID();
-      localStorage.setItem(DEVICE_ID_KEY, deviceId);
+      await mobileStorage.setItem(DEVICE_ID_KEY, deviceId);
     }
     return deviceId;
   } catch (e) {
@@ -131,18 +132,18 @@ export const checkStoryLimit = async (): Promise<{ canPlay: boolean; completedCo
 };
 
 // Save current story progress
-export const saveCurrentStory = (story: SavedStory): void => {
+export const saveCurrentStory = async (story: SavedStory): Promise<void> => {
   try {
-    localStorage.setItem(CURRENT_STORY_KEY, JSON.stringify(story));
+    await mobileStorage.setItem(CURRENT_STORY_KEY, JSON.stringify(story));
   } catch (e) {
     console.error("Failed to save current story", e);
   }
 };
 
 // Load current story progress
-export const loadCurrentStory = (): SavedStory | null => {
+export const loadCurrentStory = async (): Promise<SavedStory | null> => {
   try {
-    const raw = localStorage.getItem(CURRENT_STORY_KEY);
+    const raw = await mobileStorage.getItem(CURRENT_STORY_KEY);
     return raw ? (JSON.parse(raw) as SavedStory) : null;
   } catch (e) {
     console.error("Failed to load current story", e);
@@ -151,9 +152,9 @@ export const loadCurrentStory = (): SavedStory | null => {
 };
 
 // Clear current story progress
-export const clearCurrentStory = (): void => {
+export const clearCurrentStory = async (): Promise<void> => {
   try {
-    localStorage.removeItem(CURRENT_STORY_KEY);
+    await mobileStorage.removeItem(CURRENT_STORY_KEY);
   } catch (e) {
     console.error("Failed to clear current story", e);
   }
@@ -187,7 +188,7 @@ export const markStoryCompleted = async (
   choiceCount: number = 0
 ): Promise<{ newAchievements: any[]; characterProgress: any }> => {
   try {
-    const deviceId = getDeviceId();
+    const deviceId = await getDeviceId();
     const { error } = await supabase
       .from('story_completions')
       .insert([

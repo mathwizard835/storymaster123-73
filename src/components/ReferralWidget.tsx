@@ -49,7 +49,7 @@ export const ReferralWidget = () => {
 
   const handleShareReferral = async () => {
     const baseUrl = window.location.origin;
-    const shareUrl = getShareableReferralLink(baseUrl);
+    const shareUrl = await getShareableReferralLink(baseUrl);
     
     if (navigator.share) {
       try {

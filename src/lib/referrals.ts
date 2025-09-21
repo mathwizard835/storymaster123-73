@@ -11,19 +11,19 @@ export type Referral = {
   completed_at?: string;
 };
 
-export const generateReferralCode = (): string => {
-  const deviceId = getDeviceId();
+export const generateReferralCode = async (): Promise<string> => {
+  const deviceId = await getDeviceId();
   // Create a short, shareable code from device ID
   return deviceId.substring(0, 8).toUpperCase();
 };
 
-export const getReferralCode = (): string => {
-  return generateReferralCode();
+export const getReferralCode = async (): Promise<string> => {
+  return await generateReferralCode();
 };
 
 export const createReferral = async (referralCode: string): Promise<{ success: boolean; message: string }> => {
   try {
-    const deviceId = getDeviceId();
+    const deviceId = await getDeviceId();
     const referrerCode = referralCode.toUpperCase();
     
     // Find referrer device ID from code (first 8 chars)
@@ -75,7 +75,7 @@ export const createReferral = async (referralCode: string): Promise<{ success: b
 
 export const completeReferral = async (): Promise<void> => {
   try {
-    const deviceId = getDeviceId();
+    const deviceId = await getDeviceId();
 
     // Find pending referral for this user
     const { data: referral } = await supabase
@@ -108,7 +108,7 @@ export const getReferralStats = async (): Promise<{
   referralCode: string;
 }> => {
   try {
-    const deviceId = getDeviceId();
+    const deviceId = await getDeviceId();
     
     const { data: referrals } = await supabase
       .from('referrals')
@@ -123,7 +123,7 @@ export const getReferralStats = async (): Promise<{
       totalReferrals,
       completedReferrals,
       bonusStoriesEarned,
-      referralCode: getReferralCode()
+      referralCode: await getReferralCode()
     };
   } catch (e) {
     console.error("Failed to get referral stats", e);
@@ -131,12 +131,12 @@ export const getReferralStats = async (): Promise<{
       totalReferrals: 0,
       completedReferrals: 0,
       bonusStoriesEarned: 0,
-      referralCode: getReferralCode()
+      referralCode: await getReferralCode()
     };
   }
 };
 
-export const getShareableReferralLink = (baseUrl: string): string => {
-  const code = getReferralCode();
+export const getShareableReferralLink = async (baseUrl: string): Promise<string> => {
+  const code = await getReferralCode();
   return `${baseUrl}?ref=${code}`;
 };

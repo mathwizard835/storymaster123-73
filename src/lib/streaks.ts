@@ -18,7 +18,7 @@ export const updateDailyStreak = async (): Promise<{
   isNewRecord: boolean;
 }> => {
   try {
-    const deviceId = getDeviceId();
+    const deviceId = await getDeviceId();
     const today = new Date().toISOString().split('T')[0];
 
     // Get existing streak data
@@ -112,7 +112,7 @@ export const updateDailyStreak = async (): Promise<{
 
 export const getDailyStreak = async (): Promise<DailyStreak | null> => {
   try {
-    const deviceId = getDeviceId();
+    const deviceId = await getDeviceId();
     
     const { data, error } = await supabase
       .from('daily_streaks')
