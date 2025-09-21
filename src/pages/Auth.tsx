@@ -45,7 +45,7 @@ const Auth = () => {
         type: 'signup',
         email: email,
         options: {
-          emailRedirectTo: `${window.location.origin}/`
+          emailRedirectTo: 'https://9f53e10f-c713-425a-84ff-901a9d969a68.lovableproject.com/'
         }
       });
       
@@ -72,7 +72,7 @@ const Auth = () => {
     setError('');
 
     try {
-      const redirectUrl = `${window.location.origin}/`;
+      const redirectUrl = 'https://9f53e10f-c713-425a-84ff-901a9d969a68.lovableproject.com/';
       console.log('Signing up with redirect URL:', redirectUrl);
       console.log('Email domain:', email.split('@')[1]);
       
