@@ -37,9 +37,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               });
             });
             
-            // Clean up URL and redirect to profile setup
-            window.history.replaceState({}, document.title, '/profile?new=true');
-            window.location.href = '/profile?new=true';
+            // Clean up URL
+            window.history.replaceState({}, document.title, '/');
           }
         }
         
