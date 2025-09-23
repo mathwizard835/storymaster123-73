@@ -1,8 +1,8 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'app.lovable.2809bfa0b669424e9eb06511e3cb6327',
-  appName: 'storymaster123-73',
+  appId: 'com.lovable.storymaster123',
+  appName: 'StoryMaster Quest AI',
   webDir: 'dist',
   server: {
     url: 'https://2809bfa0-b669-424e-9eb0-6511e3cb6327.lovableproject.com?forceHideBadge=true',
