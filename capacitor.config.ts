@@ -4,10 +4,10 @@ const config: CapacitorConfig = {
   appId: 'com.lovable.storymaster123',
   appName: 'StoryMaster Quest AI',
   webDir: 'dist',
-  server: {
-    url: 'https://2809bfa0-b669-424e-9eb0-6511e3cb6327.lovableproject.com?forceHideBadge=true',
-    cleartext: true
-  },
+  // server: {
+  //   url: 'https://2809bfa0-b669-424e-9eb0-6511e3cb6327.lovableproject.com?forceHideBadge=true',
+  //   cleartext: true
+  // },
   bundledWebRuntime: false,
   plugins: {
     SplashScreen: {
