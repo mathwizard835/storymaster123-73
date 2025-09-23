@@ -22,9 +22,6 @@ import {
   Eye,
   Compass,
   GraduationCap,
-  Baby,
-  UserCircle,
-  Heart,
 } from "lucide-react";
 import { saveProfileToLocal } from "@/lib/story";
 
@@ -49,8 +46,6 @@ const modes = [
 const ProfileSetup = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [showAudienceSelection, setShowAudienceSelection] = useState<boolean>(true);
-  const [audience, setAudience] = useState<string>("");
   const [age, setAge] = useState<number>(8);
   const [reading, setReading] = useState<string>("adventurer");
   const [selectedBadges, setSelectedBadges] = useState<string[]>([]);
@@ -65,22 +60,8 @@ const ProfileSetup = () => {
     );
   };
 
-  const handleAudienceSelect = (selectedAudience: string) => {
-    setAudience(selectedAudience);
-    setShowAudienceSelection(false);
-    
-    // Set age defaults based on audience
-    if (selectedAudience === "kid") {
-      setAge(8);
-    } else if (selectedAudience === "teen") {
-      setAge(14);
-    } else if (selectedAudience === "parent") {
-      setAge(35);
-    }
-  };
-
   const handleStart = () => {
-    const profile = { audience, age, reading, selectedBadges, mode, storyLength: storyLength as 'short' | 'medium' | 'epic', topic, interests };
+    const profile = { age, reading, selectedBadges, mode, storyLength: storyLength as 'short' | 'medium' | 'epic', topic, interests };
     saveProfileToLocal(profile);
     
     // Check if this should be a new story
@@ -104,64 +85,12 @@ const ProfileSetup = () => {
 
       <main className="min-h-screen w-full bg-background">
         <section className="container py-10 md:py-16">
-          {showAudienceSelection ? (
-            <>
-              <h1 className="font-heading text-3xl md:text-5xl font-extrabold text-center">
-                Who's Playing?
-              </h1>
-              <p className="mt-2 text-center text-muted-foreground">
-                Choose your adventure level to get the perfect story experience.
-              </p>
-              
-              <div className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-3 max-w-4xl mx-auto">
-                <Button
-                  size="xl"
-                  variant="outline"
-                  onClick={() => handleAudienceSelect("kid")}
-                  className="h-32 flex flex-col items-center gap-4 text-lg font-bold hover:bg-blue-50 hover:border-blue-300"
-                >
-                  <Baby className="h-12 w-12 text-blue-500" />
-                  <div>
-                    <div>I'm a Kid</div>
-                    <div className="text-sm font-normal text-muted-foreground">6-11 years old</div>
-                  </div>
-                </Button>
-                
-                <Button
-                  size="xl"
-                  variant="outline"
-                  onClick={() => handleAudienceSelect("teen")}
-                  className="h-32 flex flex-col items-center gap-4 text-lg font-bold hover:bg-purple-50 hover:border-purple-300"
-                >
-                  <UserCircle className="h-12 w-12 text-purple-500" />
-                  <div>
-                    <div>I'm a Teen</div>
-                    <div className="text-sm font-normal text-muted-foreground">12-17 years old</div>
-                  </div>
-                </Button>
-                
-                <Button
-                  size="xl"
-                  variant="outline"
-                  onClick={() => handleAudienceSelect("parent")}
-                  className="h-32 flex flex-col items-center gap-4 text-lg font-bold hover:bg-green-50 hover:border-green-300"
-                >
-                  <Heart className="h-12 w-12 text-green-500" />
-                  <div>
-                    <div>I'm a Parent</div>
-                    <div className="text-sm font-normal text-muted-foreground">Playing with my child</div>
-                  </div>
-                </Button>
-              </div>
-            </>
-          ) : (
-            <>
-              <h1 className="font-heading text-3xl md:text-5xl font-extrabold text-center">
-                Create Your Hero Profile
-              </h1>
-              <p className="mt-2 text-center text-muted-foreground">
-                Configure your powers and style. You can always change them later.
-              </p>
+          <h1 className="font-heading text-3xl md:text-5xl font-extrabold text-center">
+            Create Your Hero Profile
+          </h1>
+          <p className="mt-2 text-center text-muted-foreground">
+            Configure your powers and style. You can always change them later.
+          </p>
 
           <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2">
             {/* Age */}
@@ -303,13 +232,11 @@ const ProfileSetup = () => {
             </article>
           </div>
 
-              <div className="mt-8 flex justify-center">
-                <Button size="xl" variant="hero" onClick={handleStart}>
-                  Start My Quest
-                </Button>
-              </div>
-            </>
-          )}
+          <div className="mt-8 flex justify-center">
+            <Button size="xl" variant="hero" onClick={handleStart}>
+              Start My Quest
+            </Button>
+          </div>
         </section>
       </main>
     </>
