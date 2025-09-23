@@ -13,15 +13,11 @@ import { loadCurrentStoryFromDatabase } from "@/lib/databaseStory";
 import { BookOpen, Star, Shield, Zap, Heart, Brain, Gamepad2, Users, Sparkles, ChevronDown, Rocket, Crown, GraduationCap, LogOut, Play } from "lucide-react";
 import { useState, useEffect } from "react";
 
-type AudienceType = 'kid' | 'teen' | 'parent' | null;
-
 const Index = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const completedStories = getCompletedStories();
   const [showPitch, setShowPitch] = useState(true);
-  const [audience, setAudience] = useState<AudienceType>(null);
-  const [showAudienceSelector, setShowAudienceSelector] = useState(true);
   const [hasActiveStory, setHasActiveStory] = useState(false);
   const [showNewStoryDialog, setShowNewStoryDialog] = useState(false);
   
@@ -177,65 +173,17 @@ const Index = () => {
     );
   }
 
-  const handleAudienceSelect = (selectedAudience: AudienceType) => {
-    setAudience(selectedAudience);
-    setShowAudienceSelector(false);
+  const content = {
+    title: "🌟 Become the Hero of Your Own Epic Adventure!",
+    subtitle: "Create amazing stories where YOU are the main character! Fight dragons, explore space, solve mysteries, and save the day!",
+    heroText: "Every Story is YOUR Adventure!",
+    ctaButton: "🚀 Start My Epic Quest!",
+    benefits: [
+      { icon: <Shield className="h-5 w-5 text-green-400" />, text: "Zero Risk - 100% Safe" },
+      { icon: <Brain className="h-5 w-5 text-blue-400" />, text: "Proven Results - Builds IQ" },
+      { icon: <Sparkles className="h-5 w-5 text-purple-400" />, text: "Instant Magic - Perfect Fit" }
+    ]
   };
-
-  const getAudienceContent = () => {
-    switch (audience) {
-      case 'kid':
-        return {
-          title: "🌟 Become the Hero of Your Own Epic Adventure!",
-          subtitle: "Create amazing stories where YOU are the main character! Fight dragons, explore space, solve mysteries, and save the day!",
-          heroText: "Every Story is YOUR Adventure!",
-          ctaButton: "🚀 Start My Epic Quest!",
-          benefits: [
-            { icon: <Rocket className="h-5 w-5 text-purple-400" />, text: "You're the HERO of every story!" },
-            { icon: <Crown className="h-5 w-5 text-yellow-400" />, text: "Unlock cool achievements & rewards!" },
-            { icon: <Zap className="h-5 w-5 text-blue-400" />, text: "Choose your own adventure path!" }
-          ]
-        };
-      case 'teen':
-        return {
-          title: "🔥 The Most Addictive Storytelling Experience Ever Built",
-          subtitle: "Daily story drops, evolving avatars, choice chains, squad missions, and viral story clips. This isn't just reading - it's the future of gaming.",
-          heroText: "Your Choices Build Legends",
-          ctaButton: "🎮 Join The Story Revolution",
-          benefits: [
-            { icon: <Zap className="h-5 w-5 text-cyan-400" />, text: "Daily story drops + evolving avatar system" },
-            { icon: <Users className="h-5 w-5 text-purple-400" />, text: "Squad missions + spectator mode with friends" },
-            { icon: <Crown className="h-5 w-5 text-yellow-400" />, text: "Choice chains + Hall of Legends ranking" }
-          ]
-        };
-      case 'parent':
-        return {
-          title: "🎯 Screen Time That Actually Makes Your Child Smarter",
-          subtitle: "While other kids waste hours on mindless content, yours will be building critical thinking, vocabulary, and decision-making skills. Finally - guilt-free screen time!",
-          heroText: "Transform Screen Time Into Brain Time",
-          ctaButton: "✅ Give My Child This Advantage",
-          benefits: [
-            { icon: <GraduationCap className="h-5 w-5 text-green-400" />, text: "Proven to improve reading & critical thinking" },
-            { icon: <Shield className="h-5 w-5 text-blue-400" />, text: "100% safe - no ads, no inappropriate content" },
-            { icon: <Star className="h-5 w-5 text-yellow-400" />, text: "Track your child's progress & growth" }
-          ]
-        };
-      default:
-        return {
-          title: "Finally! Screen Time That Actually Makes Kids Smarter",
-          subtitle: "Your child becomes the hero in personalized AI adventures that adapt to their age, interests, and reading level.",
-          heroText: "Transform Screen Time Into Brain Time",
-          ctaButton: "🚀 Start FREE Adventure Now",
-          benefits: [
-            { icon: <Shield className="h-5 w-5 text-green-400" />, text: "Zero Risk - 100% Safe" },
-            { icon: <Brain className="h-5 w-5 text-blue-400" />, text: "Proven Results - Builds IQ" },
-            { icon: <Sparkles className="h-5 w-5 text-purple-400" />, text: "Instant Magic - Perfect Fit" }
-          ]
-        };
-    }
-  };
-
-  const content = getAudienceContent();
 
   return (
     <>
@@ -253,67 +201,6 @@ const Index = () => {
         }}
       />
 
-      {/* Audience Selector Modal */}
-      <Dialog open={showAudienceSelector} onOpenChange={setShowAudienceSelector}>
-        <DialogContent className="max-w-2xl bg-gradient-to-br from-primary/10 via-background to-accent/10 border-primary/20">
-          <DialogHeader>
-            <DialogTitle className="text-3xl font-bold text-center mb-4">
-              Welcome to StoryMaster Quest! 🎮✨
-            </DialogTitle>
-          </DialogHeader>
-          <div className="text-center mb-8">
-            <p className="text-xl text-muted-foreground mb-8">
-              Let's create the perfect experience for you!
-            </p>
-            <div className="grid gap-4">
-              <Button
-                size="xl"
-                variant="outline"
-                onClick={() => handleAudienceSelect('kid')}
-                className="h-20 text-lg font-semibold bg-gradient-to-r from-purple-100 to-pink-100 hover:from-purple-200 hover:to-pink-200 border-purple-200 text-purple-800 dark:from-purple-900/30 dark:to-pink-900/30 dark:text-purple-200"
-              >
-                <div className="flex items-center gap-3">
-                  <Crown className="h-8 w-8" />
-                  <div>
-                    <div>I'm a Kid (Ages 6-11)</div>
-                    <div className="text-sm opacity-75">I want epic adventures!</div>
-                  </div>
-                </div>
-              </Button>
-              
-              <Button
-                size="xl"
-                variant="outline"
-                onClick={() => handleAudienceSelect('teen')}
-                className="h-20 text-lg font-semibold bg-gradient-to-r from-blue-100 to-cyan-100 hover:from-blue-200 hover:to-cyan-200 border-blue-200 text-blue-800 dark:from-blue-900/30 dark:to-cyan-900/30 dark:text-blue-200"
-              >
-                <div className="flex items-center gap-3">
-                  <Zap className="h-8 w-8" />
-                  <div>
-                    <div>I'm a Teen (Ages 12-17)</div>
-                    <div className="text-sm opacity-75">I want addictive gameplay!</div>
-                  </div>
-                </div>
-              </Button>
-              
-              <Button
-                size="xl"
-                variant="outline"
-                onClick={() => handleAudienceSelect('parent')}
-                className="h-20 text-lg font-semibold bg-gradient-to-r from-green-100 to-emerald-100 hover:from-green-200 hover:to-emerald-200 border-green-200 text-green-800 dark:from-green-900/30 dark:to-emerald-900/30 dark:text-green-200"
-              >
-                <div className="flex items-center gap-3">
-                  <Heart className="h-8 w-8" />
-                  <div>
-                    <div>I'm a Parent</div>
-                    <div className="text-sm opacity-75">Show me the benefits!</div>
-                  </div>
-                </div>
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
       
       {/* New Story Confirmation Dialog */}
       <NewStoryDialog open={showNewStoryDialog} onOpenChange={setShowNewStoryDialog}>
@@ -365,10 +252,7 @@ const Index = () => {
             </h1>
             <p className="text-xl md:text-2xl text-muted-foreground mb-8 leading-relaxed">
               <strong className="text-foreground text-2xl">{content.subtitle}</strong><br />
-              {audience === 'parent' && <span className="text-lg">🛡️ 100% Safe • 🧠 Builds Critical Thinking • ⚡ Instant Results</span>}
-              {audience === 'kid' && <span className="text-lg">🌟 Be The Hero • 🏆 Earn Rewards • 🎮 Choose Your Path</span>}
-              {audience === 'teen' && <span className="text-lg">⚡ Daily Drops • 🎮 Squad Missions • 👑 Hall of Legends</span>}
-              {!audience && <span className="text-lg">🛡️ 100% Safe • 🧠 Builds Critical Thinking • ⚡ Instant Engagement</span>}
+              <span className="text-lg">🌟 Be The Hero • 🏆 Earn Rewards • 🎮 Choose Your Path</span>
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
