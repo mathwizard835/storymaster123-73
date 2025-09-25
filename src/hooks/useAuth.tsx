@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { isMobilePlatform } from '@/lib/mobileFeatures';
 
 interface AuthContextType {
   user: User | null;
@@ -17,6 +18,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Mobile-specific initialization - prevent external auth redirects
+    if (isMobilePlatform()) {
+      // Clear any existing URL parameters that might cause redirects
+      if (window.location.search) {
+        const cleanUrl = window.location.origin + window.location.pathname;
+        window.history.replaceState({}, document.title, cleanUrl);
+      }
+    }
+
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
@@ -26,7 +36,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const urlParams = new URLSearchParams(window.location.search);
           const isFromVerification = urlParams.has('type') && urlParams.get('type') === 'signup';
           
-          if (isFromVerification) {
+          if (isFromVerification && !isMobilePlatform()) { // Only show for web users
             // Show success message
             import('@/hooks/use-toast').then(({ toast }) => {
               toast({
