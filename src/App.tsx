@@ -4,7 +4,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { isMobilePlatform } from "@/lib/mobileFeatures";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import ProfileSetup from "./pages/ProfileSetup";
@@ -22,7 +21,6 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   const searchParams = new URLSearchParams(window.location.search);
   const isTrialMode = searchParams.get('trial') === 'true';
-  const isMobile = isMobilePlatform();
   
   if (loading) {
     return (
@@ -32,14 +30,9 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     );
   }
   
-  // Allow access in trial mode or for mobile users without authentication
-  if (!user && !isTrialMode && !isMobile) {
+  // Allow access in trial mode even without authentication
+  if (!user && !isTrialMode) {
     return <Navigate to="/auth" replace />;
-  }
-  
-  // For mobile users without auth, redirect to trial mode instead of auth
-  if (!user && isMobile && !isTrialMode) {
-    return <Navigate to="/?trial=true" replace />;
   }
   
   return <>{children}</>;
@@ -47,7 +40,6 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
 const PublicRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
-  const isMobile = isMobilePlatform();
   
   if (loading) {
     return (
@@ -57,7 +49,6 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
     );
   }
   
-  // For mobile users, redirect to home instead of auth loop
   if (user) {
     return <Navigate to="/" replace />;
   }
@@ -65,36 +56,29 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-const App = () => {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <ErrorBoundary>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              {/* For mobile, make auth optional - redirect mobile users to home */}
-              <Route path="/auth" element={
-                isMobilePlatform() ? 
-                  <Navigate to="/" replace /> : 
-                  <PublicRoute><Auth /></PublicRoute>
-              } />
-              <Route path="/" element={<Index />} />
-              <Route path="/profile" element={<ProtectedRoute><ProfileSetup /></ProtectedRoute>} />
-              <Route path="/mission" element={<Mission />} />
-              <Route path="/gallery" element={<ProtectedRoute><StoryGallery /></ProtectedRoute>} />
-              <Route path="/achievements" element={<ProtectedRoute><Achievements /></ProtectedRoute>} />
-              <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-              <Route path="/coming-soon" element={<ProtectedRoute><ComingSoon /></ProtectedRoute>} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </ErrorBoundary>
-      </TooltipProvider>
-    </QueryClientProvider>
-  );
-};
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <ErrorBoundary>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/auth" element={<PublicRoute><Auth /></PublicRoute>} />
+            <Route path="/" element={<Index />} />
+            <Route path="/profile" element={<ProtectedRoute><ProfileSetup /></ProtectedRoute>} />
+            <Route path="/mission" element={<Mission />} />
+            <Route path="/gallery" element={<ProtectedRoute><StoryGallery /></ProtectedRoute>} />
+            <Route path="/achievements" element={<ProtectedRoute><Achievements /></ProtectedRoute>} />
+            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/coming-soon" element={<ProtectedRoute><ComingSoon /></ProtectedRoute>} />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </ErrorBoundary>
+    </TooltipProvider>
+  </QueryClientProvider>
+);
 
 export default App;
