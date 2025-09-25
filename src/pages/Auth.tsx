@@ -10,6 +10,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, BookOpen, Stars } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { signInSchema, signUpSchema, type SignInFormData, type SignUpFormData } from '@/lib/validationSchemas';
+import { isMobilePlatform } from '@/lib/mobileFeatures';
 import heroPortal from '@/assets/hero-portal.jpg';
 
 const Auth = () => {
@@ -42,12 +43,15 @@ const Auth = () => {
     
     setLoading(true);
     try {
+      const isNative = isMobilePlatform();
+      const redirectUrl = isNative ? undefined : window.location.origin;
+      
       const { error } = await supabase.auth.resend({
         type: 'signup',
         email: email,
-        options: {
-          emailRedirectTo: 'https://9f53e10f-c713-425a-84ff-901a9d969a68.lovableproject.com/'
-        }
+        options: redirectUrl ? {
+          emailRedirectTo: redirectUrl
+        } : undefined
       });
       
       if (error) {
@@ -80,14 +84,15 @@ const Auth = () => {
         return;
       }
 
-      const redirectUrl = 'https://9f53e10f-c713-425a-84ff-901a9d969a68.lovableproject.com/';
+      const isNative = isMobilePlatform();
+      const redirectUrl = isNative ? undefined : window.location.origin;
       
       const { data, error } = await supabase.auth.signUp({
         email: validationResult.data.email,
         password: validationResult.data.password,
-        options: {
+        options: redirectUrl ? {
           emailRedirectTo: redirectUrl
-        }
+        } : undefined
       });
 
       if (error) {
