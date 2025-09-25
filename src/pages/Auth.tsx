@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, BookOpen, Stars } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { signInSchema, signUpSchema, type SignInFormData, type SignUpFormData } from '@/lib/validationSchemas';
 import heroPortal from '@/assets/hero-portal.jpg';
 
 const Auth = () => {
@@ -50,7 +51,6 @@ const Auth = () => {
       });
       
       if (error) {
-        console.error('Resend error:', error);
         setError(error.message);
       } else {
         toast({
@@ -59,7 +59,6 @@ const Auth = () => {
         });
       }
     } catch (err: any) {
-      console.error('Resend catch error:', err);
       setError('Failed to resend email');
     } finally {
       setLoading(false);
@@ -72,25 +71,26 @@ const Auth = () => {
     setError('');
 
     try {
+      // Validate input data
+      const validationResult = signUpSchema.safeParse({ email, password });
+      if (!validationResult.success) {
+        const errors = validationResult.error.issues.map(err => err.message).join('. ');
+        setError(errors);
+        setLoading(false);
+        return;
+      }
+
       const redirectUrl = 'https://9f53e10f-c713-425a-84ff-901a9d969a68.lovableproject.com/';
-      console.log('Signing up with redirect URL:', redirectUrl);
-      console.log('Email domain:', email.split('@')[1]);
       
       const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
+        email: validationResult.data.email,
+        password: validationResult.data.password,
         options: {
           emailRedirectTo: redirectUrl
         }
       });
 
-      console.log('Signup response:', { data, error });
-      console.log('User created:', data?.user?.id);
-      console.log('Email confirmed:', data?.user?.email_confirmed_at);
-      console.log('Confirmation sent at:', data?.user?.confirmation_sent_at);
-
       if (error) {
-        console.error('Signup error:', error);
         if (error.message.includes('User already registered')) {
           setError('An account with this email already exists. Please sign in instead.');
         } else if (error.message.includes('rate limit')) {
@@ -101,7 +101,6 @@ const Auth = () => {
       } else {
         if (data?.user && !data.session) {
           // User created but needs email verification
-          console.log('User created, verification email should be sent');
           toast({
             title: "Check your email!",
             description: "We sent you a verification link. Check your spam folder if you don't see it within a few minutes.",
@@ -118,7 +117,6 @@ const Auth = () => {
           }, 10000);
         } else if (data?.session) {
           // User was automatically signed in (email confirmation disabled)
-          console.log('User automatically signed in');
           toast({
             title: "Account created successfully!",
             description: "You can now start your adventure.",
@@ -127,7 +125,6 @@ const Auth = () => {
         }
       }
     } catch (err: any) {
-      console.error('Signup catch error:', err);
       setError('An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
@@ -140,9 +137,18 @@ const Auth = () => {
     setError('');
 
     try {
+      // Validate input data
+      const validationResult = signInSchema.safeParse({ email, password });
+      if (!validationResult.success) {
+        const errors = validationResult.error.issues.map(err => err.message).join('. ');
+        setError(errors);
+        setLoading(false);
+        return;
+      }
+
       const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+        email: validationResult.data.email,
+        password: validationResult.data.password,
       });
 
       if (error) {

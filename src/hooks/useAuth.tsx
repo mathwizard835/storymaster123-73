@@ -20,8 +20,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        console.log('Auth event:', event, session?.user?.email);
-        
         // Handle email verification success
         if (event === 'SIGNED_IN' && session?.user?.email_confirmed_at) {
           // Check if this is from email verification by looking at URL params
