@@ -18,6 +18,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Debug logging for troubleshooting
+    console.log('Auth state - Mobile:', isMobilePlatform(), 'Capacitor exists:', !!(typeof window !== 'undefined' && (window as any).Capacitor), 'User agent:', navigator.userAgent);
+    
     // Mobile-specific initialization - prevent external auth redirects
     if (isMobilePlatform()) {
       // Clear any existing URL parameters that might cause redirects
