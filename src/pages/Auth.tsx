@@ -22,15 +22,19 @@ const Auth = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check if user is already logged in
+    // Mobile users should never see this auth page - redirect to home with trial mode
+    if (isMobilePlatform()) {
+      navigate('/?trial=true', { replace: true });
+      return;
+    }
+
+    // Check if user is already logged in (web only)
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         navigate('/');
       }
     };
-    
-    // Email verification is now handled in useAuth hook
     
     checkUser();
   }, [navigate, toast]);

@@ -25,9 +25,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const cleanUrl = window.location.origin + window.location.pathname;
         window.history.replaceState({}, document.title, cleanUrl);
       }
+      
+      // For mobile, skip Supabase auth setup and use trial mode
+      setLoading(false);
+      return;
     }
 
-    // Set up auth state listener FIRST
+    // Set up auth state listener FIRST (web only)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         // Handle email verification success
@@ -36,7 +40,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const urlParams = new URLSearchParams(window.location.search);
           const isFromVerification = urlParams.has('type') && urlParams.get('type') === 'signup';
           
-          if (isFromVerification && !isMobilePlatform()) { // Only show for web users
+          if (isFromVerification) {
             // Show success message
             import('@/hooks/use-toast').then(({ toast }) => {
               toast({
@@ -56,7 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     );
 
-    // THEN check for existing session
+    // THEN check for existing session (web only)
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);

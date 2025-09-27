@@ -22,6 +22,16 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const searchParams = new URLSearchParams(window.location.search);
   const isTrialMode = searchParams.get('trial') === 'true';
   
+  // Import mobile detection
+  const isMobile = () => {
+    try {
+      const { isMobilePlatform } = require('@/lib/mobileFeatures');
+      return isMobilePlatform();
+    } catch {
+      return false;
+    }
+  };
+  
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center">
@@ -30,8 +40,10 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     );
   }
   
-  // Allow access in trial mode even without authentication
-  if (!user && !isTrialMode) {
+  // Mobile users automatically get trial mode access
+  const shouldAllowAccess = user || isTrialMode || isMobile();
+  
+  if (!shouldAllowAccess) {
     return <Navigate to="/auth" replace />;
   }
   
