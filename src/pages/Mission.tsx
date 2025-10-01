@@ -150,8 +150,14 @@ const Mission = () => {
   useEffect(() => {
     const init = async () => {
       try {
-        // Check if this is a trial and if trial is already used
-        if (isTrialMode && !user) {
+        // Check if mobile platform
+        const isMobile = typeof window !== 'undefined' && 
+          ((window as any).Capacitor?.getPlatform?.() === 'ios' || 
+           (window as any).Capacitor?.getPlatform?.() === 'android' ||
+           /Android|iPhone|iPad|iPod/i.test(navigator.userAgent));
+        
+        // Check if this is a trial and if trial is already used (skip for mobile)
+        if (isTrialMode && !user && !isMobile) {
           const trialUsed = localStorage.getItem('trial_story_used');
           if (trialUsed) {
             navigate("/auth");
