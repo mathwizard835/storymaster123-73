@@ -63,43 +63,24 @@ export const setStatusBarStyle = async (style: 'light' | 'dark' = 'dark'): Promi
   }
 };
 
-// Check if running on mobile platform - AGGRESSIVE DETECTION
+// Check if running on mobile platform - PRODUCTION READY
 export const isMobilePlatform = (): boolean => {
-  console.log('[MOBILE DETECTION] Starting detection...');
-  
-  // Method 1: Check if Capacitor object exists at all (most reliable for native apps)
+  // Method 1: Capacitor platform check (most reliable)
   if (typeof window !== 'undefined' && (window as any).Capacitor) {
-    console.log('[MOBILE DETECTION] Capacitor detected!');
     try {
-      const platform = (window as any).Capacitor.getPlatform();
-      console.log('[MOBILE DETECTION] Platform:', platform);
-      const isMobile = platform === 'ios' || platform === 'android';
-      if (isMobile) {
-        console.log('[MOBILE DETECTION] ✓ Confirmed native mobile platform');
-        return true;
-      }
+      const platform = Capacitor.getPlatform();
+      return platform === 'ios' || platform === 'android';
     } catch (error) {
-      console.log('[MOBILE DETECTION] Capacitor exists but getPlatform failed, assuming mobile');
-      return true; // If Capacitor exists, assume mobile even if getPlatform fails
+      console.warn('[MOBILE] Capacitor detected but getPlatform failed:', error);
+      return false;
     }
   }
   
-  // Method 2: User agent detection (fallback for early initialization)
+  // Method 2: User agent fallback
   if (typeof navigator !== 'undefined') {
-    const isMobileUA = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    if (isMobileUA) {
-      console.log('[MOBILE DETECTION] ✓ Mobile detected via user agent');
-      return true;
-    }
+    return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
   }
   
-  // Method 3: Check for Capacitor in global scope (another fallback)
-  if (typeof window !== 'undefined' && 'Capacitor' in window) {
-    console.log('[MOBILE DETECTION] ✓ Capacitor in window, assuming mobile');
-    return true;
-  }
-  
-  console.log('[MOBILE DETECTION] ✗ No mobile indicators found, assuming web');
   return false;
 };
 
