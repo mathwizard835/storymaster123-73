@@ -65,14 +65,10 @@ export const setStatusBarStyle = async (style: 'light' | 'dark' = 'dark'): Promi
 
 // Check if running on mobile platform
 export const isMobilePlatform = (): boolean => {
-  // Check for Capacitor
+  // Only return true if actually running in Capacitor native app
   if (typeof window !== 'undefined' && (window as any).Capacitor) {
-    return true;
-  }
-  
-  // Check for mobile user agents
-  if (typeof navigator !== 'undefined') {
-    return /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const platform = (window as any).Capacitor.getPlatform();
+    return platform === 'ios' || platform === 'android';
   }
   
   return false;
