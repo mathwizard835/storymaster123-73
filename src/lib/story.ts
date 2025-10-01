@@ -253,12 +253,6 @@ export const generateNextScene = async (
   const adjustedTokens = Math.floor(optimizedTokens * lengthMultiplier);
   
   try {
-    // Ensure the user is authenticated before calling the Edge Function
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      throw new Error("Not authenticated");
-    }
-
     const { data, error } = await supabase.functions.invoke("generate-story", {
       body: { profile, scene, megastory, max_tokens: adjustedTokens, scene_count: sceneCount },
     });

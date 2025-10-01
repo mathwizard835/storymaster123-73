@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Share2, Gift, Users, Copy, Check } from "lucide-react";
 import { getReferralStats, createReferral, getShareableReferralLink } from "@/lib/referrals";
 import { useToast } from "@/hooks/use-toast";
+import { referralCodeSchema } from "@/lib/validationSchemas";
 
 export const ReferralWidget = () => {
   const [stats, setStats] = useState({
@@ -31,8 +32,19 @@ export const ReferralWidget = () => {
   const handleApplyReferral = async () => {
     if (!referralCode.trim()) return;
     
+    // Validate referral code format
+    const validationResult = referralCodeSchema.safeParse(referralCode);
+    if (!validationResult.success) {
+      toast({
+        title: "Invalid Referral Code",
+        description: validationResult.error.issues[0].message,
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setLoading(true);
-    const result = await createReferral(referralCode);
+    const result = await createReferral(validationResult.data);
     
     toast({
       title: result.success ? "Referral Applied!" : "Error",
@@ -59,7 +71,7 @@ export const ReferralWidget = () => {
           url: shareUrl,
         });
       } catch (err) {
-        console.log('Share cancelled');
+        // Share was cancelled or unsupported
       }
     } else {
       // Fallback to copying link

@@ -19,22 +19,29 @@ const queryClient = new QueryClient();
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
-  const searchParams = new URLSearchParams(window.location.search);
-  const isTrialMode = searchParams.get('trial') === 'true';
   
-  if (loading) {
+  // Check if on mobile platform - mobile users don't need auth
+  const isMobile = typeof window !== 'undefined' && 
+    ((window as any).Capacitor?.getPlatform?.() === 'ios' || 
+     (window as any).Capacitor?.getPlatform?.() === 'android' ||
+     /Android|iPhone|iPad|iPod/i.test(navigator.userAgent));
+  
+  if (loading && !isMobile) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center">
         <div className="text-white">Loading...</div>
       </div>
     );
   }
-  
-  // Allow access in trial mode even without authentication
-  if (!user && !isTrialMode) {
+
+  const searchParams = new URLSearchParams(window.location.search);
+  const isTrialMode = searchParams.get('trial') === 'true';
+
+  // Allow access if: user is logged in, OR trial mode, OR mobile platform
+  if (!user && !isTrialMode && !isMobile) {
     return <Navigate to="/auth" replace />;
   }
-  
+
   return <>{children}</>;
 };
 

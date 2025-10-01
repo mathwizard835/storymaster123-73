@@ -10,6 +10,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { getCompletedStories } from "@/lib/story";
 import { loadCurrentStoryFromDatabase } from "@/lib/databaseStory";
+import { isMobilePlatform } from "@/lib/mobileFeatures";
 import { BookOpen, Star, Shield, Zap, Heart, Brain, Gamepad2, Users, Sparkles, ChevronDown, Rocket, Crown, GraduationCap, LogOut, Play } from "lucide-react";
 import { useState, useEffect } from "react";
 
@@ -116,7 +117,15 @@ const Index = () => {
                   <Button
                     size="xl"
                     variant="hero"
-                    onClick={() => navigate(user ? "/profile?new=true" : "/auth")}
+                    onClick={() => {
+                      if (user) {
+                        navigate("/profile?new=true");
+                      } else if (isMobilePlatform()) {
+                        navigate("/profile?trial=true");
+                      } else {
+                        navigate("/auth");
+                      }
+                    }}
                     aria-label="Create my hero"
                   >
                     {user ? "Start New Adventure" : "Play - Join Your Quest"}
@@ -281,7 +290,15 @@ const Index = () => {
                 <Button
                   size="xl"
                   variant="hero"
-                  onClick={() => navigate(user ? "/mission" : "/auth")}
+                  onClick={() => {
+                    if (user) {
+                      navigate("/mission");
+                    } else if (isMobilePlatform()) {
+                      navigate("/profile?trial=true");
+                    } else {
+                      navigate("/auth");
+                    }
+                  }}
                   className="text-lg px-8 py-4 animate-pulse"
                 >
                   {user ? "Continue Your Quest" : "Play - Join Your Quest"}
