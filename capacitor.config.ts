@@ -17,7 +17,9 @@ const config: CapacitorConfig = {
     }
   },
   server: {
-    androidScheme: 'https'
+    androidScheme: 'https',
+    // CRITICAL: No server.url - app runs locally from dist/
+    // Never point to Lovable or any external URL
   }
 };
 
