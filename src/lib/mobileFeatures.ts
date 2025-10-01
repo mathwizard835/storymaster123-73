@@ -63,14 +63,43 @@ export const setStatusBarStyle = async (style: 'light' | 'dark' = 'dark'): Promi
   }
 };
 
-// Check if running on mobile platform
+// Check if running on mobile platform - AGGRESSIVE DETECTION
 export const isMobilePlatform = (): boolean => {
-  // Only return true if actually running in Capacitor native app
+  console.log('[MOBILE DETECTION] Starting detection...');
+  
+  // Method 1: Check if Capacitor object exists at all (most reliable for native apps)
   if (typeof window !== 'undefined' && (window as any).Capacitor) {
-    const platform = (window as any).Capacitor.getPlatform();
-    return platform === 'ios' || platform === 'android';
+    console.log('[MOBILE DETECTION] Capacitor detected!');
+    try {
+      const platform = (window as any).Capacitor.getPlatform();
+      console.log('[MOBILE DETECTION] Platform:', platform);
+      const isMobile = platform === 'ios' || platform === 'android';
+      if (isMobile) {
+        console.log('[MOBILE DETECTION] ✓ Confirmed native mobile platform');
+        return true;
+      }
+    } catch (error) {
+      console.log('[MOBILE DETECTION] Capacitor exists but getPlatform failed, assuming mobile');
+      return true; // If Capacitor exists, assume mobile even if getPlatform fails
+    }
   }
   
+  // Method 2: User agent detection (fallback for early initialization)
+  if (typeof navigator !== 'undefined') {
+    const isMobileUA = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    if (isMobileUA) {
+      console.log('[MOBILE DETECTION] ✓ Mobile detected via user agent');
+      return true;
+    }
+  }
+  
+  // Method 3: Check for Capacitor in global scope (another fallback)
+  if (typeof window !== 'undefined' && 'Capacitor' in window) {
+    console.log('[MOBILE DETECTION] ✓ Capacitor in window, assuming mobile');
+    return true;
+  }
+  
+  console.log('[MOBILE DETECTION] ✗ No mobile indicators found, assuming web');
   return false;
 };
 

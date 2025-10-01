@@ -19,8 +19,6 @@ const queryClient = new QueryClient();
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
-  const searchParams = new URLSearchParams(window.location.search);
-  const isTrialMode = searchParams.get('trial') === 'true';
   
   // Import mobile detection
   const isMobile = () => {
@@ -31,22 +29,35 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
       return false;
     }
   };
-  
+
+  console.log('[PROTECTED ROUTE] Check - Mobile:', isMobile(), 'Loading:', loading, 'User:', !!user);
+
+  // CRITICAL: Mobile users bypass all auth requirements
+  if (isMobile()) {
+    console.log('[PROTECTED ROUTE] ✓ Mobile bypass - allowing access');
+    return <>{children}</>;
+  }
+
   if (loading) {
+    console.log('[PROTECTED ROUTE] Still loading...');
     return (
       <div className="min-h-screen bg-gradient-to-b from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center">
         <div className="text-white">Loading...</div>
       </div>
     );
   }
-  
-  // Mobile users automatically get trial mode access
-  const shouldAllowAccess = user || isTrialMode || isMobile();
-  
-  if (!shouldAllowAccess) {
+
+  // Check for trial mode from URL
+  const searchParams = new URLSearchParams(window.location.search);
+  const isTrialMode = searchParams.get('trial') === 'true';
+
+  // Web users need auth or trial mode
+  if (!user && !isTrialMode) {
+    console.log('[PROTECTED ROUTE] ✗ No auth - redirecting to /auth');
     return <Navigate to="/auth" replace />;
   }
-  
+
+  console.log('[PROTECTED ROUTE] ✓ Access granted');
   return <>{children}</>;
 };
 
