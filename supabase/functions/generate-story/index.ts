@@ -23,7 +23,7 @@ function validateProfileData(profile: any): boolean {
     return false;
   }
   
-  if (profile.interests && (!Array.isArray(profile.interests) || profile.interests.length > 20)) {
+  if (profile.interests && (typeof profile.interests !== 'string' || profile.interests.length > 200)) {
     return false;
   }
   
