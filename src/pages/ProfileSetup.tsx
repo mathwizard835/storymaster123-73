@@ -111,7 +111,7 @@ const ProfileSetup = () => {
                     id="age"
                     defaultValue={[age]}
                     min={6}
-                    max={11}
+                    max={15}
                     step={1}
                     onValueChange={(v) => setAge(v[0] ?? 8)}
                   />
