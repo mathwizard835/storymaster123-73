@@ -131,9 +131,7 @@ const Auth = () => {
             title: "Account created successfully!",
             description: "You can now start your adventure.",
           });
-          // Mobile users go to home, web users go to dashboard
-          const isNative = isMobilePlatform();
-          navigate(isNative ? '/' : '/dashboard');
+          navigate('/dashboard');
         }
       }
     } catch (err: any) {
@@ -174,9 +172,7 @@ const Auth = () => {
           title: "Welcome back!",
           description: "You've successfully signed in.",
         });
-        // Mobile users go to home, web users go to dashboard
-        const isNative = isMobilePlatform();
-        navigate(isNative ? '/' : '/dashboard');
+        navigate('/dashboard');
       }
     } catch (err: any) {
       setError('An unexpected error occurred');
