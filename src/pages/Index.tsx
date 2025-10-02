@@ -97,10 +97,10 @@ const Index = () => {
                     <Button
                       size="xl"
                       variant="hero"
-                      onClick={() => navigate("/mission")}
-                      aria-label="Continue current adventure"
+                      onClick={() => navigate("/dashboard")}
+                      aria-label="Go to dashboard"
                     >
-                      Continue Adventure
+                      Go to Dashboard
                     </Button>
                     <Button
                       size="xl" 
