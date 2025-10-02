@@ -271,10 +271,10 @@ const Index = () => {
                   <Button
                     size="xl"
                     variant="hero"
-                    onClick={() => navigate("/mission")}
+                    onClick={() => navigate("/dashboard")}
                     className="text-lg px-8 py-4"
                   >
-                    Continue Your Quest
+                    Go to Dashboard
                   </Button>
                   <Button
                     size="xl"
@@ -292,7 +292,7 @@ const Index = () => {
                   variant="hero"
                   onClick={() => {
                     if (user) {
-                      navigate("/mission");
+                      navigate("/dashboard");
                     } else if (isMobilePlatform()) {
                       navigate("/profile?trial=true");
                     } else {
@@ -301,7 +301,7 @@ const Index = () => {
                   }}
                   className="text-lg px-8 py-4 animate-pulse"
                 >
-                  {user ? "Continue Your Quest" : "Play - Join Your Quest"}
+                  {user ? "Go to Dashboard" : "Play - Join Your Quest"}
                 </Button>
               )}
               <Button
