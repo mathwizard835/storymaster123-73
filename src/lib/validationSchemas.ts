@@ -1,5 +1,44 @@
 import { z } from 'zod';
 
+// Inappropriate content patterns to block
+const BLOCKED_PATTERNS = [
+  /\b(sex|sexual|porn|pornography|xxx|nsfw|nude|naked|explicit)\b/i,
+  /\b(drugs|cocaine|heroin|meth|marijuana|weed|cannabis)\b/i,
+  /\b(violence|kill|murder|assault|abuse|harm|torture)\b/i,
+  /\b(hate|racist|racism|nazi|supremacy)\b/i,
+  /\b(suicide|self-harm|cutting)\b/i,
+  /\b(gambling|casino|betting)\b/i,
+  /\b(weapons|guns|firearms|explosives|bomb)\b/i,
+  /\b(adult|mature|18\+|21\+)\b/i,
+];
+
+// Content validation function
+const validateSafeContent = (value: string): boolean => {
+  if (!value || value.trim().length === 0) return true;
+  
+  const normalized = value.toLowerCase().trim();
+  
+  // Check against blocked patterns
+  for (const pattern of BLOCKED_PATTERNS) {
+    if (pattern.test(normalized)) {
+      return false;
+    }
+  }
+  
+  // Check for suspicious patterns (excessive special characters, URLs, etc.)
+  if (/https?:\/\//i.test(normalized)) return false;
+  if (/(.)\1{5,}/.test(normalized)) return false; // Repeated characters
+  
+  return true;
+};
+
+// Safe content schema with validation
+export const safeContentSchema = z.string()
+  .max(500, { message: "Content must be less than 500 characters" })
+  .refine(validateSafeContent, {
+    message: "Content contains inappropriate or blocked keywords. Please use family-friendly language."
+  });
+
 // Common validation patterns
 export const emailSchema = z.string()
   .trim()
@@ -70,10 +109,10 @@ export const profileSetupSchema = z.object({
   age: z.number().min(4).max(18),
   reading: z.enum(['Apprentice', 'Adventurer', 'Hero']),
   selectedBadges: z.array(z.string()).min(1).max(5),
-  interests: z.string().max(500).optional(),
+  interests: safeContentSchema.optional().or(z.literal('')),
   mode: z.enum(['Thrill', 'Comedy', 'Mystery', 'Explore', 'Learning']),
   storyLength: z.enum(['short', 'medium', 'epic']),
-  topic: z.string().max(200).optional()
+  topic: safeContentSchema.optional().or(z.literal(''))
 });
 
 export type SignInFormData = z.infer<typeof signInSchema>;

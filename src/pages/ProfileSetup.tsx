@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Seo } from "@/components/Seo";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { safeContentSchema } from "@/lib/validationSchemas";
 import { Slider } from "@/components/ui/slider";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
@@ -46,6 +48,7 @@ const modes = [
 const ProfileSetup = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { toast } = useToast();
   const [age, setAge] = useState<number>(8);
   const [reading, setReading] = useState<string>("adventurer");
   const [selectedBadges, setSelectedBadges] = useState<string[]>([]);
@@ -53,6 +56,8 @@ const ProfileSetup = () => {
   const [storyLength, setStoryLength] = useState<string>("medium");
   const [topic, setTopic] = useState<string>("");
   const [interests, setInterests] = useState<string>("");
+  const [interestsError, setInterestsError] = useState<string>("");
+  const [topicError, setTopicError] = useState<string>("");
 
   const toggleBadge = (id: string) => {
     setSelectedBadges((prev) =>
@@ -60,7 +65,44 @@ const ProfileSetup = () => {
     );
   };
 
+  const validateInterests = (value: string) => {
+    try {
+      safeContentSchema.parse(value);
+      setInterestsError("");
+      return true;
+    } catch (error: any) {
+      const message = error.errors?.[0]?.message || "Invalid content";
+      setInterestsError(message);
+      return false;
+    }
+  };
+
+  const validateTopic = (value: string) => {
+    try {
+      safeContentSchema.parse(value);
+      setTopicError("");
+      return true;
+    } catch (error: any) {
+      const message = error.errors?.[0]?.message || "Invalid content";
+      setTopicError(message);
+      return false;
+    }
+  };
+
   const handleStart = () => {
+    // Validate content before proceeding
+    const interestsValid = interests ? validateInterests(interests) : true;
+    const topicValid = topic ? validateTopic(topic) : true;
+
+    if (!interestsValid || !topicValid) {
+      toast({
+        title: "Content Blocked",
+        description: "Please remove inappropriate content before continuing.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     const profile = { age, reading, selectedBadges, mode, storyLength: storyLength as 'short' | 'medium' | 'epic', topic, interests };
     saveProfileToLocal(profile);
     
@@ -214,28 +256,52 @@ const ProfileSetup = () => {
                 <Textarea
                   placeholder="e.g., soccer, video games, cats, pizza, Marvel superheroes, skateboarding..."
                   value={interests}
-                  onChange={(e) => setInterests(e.target.value)}
-                  className="min-h-[80px]"
+                  onChange={(e) => {
+                    setInterests(e.target.value);
+                    setInterestsError("");
+                  }}
+                  onBlur={(e) => {
+                    if (e.target.value) validateInterests(e.target.value);
+                  }}
+                  className={`min-h-[80px] ${interestsError ? "border-destructive" : ""}`}
                 />
+                {interestsError && (
+                  <p className="mt-2 text-sm text-destructive">{interestsError}</p>
+                )}
               </div>
             </article>
 
             {/* Topic */}
             <article className="glass-panel rounded-xl p-6 md:col-span-2">
               <h2 className="font-heading text-xl md:text-2xl font-bold">Learning Topic (optional)</h2>
-              <div className="mt-3 flex items-center gap-3">
-                <Input
-                  placeholder="e.g., Ancient Rome, Ecosystems"
-                  value={topic}
-                  onChange={(e) => setTopic(e.target.value)}
-                />
-                <Button
-                  variant="game"
-                  onClick={() => setTopic("")}
-                  aria-label="Clear topic"
-                >
-                  Clear
-                </Button>
+              <div className="mt-3 space-y-2">
+                <div className="flex items-center gap-3">
+                  <Input
+                    placeholder="e.g., Ancient Rome, Ecosystems"
+                    value={topic}
+                    onChange={(e) => {
+                      setTopic(e.target.value);
+                      setTopicError("");
+                    }}
+                    onBlur={(e) => {
+                      if (e.target.value) validateTopic(e.target.value);
+                    }}
+                    className={topicError ? "border-destructive" : ""}
+                  />
+                  <Button
+                    variant="game"
+                    onClick={() => {
+                      setTopic("");
+                      setTopicError("");
+                    }}
+                    aria-label="Clear topic"
+                  >
+                    Clear
+                  </Button>
+                </div>
+                {topicError && (
+                  <p className="text-sm text-destructive">{topicError}</p>
+                )}
               </div>
             </article>
           </div>

@@ -15,6 +15,46 @@ const corsHeaders = {
 
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
 
+// Blocked content patterns
+const BLOCKED_PATTERNS = [
+  /\b(sex|sexual|porn|pornography|xxx|nsfw|nude|naked|explicit)\b/i,
+  /\b(drugs|cocaine|heroin|meth|marijuana|weed|cannabis)\b/i,
+  /\b(violence|kill|murder|assault|abuse|harm|torture)\b/i,
+  /\b(hate|racist|racism|nazi|supremacy)\b/i,
+  /\b(suicide|self-harm|cutting)\b/i,
+  /\b(gambling|casino|betting)\b/i,
+  /\b(weapons|guns|firearms|explosives|bomb)\b/i,
+  /\b(adult|mature|18\+|21\+)\b/i,
+];
+
+function containsInappropriateContent(text: string): boolean {
+  if (!text || typeof text !== 'string') return false;
+  
+  const normalized = text.toLowerCase().trim();
+  
+  // Check blocked patterns
+  for (const pattern of BLOCKED_PATTERNS) {
+    if (pattern.test(normalized)) {
+      console.error(`Blocked content detected: matched pattern ${pattern}`);
+      return true;
+    }
+  }
+  
+  // Check for URLs
+  if (/https?:\/\//i.test(normalized)) {
+    console.error('Blocked content: URL detected');
+    return true;
+  }
+  
+  // Check for excessive special characters
+  if (/(.)\1{5,}/.test(normalized)) {
+    console.error('Blocked content: excessive repetition');
+    return true;
+  }
+  
+  return false;
+}
+
 // Input validation functions
 function validateProfileData(profile: any): boolean {
   if (!profile || typeof profile !== 'object') return true; // Optional field
@@ -29,6 +69,24 @@ function validateProfileData(profile: any): boolean {
   
   if (profile.selectedBadges && (!Array.isArray(profile.selectedBadges) || profile.selectedBadges.length > 10)) {
     return false;
+  }
+  
+  // Content filtering for interests string field
+  if (profile.interests && typeof profile.interests === 'string') {
+    if (profile.interests.length > 500) return false;
+    if (containsInappropriateContent(profile.interests)) {
+      console.error('Blocked: inappropriate content in interests');
+      return false;
+    }
+  }
+  
+  // Content filtering for topic field
+  if (profile.topic && typeof profile.topic === 'string') {
+    if (profile.topic.length > 500) return false;
+    if (containsInappropriateContent(profile.topic)) {
+      console.error('Blocked: inappropriate content in topic');
+      return false;
+    }
   }
   
   return true;
