@@ -253,6 +253,11 @@ const Index = () => {
         
         <div className="relative z-10 flex min-h-screen items-center justify-center px-6">
           <div className="max-w-4xl text-center animate-enter">
+            {user && (
+              <div className="mb-8 flex items-center justify-end">
+                <SignOutButton />
+              </div>
+            )}
             <h1 className="font-heading text-5xl md:text-7xl font-extrabold tracking-tight drop-shadow-2xl mb-6">
               {content.title.split('!')[0]}!<br />
               <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
