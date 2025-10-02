@@ -228,6 +228,12 @@ export const markStoryCompleted = async (
 // Simple cache for identical requests (5 minute TTL)
 const sceneCache = new Map<string, { data: { parsed: Scene | null; text: string }, timestamp: number }>();
 
+// Clear the scene cache (useful when starting a new story)
+export const clearSceneCache = () => {
+  sceneCache.clear();
+  console.log("Scene cache cleared");
+};
+
 export const generateNextScene = async (
   profile: Profile,
   scene?: unknown,

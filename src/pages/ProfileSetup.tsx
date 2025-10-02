@@ -60,9 +60,9 @@ const ProfileSetup = () => {
     );
   };
 
-  const handleStart = () => {
+  const handleStart = async () => {
     const profile = { age, reading, selectedBadges, mode, storyLength: storyLength as 'short' | 'medium' | 'epic', topic, interests };
-    saveProfileToLocal(profile);
+    await saveProfileToLocal(profile);
     
     // Check if this should be a new story or trial mode
     const forceNew = searchParams.get('new') === 'true';
