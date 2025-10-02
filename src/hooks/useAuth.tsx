@@ -44,7 +44,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 description: "Welcome to StoryMaster Quest!",
               });
             });
-            window.history.replaceState({}, document.title, '/');
+            window.location.href = '/dashboard';
           }
         }
         
