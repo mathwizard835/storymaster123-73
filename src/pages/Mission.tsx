@@ -180,7 +180,12 @@ const Mission = () => {
         } else {
           savedProfile = loadProfile();
           if (!savedProfile) {
-            navigate("/profile");
+            // Preserve query parameters when redirecting to profile
+            const params = new URLSearchParams();
+            if (searchParams.get('new') === 'true') params.set('new', 'true');
+            if (searchParams.get('trial') === 'true') params.set('trial', 'true');
+            const profileUrl = params.toString() ? `/profile?${params.toString()}` : '/profile';
+            navigate(profileUrl);
             return;
           }
           setProfile(savedProfile);
