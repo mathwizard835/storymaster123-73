@@ -10,6 +10,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, BookOpen, Stars } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { signInSchema, signUpSchema, type SignInFormData, type SignUpFormData } from '@/lib/validationSchemas';
+import { isMobilePlatform } from '@/lib/mobileFeatures';
 import heroPortal from '@/assets/hero-portal.jpg';
 
 const Auth = () => {
@@ -17,19 +18,24 @@ const Auth = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check if user is already logged in
+    // Mobile users should never see this auth page - redirect to home with trial mode
+    if (isMobilePlatform()) {
+      navigate('/?trial=true', { replace: true });
+      return;
+    }
+
+    // Check if user is already logged in (web only)
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         navigate('/');
       }
     };
-    
-    // Email verification is now handled in useAuth hook
     
     checkUser();
   }, [navigate, toast]);
@@ -42,12 +48,15 @@ const Auth = () => {
     
     setLoading(true);
     try {
+      const isNative = isMobilePlatform();
+      const redirectUrl = isNative ? undefined : `${window.location.origin}/dashboard`;
+      
       const { error } = await supabase.auth.resend({
         type: 'signup',
         email: email,
-        options: {
-          emailRedirectTo: 'https://9f53e10f-c713-425a-84ff-901a9d969a68.lovableproject.com/'
-        }
+        options: redirectUrl ? {
+          emailRedirectTo: redirectUrl
+        } : undefined
       });
       
       if (error) {
@@ -80,14 +89,15 @@ const Auth = () => {
         return;
       }
 
-      const redirectUrl = 'https://9f53e10f-c713-425a-84ff-901a9d969a68.lovableproject.com/';
+      const isNative = isMobilePlatform();
+      const redirectUrl = isNative ? undefined : `${window.location.origin}/dashboard`;
       
       const { data, error } = await supabase.auth.signUp({
         email: validationResult.data.email,
         password: validationResult.data.password,
-        options: {
+        options: redirectUrl ? {
           emailRedirectTo: redirectUrl
-        }
+        } : undefined
       });
 
       if (error) {
@@ -121,7 +131,7 @@ const Auth = () => {
             title: "Account created successfully!",
             description: "You can now start your adventure.",
           });
-          navigate('/');
+          navigate('/dashboard');
         }
       }
     } catch (err: any) {
@@ -162,10 +172,46 @@ const Auth = () => {
           title: "Welcome back!",
           description: "You've successfully signed in.",
         });
-        navigate('/');
+        navigate('/dashboard');
       }
     } catch (err: any) {
       setError('An unexpected error occurred');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      if (!email) {
+        setError('Please enter your email address');
+        setLoading(false);
+        return;
+      }
+
+      const isNative = isMobilePlatform();
+      const redirectUrl = isNative ? undefined : `${window.location.origin}/reset-password`;
+      
+      const { error } = await supabase.auth.resetPasswordForEmail(email, 
+        redirectUrl ? { redirectTo: redirectUrl } : {}
+      );
+
+      if (error) {
+        setError(error.message);
+      } else {
+        toast({
+          title: "Check your email!",
+          description: "We sent you a password reset link. Check your spam folder if you don't see it.",
+          duration: 8000,
+        });
+        setShowForgotPassword(false);
+      }
+    } catch (err: any) {
+      setError('Failed to send reset email');
     } finally {
       setLoading(false);
     }
@@ -198,6 +244,52 @@ const Auth = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {showForgotPassword ? (
+              <div className="space-y-4">
+                <Button 
+                  variant="ghost"
+                  onClick={() => setShowForgotPassword(false)}
+                  className="text-purple-200 hover:text-white mb-2"
+                >
+                  ← Back to Sign In
+                </Button>
+                
+                <div className="text-center mb-4">
+                  <h3 className="text-xl font-semibold text-white">Reset Password</h3>
+                  <p className="text-purple-200 text-sm mt-2">Enter your email to receive a password reset link</p>
+                </div>
+
+                <form onSubmit={handleForgotPassword} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="reset-email" className="text-white">Email</Label>
+                    <Input
+                      id="reset-email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      className="bg-black/30 border-white/20 text-white placeholder:text-white/60"
+                      placeholder="Enter your email"
+                    />
+                  </div>
+                  
+                  {error && (
+                    <Alert className="bg-red-900/50 border-red-500/50 text-red-200">
+                      <AlertDescription>{error}</AlertDescription>
+                    </Alert>
+                  )}
+                  
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-purple-600 hover:bg-purple-700" 
+                    disabled={loading}
+                  >
+                    {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Send Reset Link
+                  </Button>
+                </form>
+              </div>
+            ) : (
             <Tabs defaultValue="signin" className="w-full">
               <TabsList className="grid w-full grid-cols-2 bg-black/30">
                 <TabsTrigger value="signin" className="text-white data-[state=active]:bg-purple-600">
@@ -249,6 +341,17 @@ const Auth = () => {
                     {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Sign In
                   </Button>
+                  
+                  <div className="text-center">
+                    <Button 
+                      type="button"
+                      variant="link"
+                      onClick={() => setShowForgotPassword(true)}
+                      className="text-purple-200 hover:text-white text-sm"
+                    >
+                      Forgot password?
+                    </Button>
+                  </div>
                 </form>
               </TabsContent>
               
@@ -310,6 +413,7 @@ const Auth = () => {
                 </form>
               </TabsContent>
             </Tabs>
+            )}
           </CardContent>
         </Card>
         

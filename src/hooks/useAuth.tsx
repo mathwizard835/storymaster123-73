@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { isMobilePlatform } from '@/lib/mobileFeatures';
 
 interface AuthContextType {
   user: User | null;
@@ -17,26 +18,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Set up auth state listener FIRST
+    const isMobile = isMobilePlatform();
+    
+    // Mobile bypass - no auth needed
+    if (isMobile) {
+      setLoading(false);
+      return;
+    }
+
+    // Web-only auth setup
+    const authTimeout = setTimeout(() => {
+      setLoading(false);
+    }, 5000);
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        // Handle email verification success
+        clearTimeout(authTimeout);
+        
         if (event === 'SIGNED_IN' && session?.user?.email_confirmed_at) {
-          // Check if this is from email verification by looking at URL params
           const urlParams = new URLSearchParams(window.location.search);
-          const isFromVerification = urlParams.has('type') && urlParams.get('type') === 'signup';
-          
-          if (isFromVerification) {
-            // Show success message
+          if (urlParams.get('type') === 'signup') {
             import('@/hooks/use-toast').then(({ toast }) => {
               toast({
                 title: "Email verified successfully!",
-                description: "Welcome to StoryMaster Quest! Your adventure awaits.",
+                description: "Welcome to StoryMaster Quest!",
               });
             });
-            
-            // Clean up URL
-            window.history.replaceState({}, document.title, '/');
+            // Always redirect to dashboard for both mobile and web
+            window.location.href = '/dashboard';
           }
         }
         
@@ -46,14 +55,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     );
 
-    // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      clearTimeout(authTimeout);
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      clearTimeout(authTimeout);
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signOut = async () => {
