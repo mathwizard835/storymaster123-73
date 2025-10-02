@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Seo } from "@/components/Seo";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,7 @@ import {
   GraduationCap,
 } from "lucide-react";
 import { saveProfileToLocal } from "@/lib/story";
+import { trackViolation, isUserBanned, getRemainingAttempts } from "@/lib/contentViolations";
 
 const badges = [
   { id: "beast", label: "Beast Master", icon: PawPrint },
@@ -58,6 +59,18 @@ const ProfileSetup = () => {
   const [interests, setInterests] = useState<string>("");
   const [interestsError, setInterestsError] = useState<string>("");
   const [topicError, setTopicError] = useState<string>("");
+
+  useEffect(() => {
+    // Check if user is banned on mount
+    if (isUserBanned()) {
+      toast({
+        title: "Access Denied",
+        description: "You have been banned from the app due to multiple content violations.",
+        variant: "destructive"
+      });
+      navigate('/');
+    }
+  }, [navigate, toast]);
 
   const toggleBadge = (id: string) => {
     setSelectedBadges((prev) =>
@@ -95,11 +108,25 @@ const ProfileSetup = () => {
     const topicValid = topic ? validateTopic(topic) : true;
 
     if (!interestsValid || !topicValid) {
-      toast({
-        title: "Content Blocked",
-        description: "Please remove inappropriate content before continuing.",
-        variant: "destructive"
-      });
+      // Track violation and check if user should be banned
+      const isBanned = trackViolation();
+      const remaining = getRemainingAttempts();
+      
+      if (isBanned) {
+        toast({
+          title: "Account Banned",
+          description: "You have been banned from the app due to multiple content violations.",
+          variant: "destructive"
+        });
+        navigate('/');
+      } else {
+        toast({
+          title: "Content Violation Warning",
+          description: `Inappropriate content detected. You have ${remaining} warning${remaining !== 1 ? 's' : ''} remaining before being banned.`,
+          variant: "destructive"
+        });
+        navigate('/');
+      }
       return;
     }
 
