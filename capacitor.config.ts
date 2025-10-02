@@ -3,7 +3,7 @@ import { CapacitorConfig } from '@capacitor/cli';
 const config: CapacitorConfig = {
   appId: 'com.ordinaryheroes.storymaster',
   appName: 'StoryMaster',
-  webDir: 'public',
+  webDir: 'dist',
   bundledWebRuntime: false,
   plugins: {
     SplashScreen: {
