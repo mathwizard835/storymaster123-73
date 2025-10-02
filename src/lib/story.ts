@@ -77,7 +77,10 @@ export type CompletedStory = {
 
 export const saveProfileToLocal = async (profile: Profile) => {
   try {
+    // Clear any inventory when saving a new profile to ensure fresh start
+    profile.inventory = [];
     await mobileStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+    console.log("Profile saved - fresh configuration:", profile);
   } catch (e) {
     console.error("Failed to save profile", e);
   }
@@ -235,12 +238,18 @@ export const generateNextScene = async (
   maxTokens: number = 900,
   sceneCount: number = 1
 ): Promise<{ text: string; parsed: Scene | null; raw: any }> => {
+  // For new stories (scene 1), don't use cache to ensure fresh generation
+  if (sceneCount === 1 && !scene) {
+    console.log("Starting fresh story - bypassing cache");
+    sceneCache.clear(); // Clear all cached scenes for fresh start
+  }
+  
   // Create cache key for identical requests
   const cacheKey = JSON.stringify({ profile, scene, megastory, maxTokens, sceneCount });
   const cached = sceneCache.get(cacheKey);
   
-  // Check cache (5 minute TTL)
-  if (cached && Date.now() - cached.timestamp < 300000) {
+  // Check cache (5 minute TTL) - skip for first scene
+  if (cached && Date.now() - cached.timestamp < 300000 && sceneCount > 1) {
     console.log("Using cached scene generation");
     return { ...cached.data, raw: null };
   }
