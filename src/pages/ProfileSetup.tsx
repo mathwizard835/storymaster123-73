@@ -64,9 +64,17 @@ const ProfileSetup = () => {
     const profile = { age, reading, selectedBadges, mode, storyLength: storyLength as 'short' | 'medium' | 'epic', topic, interests };
     saveProfileToLocal(profile);
     
-    // Check if this should be a new story
+    // Check if this should be a new story or trial mode
     const forceNew = searchParams.get('new') === 'true';
-    const missionUrl = forceNew ? '/mission?new=true' : '/mission';
+    const isTrial = searchParams.get('trial') === 'true';
+    
+    // Build mission URL with appropriate parameters
+    let missionUrl = '/mission';
+    const params = new URLSearchParams();
+    if (forceNew) params.set('new', 'true');
+    if (isTrial) params.set('trial', 'true');
+    if (params.toString()) missionUrl += `?${params.toString()}`;
+    
     navigate(missionUrl);
   };
 
