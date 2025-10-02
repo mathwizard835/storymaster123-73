@@ -110,11 +110,26 @@ function extractJSON(text: string): unknown | null {
   return null;
 }
 
-const SYSTEM_PROMPT = `You are StoryMaster AI, a creative, emotionally intelligent storyteller designed to help children explore exciting, personalized, and age-appropriate choose-your-own-adventure stories. Your mission is to guide the player through thrilling, interactive narratives that adapt to their preferences, skills, and imagination.
+const SYSTEM_PROMPT = `You are StoryMaster AI, a creative, emotionally intelligent storyteller designed to help children explore exciting, personalized, and age-appropriate choose-your-own-adventure stories.
+
+⚠️ CRITICAL PROFILE ENFORCEMENT RULES - MUST FOLLOW:
+1. You MUST strictly adhere to the player's profile settings in EVERY response
+2. Age determines vocabulary, themes, and complexity - this is NON-NEGOTIABLE
+3. Interest badges MUST be incorporated into the story setting and themes
+4. Quest Mode MUST define the story's tone, pacing, and urgency
+5. Reading Level MUST match sentence structure and vocabulary
+6. Failure to follow these profile requirements will result in an invalid response
+
+Before generating each scene, mentally verify:
+✓ Does this match the player's age appropriateness?
+✓ Does this incorporate their selected interest badges/themes?
+✓ Does this match their quest mode (Thrill/Mystery/Fun/Explore)?
+✓ Does the vocabulary match their reading level?
+✓ Does this respect their chosen story length pacing?
 
 Your stories should feel immersive, cinematic, and game-like FOR ALL AGES. Every segment should be short, high-stakes, and end with a critical choice. The tone and difficulty of each story should match the player's profile, and each decision should influence the path of the adventure.
 
-🧾 Always consider the player's profile:
+🧾 Player Profile Requirements (MUST CONSIDER):
 
 **Player Level (age):** This determines story complexity and challenge level.
 
@@ -307,15 +322,40 @@ serve(async (req) => {
     const learningModeInstructions = profile.mode === 'learning' ? `
 LEARNING: Age ${profile.age} - ${profile.age <= 7 ? 'Basic math/letters via puzzles' : profile.age <= 9 ? 'Math/science/reading challenges' : 'Advanced concepts through gameplay'}. ${profile.topic ? `Focus: ${profile.topic}` : ''}` : '';
 
-    // Optimized context based on scene type
-    const contextSize = scene ? "CONTINUATION" : "NEW";
-    const userPrompt = `${contextSize}: ${profileSummary}${sceneContext}${storyProgressContext}${learningModeInstructions}
+    // Restructured prompt: Profile requirements FIRST and prominent
+    const contextSize = scene ? "CONTINUATION" : "NEW STORY";
+    
+    const userPrompt = `=== CRITICAL PLAYER PROFILE (MUST FOLLOW EXACTLY) ===
 
-JSON format: {"sceneTitle":"...","hud":{"energy":0-100,"time":"...","choicePoints":0-50,"ui":["..."]},"narrative":"...","choices":[{"id":"a","text":"...","type":"standard|item_use|object_interact","requiresItem":"...","consumesItem":true}],"interactiveObjects":[{"id":"...","name":"...","description":"...","actions":["Examine","Search"],"requiresItem":"..."}],"itemsFound":[{"id":"...","name":"...","description":"...","type":"key|tool|consumable|document|weapon|potion","usable":true,"consumable":false}],"end":false}
+${profileSummary}
 
-Requirements: ${scene ? 'Continue story and consider inventory context' : 'New adventure opening with discoverable objects/items'}, 3-4 choices, 215 words max, 3-4 paragraph narrative with \\n\\n breaks${profile.mode === 'learning' ? ', embed learning naturally' : ''}, include interactive objects when appropriate.`;
+⚠️ MANDATORY REQUIREMENTS:
+- AGE ${profile.age ?? "unknown"}: Use ${profile.age && profile.age <= 7 ? 'simple, clear vocabulary for young readers' : profile.age && profile.age <= 10 ? 'age-appropriate vocabulary with moderate complexity' : 'advanced vocabulary and complex themes'}
+- READING LEVEL "${profile.reading ?? 'unknown'}": ${profile.reading === 'Apprentice' ? 'Clear, simple structure' : profile.reading === 'Adventurer' ? 'Moderate complexity, layered plot' : 'Advanced structure with deeper concepts'}
+- INTERESTS/BADGES: ${(profile.selectedBadges || []).join(", ") || "general"} - Story MUST incorporate these themes prominently
+- QUEST MODE "${profile.mode ?? 'unknown'}": ${profile.mode === 'Thrill' ? 'High-stakes, urgent, time-sensitive danger' : profile.mode === 'Fun' ? 'Light-hearted, quirky, comedy-focused' : profile.mode === 'Mystery' ? 'Suspenseful, clue-driven investigation' : profile.mode === 'Explore' ? 'Imaginative, open-ended discovery' : 'Adventure-focused'}
+- STORY LENGTH: ${profile.storyLength ?? 'medium'} story${profile.topic ? `\n- TOPIC: ${profile.topic} - weave this into the narrative` : ''}
 
+${sceneContext}
+${storyProgressContext}
+${learningModeInstructions}
+${inventoryContext}
+
+=== RESPONSE FORMAT ===
+Return ONLY valid JSON (no markdown, no explanations):
+{"sceneTitle":"...","hud":{"energy":0-100,"time":"...","choicePoints":0-50,"ui":["..."]},"narrative":"...","choices":[{"id":"a","text":"...","type":"standard|item_use|object_interact","requiresItem":"...","consumesItem":true}],"interactiveObjects":[{"id":"...","name":"...","description":"...","actions":["Examine","Search"],"requiresItem":"..."}],"itemsFound":[{"id":"...","name":"...","description":"...","type":"key|tool|consumable|document|weapon|potion","usable":true,"consumable":false}],"end":false}
+
+SCENE REQUIREMENTS:
+- ${scene ? 'Continue the story naturally from previous scene' : 'Open with immediate action hook that establishes setting, character, and conflict'}
+- 3-4 compelling choices that matter
+- Narrative: 215 words max, formatted in 3-4 paragraphs with \\n\\n breaks
+- Incorporate interactive objects/items when appropriate
+${profile.mode === 'learning' ? '- Embed educational content naturally into the story' : ''}
+- Ensure story reflects ALL profile requirements listed above`;
+
+    // Log profile for validation
     console.log(`Story generation request: ${max_tokens} tokens, scene ${sceneCount}`);
+    console.log(`Profile validation - Age: ${profile.age}, Reading: ${profile.reading}, Badges: ${(profile.selectedBadges || []).join(", ")}, Mode: ${profile.mode}`);
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -350,6 +390,24 @@ Requirements: ${scene ? 'Continue story and consider inventory context' : 'New a
 
     // Use enhanced JSON extraction
     const parsed = extractJSON(text);
+    
+    // Profile validation warning (for debugging)
+    if (parsed && typeof parsed === 'object') {
+      const storyText = JSON.stringify(parsed).toLowerCase();
+      const badges = profile.selectedBadges || [];
+      const matchedBadges = badges.filter((badge: string) => 
+        storyText.includes(badge.toLowerCase()) || 
+        storyText.includes(badge.split(' ')[0].toLowerCase())
+      );
+      
+      if (badges.length > 0 && matchedBadges.length === 0) {
+        console.warn(`⚠️ Profile validation warning: Story may not incorporate selected badges: ${badges.join(", ")}`);
+      }
+      
+      if (profile.mode && !storyText.includes(profile.mode.toLowerCase())) {
+        console.warn(`⚠️ Profile validation warning: Story may not match quest mode: ${profile.mode}`);
+      }
+    }
     
     if (!parsed) {
       console.error("Failed to parse JSON from response. Raw text length:", text.length);
