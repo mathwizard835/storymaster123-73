@@ -248,13 +248,8 @@ serve(async (req) => {
     const scene = body?.scene ?? null; // optional current scene context
     const sceneCount = Number(body?.scene_count ?? 1);
     const megastory = Boolean(body?.megastory ?? false);
-    // Smart token management based on story type
-    const getOptimalTokens = (sceneCount: number, isNewStory: boolean) => {
-      if (isNewStory) return 2000; // New stories need complete JSON
-      if (sceneCount >= 12) return 1500; // Ending scenes need more detail
-      return 1200; // Continuation scenes - ensure complete responses
-    };
-    const max_tokens = Math.min(Number(body?.max_tokens ?? getOptimalTokens(sceneCount, !scene)), 4000);
+    // Use client-provided max_tokens for quality (already optimized for age/length)
+    const max_tokens = Number(body?.max_tokens ?? 2500);
 
     const inventoryContext = profile.inventory && profile.inventory.length > 0 ? 
       `\nCurrent Inventory: ${profile.inventory.map((item: any) => `${item.name} (${item.type})`).join(", ")}` : 
@@ -322,7 +317,7 @@ Requirements: ${scene ? 'Continue story and consider inventory context' : 'New a
         "content-type": "application/json",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-20250514", // Using high-performance model
+        model: "claude-opus-4-20250514", // Using highest quality model for best stories
         max_tokens,
         system: SYSTEM_PROMPT,
         messages: [
