@@ -15,16 +15,26 @@ const corsHeaders = {
 
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
 
-// Blocked content patterns
+// Strict content blocking for ages 6-11
 const BLOCKED_PATTERNS = [
-  /\b(sex|sexual|porn|pornography|xxx|nsfw|nude|naked|explicit)\b/i,
-  /\b(drugs|cocaine|heroin|meth|marijuana|weed|cannabis)\b/i,
-  /\b(violence|kill|murder|assault|abuse|harm|torture)\b/i,
-  /\b(hate|racist|racism|nazi|supremacy)\b/i,
-  /\b(suicide|self-harm|cutting)\b/i,
-  /\b(gambling|casino|betting)\b/i,
-  /\b(weapons|guns|firearms|explosives|bomb)\b/i,
-  /\b(adult|mature|18\+|21\+)\b/i,
+  // Sexual content and innuendo
+  /\b(sex|sexual|porn|pornography|xxx|nsfw|nude|naked|explicit|romantic|kiss|dating|boyfriend|girlfriend|lover|seductive|flirt)\b/i,
+  // Drugs, alcohol, smoking
+  /\b(drugs|cocaine|heroin|meth|marijuana|weed|cannabis|alcohol|beer|wine|liquor|drunk|smoking|cigarette|vape|tobacco)\b/i,
+  // Graphic violence and gore
+  /\b(kill|killing|murder|stab|stabbing|blood|bloody|gore|gory|death|die|dying|corpse|torture|mutilate|dismember|decapitate)\b/i,
+  // Weapons and violence
+  /\b(gun|guns|firearm|shoot|shooting|weapon|knife|sword|explosive|bomb|grenade|attack|assault)\b/i,
+  // Hate and discrimination
+  /\b(hate|racist|racism|nazi|supremacy|discriminat|bully|bullying|harass|harassment)\b/i,
+  // Self-harm and mental health crisis
+  /\b(suicide|self-harm|cutting|hanging)\b/i,
+  // Gambling and adult themes
+  /\b(gambling|casino|betting|adult|mature|18\+|21\+)\b/i,
+  // Dark horror themes
+  /\b(horror|terrifying|nightmare|demon|possessed|haunted|evil|sinister|creepy|scary|frightening)\b/i,
+  // Unsafe behaviors
+  /\b(dangerous|unsafe|reckless|poison|toxic)\b/i,
 ];
 
 function containsInappropriateContent(text: string): boolean {
@@ -59,7 +69,7 @@ function containsInappropriateContent(text: string): boolean {
 function validateProfileData(profile: any): boolean {
   if (!profile || typeof profile !== 'object') return true; // Optional field
   
-  if (profile.age && (typeof profile.age !== 'number' || profile.age < 4 || profile.age > 18)) {
+  if (profile.age && (typeof profile.age !== 'number' || profile.age < 6 || profile.age > 11)) {
     return false;
   }
   
@@ -168,7 +178,14 @@ function extractJSON(text: string): unknown | null {
   return null;
 }
 
-const SYSTEM_PROMPT = `You are StoryMaster AI, a creative, emotionally intelligent storyteller designed to help children explore exciting, personalized, and age-appropriate choose-your-own-adventure stories.
+const SYSTEM_PROMPT = `You are StoryMaster AI, a creative, emotionally intelligent storyteller designed to help children ages 6-11 explore exciting, personalized, and age-appropriate choose-your-own-adventure stories.
+
+🚫 ABSOLUTE CONTENT SAFETY RULES - NON-NEGOTIABLE:
+1. NO graphic violence or gore: Never include killing, stabbing, blood, or detailed violence. Keep action adventure-appropriate.
+2. NO sexual content or innuendo: All relationships must be platonic, age-appropriate friendships. No romantic or sexual themes whatsoever.
+3. NO drugs, alcohol, smoking, or unsafe behaviors: Never promote or depict harmful habits.
+4. NO bullying, harassment, or discrimination: All characters must treat each other respectfully and positively.
+5. NO dark horror or frightening scenarios: Keep stories fun, adventurous, or mysterious but never scary or disturbing.
 
 ⚠️ CRITICAL PROFILE ENFORCEMENT RULES - MUST FOLLOW:
 1. You MUST strictly adhere to the player's profile settings in EVERY response
@@ -251,9 +268,9 @@ Be cinematic. Build wonder. Let the choices matter.
 
 🎓 Learning Mode (when mode is "learning"):
 Create IMMERSIVE educational adventures using discovery-based learning. Match educational content to age:
-- **Ages 4-7:** Basic math/letters via puzzles and simple games
+- **Ages 6-7:** Basic math/letters via puzzles and simple games
 - **Ages 8-9:** Math/science/reading challenges embedded in story
-- **Ages 10+:** Advanced concepts through gameplay and problem-solving
+- **Ages 10-11:** Advanced concepts through gameplay and problem-solving
 
 Embed assessment naturally through story choices. Wrong answers lead to educational consequences, not dead ends.
 

@@ -1,15 +1,25 @@
 import { z } from 'zod';
 
-// Inappropriate content patterns to block
+// Strict content blocking for ages 6-11
 const BLOCKED_PATTERNS = [
-  /\b(sex|sexual|porn|pornography|xxx|nsfw|nude|naked|explicit)\b/i,
-  /\b(drugs|cocaine|heroin|meth|marijuana|weed|cannabis)\b/i,
-  /\b(violence|kill|murder|assault|abuse|harm|torture)\b/i,
-  /\b(hate|racist|racism|nazi|supremacy)\b/i,
-  /\b(suicide|self-harm|cutting)\b/i,
-  /\b(gambling|casino|betting)\b/i,
-  /\b(weapons|guns|firearms|explosives|bomb)\b/i,
-  /\b(adult|mature|18\+|21\+)\b/i,
+  // Sexual content and innuendo
+  /\b(sex|sexual|porn|pornography|xxx|nsfw|nude|naked|explicit|romantic|kiss|dating|boyfriend|girlfriend|lover|seductive|flirt)\b/i,
+  // Drugs, alcohol, smoking
+  /\b(drugs|cocaine|heroin|meth|marijuana|weed|cannabis|alcohol|beer|wine|liquor|drunk|smoking|cigarette|vape|tobacco)\b/i,
+  // Graphic violence and gore
+  /\b(kill|killing|murder|stab|stabbing|blood|bloody|gore|gory|death|die|dying|corpse|torture|mutilate|dismember|decapitate)\b/i,
+  // Weapons and violence
+  /\b(gun|guns|firearm|shoot|shooting|weapon|knife|sword|explosive|bomb|grenade|attack|assault)\b/i,
+  // Hate and discrimination
+  /\b(hate|racist|racism|nazi|supremacy|discriminat|bully|bullying|harass|harassment)\b/i,
+  // Self-harm and mental health crisis
+  /\b(suicide|self-harm|cutting|hanging)\b/i,
+  // Gambling and adult themes
+  /\b(gambling|casino|betting|adult|mature|18\+|21\+)\b/i,
+  // Dark horror themes
+  /\b(horror|terrifying|nightmare|demon|possessed|haunted|evil|sinister|creepy|scary|frightening)\b/i,
+  // Unsafe behaviors
+  /\b(dangerous|unsafe|reckless|poison|toxic)\b/i,
 ];
 
 // Content validation function
@@ -85,7 +95,7 @@ export const waitlistSchema = z.object({
 // Story generation validation
 export const storyGenerationSchema = z.object({
   profile: z.object({
-    age: z.number().min(4).max(18).optional(),
+    age: z.number().min(6).max(11).optional(),
     reading: z.enum(['Apprentice', 'Adventurer', 'Hero']).optional(),
     selectedBadges: z.array(z.string()).max(10).optional(),
     interests: z.string().max(500).optional(),
@@ -106,7 +116,7 @@ export const storyGenerationSchema = z.object({
 
 // Profile setup validation
 export const profileSetupSchema = z.object({
-  age: z.number().min(4).max(18),
+  age: z.number().min(6).max(11),
   reading: z.enum(['Apprentice', 'Adventurer', 'Hero']),
   selectedBadges: z.array(z.string()).min(1).max(5),
   interests: safeContentSchema.optional().or(z.literal('')),
