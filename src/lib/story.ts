@@ -245,11 +245,31 @@ export const generateNextScene = async (
     return { ...cached.data, raw: null };
   }
 
-  // Smart token calculation based on story type
-  const optimizedTokens = maxTokens || (sceneCount === 1 ? 1800 : sceneCount >= 12 ? 1200 : 900);
+  // Age-based token allocation for scene 1
+  const getBaseTokensForScene1 = (age: number): number => {
+    if (age <= 9) return 1800;
+    if (age <= 11) return 2400;
+    return 3000; // Ages 12-13
+  };
   
-  // Adjust max tokens based on story length
-  const lengthMultiplier = profile.storyLength === 'short' ? 0.7 : profile.storyLength === 'epic' ? 1.5 : 1;
+  // Smart token calculation based on story type and age
+  let optimizedTokens: number;
+  
+  if (sceneCount === 1) {
+    // Scene 1: Age-based allocation
+    optimizedTokens = maxTokens || getBaseTokensForScene1(profile.age || 8);
+  } else if (sceneCount >= 12) {
+    // Final scenes: Always generous for satisfying conclusions
+    optimizedTokens = maxTokens || 2000;
+  } else {
+    // Continuation scenes: Base + age multiplier
+    const baseTokens = 1500;
+    const ageMultiplier = profile.age <= 9 ? 1.0 : profile.age <= 11 ? 1.13 : 1.27; // +0, +200, +400
+    optimizedTokens = maxTokens || Math.floor(baseTokens * ageMultiplier);
+  }
+  
+  // Story length multiplier
+  const lengthMultiplier = profile.storyLength === 'short' ? 1.0 : profile.storyLength === 'epic' ? 1.5 : 1.2;
   const adjustedTokens = Math.floor(optimizedTokens * lengthMultiplier);
   
   try {
