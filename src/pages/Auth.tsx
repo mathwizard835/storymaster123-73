@@ -193,9 +193,12 @@ const Auth = () => {
         return;
       }
 
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
-      });
+      const isNative = isMobilePlatform();
+      const redirectUrl = isNative ? undefined : `${window.location.origin}/reset-password`;
+      
+      const { error } = await supabase.auth.resetPasswordForEmail(email, 
+        redirectUrl ? { redirectTo: redirectUrl } : {}
+      );
 
       if (error) {
         setError(error.message);
