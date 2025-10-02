@@ -178,7 +178,7 @@ const Mission = () => {
           };
           setProfile(savedProfile);
         } else {
-          savedProfile = loadProfile();
+          savedProfile = await loadProfile();
           if (!savedProfile) {
             navigate("/profile");
             return;
