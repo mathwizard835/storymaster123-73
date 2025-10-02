@@ -171,7 +171,7 @@ const Mission = () => {
           // Create a basic trial profile
           savedProfile = {
             name: "Guest Hero",
-            age: 12,
+            age: 10,
             characterType: "action-hero",
             interests: ["adventure"],
             mode: "story"
