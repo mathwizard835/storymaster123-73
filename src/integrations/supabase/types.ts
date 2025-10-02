@@ -268,7 +268,7 @@ export type Database = {
       waitlist: {
         Row: {
           created_at: string
-          device_id: string
+          device_id: string | null
           email: string
           id: string
           position: number | null
@@ -276,7 +276,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          device_id: string
+          device_id?: string | null
           email: string
           id?: string
           position?: number | null
@@ -284,7 +284,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
-          device_id?: string
+          device_id?: string | null
           email?: string
           id?: string
           position?: number | null
@@ -297,10 +297,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      validate_device_context: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never

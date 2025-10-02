@@ -228,12 +228,6 @@ export const markStoryCompleted = async (
 // Simple cache for identical requests (5 minute TTL)
 const sceneCache = new Map<string, { data: { parsed: Scene | null; text: string }, timestamp: number }>();
 
-// Clear the scene cache (useful when starting a new story)
-export const clearSceneCache = () => {
-  sceneCache.clear();
-  console.log("Scene cache cleared");
-};
-
 export const generateNextScene = async (
   profile: Profile,
   scene?: unknown,
@@ -251,34 +245,20 @@ export const generateNextScene = async (
     return { ...cached.data, raw: null };
   }
 
-  // Age-based token allocation for scene 1
-  const getBaseTokensForScene1 = (age: number): number => {
-    if (age <= 9) return 1800;
-    if (age <= 11) return 2400;
-    return 3000; // Ages 12-13
-  };
+  // Smart token calculation based on story type
+  const optimizedTokens = maxTokens || (sceneCount === 1 ? 1800 : sceneCount >= 12 ? 1200 : 900);
   
-  // Smart token calculation based on story type and age
-  let optimizedTokens: number;
-  
-  if (sceneCount === 1) {
-    // Scene 1: Age-based allocation
-    optimizedTokens = maxTokens || getBaseTokensForScene1(profile.age || 8);
-  } else if (sceneCount >= 12) {
-    // Final scenes: Always generous for satisfying conclusions
-    optimizedTokens = maxTokens || 2000;
-  } else {
-    // Continuation scenes: Base + age multiplier
-    const baseTokens = 1500;
-    const ageMultiplier = profile.age <= 9 ? 1.0 : profile.age <= 11 ? 1.13 : 1.27; // +0, +200, +400
-    optimizedTokens = maxTokens || Math.floor(baseTokens * ageMultiplier);
-  }
-  
-  // Story length multiplier
-  const lengthMultiplier = profile.storyLength === 'short' ? 1.0 : profile.storyLength === 'epic' ? 1.5 : 1.2;
+  // Adjust max tokens based on story length
+  const lengthMultiplier = profile.storyLength === 'short' ? 0.7 : profile.storyLength === 'epic' ? 1.5 : 1;
   const adjustedTokens = Math.floor(optimizedTokens * lengthMultiplier);
   
   try {
+    // Ensure the user is authenticated before calling the Edge Function
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      throw new Error("Not authenticated");
+    }
+
     const { data, error } = await supabase.functions.invoke("generate-story", {
       body: { profile, scene, megastory, max_tokens: adjustedTokens, scene_count: sceneCount },
     });

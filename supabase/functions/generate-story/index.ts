@@ -1,62 +1,12 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-// Rate limiting: Track requests per device
-const requestCounts = new Map<string, { count: number; resetTime: number }>();
-const RATE_LIMIT_WINDOW = 60000; // 1 minute
-const MAX_REQUESTS_PER_MINUTE = 10;
-
-// More restrictive CORS - only allow specific origins in production
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*", // TODO: Restrict to specific domains in production
+  "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Max-Age": "86400",
 };
 
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
-
-// Input validation functions
-function validateProfileData(profile: any): boolean {
-  if (!profile || typeof profile !== 'object') return true; // Optional field
-  
-  if (profile.age && (typeof profile.age !== 'number' || profile.age < 4 || profile.age > 18)) {
-    return false;
-  }
-  
-  if (profile.interests && (!Array.isArray(profile.interests) || profile.interests.length > 20)) {
-    return false;
-  }
-  
-  if (profile.selectedBadges && (!Array.isArray(profile.selectedBadges) || profile.selectedBadges.length > 10)) {
-    return false;
-  }
-  
-  return true;
-}
-
-function validateRequestSize(body: any): boolean {
-  const bodyStr = JSON.stringify(body);
-  return bodyStr.length <= 50000; // 50KB limit
-}
-
-function rateLimit(deviceId: string): boolean {
-  const now = Date.now();
-  const deviceKey = deviceId || 'anonymous';
-  
-  const current = requestCounts.get(deviceKey);
-  
-  if (!current || now > current.resetTime) {
-    requestCounts.set(deviceKey, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
-    return true;
-  }
-  
-  if (current.count >= MAX_REQUESTS_PER_MINUTE) {
-    return false;
-  }
-  
-  current.count++;
-  return true;
-}
 
 // Enhanced JSON extraction function to handle markdown-wrapped responses
 function extractJSON(text: string): unknown | null {
@@ -119,9 +69,10 @@ const SYSTEM_PROMPT = `You are StoryMaster AI, a creative storyteller for childr
 - Quest Mode: Thrill (urgent action), Comedy (clever humor), Mystery (clues/suspense), Explore (imagination), Learning (stealth education)
 
 🧠 Critical Thinking Integration (Age-Scaled):
-**Ages 6-8**: Simple cause-effect choices ("What happens if we feed the hungry dragon?" vs "What if we hide?")
-**Ages 9-11**: Pattern recognition and basic logic ("Which clue doesn't fit?" "What would a detective do?")
-**Ages 12-13**: Multi-step reasoning, ethical dilemmas, and complex problem-solving ("Weigh the benefits and risks for different characters", "Consider the moral implications of this choice")
+**Ages 4-6**: Simple cause-effect choices ("What happens if we feed the hungry dragon?" vs "What if we hide?")
+**Ages 7-9**: Pattern recognition and basic logic ("Which clue doesn't fit?" "What would a detective do?")
+**Ages 10-12**: Multi-step reasoning and consequences ("Consider both short-term and long-term effects of this choice")
+**Ages 13+**: Ethical dilemmas and complex problem-solving ("Weigh the benefits and risks for different characters")
 
 🎯 Choice Design Principles:
 - Make thinking FEEL like adventure, not homework
@@ -133,20 +84,16 @@ const SYSTEM_PROMPT = `You are StoryMaster AI, a creative storyteller for childr
 
 📖 Story Structure & Pacing:
 - Open with immediate action hook answering: Where am I? What world? Who am I? What's my backstory?
-- Build escalating stakes and tension with vivid, impactful storytelling
-- **Age-Appropriate Length & Complexity**:
-  * **Ages 6-8**: 150-200 words per scene, simple vocabulary, clear cause-effect
-  * **Ages 9-11**: 200-300 words per scene, moderate vocabulary, pattern recognition challenges
-  * **Ages 12-13**: 300-450 words per scene, sophisticated vocabulary (college-prep level), complex moral dilemmas, nuanced character psychology, literary devices (metaphor, foreshadowing)
+- Keep passages short, vivid, and impactful (215 words max)
+- Build escalating stakes and tension
 - End with 2-4 strategic choices that influence the story
 - Include morally complex decisions appropriate for age
 - Add game-like elements (HUD, progress tracking, countdowns)
 - Weave critical thinking moments into plot naturally
-- **CRITICAL Story Length Pacing**:
+- **CRITICAL**: Pace story according to selected length:
   * Short stories (4-5 scenes): Quick progression, immediate conflict resolution
-  * Medium stories (6-8 scenes): Balanced pacing with character development, deeper world-building
-  * Epic stories (10-12 scenes): Rich world-building, complex character arcs, multiple interconnected plot threads, deeper thematic exploration
-- **For Ages 12-13 at Hero Level**: Match quality of published YA literature - parallel storylines, flashbacks, sophisticated narrative techniques, realistic character motivations and consequences
+  * Medium stories (6-8 scenes): Balanced pacing with character development
+  * Epic stories (10-12 scenes): Rich world-building, complex character arcs, multiple plot threads
 
 🎒 Interactive Object System:
 - Include "interactiveObjects" array with objects players can examine/interact with
@@ -199,54 +146,16 @@ serve(async (req) => {
   }
 
   if (!ANTHROPIC_API_KEY) {
-    console.error("Missing ANTHROPIC_API_KEY secret");
     return new Response(
-      JSON.stringify({ error: "Service configuration error" }),
+      JSON.stringify({ error: "Missing ANTHROPIC_API_KEY secret" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 
   try {
-    // Parse and validate request body
-    const contentLength = req.headers.get('content-length');
-    if (contentLength && parseInt(contentLength) > 50000) {
-      return new Response(
-        JSON.stringify({ error: "Request too large" }),
-        { status: 413, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
     const body = await req.json();
-    
-    // Validate request structure and content
-    if (!validateRequestSize(body)) {
-      return new Response(
-        JSON.stringify({ error: "Request payload too large" }),
-        { status: 413, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-    
-    // Extract device ID for rate limiting
-    const deviceId = req.headers.get('x-device-id') || body?.device_id || 'anonymous';
-    
-    // Apply rate limiting
-    if (!rateLimit(deviceId)) {
-      return new Response(
-        JSON.stringify({ error: "Rate limit exceeded. Please wait before making another request." }),
-        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-    
-    // Validate profile data
-    if (!validateProfileData(body?.profile)) {
-      return new Response(
-        JSON.stringify({ error: "Invalid profile data" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
     const profile = body?.profile ?? {};
     const scene = body?.scene ?? null; // optional current scene context
-    const sceneCount = Number(body?.scene_count ?? 1);
     const megastory = Boolean(body?.megastory ?? false);
     // Smart token management based on story type
     const getOptimalTokens = (sceneCount: number, isNewStory: boolean) => {
@@ -255,9 +164,10 @@ serve(async (req) => {
       return 1200; // Continuation scenes - ensure complete responses
     };
     const max_tokens = Math.min(Number(body?.max_tokens ?? getOptimalTokens(sceneCount, !scene)), 4000);
+    const sceneCount = Number(body?.scene_count ?? 1);
 
     const inventoryContext = profile.inventory && profile.inventory.length > 0 ? 
-      `\nCurrent Inventory: ${profile.inventory.map((item: any) => `${item.name} (${item.type})`).join(", ")}` : 
+      `\nCurrent Inventory: ${profile.inventory.map(item => `${item.name} (${item.type})`).join(", ")}` : 
       "\nInventory: Empty";
 
     const profileSummary = `Player Profile:
@@ -310,9 +220,9 @@ LEARNING: Age ${profile.age} - ${profile.age <= 7 ? 'Basic math/letters via puzz
 
 JSON format: {"sceneTitle":"...","hud":{"energy":0-100,"time":"...","choicePoints":0-50,"ui":["..."]},"narrative":"...","choices":[{"id":"a","text":"...","type":"standard|item_use|object_interact","requiresItem":"...","consumesItem":true}],"interactiveObjects":[{"id":"...","name":"...","description":"...","actions":["Examine","Search"],"requiresItem":"..."}],"itemsFound":[{"id":"...","name":"...","description":"...","type":"key|tool|consumable|document|weapon|potion","usable":true,"consumable":false}],"end":false}
 
-Requirements: ${scene ? 'Continue story and consider inventory context' : 'New adventure opening with discoverable objects/items'}, 3-4 choices, age-appropriate length (${profile.age <= 8 ? '150-200' : profile.age <= 11 ? '200-300' : '300-450'} words), 3-4 paragraph narrative with \\n\\n breaks${profile.mode === 'learning' ? ', embed learning naturally' : ''}, include interactive objects when appropriate, ${profile.age >= 12 ? 'sophisticated vocabulary and complex narrative techniques' : 'age-appropriate complexity'}.`;
+Requirements: ${scene ? 'Continue story and consider inventory context' : 'New adventure opening with discoverable objects/items'}, 3-4 choices, 215 words max, 3-4 paragraph narrative with \\n\\n breaks${profile.mode === 'learning' ? ', embed learning naturally' : ''}, include interactive objects when appropriate.`;
 
-    console.log(`Story generation request: ${max_tokens} tokens, scene ${sceneCount}`);
+    console.log(`Making request to Claude (${max_tokens} tokens) with model: claude-sonnet-4-20250514`);
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -333,17 +243,17 @@ Requirements: ${scene ? 'Continue story and consider inventory context' : 'New a
 
     if (!response.ok) {
       const errText = await response.text();
-      console.error("Anthropic API error:", response.status, errText);
+      console.error("Anthropic error:", errText);
       return new Response(
-        JSON.stringify({ error: "Story generation service error" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: "Anthropic API error", details: errText }),
+        { status: response.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     const data = await response.json();
     const text: string = data?.content?.[0]?.text ?? "";
     
-    console.log("Story generation completed, length:", text.length);
+    console.log("Claude response (first 200 chars):", text.substring(0, 200));
 
     // Use enhanced JSON extraction
     const parsed = extractJSON(text);

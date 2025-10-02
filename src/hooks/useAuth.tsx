@@ -1,7 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { isMobilePlatform } from '@/lib/mobileFeatures';
 
 interface AuthContextType {
   user: User | null;
@@ -18,34 +17,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const isMobile = isMobilePlatform();
-    
-    // Mobile bypass - no auth needed
-    if (isMobile) {
-      setLoading(false);
-      return;
-    }
-
-    // Web-only auth setup
-    const authTimeout = setTimeout(() => {
-      setLoading(false);
-    }, 5000);
-
+    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        clearTimeout(authTimeout);
+        console.log('Auth event:', event, session?.user?.email);
         
+        // Handle email verification success
         if (event === 'SIGNED_IN' && session?.user?.email_confirmed_at) {
+          // Check if this is from email verification by looking at URL params
           const urlParams = new URLSearchParams(window.location.search);
-          if (urlParams.get('type') === 'signup') {
+          const isFromVerification = urlParams.has('type') && urlParams.get('type') === 'signup';
+          
+          if (isFromVerification) {
+            // Show success message
             import('@/hooks/use-toast').then(({ toast }) => {
               toast({
                 title: "Email verified successfully!",
-                description: "Welcome to StoryMaster Quest!",
+                description: "Welcome to StoryMaster Quest! Your adventure awaits.",
               });
             });
-            // Always redirect to dashboard for both mobile and web
-            window.location.href = '/dashboard';
+            
+            // Clean up URL and redirect to profile setup
+            window.history.replaceState({}, document.title, '/profile?new=true');
+            window.location.href = '/profile?new=true';
           }
         }
         
@@ -55,17 +49,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     );
 
+    // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      clearTimeout(authTimeout);
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
     });
 
-    return () => {
-      clearTimeout(authTimeout);
-      subscription.unsubscribe();
-    };
+    return () => subscription.unsubscribe();
   }, []);
 
   const signOut = async () => {

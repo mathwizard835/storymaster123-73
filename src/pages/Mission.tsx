@@ -8,7 +8,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Zap, Timer, Star, Heart, Shield, Eye, Wand2, PawPrint, Crosshair, Users, Palette, RefreshCw, Play, BookOpen, Trophy, Target, ArrowLeft, Crown } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect, useState } from "react";
-import { generateNextScene, loadProfile, checkStoryLimit, markStoryCompleted, type Scene, saveCurrentStory, loadCurrentStory, clearCurrentStory, saveCompletedStory, type SavedStory, type InventoryItem, saveProfileToLocal, clearSceneCache } from "@/lib/story";
+import { generateNextScene, loadProfile, checkStoryLimit, markStoryCompleted, type Scene, saveCurrentStory, loadCurrentStory, clearCurrentStory, saveCompletedStory, type SavedStory, type InventoryItem, saveProfileToLocal } from "@/lib/story";
 import { saveStoryToDatabase, loadCurrentStoryFromDatabase, clearCurrentStoryInDatabase } from "@/lib/databaseStory";
 import { loadInventory, saveInventory, addItemToInventory, useItem, clearInventory, updateProfileInventory } from "@/lib/inventory";
 import { 
@@ -150,17 +150,11 @@ const Mission = () => {
   useEffect(() => {
     const init = async () => {
       try {
-        // Check if mobile platform
-        const isMobile = typeof window !== 'undefined' && 
-          ((window as any).Capacitor?.getPlatform?.() === 'ios' || 
-           (window as any).Capacitor?.getPlatform?.() === 'android' ||
-           /Android|iPhone|iPad|iPod/i.test(navigator.userAgent));
-        
-        // Check if trial/mobile story already used for non-authenticated users
-        if (!user && (isTrialMode || isMobile)) {
+        // Check if this is a trial and if trial is already used
+        if (isTrialMode && !user) {
           const trialUsed = localStorage.getItem('trial_story_used');
           if (trialUsed) {
-            navigate("/");
+            navigate("/auth");
             return;
           }
         }
@@ -180,12 +174,7 @@ const Mission = () => {
         } else {
           savedProfile = loadProfile();
           if (!savedProfile) {
-            // Preserve query parameters when redirecting to profile
-            const params = new URLSearchParams();
-            if (searchParams.get('new') === 'true') params.set('new', 'true');
-            if (searchParams.get('trial') === 'true') params.set('trial', 'true');
-            const profileUrl = params.toString() ? `/profile?${params.toString()}` : '/profile';
-            navigate(profileUrl);
+            navigate("/profile");
             return;
           }
           setProfile(savedProfile);
@@ -223,7 +212,6 @@ const Mission = () => {
               await clearCurrentStoryInDatabase(existingStory.id);
             }
             clearInventory();
-            clearSceneCache(); // Clear the scene generation cache
           } catch (e) {
             console.log('No existing story to clear');
           }
@@ -391,22 +379,16 @@ const Mission = () => {
       }
 
       if (parsed.end) {
-        // Check if mobile platform
-        const isMobile = typeof window !== 'undefined' && 
-          ((window as any).Capacitor?.getPlatform?.() === 'ios' || 
-           (window as any).Capacitor?.getPlatform?.() === 'android' ||
-           /Android|iPhone|iPad|iPod/i.test(navigator.userAgent));
-        
-        // Mark trial/mobile story as used if not authenticated
-        if (!user && (isTrialMode || isMobile)) {
+        // Mark trial as used if in trial mode
+        if (isTrialMode && !user) {
           localStorage.setItem('trial_story_used', 'true');
           toast({
-            title: "Story Complete! 🎉",
-            description: "Sign up to continue your adventures!",
+            title: "Trial Complete! 🎉",
+            description: "Create your profile to continue your adventure!",
             variant: "default",
           });
           setTimeout(() => {
-            navigate("/");
+            navigate("/profile");
           }, 3000);
           return;
         }

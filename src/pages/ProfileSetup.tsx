@@ -60,21 +60,13 @@ const ProfileSetup = () => {
     );
   };
 
-  const handleStart = async () => {
+  const handleStart = () => {
     const profile = { age, reading, selectedBadges, mode, storyLength: storyLength as 'short' | 'medium' | 'epic', topic, interests };
-    await saveProfileToLocal(profile);
+    saveProfileToLocal(profile);
     
-    // Check if this should be a new story or trial mode
+    // Check if this should be a new story
     const forceNew = searchParams.get('new') === 'true';
-    const isTrial = searchParams.get('trial') === 'true';
-    
-    // Build mission URL with appropriate parameters
-    let missionUrl = '/mission';
-    const params = new URLSearchParams();
-    if (forceNew) params.set('new', 'true');
-    if (isTrial) params.set('trial', 'true');
-    if (params.toString()) missionUrl += `?${params.toString()}`;
-    
+    const missionUrl = forceNew ? '/mission?new=true' : '/mission';
     navigate(missionUrl);
   };
 
@@ -111,7 +103,7 @@ const ProfileSetup = () => {
                     id="age"
                     defaultValue={[age]}
                     min={6}
-                    max={13}
+                    max={11}
                     step={1}
                     onValueChange={(v) => setAge(v[0] ?? 8)}
                   />

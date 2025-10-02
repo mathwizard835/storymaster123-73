@@ -7,7 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { getCompletedStories } from "@/lib/story";
 import { loadAchievements, ALL_ACHIEVEMENTS } from "@/lib/achievements";
 import { loadCharacter } from "@/lib/character";
-import { ArrowLeft, Trophy, BookOpen, Star, Crown, Zap, Plus, TrendingUp, Play } from "lucide-react";
+import { ArrowLeft, Trophy, BookOpen, Star, Crown, Zap, Plus, TrendingUp } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -91,24 +91,13 @@ const Dashboard = () => {
               <ArrowLeft className="h-4 w-4" />
               Back to Home
             </Button>
-            <div className="flex gap-2">
-              <Button 
-                onClick={() => navigate("/mission")}
-                variant="hero"
-                className="flex items-center gap-2"
-              >
-                <Play className="h-4 w-4" />
-                Continue Your Quest
-              </Button>
-              <Button 
-                onClick={() => navigate("/profile")}
-                variant="outline"
-                className="flex items-center gap-2"
-              >
-                <Plus className="h-4 w-4" />
-                New Adventure
-              </Button>
-            </div>
+            <Button 
+              onClick={() => navigate("/profile")}
+              className="flex items-center gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              New Adventure
+            </Button>
           </div>
 
           <div className="mb-8">

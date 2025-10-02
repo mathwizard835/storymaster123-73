@@ -63,25 +63,9 @@ export const setStatusBarStyle = async (style: 'light' | 'dark' = 'dark'): Promi
   }
 };
 
-// Check if running on mobile platform - PRODUCTION READY
+// Check if running on mobile platform
 export const isMobilePlatform = (): boolean => {
-  // Method 1: Capacitor platform check (most reliable)
-  if (typeof window !== 'undefined' && (window as any).Capacitor) {
-    try {
-      const platform = Capacitor.getPlatform();
-      return platform === 'ios' || platform === 'android';
-    } catch (error) {
-      console.warn('[MOBILE] Capacitor detected but getPlatform failed:', error);
-      return false;
-    }
-  }
-  
-  // Method 2: User agent fallback
-  if (typeof navigator !== 'undefined') {
-    return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-  }
-  
-  return false;
+  return Capacitor.isNativePlatform();
 };
 
 // Get platform information
