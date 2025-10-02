@@ -60,9 +60,9 @@ const ProfileSetup = () => {
     );
   };
 
-  const handleStart = async () => {
+  const handleStart = () => {
     const profile = { age, reading, selectedBadges, mode, storyLength: storyLength as 'short' | 'medium' | 'epic', topic, interests };
-    await saveProfileToLocal(profile);
+    saveProfileToLocal(profile);
     
     // Check if this should be a new story or trial mode
     const forceNew = searchParams.get('new') === 'true';
@@ -111,7 +111,7 @@ const ProfileSetup = () => {
                     id="age"
                     defaultValue={[age]}
                     min={6}
-                    max={13}
+                    max={15}
                     step={1}
                     onValueChange={(v) => setAge(v[0] ?? 8)}
                   />

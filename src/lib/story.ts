@@ -228,12 +228,6 @@ export const markStoryCompleted = async (
 // Simple cache for identical requests (5 minute TTL)
 const sceneCache = new Map<string, { data: { parsed: Scene | null; text: string }, timestamp: number }>();
 
-// Clear the scene cache (useful when starting a new story)
-export const clearSceneCache = () => {
-  sceneCache.clear();
-  console.log("Scene cache cleared");
-};
-
 export const generateNextScene = async (
   profile: Profile,
   scene?: unknown,
@@ -251,35 +245,12 @@ export const generateNextScene = async (
     return { ...cached.data, raw: null };
   }
 
-  // Optimized token allocation for maximum quality
-  const getOptimalTokens = (): number => {
-    const age = profile.age || 8;
-    const length = profile.storyLength || 'medium';
-    
-    // Base tokens by age for quality writing
-    let baseTokens: number;
-    if (age <= 9) {
-      baseTokens = 2200; // Enough for 150-200 words + rich detail
-    } else if (age <= 11) {
-      baseTokens = 2800; // 200-300 words + complexity
-    } else {
-      baseTokens = 3500; // 300-450 words + sophisticated narrative
-    }
-    
-    // Scene type adjustments
-    if (sceneCount === 1) {
-      baseTokens = Math.floor(baseTokens * 1.1); // Opening needs extra setup
-    } else if (sceneCount >= 12) {
-      baseTokens = Math.floor(baseTokens * 1.2); // Endings need satisfying conclusions
-    }
-    
-    // Story length multipliers
-    const lengthMultiplier = length === 'short' ? 0.9 : length === 'epic' ? 1.3 : 1.0;
-    
-    return Math.floor(baseTokens * lengthMultiplier);
-  };
+  // Smart token calculation based on story type
+  const optimizedTokens = maxTokens || (sceneCount === 1 ? 1800 : sceneCount >= 12 ? 1200 : 900);
   
-  const adjustedTokens = maxTokens || getOptimalTokens();
+  // Adjust max tokens based on story length
+  const lengthMultiplier = profile.storyLength === 'short' ? 0.7 : profile.storyLength === 'epic' ? 1.5 : 1;
+  const adjustedTokens = Math.floor(optimizedTokens * lengthMultiplier);
   
   try {
     const { data, error } = await supabase.functions.invoke("generate-story", {

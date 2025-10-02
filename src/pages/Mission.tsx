@@ -8,7 +8,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Zap, Timer, Star, Heart, Shield, Eye, Wand2, PawPrint, Crosshair, Users, Palette, RefreshCw, Play, BookOpen, Trophy, Target, ArrowLeft, Crown } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect, useState } from "react";
-import { generateNextScene, loadProfile, checkStoryLimit, markStoryCompleted, type Scene, saveCurrentStory, loadCurrentStory, clearCurrentStory, saveCompletedStory, type SavedStory, type InventoryItem, saveProfileToLocal, clearSceneCache } from "@/lib/story";
+import { generateNextScene, loadProfile, checkStoryLimit, markStoryCompleted, type Scene, saveCurrentStory, loadCurrentStory, clearCurrentStory, saveCompletedStory, type SavedStory, type InventoryItem, saveProfileToLocal } from "@/lib/story";
 import { saveStoryToDatabase, loadCurrentStoryFromDatabase, clearCurrentStoryInDatabase } from "@/lib/databaseStory";
 import { loadInventory, saveInventory, addItemToInventory, useItem, clearInventory, updateProfileInventory } from "@/lib/inventory";
 import { 
@@ -180,12 +180,7 @@ const Mission = () => {
         } else {
           savedProfile = loadProfile();
           if (!savedProfile) {
-            // Preserve query parameters when redirecting to profile
-            const params = new URLSearchParams();
-            if (searchParams.get('new') === 'true') params.set('new', 'true');
-            if (searchParams.get('trial') === 'true') params.set('trial', 'true');
-            const profileUrl = params.toString() ? `/profile?${params.toString()}` : '/profile';
-            navigate(profileUrl);
+            navigate("/profile");
             return;
           }
           setProfile(savedProfile);
@@ -223,7 +218,6 @@ const Mission = () => {
               await clearCurrentStoryInDatabase(existingStory.id);
             }
             clearInventory();
-            clearSceneCache(); // Clear the scene generation cache
           } catch (e) {
             console.log('No existing story to clear');
           }
