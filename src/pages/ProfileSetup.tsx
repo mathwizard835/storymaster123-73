@@ -70,7 +70,14 @@ const ProfileSetup = () => {
       });
       navigate('/');
     }
-  }, [navigate, toast]);
+
+    // Reset interests when starting a new adventure
+    const isNewAdventure = searchParams.get('new') === 'true';
+    if (isNewAdventure) {
+      setInterests("");
+      setTopic("");
+    }
+  }, [navigate, toast, searchParams]);
 
   const toggleBadge = (id: string) => {
     setSelectedBadges((prev) =>
