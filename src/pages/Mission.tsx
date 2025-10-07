@@ -8,7 +8,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Zap, Timer, Star, Heart, Shield, Eye, Wand2, PawPrint, Crosshair, Users, Palette, RefreshCw, Play, BookOpen, Trophy, Target, ArrowLeft, Crown } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect, useState } from "react";
-import { generateNextScene, loadProfile, checkStoryLimit, markStoryCompleted, type Scene, saveCurrentStory, loadCurrentStory, clearCurrentStory, saveCompletedStory, type SavedStory, type InventoryItem, saveProfileToLocal } from "@/lib/story";
+import { generateNextScene, loadProfile, checkStoryLimit, markStoryCompleted, type Scene, saveCurrentStory, loadCurrentStory, clearCurrentStory, saveCompletedStory, getCompletedStories, type SavedStory, type InventoryItem, saveProfileToLocal } from "@/lib/story";
 import { saveStoryToDatabase, loadCurrentStoryFromDatabase, clearCurrentStoryInDatabase } from "@/lib/databaseStory";
 import { loadInventory, saveInventory, addItemToInventory, useItem, clearInventory, updateProfileInventory } from "@/lib/inventory";
 import { 
@@ -701,49 +701,64 @@ const Mission = () => {
                           const nextSceneCount = sceneCount;
                           const { newAchievements, characterProgress } = await markStoryCompleted(profile, nextSceneCount);
                           
-                          const completedStoryData = {
-                            id: savedStory.id,
-                            title: scene.sceneTitle || "Untitled Adventure",
-                            completedAt: new Date().toISOString(),
-                            sceneCount: nextSceneCount,
-                            choicesMade: [],
-                            profile: savedStory.profile,
-                          };
+                          // Check if this story was already saved to prevent duplicates
+                          const existingStories = getCompletedStories();
+                          const alreadySaved = existingStories.some(story => story.id === savedStory.id);
                           
-                          saveCompletedStory(completedStoryData);
+                          if (!alreadySaved) {
+                            const completedStoryData = {
+                              id: savedStory.id,
+                              title: allScenes[0]?.sceneTitle || scene.sceneTitle || "Untitled Adventure",
+                              completedAt: new Date().toISOString(),
+                              sceneCount: nextSceneCount,
+                              choicesMade: [],
+                              profile: savedStory.profile,
+                            };
+                            
+                            saveCompletedStory(completedStoryData);
+                          }
+                          
                           await clearCurrentStoryInDatabase(savedStory.id);
                           clearInventory();
                           setInventory([]);
 
-                          // Show level up notification if applicable
+                          // Show level up notification with longer delay for visibility
                           if (characterProgress?.leveledUp) {
-                            toast({
-                              title: `🎉 Level Up! You're now Level ${characterProgress.character.level}!`,
-                              description: `You gained experience and unlocked new abilities!`,
-                              duration: 6000,
-                            });
+                            setTimeout(() => {
+                              toast({
+                                title: `🎉 Level Up! You're now Level ${characterProgress.character.level}!`,
+                                description: `You gained ${characterProgress.expGained || 0} XP and unlocked new abilities!`,
+                                duration: 8000,
+                              });
+                            }, 500);
                           }
 
-                          // Show new achievements
+                          // Show new achievements with staggered timing
                           if (newAchievements?.length > 0) {
                             newAchievements.forEach((achievement, index) => {
                               setTimeout(() => {
                                 toast({
                                   title: `🏆 Achievement Unlocked!`,
-                                  description: `${achievement.icon} ${achievement.name}`,
-                                  duration: 5000,
+                                  description: `${achievement.icon} ${achievement.name}: ${achievement.description}`,
+                                  duration: 7000,
                                 });
-                              }, (index + 1) * 1000);
+                              }, (characterProgress?.leveledUp ? 2000 : 500) + (index * 1500));
                             });
                           }
 
-                          toast({
-                            title: "🎉 Adventure Saved!",
-                            description: `Your ${nextSceneCount}-scene adventure has been added to your gallery!`,
-                            duration: 5000,
-                          });
+                          const finalDelay = 500 + 
+                            (characterProgress?.leveledUp ? 1000 : 0) + 
+                            (newAchievements?.length || 0) * 1500;
 
-                          setTimeout(() => navigate('/'), 2000);
+                          setTimeout(() => {
+                            toast({
+                              title: "🎉 Adventure Saved!",
+                              description: `Your ${nextSceneCount}-scene adventure has been added to your gallery!`,
+                              duration: 5000,
+                            });
+                          }, finalDelay);
+
+                          setTimeout(() => navigate('/'), finalDelay + 3000);
                         } catch (error) {
                           console.error("Error finishing adventure:", error);
                           toast({
