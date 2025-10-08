@@ -593,7 +593,7 @@ const Mission = () => {
                           <span className="text-white font-semibold">{scene.hud.energy}</span>
                         </div>
                       </TooltipTrigger>
-                      <TooltipContent>
+                      <TooltipContent side="bottom" sideOffset={12} className="z-[9999] bg-popover/95 backdrop-blur-sm">
                         <p className="max-w-xs">⚡ Experience Points: Earned through story progression and smart choices. Build up experience to level up your hero!</p>
                       </TooltipContent>
                     </Tooltip>
@@ -605,7 +605,7 @@ const Mission = () => {
                           <span className="text-white font-semibold">{scene.hud.time}</span>
                         </div>
                       </TooltipTrigger>
-                      <TooltipContent>
+                      <TooltipContent side="bottom" sideOffset={12} className="z-[9999] bg-popover/95 backdrop-blur-sm">
                         <p className="max-w-xs">⏱️ Time/Energy: Represents your character's current energy level and story progress timing.</p>
                       </TooltipContent>
                     </Tooltip>
@@ -617,7 +617,7 @@ const Mission = () => {
                           <span className="text-white font-semibold">{scene.hud.choicePoints}</span>
                         </div>
                       </TooltipTrigger>
-                      <TooltipContent>
+                      <TooltipContent side="bottom" sideOffset={12} className="z-[9999] bg-popover/95 backdrop-blur-sm">
                         <p className="max-w-xs">⭐ Choice Points: Total meaningful decisions made in your adventure. Higher points show deeper engagement with the story!</p>
                       </TooltipContent>
                     </Tooltip>
@@ -631,7 +631,7 @@ const Mission = () => {
                           </span>
                         </div>
                       </TooltipTrigger>
-                      <TooltipContent>
+                      <TooltipContent side="bottom" sideOffset={12} className="z-[9999] bg-popover/95 backdrop-blur-sm">
                         <p className="max-w-xs">❤️ Status Display: Shows your current story status (display only, not interactive).</p>
                       </TooltipContent>
                     </Tooltip>
