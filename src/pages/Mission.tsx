@@ -651,69 +651,71 @@ const Mission = () => {
               </div>
 
               {/* Choices */}
-              <div className="bg-black/50 backdrop-blur-sm rounded-lg p-6 border border-white/20">
-                <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                  <Target className="h-5 w-5" />
-                  What do you choose?
-                </h3>
-                
-                {/* Go Back Button */}
-                {allScenes.length > 1 && goBacksUsed < 5 && (savedStory?.currentSceneIndex || allScenes.length - 1) > 0 && (
-                  <div className="mb-4">
-                    <button
-                      onClick={goBack}
-                      disabled={choiceLoading}
-                      className="w-full p-3 rounded-lg bg-gray-700/80 hover:bg-gray-600/80 text-white border-2 border-gray-500/50 hover:border-gray-400/50 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <ArrowLeft className="h-4 w-4" />
-                      Go Back to Previous Scene ({5 - goBacksUsed} remaining)
-                    </button>
-                  </div>
-                )}
-                
-                <div className="grid gap-3">
-                  {scene.choices.map((choice, index) => {
-                    const validation = validateChoice(choice.id, scene, inventory);
-                    const isDisabled = !validation.valid || choiceLoading;
-                    return (
+              {!storyReadyToFinish && (
+                <div className="bg-black/50 backdrop-blur-sm rounded-lg p-6 border border-white/20">
+                  <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                    <Target className="h-5 w-5" />
+                    What do you choose?
+                  </h3>
+                  
+                  {/* Go Back Button */}
+                  {allScenes.length > 1 && goBacksUsed < 5 && (savedStory?.currentSceneIndex || allScenes.length - 1) > 0 && (
+                    <div className="mb-4">
                       <button
-                        key={choice.id}
-                        onClick={() => onChoose(choice.id)}
-                        disabled={isDisabled}
-                        className={`p-4 rounded-lg text-left transition-all transform hover:scale-[1.02] relative ${
-                          validation.valid && !choiceLoading
-                            ? 'bg-white/20 hover:bg-white/30 text-white border-2 border-transparent hover:border-white/30'
-                            : 'bg-gray-600/50 text-gray-400 border-2 border-gray-500/50 cursor-not-allowed'
-                        } ${choiceLoading ? 'opacity-75' : ''}`}
+                        onClick={goBack}
+                        disabled={choiceLoading}
+                        className="w-full p-3 rounded-lg bg-gray-700/80 hover:bg-gray-600/80 text-white border-2 border-gray-500/50 hover:border-gray-400/50 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        {choiceLoading && (
-                          <div className="absolute inset-0 bg-black/20 rounded-lg flex items-center justify-center">
-                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
-                          </div>
-                        )}
-                        <div className="flex items-start space-x-3">
-                          <span className="bg-purple-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold text-sm flex-shrink-0 mt-1">
-                            {String.fromCharCode(65 + index)}
-                          </span>
-                          <div className="flex-1">
-                            <p className="font-medium">{choice.text}</p>
-                            {choice.requiresItem && (
-                              <p className="text-sm mt-1 opacity-75">
-                                Requires: {choice.requiresItem}
-                              </p>
-                            )}
-                            {!validation.valid && !choiceLoading && (
-                              <p className="text-sm mt-1 text-red-300">
-                                {validation.reason}
-                              </p>
-                            )}
-                          </div>
-                        </div>
+                        <ArrowLeft className="h-4 w-4" />
+                        Go Back to Previous Scene ({5 - goBacksUsed} remaining)
                       </button>
-                    );
-                  })}
+                    </div>
+                  )}
+                  
+                  <div className="grid gap-3">
+                    {scene.choices.map((choice, index) => {
+                      const validation = validateChoice(choice.id, scene, inventory);
+                      const isDisabled = !validation.valid || choiceLoading;
+                      return (
+                        <button
+                          key={choice.id}
+                          onClick={() => onChoose(choice.id)}
+                          disabled={isDisabled}
+                          className={`p-4 rounded-lg text-left transition-all transform hover:scale-[1.02] relative ${
+                            validation.valid && !choiceLoading
+                              ? 'bg-white/20 hover:bg-white/30 text-white border-2 border-transparent hover:border-white/30'
+                              : 'bg-gray-600/50 text-gray-400 border-2 border-gray-500/50 cursor-not-allowed'
+                          } ${choiceLoading ? 'opacity-75' : ''}`}
+                        >
+                          {choiceLoading && (
+                            <div className="absolute inset-0 bg-black/20 rounded-lg flex items-center justify-center">
+                              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                            </div>
+                          )}
+                          <div className="flex items-start space-x-3">
+                            <span className="bg-purple-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold text-sm flex-shrink-0 mt-1">
+                              {String.fromCharCode(65 + index)}
+                            </span>
+                            <div className="flex-1">
+                              <p className="font-medium">{choice.text}</p>
+                              {choice.requiresItem && (
+                                <p className="text-sm mt-1 opacity-75">
+                                  Requires: {choice.requiresItem}
+                                </p>
+                              )}
+                              {!validation.valid && !choiceLoading && (
+                                <p className="text-sm mt-1 text-red-300">
+                                  {validation.reason}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
+              )}
               
               {/* Finish Adventure Button (when story is complete) */}
               {storyReadyToFinish && (
