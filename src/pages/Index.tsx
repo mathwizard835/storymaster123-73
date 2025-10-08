@@ -188,9 +188,9 @@ const Index = () => {
     heroText: "Every Story is YOUR Adventure!",
     ctaButton: "🚀 Start My Epic Quest!",
     benefits: [
-      { icon: <Shield className="h-5 w-5 text-green-400" />, text: "Zero Risk - 100% Safe" },
-      { icon: <Brain className="h-5 w-5 text-blue-400" />, text: "Proven Results - Builds IQ" },
-      { icon: <Sparkles className="h-5 w-5 text-purple-400" />, text: "Instant Magic - Perfect Fit" }
+      { icon: <Shield className="h-5 w-5 text-green-400" />, text: "100% Safe Content" },
+      { icon: <Brain className="h-5 w-5 text-blue-400" />, text: "Educational & Engaging" },
+      { icon: <Sparkles className="h-5 w-5 text-purple-400" />, text: "Personalized Adventures" }
     ]
   };
 
@@ -328,10 +328,10 @@ const Index = () => {
             </div>
             
             <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 mb-8 border border-white/20">
-              <p className="text-lg font-semibold text-center mb-3">👨‍👩‍👧‍👦 Join 10,000+ Happy Families</p>
+              <p className="text-lg font-semibold text-center mb-3">✨ Start Your Magical Story Adventure Today</p>
               <div className="flex justify-center items-center gap-6 text-sm">
-                <span className="flex items-center gap-2">⭐⭐⭐⭐⭐ <strong>4.9/5 Parent Rating</strong></span>
-                <span className="flex items-center gap-2">📚 <strong>50,000+ Stories Created</strong></span>
+                <span className="flex items-center gap-2">🌍 <strong>Explore New Worlds and Characters</strong></span>
+                <span className="flex items-center gap-2">📚 <strong>Fun, Interactive Stories for Kids</strong></span>
               </div>
             </div>
             

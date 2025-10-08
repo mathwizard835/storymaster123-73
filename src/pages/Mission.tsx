@@ -7,6 +7,7 @@ import creativeGeniusBg from "@/assets/creative-genius-bg.jpg";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Zap, Timer, Star, Heart, Shield, Eye, Wand2, PawPrint, Crosshair, Users, Palette, RefreshCw, Play, BookOpen, Trophy, Target, ArrowLeft, Crown } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useEffect, useState } from "react";
 import { generateNextScene, loadProfile, checkStoryLimit, markStoryCompleted, type Scene, saveCurrentStory, loadCurrentStory, clearCurrentStory, saveCompletedStory, getCompletedStories, type SavedStory, type InventoryItem, saveProfileToLocal } from "@/lib/story";
 import { saveStoryToDatabase, loadCurrentStoryFromDatabase, clearCurrentStoryInDatabase } from "@/lib/databaseStory";
@@ -583,26 +584,59 @@ const Mission = () => {
 
               {/* HUD */}
               <div className="bg-black/50 backdrop-blur-sm rounded-lg p-4 border border-white/20">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                  <div className="flex items-center justify-center space-x-2">
-                    <Zap className="h-5 w-5 text-yellow-400" />
-                    <span className="text-white font-semibold">{scene.hud.energy}</span>
+                <TooltipProvider>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="flex items-center justify-center space-x-2 cursor-help">
+                          <Zap className="h-5 w-5 text-yellow-400" />
+                          <span className="text-white font-semibold">{scene.hud.energy}</span>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="max-w-xs">⚡ Experience Points: Earned through story progression and smart choices. Build up experience to level up your hero!</p>
+                      </TooltipContent>
+                    </Tooltip>
+                    
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="flex items-center justify-center space-x-2 cursor-help">
+                          <Timer className="h-5 w-5 text-blue-400" />
+                          <span className="text-white font-semibold">{scene.hud.time}</span>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="max-w-xs">⏱️ Time/Energy: Represents your character's current energy level and story progress timing.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                    
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="flex items-center justify-center space-x-2 cursor-help">
+                          <Star className="h-5 w-5 text-purple-400" />
+                          <span className="text-white font-semibold">{scene.hud.choicePoints}</span>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="max-w-xs">⭐ Choice Points: Total meaningful decisions made in your adventure. Higher points show deeper engagement with the story!</p>
+                      </TooltipContent>
+                    </Tooltip>
+                    
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="flex items-center justify-center space-x-2 cursor-default">
+                          <Heart className="h-5 w-5 text-red-400 opacity-70" />
+                          <span className="text-white font-semibold text-sm opacity-70">
+                            {scene.hud.ui?.join(" • ") || "Ready"}
+                          </span>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="max-w-xs">❤️ Status Display: Shows your current story status (display only, not interactive).</p>
+                      </TooltipContent>
+                    </Tooltip>
                   </div>
-                  <div className="flex items-center justify-center space-x-2">
-                    <Timer className="h-5 w-5 text-blue-400" />
-                    <span className="text-white font-semibold">{scene.hud.time}</span>
-                  </div>
-                  <div className="flex items-center justify-center space-x-2">
-                    <Star className="h-5 w-5 text-purple-400" />
-                    <span className="text-white font-semibold">{scene.hud.choicePoints}</span>
-                  </div>
-                  <div className="flex items-center justify-center space-x-2">
-                    <Heart className="h-5 w-5 text-red-400" />
-                    <span className="text-white font-semibold text-sm">
-                      {scene.hud.ui?.join(" • ") || "Ready"}
-                    </span>
-                  </div>
-                </div>
+                </TooltipProvider>
               </div>
 
               {/* Narrative */}
