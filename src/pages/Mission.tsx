@@ -386,17 +386,23 @@ const Mission = () => {
         });
       }
       
+      // Create the updated scenes array BEFORE setting state
+      const updatedScenes = [...allScenes, parsed];
+      const updatedIndex = updatedScenes.length - 1;
+      
       setScene(parsed);
-      setAllScenes(prev => [...prev, parsed]);
+      setAllScenes(updatedScenes);
       setSceneCount(nextSceneCount);
 
       const updatedStory: SavedStory = {
         ...savedStory,
-        scenes: [...allScenes, parsed],
-        currentSceneIndex: allScenes.length,
+        scenes: updatedScenes,
+        currentSceneIndex: updatedIndex,
         lastPlayedAt: new Date().toISOString(),
       };
       setSavedStory(updatedStory);
+      
+      // Save to database immediately with the correct state
       if (!isTrialMode) {
         await saveStoryToDatabase(updatedStory);
       }
