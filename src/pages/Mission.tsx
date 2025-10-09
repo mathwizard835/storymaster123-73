@@ -7,8 +7,9 @@ import creativeGeniusBg from "@/assets/creative-genius-bg.jpg";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Zap, Timer, Star, Heart, Shield, Eye, Wand2, PawPrint, Crosshair, Users, Palette, RefreshCw, Play, BookOpen, Trophy, Target, ArrowLeft, Crown } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useEffect, useState } from "react";
-import { generateNextScene, loadProfile, checkStoryLimit, markStoryCompleted, type Scene, saveCurrentStory, loadCurrentStory, clearCurrentStory, saveCompletedStory, type SavedStory, type InventoryItem, saveProfileToLocal } from "@/lib/story";
+import { generateNextScene, loadProfile, checkStoryLimit, markStoryCompleted, type Scene, saveCurrentStory, loadCurrentStory, clearCurrentStory, saveCompletedStory, getCompletedStories, type SavedStory, type InventoryItem, saveProfileToLocal } from "@/lib/story";
 import { saveStoryToDatabase, loadCurrentStoryFromDatabase, clearCurrentStoryInDatabase } from "@/lib/databaseStory";
 import { loadInventory, saveInventory, addItemToInventory, useItem, clearInventory, updateProfileInventory } from "@/lib/inventory";
 import { 
@@ -583,26 +584,59 @@ const Mission = () => {
 
               {/* HUD */}
               <div className="bg-black/50 backdrop-blur-sm rounded-lg p-4 border border-white/20">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                  <div className="flex items-center justify-center space-x-2">
-                    <Zap className="h-5 w-5 text-yellow-400" />
-                    <span className="text-white font-semibold">{scene.hud.energy}</span>
+                <TooltipProvider>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="flex items-center justify-center space-x-2 cursor-help">
+                          <Zap className="h-5 w-5 text-yellow-400" />
+                          <span className="text-white font-semibold">{scene.hud.energy}</span>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" sideOffset={12} className="z-[9999] bg-popover/95 backdrop-blur-sm">
+                        <p className="max-w-xs">⚡ Experience Points: Earned through story progression and smart choices. Build up experience to level up your hero!</p>
+                      </TooltipContent>
+                    </Tooltip>
+                    
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="flex items-center justify-center space-x-2 cursor-help">
+                          <Timer className="h-5 w-5 text-blue-400" />
+                          <span className="text-white font-semibold">{scene.hud.time}</span>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" sideOffset={12} className="z-[9999] bg-popover/95 backdrop-blur-sm">
+                        <p className="max-w-xs">⏱️ Time/Energy: Represents your character's current energy level and story progress timing.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                    
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="flex items-center justify-center space-x-2 cursor-help">
+                          <Star className="h-5 w-5 text-purple-400" />
+                          <span className="text-white font-semibold">{scene.hud.choicePoints}</span>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" sideOffset={12} className="z-[9999] bg-popover/95 backdrop-blur-sm">
+                        <p className="max-w-xs">⭐ Choice Points: Total meaningful decisions made in your adventure. Higher points show deeper engagement with the story!</p>
+                      </TooltipContent>
+                    </Tooltip>
+                    
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="flex items-center justify-center space-x-2 cursor-default">
+                          <Heart className="h-5 w-5 text-red-400 opacity-70" />
+                          <span className="text-white font-semibold text-sm opacity-70">
+                            {scene.hud.ui?.join(" • ") || "Ready"}
+                          </span>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" sideOffset={12} className="z-[9999] bg-popover/95 backdrop-blur-sm">
+                        <p className="max-w-xs">❤️ Status Display: Shows your current story status (display only, not interactive).</p>
+                      </TooltipContent>
+                    </Tooltip>
                   </div>
-                  <div className="flex items-center justify-center space-x-2">
-                    <Timer className="h-5 w-5 text-blue-400" />
-                    <span className="text-white font-semibold">{scene.hud.time}</span>
-                  </div>
-                  <div className="flex items-center justify-center space-x-2">
-                    <Star className="h-5 w-5 text-purple-400" />
-                    <span className="text-white font-semibold">{scene.hud.choicePoints}</span>
-                  </div>
-                  <div className="flex items-center justify-center space-x-2">
-                    <Heart className="h-5 w-5 text-red-400" />
-                    <span className="text-white font-semibold text-sm">
-                      {scene.hud.ui?.join(" • ") || "Ready"}
-                    </span>
-                  </div>
-                </div>
+                </TooltipProvider>
               </div>
 
               {/* Narrative */}
@@ -617,69 +651,71 @@ const Mission = () => {
               </div>
 
               {/* Choices */}
-              <div className="bg-black/50 backdrop-blur-sm rounded-lg p-6 border border-white/20">
-                <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                  <Target className="h-5 w-5" />
-                  What do you choose?
-                </h3>
-                
-                {/* Go Back Button */}
-                {allScenes.length > 1 && goBacksUsed < 5 && (savedStory?.currentSceneIndex || allScenes.length - 1) > 0 && (
-                  <div className="mb-4">
-                    <button
-                      onClick={goBack}
-                      disabled={choiceLoading}
-                      className="w-full p-3 rounded-lg bg-gray-700/80 hover:bg-gray-600/80 text-white border-2 border-gray-500/50 hover:border-gray-400/50 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <ArrowLeft className="h-4 w-4" />
-                      Go Back to Previous Scene ({5 - goBacksUsed} remaining)
-                    </button>
-                  </div>
-                )}
-                
-                <div className="grid gap-3">
-                  {scene.choices.map((choice, index) => {
-                    const validation = validateChoice(choice.id, scene, inventory);
-                    const isDisabled = !validation.valid || choiceLoading;
-                    return (
+              {!storyReadyToFinish && (
+                <div className="bg-black/50 backdrop-blur-sm rounded-lg p-6 border border-white/20">
+                  <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                    <Target className="h-5 w-5" />
+                    What do you choose?
+                  </h3>
+                  
+                  {/* Go Back Button */}
+                  {allScenes.length > 1 && goBacksUsed < 5 && (savedStory?.currentSceneIndex || allScenes.length - 1) > 0 && (
+                    <div className="mb-4">
                       <button
-                        key={choice.id}
-                        onClick={() => onChoose(choice.id)}
-                        disabled={isDisabled}
-                        className={`p-4 rounded-lg text-left transition-all transform hover:scale-[1.02] relative ${
-                          validation.valid && !choiceLoading
-                            ? 'bg-white/20 hover:bg-white/30 text-white border-2 border-transparent hover:border-white/30'
-                            : 'bg-gray-600/50 text-gray-400 border-2 border-gray-500/50 cursor-not-allowed'
-                        } ${choiceLoading ? 'opacity-75' : ''}`}
+                        onClick={goBack}
+                        disabled={choiceLoading}
+                        className="w-full p-3 rounded-lg bg-gray-700/80 hover:bg-gray-600/80 text-white border-2 border-gray-500/50 hover:border-gray-400/50 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        {choiceLoading && (
-                          <div className="absolute inset-0 bg-black/20 rounded-lg flex items-center justify-center">
-                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
-                          </div>
-                        )}
-                        <div className="flex items-start space-x-3">
-                          <span className="bg-purple-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold text-sm flex-shrink-0 mt-1">
-                            {String.fromCharCode(65 + index)}
-                          </span>
-                          <div className="flex-1">
-                            <p className="font-medium">{choice.text}</p>
-                            {choice.requiresItem && (
-                              <p className="text-sm mt-1 opacity-75">
-                                Requires: {choice.requiresItem}
-                              </p>
-                            )}
-                            {!validation.valid && !choiceLoading && (
-                              <p className="text-sm mt-1 text-red-300">
-                                {validation.reason}
-                              </p>
-                            )}
-                          </div>
-                        </div>
+                        <ArrowLeft className="h-4 w-4" />
+                        Go Back to Previous Scene ({5 - goBacksUsed} remaining)
                       </button>
-                    );
-                  })}
+                    </div>
+                  )}
+                  
+                  <div className="grid gap-3">
+                    {scene.choices.map((choice, index) => {
+                      const validation = validateChoice(choice.id, scene, inventory);
+                      const isDisabled = !validation.valid || choiceLoading;
+                      return (
+                        <button
+                          key={choice.id}
+                          onClick={() => onChoose(choice.id)}
+                          disabled={isDisabled}
+                          className={`p-4 rounded-lg text-left transition-all transform hover:scale-[1.02] relative ${
+                            validation.valid && !choiceLoading
+                              ? 'bg-white/20 hover:bg-white/30 text-white border-2 border-transparent hover:border-white/30'
+                              : 'bg-gray-600/50 text-gray-400 border-2 border-gray-500/50 cursor-not-allowed'
+                          } ${choiceLoading ? 'opacity-75' : ''}`}
+                        >
+                          {choiceLoading && (
+                            <div className="absolute inset-0 bg-black/20 rounded-lg flex items-center justify-center">
+                              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                            </div>
+                          )}
+                          <div className="flex items-start space-x-3">
+                            <span className="bg-purple-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold text-sm flex-shrink-0 mt-1">
+                              {String.fromCharCode(65 + index)}
+                            </span>
+                            <div className="flex-1">
+                              <p className="font-medium">{choice.text}</p>
+                              {choice.requiresItem && (
+                                <p className="text-sm mt-1 opacity-75">
+                                  Requires: {choice.requiresItem}
+                                </p>
+                              )}
+                              {!validation.valid && !choiceLoading && (
+                                <p className="text-sm mt-1 text-red-300">
+                                  {validation.reason}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
+              )}
               
               {/* Finish Adventure Button (when story is complete) */}
               {storyReadyToFinish && (
@@ -701,49 +737,64 @@ const Mission = () => {
                           const nextSceneCount = sceneCount;
                           const { newAchievements, characterProgress } = await markStoryCompleted(profile, nextSceneCount);
                           
-                          const completedStoryData = {
-                            id: savedStory.id,
-                            title: scene.sceneTitle || "Untitled Adventure",
-                            completedAt: new Date().toISOString(),
-                            sceneCount: nextSceneCount,
-                            choicesMade: [],
-                            profile: savedStory.profile,
-                          };
+                          // Check if this story was already saved to prevent duplicates
+                          const existingStories = getCompletedStories();
+                          const alreadySaved = existingStories.some(story => story.id === savedStory.id);
                           
-                          saveCompletedStory(completedStoryData);
+                          if (!alreadySaved) {
+                            const completedStoryData = {
+                              id: savedStory.id,
+                              title: allScenes[0]?.sceneTitle || scene.sceneTitle || "Untitled Adventure",
+                              completedAt: new Date().toISOString(),
+                              sceneCount: nextSceneCount,
+                              choicesMade: [],
+                              profile: savedStory.profile,
+                            };
+                            
+                            saveCompletedStory(completedStoryData);
+                          }
+                          
                           await clearCurrentStoryInDatabase(savedStory.id);
                           clearInventory();
                           setInventory([]);
 
-                          // Show level up notification if applicable
+                          // Show level up notification with longer delay for visibility
                           if (characterProgress?.leveledUp) {
-                            toast({
-                              title: `🎉 Level Up! You're now Level ${characterProgress.character.level}!`,
-                              description: `You gained experience and unlocked new abilities!`,
-                              duration: 6000,
-                            });
+                            setTimeout(() => {
+                              toast({
+                                title: `🎉 Level Up! You're now Level ${characterProgress.character.level}!`,
+                                description: `You gained ${characterProgress.expGained || 0} XP and unlocked new abilities!`,
+                                duration: 8000,
+                              });
+                            }, 500);
                           }
 
-                          // Show new achievements
+                          // Show new achievements with staggered timing
                           if (newAchievements?.length > 0) {
                             newAchievements.forEach((achievement, index) => {
                               setTimeout(() => {
                                 toast({
                                   title: `🏆 Achievement Unlocked!`,
-                                  description: `${achievement.icon} ${achievement.name}`,
-                                  duration: 5000,
+                                  description: `${achievement.icon} ${achievement.name}: ${achievement.description}`,
+                                  duration: 7000,
                                 });
-                              }, (index + 1) * 1000);
+                              }, (characterProgress?.leveledUp ? 2000 : 500) + (index * 1500));
                             });
                           }
 
-                          toast({
-                            title: "🎉 Adventure Saved!",
-                            description: `Your ${nextSceneCount}-scene adventure has been added to your gallery!`,
-                            duration: 5000,
-                          });
+                          const finalDelay = 500 + 
+                            (characterProgress?.leveledUp ? 1000 : 0) + 
+                            (newAchievements?.length || 0) * 1500;
 
-                          setTimeout(() => navigate('/'), 2000);
+                          setTimeout(() => {
+                            toast({
+                              title: "🎉 Adventure Saved!",
+                              description: `Your ${nextSceneCount}-scene adventure has been added to your gallery!`,
+                              duration: 5000,
+                            });
+                          }, finalDelay);
+
+                          setTimeout(() => navigate('/'), finalDelay + 3000);
                         } catch (error) {
                           console.error("Error finishing adventure:", error);
                           toast({

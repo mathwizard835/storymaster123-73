@@ -70,7 +70,14 @@ const ProfileSetup = () => {
       });
       navigate('/');
     }
-  }, [navigate, toast]);
+
+    // Reset interests when starting a new adventure
+    const isNewAdventure = searchParams.get('new') === 'true';
+    if (isNewAdventure) {
+      setInterests("");
+      setTopic("");
+    }
+  }, [navigate, toast, searchParams]);
 
   const toggleBadge = (id: string) => {
     setSelectedBadges((prev) =>
@@ -180,7 +187,7 @@ const ProfileSetup = () => {
                     id="age"
                     defaultValue={[age]}
                     min={6}
-                    max={15}
+                    max={11}
                     step={1}
                     onValueChange={(v) => setAge(v[0] ?? 8)}
                   />
