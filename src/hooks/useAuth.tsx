@@ -1,7 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { isMobilePlatform } from '@/lib/mobileFeatures';
 
 interface AuthContextType {
   user: User | null;
@@ -18,15 +17,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const isMobile = isMobilePlatform();
-    
-    // Mobile bypass - no auth needed
-    if (isMobile) {
-      setLoading(false);
-      return;
-    }
-
-    // Web-only auth setup
+    // Auth setup for all platforms (web and mobile)
     const authTimeout = setTimeout(() => {
       setLoading(false);
     }, 5000);

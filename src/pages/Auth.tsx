@@ -10,7 +10,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, BookOpen, Stars } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { signInSchema, signUpSchema, type SignInFormData, type SignUpFormData } from '@/lib/validationSchemas';
-import { isMobilePlatform } from '@/lib/mobileFeatures';
 import heroPortal from '@/assets/hero-portal.jpg';
 
 const Auth = () => {
@@ -23,13 +22,7 @@ const Auth = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Mobile users should never see this auth page - redirect to home with trial mode
-    if (isMobilePlatform()) {
-      navigate('/?trial=true', { replace: true });
-      return;
-    }
-
-    // Check if user is already logged in (web only)
+    // Check if user is already logged in
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
@@ -48,15 +41,14 @@ const Auth = () => {
     
     setLoading(true);
     try {
-      const isNative = isMobilePlatform();
-      const redirectUrl = isNative ? undefined : `${window.location.origin}/dashboard`;
+      const redirectUrl = `${window.location.origin}/dashboard`;
       
       const { error } = await supabase.auth.resend({
         type: 'signup',
         email: email,
-        options: redirectUrl ? {
+        options: {
           emailRedirectTo: redirectUrl
-        } : undefined
+        }
       });
       
       if (error) {
@@ -89,15 +81,14 @@ const Auth = () => {
         return;
       }
 
-      const isNative = isMobilePlatform();
-      const redirectUrl = isNative ? undefined : `${window.location.origin}/dashboard`;
+      const redirectUrl = `${window.location.origin}/dashboard`;
       
       const { data, error } = await supabase.auth.signUp({
         email: validationResult.data.email,
         password: validationResult.data.password,
-        options: redirectUrl ? {
+        options: {
           emailRedirectTo: redirectUrl
-        } : undefined
+        }
       });
 
       if (error) {
@@ -193,12 +184,11 @@ const Auth = () => {
         return;
       }
 
-      const isNative = isMobilePlatform();
-      const redirectUrl = isNative ? undefined : `${window.location.origin}/reset-password`;
+      const redirectUrl = `${window.location.origin}/reset-password`;
       
-      const { error } = await supabase.auth.resetPasswordForEmail(email, 
-        redirectUrl ? { redirectTo: redirectUrl } : {}
-      );
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: redirectUrl
+      });
 
       if (error) {
         setError(error.message);
