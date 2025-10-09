@@ -116,6 +116,10 @@ export const storyGenerationSchema = z.object({
 
 // Profile setup validation
 export const profileSetupSchema = z.object({
+  name: z.string().max(50).optional().refine(
+    (val) => !val || validateSafeContent(val),
+    { message: "Inappropriate content detected in name" }
+  ),
   age: z.number().min(6).max(11),
   reading: z.enum(['Apprentice', 'Adventurer', 'Hero']),
   selectedBadges: z.array(z.string()).min(1).max(5),

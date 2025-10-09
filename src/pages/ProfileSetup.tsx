@@ -50,6 +50,8 @@ const ProfileSetup = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
+  const [name, setName] = useState<string>("");
+  const [nameError, setNameError] = useState<string>("");
   const [age, setAge] = useState<number>(8);
   const [reading, setReading] = useState<string>("adventurer");
   const [selectedBadges, setSelectedBadges] = useState<string[]>([]);
@@ -74,6 +76,7 @@ const ProfileSetup = () => {
     // Reset interests when starting a new adventure
     const isNewAdventure = searchParams.get('new') === 'true';
     if (isNewAdventure) {
+      setName("");
       setInterests("");
       setTopic("");
     }
@@ -109,12 +112,25 @@ const ProfileSetup = () => {
     }
   };
 
+  const validateName = (value: string) => {
+    try {
+      safeContentSchema.parse(value);
+      setNameError("");
+      return true;
+    } catch (error: any) {
+      const message = error.errors?.[0]?.message || "Invalid content";
+      setNameError(message);
+      return false;
+    }
+  };
+
   const handleStart = () => {
     // Validate content before proceeding
+    const nameValid = name ? validateName(name) : true;
     const interestsValid = interests ? validateInterests(interests) : true;
     const topicValid = topic ? validateTopic(topic) : true;
 
-    if (!interestsValid || !topicValid) {
+    if (!nameValid || !interestsValid || !topicValid) {
       // Track violation and check if user should be banned
       const isBanned = trackViolation();
       const remaining = getRemainingAttempts();
@@ -137,7 +153,7 @@ const ProfileSetup = () => {
       return;
     }
 
-    const profile = { age, reading, selectedBadges, mode, storyLength: storyLength as 'short' | 'medium' | 'epic', topic, interests };
+    const profile = { name: name || undefined, age, reading, selectedBadges, mode, storyLength: storyLength as 'short' | 'medium' | 'epic', topic, interests };
     saveProfileToLocal(profile);
     
     // Check if this should be a new story or trial mode
@@ -177,6 +193,33 @@ const ProfileSetup = () => {
           </p>
 
           <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2">
+            {/* Hero Name */}
+            <article className="glass-panel rounded-xl p-6 md:col-span-2">
+              <h2 className="font-heading text-xl md:text-2xl font-bold flex items-center gap-2">
+                <Target className="h-6 w-6" />
+                Your Hero Name
+              </h2>
+              <p className="mt-1 text-sm text-muted-foreground">What should we call your hero? (optional)</p>
+              <div className="mt-3">
+                <Input
+                  placeholder="Enter your hero name..."
+                  value={name}
+                  onChange={(e) => {
+                    setName(e.target.value);
+                    setNameError("");
+                  }}
+                  onBlur={(e) => {
+                    if (e.target.value) validateName(e.target.value);
+                  }}
+                  maxLength={50}
+                  className={nameError ? "border-destructive" : ""}
+                />
+                {nameError && (
+                  <p className="mt-2 text-sm text-destructive">{nameError}</p>
+                )}
+              </div>
+            </article>
+
             {/* Age */}
             <article className="glass-panel rounded-xl p-6">
               <h2 className="font-heading text-xl md:text-2xl font-bold">Age</h2>

@@ -81,6 +81,15 @@ function validateProfileData(profile: any): boolean {
     return false;
   }
   
+  // Content filtering for name field
+  if (profile.name && typeof profile.name === 'string') {
+    if (profile.name.length > 50) return false;
+    if (containsInappropriateContent(profile.name)) {
+      console.error('Blocked: inappropriate content in name');
+      return false;
+    }
+  }
+  
   // Content filtering for interests string field
   if (profile.interests && typeof profile.interests === 'string') {
     if (profile.interests.length > 500) return false;
@@ -350,6 +359,7 @@ serve(async (req) => {
       "\nInventory: Empty";
 
     const profileSummary = `Player Profile:
+- Hero Name: ${profile.name || "the hero"}
 - Age: ${profile.age ?? "unknown"}
 - Reading Level: ${profile.reading ?? profile.readingSkill ?? "unknown"}
 - Interest: ${(profile.selectedBadges || []).join(", ") || "none"}${profile.interests ? `\n- Personal Interests: ${profile.interests}` : ""}
@@ -401,6 +411,7 @@ LEARNING: Age ${profile.age} - ${profile.age <= 7 ? 'Basic math/letters via puzz
 ${profileSummary}
 
 ⚠️ MANDATORY REQUIREMENTS:
+- PROTAGONIST NAME: ${profile.name || "the hero"} - Use this as the main character's name throughout the story. Refer to the protagonist by this name in the narrative and choices. Make the player feel like THEY are the hero.
 - AGE ${profile.age ?? "unknown"}: Use ${profile.age && profile.age <= 7 ? 'simple, clear vocabulary for young readers' : profile.age && profile.age <= 10 ? 'age-appropriate vocabulary with moderate complexity' : 'advanced vocabulary and complex themes'}
 - READING LEVEL "${profile.reading ?? 'unknown'}": ${profile.reading === 'Apprentice' ? 'Clear, simple structure' : profile.reading === 'Adventurer' ? 'Moderate complexity, layered plot' : 'Advanced structure with deeper concepts'}
 - INTERESTS/BADGES: ${(profile.selectedBadges || []).join(", ") || "general"} - Story MUST incorporate these themes prominently
@@ -417,7 +428,8 @@ Return ONLY valid JSON (no markdown, no explanations):
 {"sceneTitle":"...","hud":{"energy":0-100,"time":"...","choicePoints":0-50,"ui":["..."]},"narrative":"...","choices":[{"id":"a","text":"...","type":"standard|item_use|object_interact","requiresItem":"...","consumesItem":true}],"interactiveObjects":[{"id":"...","name":"...","description":"...","actions":["Examine","Search"],"requiresItem":"..."}],"itemsFound":[{"id":"...","name":"...","description":"...","type":"key|tool|consumable|document|weapon|potion","usable":true,"consumable":false}],"end":false}
 
 SCENE REQUIREMENTS:
-- ${scene ? 'Continue the story naturally from previous scene' : 'Open with immediate action hook that establishes setting, character, and conflict'}
+- ${scene ? 'Continue the story naturally from previous scene' : `Open with immediate action hook that establishes setting, character, and conflict. Introduce ${profile.name || "the hero"} as the protagonist.`}
+- Use the protagonist's name (${profile.name || "the hero"}) naturally in the narrative and address them directly
 - 3-4 compelling choices that matter
 - Narrative: 215 words max, formatted in 3-4 paragraphs with \\n\\n breaks
 - Incorporate interactive objects/items when appropriate

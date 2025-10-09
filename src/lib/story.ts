@@ -23,6 +23,7 @@ export type InteractiveObject = {
 };
 
 export type Profile = {
+  name?: string;
   age: number;
   reading: string; // apprentice | adventurer | hero
   selectedBadges: string[];
