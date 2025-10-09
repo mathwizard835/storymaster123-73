@@ -1,5 +1,54 @@
 import { z } from 'zod';
 
+// Strict content blocking for ages 6-11
+const BLOCKED_PATTERNS = [
+  // Sexual content and innuendo
+  /\b(sex|sexual|porn|pornography|xxx|nsfw|nude|naked|explicit|romantic|kiss|dating|boyfriend|girlfriend|lover|seductive|flirt)\b/i,
+  // Drugs, alcohol, smoking
+  /\b(drugs|cocaine|heroin|meth|marijuana|weed|cannabis|alcohol|beer|wine|liquor|drunk|smoking|cigarette|vape|tobacco)\b/i,
+  // Graphic violence and gore
+  /\b(kill|killing|murder|stab|stabbing|blood|bloody|gore|gory|death|die|dying|corpse|torture|mutilate|dismember|decapitate)\b/i,
+  // Weapons and violence
+  /\b(gun|guns|firearm|shoot|shooting|weapon|knife|sword|explosive|bomb|grenade|attack|assault)\b/i,
+  // Hate and discrimination
+  /\b(hate|racist|racism|nazi|supremacy|discriminat|bully|bullying|harass|harassment)\b/i,
+  // Self-harm and mental health crisis
+  /\b(suicide|self-harm|cutting|hanging)\b/i,
+  // Gambling and adult themes
+  /\b(gambling|casino|betting|adult|mature|18\+|21\+)\b/i,
+  // Dark horror themes
+  /\b(horror|terrifying|nightmare|demon|possessed|haunted|evil|sinister|creepy|scary|frightening)\b/i,
+  // Unsafe behaviors
+  /\b(dangerous|unsafe|reckless|poison|toxic)\b/i,
+];
+
+// Content validation function
+const validateSafeContent = (value: string): boolean => {
+  if (!value || value.trim().length === 0) return true;
+  
+  const normalized = value.toLowerCase().trim();
+  
+  // Check against blocked patterns
+  for (const pattern of BLOCKED_PATTERNS) {
+    if (pattern.test(normalized)) {
+      return false;
+    }
+  }
+  
+  // Check for suspicious patterns (excessive special characters, URLs, etc.)
+  if (/https?:\/\//i.test(normalized)) return false;
+  if (/(.)\1{5,}/.test(normalized)) return false; // Repeated characters
+  
+  return true;
+};
+
+// Safe content schema with validation
+export const safeContentSchema = z.string()
+  .max(500, { message: "Content must be less than 500 characters" })
+  .refine(validateSafeContent, {
+    message: "Content contains inappropriate or blocked keywords. Please use family-friendly language."
+  });
+
 // Common validation patterns
 export const emailSchema = z.string()
   .trim()
@@ -46,7 +95,7 @@ export const waitlistSchema = z.object({
 // Story generation validation
 export const storyGenerationSchema = z.object({
   profile: z.object({
-    age: z.number().min(4).max(18).optional(),
+    age: z.number().min(6).max(11).optional(),
     reading: z.enum(['Apprentice', 'Adventurer', 'Hero']).optional(),
     selectedBadges: z.array(z.string()).max(10).optional(),
     interests: z.string().max(500).optional(),
@@ -67,13 +116,13 @@ export const storyGenerationSchema = z.object({
 
 // Profile setup validation
 export const profileSetupSchema = z.object({
-  age: z.number().min(4).max(18),
+  age: z.number().min(6).max(11),
   reading: z.enum(['Apprentice', 'Adventurer', 'Hero']),
   selectedBadges: z.array(z.string()).min(1).max(5),
-  interests: z.string().max(500).optional(),
+  interests: safeContentSchema.optional().or(z.literal('')),
   mode: z.enum(['Thrill', 'Comedy', 'Mystery', 'Explore', 'Learning']),
   storyLength: z.enum(['short', 'medium', 'epic']),
-  topic: z.string().max(200).optional()
+  topic: safeContentSchema.optional().or(z.literal(''))
 });
 
 export type SignInFormData = z.infer<typeof signInSchema>;

@@ -14,6 +14,7 @@ import Achievements from "./pages/Achievements";
 import Dashboard from "./pages/Dashboard";
 import ErrorBoundary from "./components/ErrorBoundary";
 import Auth from "./pages/Auth";
+import ResetPassword from "./pages/ResetPassword";
 
 const queryClient = new QueryClient();
 
@@ -72,6 +73,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/auth" element={<PublicRoute><Auth /></PublicRoute>} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/" element={<Index />} />
             <Route path="/profile" element={<ProtectedRoute><ProfileSetup /></ProtectedRoute>} />
             <Route path="/mission" element={<Mission />} />

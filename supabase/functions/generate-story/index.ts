@@ -15,20 +15,88 @@ const corsHeaders = {
 
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
 
+// Strict content blocking for ages 6-11
+const BLOCKED_PATTERNS = [
+  // Sexual content and innuendo
+  /\b(sex|sexual|porn|pornography|xxx|nsfw|nude|naked|explicit|romantic|kiss|dating|boyfriend|girlfriend|lover|seductive|flirt)\b/i,
+  // Drugs, alcohol, smoking
+  /\b(drugs|cocaine|heroin|meth|marijuana|weed|cannabis|alcohol|beer|wine|liquor|drunk|smoking|cigarette|vape|tobacco)\b/i,
+  // Graphic violence and gore
+  /\b(kill|killing|murder|stab|stabbing|blood|bloody|gore|gory|death|die|dying|corpse|torture|mutilate|dismember|decapitate)\b/i,
+  // Weapons and violence
+  /\b(gun|guns|firearm|shoot|shooting|weapon|knife|sword|explosive|bomb|grenade|attack|assault)\b/i,
+  // Hate and discrimination
+  /\b(hate|racist|racism|nazi|supremacy|discriminat|bully|bullying|harass|harassment)\b/i,
+  // Self-harm and mental health crisis
+  /\b(suicide|self-harm|cutting|hanging)\b/i,
+  // Gambling and adult themes
+  /\b(gambling|casino|betting|adult|mature|18\+|21\+)\b/i,
+  // Dark horror themes
+  /\b(horror|terrifying|nightmare|demon|possessed|haunted|evil|sinister|creepy|scary|frightening)\b/i,
+  // Unsafe behaviors
+  /\b(dangerous|unsafe|reckless|poison|toxic)\b/i,
+];
+
+function containsInappropriateContent(text: string): boolean {
+  if (!text || typeof text !== 'string') return false;
+  
+  const normalized = text.toLowerCase().trim();
+  
+  // Check blocked patterns
+  for (const pattern of BLOCKED_PATTERNS) {
+    if (pattern.test(normalized)) {
+      console.error(`Blocked content detected: matched pattern ${pattern}`);
+      return true;
+    }
+  }
+  
+  // Check for URLs
+  if (/https?:\/\//i.test(normalized)) {
+    console.error('Blocked content: URL detected');
+    return true;
+  }
+  
+  // Check for excessive special characters
+  if (/(.)\1{5,}/.test(normalized)) {
+    console.error('Blocked content: excessive repetition');
+    return true;
+  }
+  
+  return false;
+}
+
 // Input validation functions
 function validateProfileData(profile: any): boolean {
   if (!profile || typeof profile !== 'object') return true; // Optional field
   
-  if (profile.age && (typeof profile.age !== 'number' || profile.age < 4 || profile.age > 18)) {
+  if (profile.age && (typeof profile.age !== 'number' || profile.age < 6 || profile.age > 11)) {
     return false;
   }
   
-  if (profile.interests && (typeof profile.interests !== 'string' || profile.interests.length > 500)) {
+  if (profile.interests && (!Array.isArray(profile.interests) || profile.interests.length > 20)) {
     return false;
   }
   
   if (profile.selectedBadges && (!Array.isArray(profile.selectedBadges) || profile.selectedBadges.length > 10)) {
     return false;
+  }
+  
+  // Content filtering for interests string field
+  if (profile.interests && typeof profile.interests === 'string') {
+    if (profile.interests.length > 500) return false;
+    if (containsInappropriateContent(profile.interests)) {
+      console.error('Blocked: inappropriate content in interests');
+      return false;
+    }
+  }
+  
+  // Content filtering for topic field
+  if (profile.topic && typeof profile.topic === 'string') {
+    if (profile.topic.length > 500) return false;
+    if (containsInappropriateContent(profile.topic)) {
+      console.error('Blocked: inappropriate content in topic');
+      return false;
+    }
   }
   
   return true;
@@ -110,40 +178,77 @@ function extractJSON(text: string): unknown | null {
   return null;
 }
 
-const SYSTEM_PROMPT = `You are StoryMaster AI, a creative storyteller for children's choose-your-own-adventure stories. Create immersive, age-appropriate narratives with meaningful choices and interactive objects.
+const SYSTEM_PROMPT = `You are StoryMaster AI, a creative, emotionally intelligent storyteller designed to help children ages 6-11 explore exciting, personalized, and age-appropriate choose-your-own-adventure stories.
 
-🧾 Player Profile Adaptation:
-- Age determines complexity and vocabulary
-- Reading Level: Apprentice (simple), Adventurer (moderate), Hero (advanced)
-- Interest Badge: Match story theme to their preferences (space, fantasy, mystery, animals, etc.)
-- Quest Mode: Thrill (urgent action), Comedy (clever humor), Mystery (clues/suspense), Explore (imagination), Learning (stealth education)
+🚫 ABSOLUTE CONTENT SAFETY RULES - NON-NEGOTIABLE:
+1. NO graphic violence or gore: Never include killing, stabbing, blood, or detailed violence. Keep action adventure-appropriate.
+2. NO sexual content or innuendo: All relationships must be platonic, age-appropriate friendships. No romantic or sexual themes whatsoever.
+3. NO drugs, alcohol, smoking, or unsafe behaviors: Never promote or depict harmful habits.
+4. NO bullying, harassment, or discrimination: All characters must treat each other respectfully and positively.
+5. NO dark horror or frightening scenarios: Keep stories fun, adventurous, or mysterious but never scary or disturbing.
 
-🧠 Critical Thinking Integration (Age-Scaled):
-**Ages 4-6**: Simple cause-effect choices ("What happens if we feed the hungry dragon?" vs "What if we hide?")
-**Ages 7-9**: Pattern recognition and basic logic ("Which clue doesn't fit?" "What would a detective do?")
-**Ages 10-12**: Multi-step reasoning and consequences ("Consider both short-term and long-term effects of this choice")
-**Ages 13+**: Ethical dilemmas and complex problem-solving ("Weigh the benefits and risks for different characters")
+⚠️ CRITICAL PROFILE ENFORCEMENT RULES - MUST FOLLOW:
+1. You MUST strictly adhere to the player's profile settings in EVERY response
+2. Age determines vocabulary, themes, and complexity - this is NON-NEGOTIABLE
+3. Interest badges MUST be incorporated into the story setting and themes
+4. Quest Mode MUST define the story's tone, pacing, and urgency
+5. Reading Level MUST match sentence structure and vocabulary
+6. Failure to follow these profile requirements will result in an invalid response
 
-🎯 Choice Design Principles:
-- Make thinking FEEL like adventure, not homework
-- Embed reasoning naturally: "The wise owl asks you to consider..." "Your detective instincts suggest..."
-- Use story consequences to teach cause-effect reasoning
-- Include "investigate further" options that reward curiosity
-- Present multiple valid approaches with different trade-offs
-- Use character motivations to explore different perspectives
+Before generating each scene, mentally verify:
+✓ Does this match the player's age appropriateness?
+✓ Does this incorporate their selected interest badges/themes?
+✓ Does this match their quest mode (Thrill/Mystery/Fun/Explore)?
+✓ Does the vocabulary match their reading level?
+✓ Does this respect their chosen story length pacing?
 
-📖 Story Structure & Pacing:
-- Open with immediate action hook answering: Where am I? What world? Who am I? What's my backstory?
-- Keep passages short, vivid, and impactful (215 words max)
-- Build escalating stakes and tension
-- End with 2-4 strategic choices that influence the story
-- Include morally complex decisions appropriate for age
-- Add game-like elements (HUD, progress tracking, countdowns)
-- Weave critical thinking moments into plot naturally
-- **CRITICAL**: Pace story according to selected length:
-  * Short stories (4-5 scenes): Quick progression, immediate conflict resolution
-  * Medium stories (6-8 scenes): Balanced pacing with character development
-  * Epic stories (10-12 scenes): Rich world-building, complex character arcs, multiple plot threads
+Your stories should feel immersive, cinematic, and game-like FOR ALL AGES. Every segment should be short, high-stakes, and end with a critical choice. The tone and difficulty of each story should match the player's profile, and each decision should influence the path of the adventure.
+
+🧾 Player Profile Requirements (MUST CONSIDER):
+
+**Player Level (age):** This determines story complexity and challenge level.
+
+**Reading Skill:**
+- Apprentice: Clear, simple vocabulary and structure.
+- Adventurer: Moderate complexity, layered plot.
+- Hero: Advanced structure, deeper emotional and conceptual ideas.
+
+**Interest Badge (genre/theme):** Match story setting and tone to their interest. Examples include space, fantasy, mystery, school, animals, art, and more.
+
+**Quest Mode:**
+- Thrill Mode: Urgent, high-stakes, time-sensitive danger.
+- Fun Mode: Light-hearted, quirky, comedy-focused.
+- Mystery Mode: Suspenseful, clue-driven, slow-burn.
+- Explore Mode: Imaginative, open-ended, free exploration.
+
+📖 Story structure and behavior guidelines:
+
+**Open every scene with a powerful, strong, immediate hook — drop the player right into the action IMMEDIATELY.** Answer the following questions at the beginning:
+- Where am I?
+- What world are we in?
+- Who are we?
+- What is my backstory?
+
+Keep passages short and impactful. Use vivid language, clear pacing, and immersive detail (215 words max).
+
+Build stakes and tension. Problems should grow as the story progresses — emotionally, morally, or cosmically.
+
+End each segment with a critical decision, offering 2 to 4 distinct choices that influence future events. These choices should feel urgent and strategic.
+
+Give the player agency: their personality, bravery, alignment, or caution should shape the world and its response.
+
+Incorporate a sense of gameplay: show things like fuel levels, distress beacons, experimental tools, or countdowns. These "UI-style" elements make the story feel more alive.
+
+Use original characters and ideas — never reference copyrighted material. But you can replicate the feeling of iconic characters (e.g., a heroic mech leader who transforms).
+
+You should gently embed emotional lessons, growth, or friendship when it is called for, but never moralize or preach.
+
+**MAKE EACH STORY UNIQUE AND NON-REPETITIVE. It should never feel like the plot is predictable or like the mystery/action is the same as the story before, ESPECIALLY IN A SEQUEL.**
+
+🧠 Tone & Voice:
+Write in a natural, engaging, imaginative voice that's respectful of the reader's intelligence and curiosity. For Thrill Mode stories, build momentum and danger. Let the player feel like the main character in a high-stakes adventure.
+
+Be cinematic. Build wonder. Let the choices matter.
 
 🎒 Interactive Object System:
 - Include "interactiveObjects" array with objects players can examine/interact with
@@ -154,39 +259,30 @@ const SYSTEM_PROMPT = `You are StoryMaster AI, a creative storyteller for childr
 - Consider player's current inventory when generating contextual choices
 - Make object interactions feel meaningful and advance the story
 
-🎓 ENHANCED Learning Mode Instructions:
-When mode is "learning", create IMMERSIVE educational adventures:
+🏆 Achievement System:
+**CRITICAL: Achievements earned in one story MUST impact available options in future stories.**
+- Track player achievements through their profile
+- When a player has earned achievements (e.g., "Master Detective", "Dragon Tamer", "Space Hero"), unlock special choices or abilities in new stories
+- Reference past achievements in narrative: "Your detective training from your last case helps you notice..."
+- Example: If player earned "Master Detective" achievement, add extra investigation options in new mysteries
 
-📚 **Pedagogical Framework:**
-- Use discovery-based learning: Let players figure things out through experimentation
-- Scaffold difficulty: Start with guided examples, progress to independent challenges  
-- Provide immediate feedback through story consequences and character reactions
-- Multiple learning modalities: Visual puzzles, hands-on experiments, logical reasoning
-- Spaced repetition: Revisit concepts in different contexts throughout the adventure
+🎓 Learning Mode (when mode is "learning"):
+Create IMMERSIVE educational adventures using discovery-based learning. Match educational content to age:
+- **Ages 6-7:** Basic math/letters via puzzles and simple games
+- **Ages 8-9:** Math/science/reading challenges embedded in story
+- **Ages 10-11:** Advanced concepts through gameplay and problem-solving
 
-🔬 **Subject Integration Strategies:**
-- **Math**: Magical formulas, treasure calculations, architectural puzzles, resource optimization
-- **Science**: Potion brewing (chemistry), ecosystem mysteries (biology), invention challenges (physics)
-- **Reading**: Ancient scrolls to decipher, character dialogue analysis, story prediction games
-- **History**: Time-travel scenarios, archaeological discoveries, cultural exploration quests
-- **Critical Thinking**: Detective mysteries, ethical dilemmas, strategy challenges
+Embed assessment naturally through story choices. Wrong answers lead to educational consequences, not dead ends.
 
-🎮 **Gamified Learning Elements:**
-- **Knowledge Crystals**: Collectible items representing mastered concepts
-- **Skill Trees**: Unlock new abilities as understanding deepens
-- **Mentor Characters**: NPCs who guide learning and celebrate progress
-- **Learning Challenges**: Mini-games that test understanding before story progression
-- **Discovery Journals**: Track learned concepts and "aha!" moments
+📖 Story Length Pacing:
+- **Short stories (4-5 scenes):** Quick progression, immediate conflict resolution
+- **Medium stories (6-8 scenes):** Balanced pacing with character development
+- **Epic stories (10-12 scenes):** Rich world-building, complex character arcs, multiple plot threads
 
-🧠 **Assessment Through Storytelling:**
-- Embed assessment naturally: "Which spell formula would save the village?"
-- Use failure as learning: Wrong answers lead to educational consequences, not dead ends
-- Progress gates: Must demonstrate understanding to unlock new story areas
-- Peer teaching: Have player character explain concepts to story NPCs
+🧭 When the story ends:
+At the end of the story or mission, acknowledge achievements earned and remind the player they can start a new adventure.
 
-🧠 Tone: Natural, engaging, respectful of reader intelligence. Be cinematic and let choices matter.
-
-FORMAT: Return valid JSON with sceneTitle, hud{energy, time, choicePoints, ui[]}, narrative (formatted in 3-4 paragraphs), choices[{id, text, type?, requiresItem?, consumesItem?}], interactiveObjects?[{id, name, description, actions[], requiresItem?}], itemsFound?[{id, name, description, type, usable, consumable}], and end boolean.`;
+FORMAT: Return valid JSON with sceneTitle, hud{energy, time, choicePoints, ui[]}, narrative (formatted in 3-4 paragraphs with \\n\\n breaks), choices[{id, text, type?, requiresItem?, consumesItem?}], interactiveObjects?[{id, name, description, actions[], requiresItem?}], itemsFound?[{id, name, description, type, usable, consumable}], and end boolean.`;
 
 
 
@@ -301,15 +397,40 @@ serve(async (req) => {
     const learningModeInstructions = profile.mode === 'learning' ? `
 LEARNING: Age ${profile.age} - ${profile.age <= 7 ? 'Basic math/letters via puzzles' : profile.age <= 9 ? 'Math/science/reading challenges' : 'Advanced concepts through gameplay'}. ${profile.topic ? `Focus: ${profile.topic}` : ''}` : '';
 
-    // Optimized context based on scene type
-    const contextSize = scene ? "CONTINUATION" : "NEW";
-    const userPrompt = `${contextSize}: ${profileSummary}${sceneContext}${storyProgressContext}${learningModeInstructions}
+    // Restructured prompt: Profile requirements FIRST and prominent
+    const contextSize = scene ? "CONTINUATION" : "NEW STORY";
+    
+    const userPrompt = `=== CRITICAL PLAYER PROFILE (MUST FOLLOW EXACTLY) ===
 
-JSON format: {"sceneTitle":"...","hud":{"energy":0-100,"time":"...","choicePoints":0-50,"ui":["..."]},"narrative":"...","choices":[{"id":"a","text":"...","type":"standard|item_use|object_interact","requiresItem":"...","consumesItem":true}],"interactiveObjects":[{"id":"...","name":"...","description":"...","actions":["Examine","Search"],"requiresItem":"..."}],"itemsFound":[{"id":"...","name":"...","description":"...","type":"key|tool|consumable|document|weapon|potion","usable":true,"consumable":false}],"end":false}
+${profileSummary}
 
-Requirements: ${scene ? 'Continue story and consider inventory context' : 'New adventure opening with discoverable objects/items'}, 3-4 choices, 215 words max, 3-4 paragraph narrative with \\n\\n breaks${profile.mode === 'learning' ? ', embed learning naturally' : ''}, include interactive objects when appropriate.`;
+⚠️ MANDATORY REQUIREMENTS:
+- AGE ${profile.age ?? "unknown"}: Use ${profile.age && profile.age <= 7 ? 'simple, clear vocabulary for young readers' : profile.age && profile.age <= 10 ? 'age-appropriate vocabulary with moderate complexity' : 'advanced vocabulary and complex themes'}
+- READING LEVEL "${profile.reading ?? 'unknown'}": ${profile.reading === 'Apprentice' ? 'Clear, simple structure' : profile.reading === 'Adventurer' ? 'Moderate complexity, layered plot' : 'Advanced structure with deeper concepts'}
+- INTERESTS/BADGES: ${(profile.selectedBadges || []).join(", ") || "general"} - Story MUST incorporate these themes prominently
+- QUEST MODE "${profile.mode ?? 'unknown'}": ${profile.mode === 'Thrill' ? 'High-stakes, urgent, time-sensitive danger' : profile.mode === 'Fun' ? 'Light-hearted, quirky, comedy-focused' : profile.mode === 'Mystery' ? 'Suspenseful, clue-driven investigation' : profile.mode === 'Explore' ? 'Imaginative, open-ended discovery' : 'Adventure-focused'}
+- STORY LENGTH: ${profile.storyLength ?? 'medium'} story${profile.topic ? `\n- TOPIC: ${profile.topic} - weave this into the narrative` : ''}
 
+${sceneContext}
+${storyProgressContext}
+${learningModeInstructions}
+${inventoryContext}
+
+=== RESPONSE FORMAT ===
+Return ONLY valid JSON (no markdown, no explanations):
+{"sceneTitle":"...","hud":{"energy":0-100,"time":"...","choicePoints":0-50,"ui":["..."]},"narrative":"...","choices":[{"id":"a","text":"...","type":"standard|item_use|object_interact","requiresItem":"...","consumesItem":true}],"interactiveObjects":[{"id":"...","name":"...","description":"...","actions":["Examine","Search"],"requiresItem":"..."}],"itemsFound":[{"id":"...","name":"...","description":"...","type":"key|tool|consumable|document|weapon|potion","usable":true,"consumable":false}],"end":false}
+
+SCENE REQUIREMENTS:
+- ${scene ? 'Continue the story naturally from previous scene' : 'Open with immediate action hook that establishes setting, character, and conflict'}
+- 3-4 compelling choices that matter
+- Narrative: 215 words max, formatted in 3-4 paragraphs with \\n\\n breaks
+- Incorporate interactive objects/items when appropriate
+${profile.mode === 'learning' ? '- Embed educational content naturally into the story' : ''}
+- Ensure story reflects ALL profile requirements listed above`;
+
+    // Log profile for validation
     console.log(`Story generation request: ${max_tokens} tokens, scene ${sceneCount}`);
+    console.log(`Profile validation - Age: ${profile.age}, Reading: ${profile.reading}, Badges: ${(profile.selectedBadges || []).join(", ")}, Mode: ${profile.mode}`);
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -344,6 +465,24 @@ Requirements: ${scene ? 'Continue story and consider inventory context' : 'New a
 
     // Use enhanced JSON extraction
     const parsed = extractJSON(text);
+    
+    // Profile validation warning (for debugging)
+    if (parsed && typeof parsed === 'object') {
+      const storyText = JSON.stringify(parsed).toLowerCase();
+      const badges = profile.selectedBadges || [];
+      const matchedBadges = badges.filter((badge: string) => 
+        storyText.includes(badge.toLowerCase()) || 
+        storyText.includes(badge.split(' ')[0].toLowerCase())
+      );
+      
+      if (badges.length > 0 && matchedBadges.length === 0) {
+        console.warn(`⚠️ Profile validation warning: Story may not incorporate selected badges: ${badges.join(", ")}`);
+      }
+      
+      if (profile.mode && !storyText.includes(profile.mode.toLowerCase())) {
+        console.warn(`⚠️ Profile validation warning: Story may not match quest mode: ${profile.mode}`);
+      }
+    }
     
     if (!parsed) {
       console.error("Failed to parse JSON from response. Raw text length:", text.length);

@@ -97,10 +97,10 @@ const Index = () => {
                     <Button
                       size="xl"
                       variant="hero"
-                      onClick={() => navigate("/mission")}
-                      aria-label="Continue current adventure"
+                      onClick={() => navigate("/dashboard")}
+                      aria-label="Go to dashboard"
                     >
-                      Continue Adventure
+                      Go to Dashboard
                     </Button>
                     <Button
                       size="xl" 
@@ -253,6 +253,11 @@ const Index = () => {
         
         <div className="relative z-10 flex min-h-screen items-center justify-center px-6">
           <div className="max-w-4xl text-center animate-enter">
+            {user && (
+              <div className="mb-8 flex items-center justify-end">
+                <SignOutButton />
+              </div>
+            )}
             <h1 className="font-heading text-5xl md:text-7xl font-extrabold tracking-tight drop-shadow-2xl mb-6">
               {content.title.split('!')[0]}!<br />
               <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
@@ -271,10 +276,10 @@ const Index = () => {
                   <Button
                     size="xl"
                     variant="hero"
-                    onClick={() => navigate("/mission")}
+                    onClick={() => navigate("/dashboard")}
                     className="text-lg px-8 py-4"
                   >
-                    Continue Your Quest
+                    Go to Dashboard
                   </Button>
                   <Button
                     size="xl"
@@ -292,7 +297,7 @@ const Index = () => {
                   variant="hero"
                   onClick={() => {
                     if (user) {
-                      navigate("/mission");
+                      navigate("/dashboard");
                     } else if (isMobilePlatform()) {
                       navigate("/profile?trial=true");
                     } else {
@@ -301,7 +306,7 @@ const Index = () => {
                   }}
                   className="text-lg px-8 py-4 animate-pulse"
                 >
-                  {user ? "Continue Your Quest" : "Play - Join Your Quest"}
+                  {user ? "Go to Dashboard" : "Play - Join Your Quest"}
                 </Button>
               )}
               <Button

@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Seo } from "@/components/Seo";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { safeContentSchema } from "@/lib/validationSchemas";
 import { Slider } from "@/components/ui/slider";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
@@ -24,6 +26,7 @@ import {
   GraduationCap,
 } from "lucide-react";
 import { saveProfileToLocal } from "@/lib/story";
+import { trackViolation, isUserBanned, getRemainingAttempts } from "@/lib/contentViolations";
 
 const badges = [
   { id: "beast", label: "Beast Master", icon: PawPrint },
@@ -46,6 +49,7 @@ const modes = [
 const ProfileSetup = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { toast } = useToast();
   const [age, setAge] = useState<number>(8);
   const [reading, setReading] = useState<string>("adventurer");
   const [selectedBadges, setSelectedBadges] = useState<string[]>([]);
@@ -53,6 +57,20 @@ const ProfileSetup = () => {
   const [storyLength, setStoryLength] = useState<string>("medium");
   const [topic, setTopic] = useState<string>("");
   const [interests, setInterests] = useState<string>("");
+  const [interestsError, setInterestsError] = useState<string>("");
+  const [topicError, setTopicError] = useState<string>("");
+
+  useEffect(() => {
+    // Check if user is banned on mount
+    if (isUserBanned()) {
+      toast({
+        title: "Access Denied",
+        description: "You have been banned from the app due to multiple content violations.",
+        variant: "destructive"
+      });
+      navigate('/');
+    }
+  }, [navigate, toast]);
 
   const toggleBadge = (id: string) => {
     setSelectedBadges((prev) =>
@@ -60,13 +78,72 @@ const ProfileSetup = () => {
     );
   };
 
+  const validateInterests = (value: string) => {
+    try {
+      safeContentSchema.parse(value);
+      setInterestsError("");
+      return true;
+    } catch (error: any) {
+      const message = error.errors?.[0]?.message || "Invalid content";
+      setInterestsError(message);
+      return false;
+    }
+  };
+
+  const validateTopic = (value: string) => {
+    try {
+      safeContentSchema.parse(value);
+      setTopicError("");
+      return true;
+    } catch (error: any) {
+      const message = error.errors?.[0]?.message || "Invalid content";
+      setTopicError(message);
+      return false;
+    }
+  };
+
   const handleStart = () => {
+    // Validate content before proceeding
+    const interestsValid = interests ? validateInterests(interests) : true;
+    const topicValid = topic ? validateTopic(topic) : true;
+
+    if (!interestsValid || !topicValid) {
+      // Track violation and check if user should be banned
+      const isBanned = trackViolation();
+      const remaining = getRemainingAttempts();
+      
+      if (isBanned) {
+        toast({
+          title: "Account Banned",
+          description: "You have been banned from the app due to multiple content violations.",
+          variant: "destructive"
+        });
+        navigate('/');
+      } else {
+        toast({
+          title: "Content Violation Warning",
+          description: `Inappropriate content detected. You have ${remaining} warning${remaining !== 1 ? 's' : ''} remaining before being banned.`,
+          variant: "destructive"
+        });
+        navigate('/');
+      }
+      return;
+    }
+
     const profile = { age, reading, selectedBadges, mode, storyLength: storyLength as 'short' | 'medium' | 'epic', topic, interests };
     saveProfileToLocal(profile);
     
-    // Check if this should be a new story
+    // Check if this should be a new story or trial mode
     const forceNew = searchParams.get('new') === 'true';
-    const missionUrl = forceNew ? '/mission?new=true' : '/mission';
+    const isTrial = searchParams.get('trial') === 'true';
+    
+    // Build mission URL with appropriate parameters
+    let missionUrl = '/mission';
+    const params = new URLSearchParams();
+    if (forceNew) params.set('new', 'true');
+    if (isTrial) params.set('trial', 'true');
+    if (params.toString()) missionUrl += `?${params.toString()}`;
+    
     navigate(missionUrl);
   };
 
@@ -103,7 +180,7 @@ const ProfileSetup = () => {
                     id="age"
                     defaultValue={[age]}
                     min={6}
-                    max={11}
+                    max={15}
                     step={1}
                     onValueChange={(v) => setAge(v[0] ?? 8)}
                   />
@@ -206,28 +283,52 @@ const ProfileSetup = () => {
                 <Textarea
                   placeholder="e.g., soccer, video games, cats, pizza, Marvel superheroes, skateboarding..."
                   value={interests}
-                  onChange={(e) => setInterests(e.target.value)}
-                  className="min-h-[80px]"
+                  onChange={(e) => {
+                    setInterests(e.target.value);
+                    setInterestsError("");
+                  }}
+                  onBlur={(e) => {
+                    if (e.target.value) validateInterests(e.target.value);
+                  }}
+                  className={`min-h-[80px] ${interestsError ? "border-destructive" : ""}`}
                 />
+                {interestsError && (
+                  <p className="mt-2 text-sm text-destructive">{interestsError}</p>
+                )}
               </div>
             </article>
 
             {/* Topic */}
             <article className="glass-panel rounded-xl p-6 md:col-span-2">
               <h2 className="font-heading text-xl md:text-2xl font-bold">Learning Topic (optional)</h2>
-              <div className="mt-3 flex items-center gap-3">
-                <Input
-                  placeholder="e.g., Ancient Rome, Ecosystems"
-                  value={topic}
-                  onChange={(e) => setTopic(e.target.value)}
-                />
-                <Button
-                  variant="game"
-                  onClick={() => setTopic("")}
-                  aria-label="Clear topic"
-                >
-                  Clear
-                </Button>
+              <div className="mt-3 space-y-2">
+                <div className="flex items-center gap-3">
+                  <Input
+                    placeholder="e.g., Ancient Rome, Ecosystems"
+                    value={topic}
+                    onChange={(e) => {
+                      setTopic(e.target.value);
+                      setTopicError("");
+                    }}
+                    onBlur={(e) => {
+                      if (e.target.value) validateTopic(e.target.value);
+                    }}
+                    className={topicError ? "border-destructive" : ""}
+                  />
+                  <Button
+                    variant="game"
+                    onClick={() => {
+                      setTopic("");
+                      setTopicError("");
+                    }}
+                    aria-label="Clear topic"
+                  >
+                    Clear
+                  </Button>
+                </div>
+                {topicError && (
+                  <p className="text-sm text-destructive">{topicError}</p>
+                )}
               </div>
             </article>
           </div>

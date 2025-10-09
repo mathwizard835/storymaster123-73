@@ -171,14 +171,14 @@ const Mission = () => {
           // Create a basic trial profile
           savedProfile = {
             name: "Guest Hero",
-            age: 12,
+            age: 10,
             characterType: "action-hero",
             interests: ["adventure"],
             mode: "story"
           };
           setProfile(savedProfile);
         } else {
-          savedProfile = loadProfile();
+          savedProfile = await loadProfile();
           if (!savedProfile) {
             navigate("/profile");
             return;
@@ -210,16 +210,29 @@ const Mission = () => {
           }
         }
         
-        // If forcing new story, clear any existing story first
+        // If forcing new story, clear ALL existing data to ensure fresh start
         if (forceNew) {
+          console.log('Starting fresh adventure - clearing all existing data');
           try {
             const existingStory = await loadCurrentStoryFromDatabase();
             if (existingStory) {
               await clearCurrentStoryInDatabase(existingStory.id);
             }
-            clearInventory();
+            await clearCurrentStory(); // Clear local storage story
+            clearInventory(); // Clear inventory
+            
+            // Clear learning progress if switching topics
+            const existingLearning = loadLearningProgress();
+            if (existingLearning && existingLearning.topic !== savedProfile.topic) {
+              localStorage.removeItem('smq.learning_progress');
+            }
+            
+            // Clear scene cache to prevent using old cached responses
+            if (typeof window !== 'undefined') {
+              sessionStorage.removeItem('scene_cache');
+            }
           } catch (e) {
-            console.log('No existing story to clear');
+            console.log('No existing data to clear:', e);
           }
         }
 
@@ -233,14 +246,17 @@ const Mission = () => {
           }
         }
 
-        const savedInventory = loadInventory();
+        // For new stories, start with completely empty inventory
+        const savedInventory = forceNew ? [] : loadInventory();
         setInventory(savedInventory);
 
         if (savedProfile.mode === 'learning') {
           initializeLearningSession(savedProfile);
         }
 
-        const profileWithInventory = updateProfileInventory(savedProfile, savedInventory);
+        // Ensure profile has no old inventory data for fresh start
+        const cleanProfile = { ...savedProfile, inventory: savedInventory };
+        const profileWithInventory = updateProfileInventory(cleanProfile, savedInventory);
         
         const { parsed, text } = await generateNextScene(profileWithInventory, undefined, false, 1800, 1);
         if (!parsed) {

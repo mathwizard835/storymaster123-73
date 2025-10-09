@@ -44,7 +44,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 description: "Welcome to StoryMaster Quest!",
               });
             });
-            window.history.replaceState({}, document.title, '/');
+            // Always redirect to dashboard for both mobile and web
+            window.location.href = '/dashboard';
           }
         }
         
