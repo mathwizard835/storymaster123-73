@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Toggle } from "@/components/ui/toggle";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   Rocket,
   Sparkles,
@@ -29,13 +30,13 @@ import { saveProfileToLocal } from "@/lib/story";
 import { trackViolation, isUserBanned, getRemainingAttempts } from "@/lib/contentViolations";
 
 const badges = [
-  { id: "beast", label: "Beast Master", icon: PawPrint },
-  { id: "space", label: "Space Explorer", icon: Rocket },
-  { id: "mystic", label: "Mystic Mage", icon: Sparkles },
-  { id: "detective", label: "Detective", icon: Search },
-  { id: "action", label: "Action Hero", icon: Target },
-  { id: "social", label: "Social Champion", icon: Users },
-  { id: "creative", label: "Creative Genius", icon: Paintbrush },
+  { id: "beast", label: "Beast Master", icon: PawPrint, description: "Love animals and nature adventures" },
+  { id: "space", label: "Space Explorer", icon: Rocket, description: "Explore galaxies and sci-fi worlds" },
+  { id: "mystic", label: "Mystic Mage", icon: Sparkles, description: "Magic, fantasy, and wizardry" },
+  { id: "detective", label: "Detective", icon: Search, description: "Solve mysteries and uncover clues" },
+  { id: "action", label: "Action Hero", icon: Target, description: "Fast-paced adventures and challenges" },
+  { id: "social", label: "Social Champion", icon: Users, description: "Team up with friends and communities" },
+  { id: "creative", label: "Creative Genius", icon: Paintbrush, description: "Art, music, and creative expression" },
 ];
 
 const modes = [
@@ -125,6 +126,16 @@ const ProfileSetup = () => {
   };
 
   const handleStart = () => {
+    // Check if at least one badge is selected OR interests field has content
+    if (selectedBadges.length === 0 && !interests.trim()) {
+      toast({
+        title: "Profile Incomplete",
+        description: "Please select at least one interest badge or tell us about things you love.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     // Validate content before proceeding
     const nameValid = name ? validateName(name) : true;
     const interestsValid = interests ? validateInterests(interests) : true;
@@ -264,20 +275,28 @@ const ProfileSetup = () => {
             {/* Interest Badges */}
             <article className="glass-panel rounded-xl p-6 md:col-span-2">
               <h2 className="font-heading text-xl md:text-2xl font-bold">Interest Badges</h2>
-              <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-                {badges.map((b) => (
-                  <Toggle
-                    key={b.id}
-                    pressed={selectedBadges.includes(b.id)}
-                    onPressedChange={() => toggleBadge(b.id)}
-                    className="justify-start rounded-lg border px-3 py-3 data-[state=on]:bg-primary/10 data-[state=on]:border-primary hover:bg-accent hover:text-foreground"
-                    aria-label={b.label}
-                  >
-                    <b.icon className="mr-2 h-5 w-5" />
-                    <span className="text-sm font-semibold">{b.label}</span>
-                  </Toggle>
-                ))}
-              </div>
+              <TooltipProvider>
+                <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+                  {badges.map((b) => (
+                    <Tooltip key={b.id}>
+                      <TooltipTrigger asChild>
+                        <Toggle
+                          pressed={selectedBadges.includes(b.id)}
+                          onPressedChange={() => toggleBadge(b.id)}
+                          className="justify-start rounded-lg border px-3 py-3 data-[state=on]:bg-primary/10 data-[state=on]:border-primary hover:bg-accent hover:text-foreground"
+                          aria-label={b.label}
+                        >
+                          <b.icon className="mr-2 h-5 w-5" />
+                          <span className="text-sm font-semibold">{b.label}</span>
+                        </Toggle>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{b.description}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  ))}
+                </div>
+              </TooltipProvider>
             </article>
 
             {/* Story Length */}
