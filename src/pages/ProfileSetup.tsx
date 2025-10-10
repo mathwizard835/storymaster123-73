@@ -3,6 +3,13 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Seo } from "@/components/Seo";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { safeContentSchema } from "@/lib/validationSchemas";
 import { Slider } from "@/components/ui/slider";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -29,13 +36,13 @@ import { saveProfileToLocal } from "@/lib/story";
 import { trackViolation, isUserBanned, getRemainingAttempts } from "@/lib/contentViolations";
 
 const badges = [
-  { id: "beast", label: "Beast Master", icon: PawPrint },
-  { id: "space", label: "Space Explorer", icon: Rocket },
-  { id: "mystic", label: "Mystic Mage", icon: Sparkles },
-  { id: "detective", label: "Detective", icon: Search },
-  { id: "action", label: "Action Hero", icon: Target },
-  { id: "social", label: "Social Champion", icon: Users },
-  { id: "creative", label: "Creative Genius", icon: Paintbrush },
+  { id: "beast", label: "Beast Master", icon: PawPrint, description: "Adventures with animals, nature, and fantastic creatures" },
+  { id: "space", label: "Space Explorer", icon: Rocket, description: "Sci-fi adventures in outer space, planets, and alien worlds" },
+  { id: "mystic", label: "Mystic Mage", icon: Sparkles, description: "Magic, wizards, enchanted worlds, and mystical powers" },
+  { id: "detective", label: "Detective", icon: Search, description: "Mystery solving, clues, puzzles, and investigations" },
+  { id: "action", label: "Action Hero", icon: Target, description: "Fast-paced adventures with challenges and heroic missions" },
+  { id: "social", label: "Social Champion", icon: Users, description: "Stories about friendship, teamwork, and helping others" },
+  { id: "creative", label: "Creative Genius", icon: Paintbrush, description: "Art, music, building things, and creative expression" },
 ];
 
 const modes = [
@@ -61,6 +68,7 @@ const ProfileSetup = () => {
   const [interests, setInterests] = useState<string>("");
   const [interestsError, setInterestsError] = useState<string>("");
   const [topicError, setTopicError] = useState<string>("");
+  const [showTrialLimitDialog, setShowTrialLimitDialog] = useState(false);
 
   useEffect(() => {
     // Check if user is banned on mount
@@ -125,6 +133,26 @@ const ProfileSetup = () => {
   };
 
   const handleStart = () => {
+    // Check if user has already tried one story (trial limit)
+    const isTrial = searchParams.get('trial') === 'true';
+    if (isTrial) {
+      const hasTriedStory = localStorage.getItem('has_tried_one_story');
+      if (hasTriedStory === 'true') {
+        setShowTrialLimitDialog(true);
+        return;
+      }
+    }
+
+    // Validate that at least one badge OR interests text is provided
+    if (selectedBadges.length === 0 && !interests.trim()) {
+      toast({
+        title: "More Info Needed",
+        description: "Please select at least one interest badge or fill in what you love to personalize your story!",
+        variant: "destructive"
+      });
+      return;
+    }
+
     // Validate content before proceeding
     const nameValid = name ? validateName(name) : true;
     const interestsValid = interests ? validateInterests(interests) : true;
@@ -156,9 +184,13 @@ const ProfileSetup = () => {
     const profile = { name: name || undefined, age, reading, selectedBadges, mode, storyLength: storyLength as 'short' | 'medium' | 'epic', topic, interests };
     saveProfileToLocal(profile);
     
+    // Mark that user is starting their first story (for trial tracking)
+    if (isTrial) {
+      localStorage.setItem('has_tried_one_story', 'true');
+    }
+    
     // Check if this should be a new story or trial mode
     const forceNew = searchParams.get('new') === 'true';
-    const isTrial = searchParams.get('trial') === 'true';
     
     // Build mission URL with appropriate parameters
     let missionUrl = '/mission';
@@ -264,20 +296,29 @@ const ProfileSetup = () => {
             {/* Interest Badges */}
             <article className="glass-panel rounded-xl p-6 md:col-span-2">
               <h2 className="font-heading text-xl md:text-2xl font-bold">Interest Badges</h2>
-              <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-                {badges.map((b) => (
-                  <Toggle
-                    key={b.id}
-                    pressed={selectedBadges.includes(b.id)}
-                    onPressedChange={() => toggleBadge(b.id)}
-                    className="justify-start rounded-lg border px-3 py-3 data-[state=on]:bg-primary/10 data-[state=on]:border-primary hover:bg-accent hover:text-foreground"
-                    aria-label={b.label}
-                  >
-                    <b.icon className="mr-2 h-5 w-5" />
-                    <span className="text-sm font-semibold">{b.label}</span>
-                  </Toggle>
-                ))}
-              </div>
+              <p className="mt-1 text-sm text-muted-foreground">Choose at least one badge or fill in your interests below</p>
+              <TooltipProvider>
+                <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+                  {badges.map((b) => (
+                    <Tooltip key={b.id}>
+                      <TooltipTrigger asChild>
+                        <Toggle
+                          pressed={selectedBadges.includes(b.id)}
+                          onPressedChange={() => toggleBadge(b.id)}
+                          className="justify-start rounded-lg border px-3 py-3 data-[state=on]:bg-primary/10 data-[state=on]:border-primary hover:bg-accent hover:text-foreground"
+                          aria-label={b.label}
+                        >
+                          <b.icon className="mr-2 h-5 w-5" />
+                          <span className="text-sm font-semibold">{b.label}</span>
+                        </Toggle>
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-[200px]">
+                        <p>{b.description}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  ))}
+                </div>
+              </TooltipProvider>
             </article>
 
             {/* Story Length */}
@@ -390,6 +431,42 @@ const ProfileSetup = () => {
           </div>
         </section>
       </main>
+
+      {/* Trial Limit Dialog */}
+      <AlertDialog open={showTrialLimitDialog} onOpenChange={setShowTrialLimitDialog}>
+        <AlertDialogContent className="max-w-md bg-gradient-to-br from-primary/20 via-secondary/20 to-accent/20 border-2 border-primary/50">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-2xl font-bold text-center bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+              🎉 You've Tried Your Free Story! 🎉
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-center space-y-4 pt-4">
+              <p className="text-lg font-semibold">
+                Ready for unlimited adventures?
+              </p>
+              <p className="text-muted-foreground">
+                Sign up to unlock endless stories, save your progress, and embark on epic quests!
+              </p>
+              <div className="flex flex-col gap-3 pt-2">
+                <Button 
+                  size="lg" 
+                  variant="hero" 
+                  className="w-full"
+                  onClick={() => navigate('/auth?mode=signup')}
+                >
+                  Sign Up & Continue Quest
+                </Button>
+                <Button 
+                  size="lg" 
+                  variant="outline" 
+                  onClick={() => navigate('/')}
+                >
+                  Back to Home
+                </Button>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };
