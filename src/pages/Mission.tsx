@@ -168,24 +168,13 @@ const Mission = () => {
         
         let savedProfile;
         
-        if (isTrialMode && !user) {
-          // Create a basic trial profile
-          savedProfile = {
-            name: "Guest Hero",
-            age: 10,
-            characterType: "action-hero",
-            interests: ["adventure"],
-            mode: "story"
-          };
-          setProfile(savedProfile);
-        } else {
-          savedProfile = await loadProfile();
-          if (!savedProfile) {
-            navigate("/profile");
-            return;
-          }
-          setProfile(savedProfile);
+        // Always load the profile from localStorage, even in trial mode
+        savedProfile = await loadProfile();
+        if (!savedProfile) {
+          navigate("/profile");
+          return;
         }
+        setProfile(savedProfile);
 
         // Check if user wants to start fresh (from URL param)
         const forceNew = searchParams.get('new') === 'true';
