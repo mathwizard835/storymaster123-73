@@ -223,26 +223,28 @@ const Mission = () => {
           }
         }
         
-        // Phase 1: Clear ALL existing active stories before starting new one
-        if (forceNew || isTrialMode) {
-          console.log('🧹 Starting fresh adventure - clearing all existing data');
-          try {
-            if (!isTrialMode) {
-              const clearedCount = await clearAllActiveStoriesForUser();
-              console.log(`✅ Cleared ${clearedCount} active stories`);
-            }
-            await clearCurrentStory();
-            clearInventory();
-            clearSceneCache();
-            
-            // Clear learning progress if exists
+        // CRITICAL FIX: ALWAYS clear ALL active stories before creating a new one
+        // This prevents duplicate active story errors from the unique constraint
+        console.log('🧹 Preparing to create new story - clearing all existing active stories');
+        try {
+          if (!isTrialMode) {
+            const clearedCount = await clearAllActiveStoriesForUser();
+            console.log(`✅ Cleared ${clearedCount} active stories`);
+          }
+          await clearCurrentStory();
+          clearInventory();
+          clearSceneCache();
+          
+          // Clear learning progress if forcing new or no existing story
+          if (forceNew) {
             const existingLearning = loadLearningProgress();
             if (existingLearning) {
               localStorage.removeItem('smq.learning_progress');
             }
-          } catch (e) {
-            console.log('No existing data to clear:', e);
           }
+        } catch (e) {
+          console.error('Error clearing existing data:', e);
+          // Continue anyway - better to try creating new story
         }
 
         // Check story limit (skip for trial mode)
