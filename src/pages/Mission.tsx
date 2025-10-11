@@ -477,13 +477,6 @@ const Mission = () => {
       setSelectedChoice(null);
     }
   };
-        variant: "destructive",
-        duration: 5000,
-      });
-    } finally {
-      setChoiceLoading(false);
-    }
-  };
 
   const goBack = () => {
     if (!savedStory || allScenes.length <= 1 || goBacksUsed >= 5) return;
