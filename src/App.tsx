@@ -29,11 +29,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
-  const searchParams = new URLSearchParams(window.location.search);
-  const isTrialMode = searchParams.get('trial') === 'true';
-
-  // Allow access if: user is logged in OR trial mode
-  if (!user && !isTrialMode) {
+  if (!user) {
     return <Navigate to="/auth" replace />;
   }
 
