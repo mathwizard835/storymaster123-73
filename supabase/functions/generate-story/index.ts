@@ -73,8 +73,14 @@ function validateProfileData(profile: any): boolean {
     return false;
   }
   
-  if (profile.interests && (!Array.isArray(profile.interests) || profile.interests.length > 20)) {
-    return false;
+  // Handle interests as both array and string format
+  if (profile.interests) {
+    if (Array.isArray(profile.interests) && profile.interests.length > 20) {
+      return false;
+    }
+    if (typeof profile.interests === 'string' && profile.interests.length > 500) {
+      return false;
+    }
   }
   
   if (profile.selectedBadges && (!Array.isArray(profile.selectedBadges) || profile.selectedBadges.length > 10)) {
