@@ -753,15 +753,38 @@ const Mission = () => {
                           clearInventory();
                           setInventory([]);
 
-                          // Show level up notification with longer delay for visibility
+                          // Show comprehensive progress summary first
+                          const progressParts = [];
+                          if (characterProgress?.expGained) {
+                            progressParts.push(`+${characterProgress.expGained} XP`);
+                          }
+                          if (characterProgress?.leveledUp) {
+                            progressParts.push(`Level ${characterProgress.character.level}`);
+                          }
+                          if (newAchievements?.length > 0) {
+                            progressParts.push(`${newAchievements.length} new achievement${newAchievements.length > 1 ? 's' : ''}`);
+                          }
+                          
+                          if (progressParts.length > 0) {
+                            toast({
+                              title: "🎉 Story Complete!",
+                              description: progressParts.join(' • '),
+                              duration: 6000,
+                            });
+                          }
+
+                          // Show level up notification
                           if (characterProgress?.leveledUp) {
                             setTimeout(() => {
+                              const titleInfo = characterProgress.newTitles?.length > 0 
+                                ? ` • ${characterProgress.newTitles[0]}` 
+                                : '';
                               toast({
-                                title: `🎉 Level Up! You're now Level ${characterProgress.character.level}!`,
-                                description: `You gained ${characterProgress.expGained || 0} XP and unlocked new abilities!`,
+                                title: `🎉 Level Up! Level ${characterProgress.character.level}${titleInfo}`,
+                                description: `+${characterProgress.character.skillPoints} skill points earned!`,
                                 duration: 8000,
                               });
-                            }, 500);
+                            }, 1500);
                           }
 
                           // Show new achievements with staggered timing
@@ -773,18 +796,18 @@ const Mission = () => {
                                   description: `${achievement.icon} ${achievement.name}: ${achievement.description}`,
                                   duration: 7000,
                                 });
-                              }, (characterProgress?.leveledUp ? 2000 : 500) + (index * 1500));
+                              }, (characterProgress?.leveledUp ? 3500 : 2000) + (index * 2000));
                             });
                           }
 
-                          const finalDelay = 500 + 
-                            (characterProgress?.leveledUp ? 1000 : 0) + 
-                            (newAchievements?.length || 0) * 1500;
+                          const finalDelay = 2000 + 
+                            (characterProgress?.leveledUp ? 2000 : 0) + 
+                            (newAchievements?.length || 0) * 2000;
 
                           setTimeout(() => {
                             toast({
-                              title: "🎉 Adventure Saved!",
-                              description: `Your ${nextSceneCount}-scene adventure has been added to your gallery!`,
+                              title: "✨ Adventure Saved!",
+                              description: `Your ${nextSceneCount}-scene adventure is now in your gallery!`,
                               duration: 5000,
                             });
                           }, finalDelay);

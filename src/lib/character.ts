@@ -60,7 +60,7 @@ export const gainExperience = (
   mode: string,
   choiceCount: number,
   storyLength: 'short' | 'medium' | 'epic'
-): { character: CharacterStats; leveledUp: boolean; newTitles: string[] } => {
+): { character: CharacterStats; leveledUp: boolean; newTitles: string[]; expGained: number } => {
   const character = loadCharacter();
   const newTitles: string[] = [];
   
@@ -103,7 +103,7 @@ export const gainExperience = (
   }
   
   saveCharacter(character);
-  return { character, leveledUp, newTitles };
+  return { character, leveledUp, newTitles, expGained: totalExp };
 };
 
 const getTitleForLevel = (level: number): string | null => {
