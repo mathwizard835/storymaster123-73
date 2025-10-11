@@ -196,7 +196,7 @@ const ProfileSetup = () => {
 
       <main className="min-h-screen w-full bg-background">
         <section className="container py-10 md:py-16">
-          <div className="flex justify-end mb-4">
+          <div className="flex justify-start mb-4">
             <Button variant="outline" onClick={() => navigate('/')}>
               Go Back
             </Button>
