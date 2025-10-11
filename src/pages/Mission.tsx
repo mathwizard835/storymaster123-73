@@ -11,7 +11,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { useEffect, useState } from "react";
 import { generateNextScene, loadProfile, checkStoryLimit, markStoryCompleted, type Scene, saveCurrentStory, loadCurrentStory, clearCurrentStory, saveCompletedStory, getCompletedStories, type SavedStory, type InventoryItem, saveProfileToLocal } from "@/lib/story";
 import { saveStoryToDatabase, loadCurrentStoryFromDatabase, clearCurrentStoryInDatabase } from "@/lib/databaseStory";
-import { loadInventory, saveInventory, addItemToInventory, useItem, clearInventory, updateProfileInventory } from "@/lib/inventory";
+import { loadInventory, saveInventory, addItemToInventory, useItem, clearInventory, updateProfileInventory, validateInventory } from "@/lib/inventory";
 import { 
   LearningSession, 
   saveLearningProgress, 
@@ -29,6 +29,7 @@ import { validateChoice } from "@/lib/interactionHandlers";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { logChoice, logSceneGeneration, logInventoryChange, logError, DebugLogger } from "@/lib/debugLogger";
 
 const Mission = () => {
   const navigate = useNavigate();
@@ -45,6 +46,7 @@ const Mission = () => {
   const [storyLimitReached, setStoryLimitReached] = useState(false);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [goBacksUsed, setGoBacksUsed] = useState(0);
+  const [selectedChoice, setSelectedChoice] = useState<{ id: string; text: string } | null>(null);
   
   // Learning system state
   const [learningSession, setLearningSession] = useState<LearningSession | null>(null);
@@ -307,7 +309,24 @@ const Mission = () => {
   const onChoose = async (choiceId: string) => {
     if (!profile || !scene || !savedStory || choiceLoading) return;
 
+    // Find and lock in the selected choice
+    const choice = scene.choices.find(c => c.id === choiceId);
+    if (!choice) {
+      logError('Choice not found', { choiceId, availableChoices: scene.choices.map(c => c.id) });
+      return;
+    }
+
+    // Lock in selection and log it
+    setSelectedChoice({ id: choiceId, text: choice.text });
+    logChoice(choiceId, choice.text);
     setChoiceLoading(true);
+
+    // Show which choice is being processed
+    toast({
+      title: "Processing choice...",
+      description: choice.text,
+      duration: 2000,
+    });
 
     if (profile.mode === 'learning' && learningSession) {
       const availableChallenge = learningSession.challenges.find(
@@ -317,14 +336,12 @@ const Mission = () => {
       if (availableChallenge && Math.random() < 0.3) {
         setCurrentChallenge(availableChallenge);
         setChoiceLoading(false);
+        setSelectedChoice(null);
         return;
       }
     }
 
     try {
-      const choice = scene.choices.find(c => c.id === choiceId);
-      if (!choice) return;
-
       const validation = validateChoice(choiceId, scene, inventory);
       if (!validation.valid) {
         toast({
@@ -334,14 +351,17 @@ const Mission = () => {
           duration: 4000,
         });
         setChoiceLoading(false);
+        setSelectedChoice(null);
         return;
       }
 
+      // Consolidate all inventory updates before state changes
+      let updatedInventory = [...inventory];
+
       if (choice.consumesItem && choice.requiresItem) {
-        const { item, newInventory } = useItem(choice.requiresItem!, inventory);
+        const { item, newInventory } = useItem(choice.requiresItem!, updatedInventory);
         if (item) {
-          setInventory(newInventory);
-          saveInventory(newInventory);
+          updatedInventory = newInventory;
           toast({
             title: "Item used",
             description: choice.consumesItem ? "Item consumed" : "Item used successfully",
@@ -351,22 +371,37 @@ const Mission = () => {
       }
       
       const nextSceneCount = sceneCount + 1;
-      const profileWithInventory = updateProfileInventory(profile, inventory);
+      const profileWithInventory = updateProfileInventory(profile, updatedInventory);
       
-      const { parsed, text } = await generateNextScene(profileWithInventory, { ...scene, selectedChoiceId: choiceId }, false, 1200, nextSceneCount);
-      if (!parsed) throw new Error("Invalid AI response: " + text.slice(0, 140));
+      // Log scene generation with explicit choice context
+      logSceneGeneration(choiceId, nextSceneCount);
+      
+      const { parsed, text } = await generateNextScene(
+        profileWithInventory, 
+        { 
+          ...scene, 
+          selectedChoiceId: choiceId,
+          selectedChoiceText: choice.text // Pass choice text for explicit context
+        }, 
+        false, 
+        1200, 
+        nextSceneCount,
+        choiceId // Pass choice ID to cache invalidation
+      );
+      
+      if (!parsed) {
+        logError('Invalid AI response', { text: text.slice(0, 140) });
+        throw new Error("Invalid AI response: " + text.slice(0, 140));
+      }
       
       if (parsed.itemsFound && parsed.itemsFound.length > 0) {
-        let newInventory = inventory;
         for (const item of parsed.itemsFound) {
-          newInventory = addItemToInventory(item, newInventory);
+          updatedInventory = addItemToInventory(item, updatedInventory);
           
           if (profile.mode === 'learning' && item.type === 'document') {
             addLearningConcept(item.name, profile.topic || 'general');
           }
         }
-        setInventory(newInventory);
-        saveInventory(newInventory);
         
         toast({
           title: "Items discovered!",
@@ -374,6 +409,11 @@ const Mission = () => {
           duration: 4000,
         });
       }
+
+      // Validate and save inventory once
+      updatedInventory = validateInventory(updatedInventory);
+      setInventory(updatedInventory);
+      saveInventory(updatedInventory);
       
       // Create the updated scenes array BEFORE setting state
       const updatedScenes = [...allScenes, parsed];
@@ -391,9 +431,9 @@ const Mission = () => {
       };
       setSavedStory(updatedStory);
       
-      // Save to database immediately with the correct state
+      // Save to database immediately with the correct state and inventory
       if (!isTrialMode) {
-        await saveStoryToDatabase(updatedStory);
+        await saveStoryToDatabase(updatedStory, updatedInventory);
       }
 
       if (parsed.end) {
@@ -422,12 +462,21 @@ const Mission = () => {
       }
       
     } catch (error: any) {
+      logError("Error in onChoose", { error: error.message, choiceId, scene: scene.sceneTitle });
       console.error("Error in onChoose:", error);
       toast({
         title: "Story Error",
         description: error.message?.includes("authentication") || error.message?.includes("Not authenticated") 
           ? "Authentication error. Please try refreshing the page." 
           : "Failed to continue story. Please try again.",
+        variant: "destructive",
+        duration: 5000,
+      });
+    } finally {
+      setChoiceLoading(false);
+      setSelectedChoice(null);
+    }
+  };
         variant: "destructive",
         duration: 5000,
       });

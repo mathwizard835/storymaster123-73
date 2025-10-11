@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
-import { Profile, Scene, SavedStory } from './story';
+import { Profile, Scene, SavedStory, InventoryItem } from './story';
+import { loadInventory } from './inventory';
 
 export interface DatabaseStory {
   id: string;
@@ -14,17 +15,24 @@ export interface DatabaseStory {
   choices_made: string[];
   status: 'active' | 'completed' | 'paused';
   title?: string;
+  inventory_snapshot?: InventoryItem[];
 }
 
-// Save current story to database
-export const saveStoryToDatabase = async (story: SavedStory): Promise<void> => {
+// Save current story to database with inventory snapshot
+export const saveStoryToDatabase = async (story: SavedStory, currentInventory?: InventoryItem[]): Promise<void> => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
+
+  // Get current inventory if not provided
+  const inventory = currentInventory || loadInventory();
 
   const storyData = {
     id: story.id,
     user_id: user.id,
-    profile: story.profile,
+    profile: {
+      ...story.profile,
+      inventory // Save inventory in profile
+    },
     scenes: story.scenes,
     current_scene_index: story.currentSceneIndex || 0,
     started_at: story.startedAt,
@@ -33,7 +41,8 @@ export const saveStoryToDatabase = async (story: SavedStory): Promise<void> => {
     scene_count: story.scenes.length,
     choices_made: [], // TODO: track choices made
     status: story.completed ? 'completed' : 'active',
-    title: story.scenes[0]?.sceneTitle || 'Untitled Adventure'
+    title: story.scenes[0]?.sceneTitle || 'Untitled Adventure',
+    inventory_snapshot: inventory // Also save as separate field for reconciliation
   };
 
   const { error } = await (supabase as any)
@@ -46,7 +55,7 @@ export const saveStoryToDatabase = async (story: SavedStory): Promise<void> => {
   }
 };
 
-// Load current active story from database
+// Load current active story from database with inventory reconciliation
 export const loadCurrentStoryFromDatabase = async (): Promise<SavedStory | null> => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
@@ -67,9 +76,19 @@ export const loadCurrentStoryFromDatabase = async (): Promise<SavedStory | null>
 
   if (!data) return null;
 
+  // Reconcile inventory: prefer profile inventory, fallback to snapshot
+  let inventory = data.profile?.inventory || [];
+  if (inventory.length === 0 && data.inventory_snapshot) {
+    console.log('Reconciling inventory from snapshot');
+    inventory = data.inventory_snapshot;
+  }
+
   return {
     id: data.id,
-    profile: data.profile,
+    profile: {
+      ...data.profile,
+      inventory // Ensure inventory is in profile
+    },
     scenes: data.scenes,
     currentSceneIndex: data.current_scene_index,
     startedAt: data.started_at,

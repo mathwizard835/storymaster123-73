@@ -230,27 +230,49 @@ export const markStoryCompleted = async (
 };
 
 // Simple cache for identical requests (5 minute TTL)
-const sceneCache = new Map<string, { data: { parsed: Scene | null; text: string }, timestamp: number }>();
+const sceneCache = new Map<string, { data: { parsed: Scene | null; text: string }, timestamp: number, choiceId?: string }>();
+
+// Track last choice to invalidate cache when choices change
+let lastChoiceId: string | null = null;
 
 export const generateNextScene = async (
   profile: Profile,
   scene?: unknown,
   megastory: boolean = false,
   maxTokens: number = 900,
-  sceneCount: number = 1
+  sceneCount: number = 1,
+  selectedChoiceId?: string
 ): Promise<{ text: string; parsed: Scene | null; raw: any }> => {
   // For new stories (scene 1), don't use cache to ensure fresh generation
   if (sceneCount === 1 && !scene) {
     console.log("Starting fresh story - bypassing cache");
     sceneCache.clear(); // Clear all cached scenes for fresh start
+    lastChoiceId = null;
   }
   
-  // Create cache key for identical requests
-  const cacheKey = JSON.stringify({ profile, scene, megastory, maxTokens, sceneCount });
+  // If choice changed, invalidate cache to prevent wrong outcomes
+  if (selectedChoiceId && selectedChoiceId !== lastChoiceId) {
+    console.log(`Choice changed from ${lastChoiceId} to ${selectedChoiceId} - invalidating cache`);
+    sceneCache.clear();
+    lastChoiceId = selectedChoiceId;
+  }
+  
+  // Create cache key including choice ID to ensure unique outcomes
+  const cacheKey = JSON.stringify({ 
+    profile, 
+    scene, 
+    megastory, 
+    maxTokens, 
+    sceneCount,
+    choiceId: selectedChoiceId 
+  });
   const cached = sceneCache.get(cacheKey);
   
-  // Check cache (5 minute TTL) - skip for first scene
-  if (cached && Date.now() - cached.timestamp < 300000 && sceneCount > 1) {
+  // Disable caching for choice-based scenes (scene > 1) to prevent wrong outcomes
+  const shouldCache = sceneCount === 1 || !selectedChoiceId;
+  
+  // Check cache (5 minute TTL) - only for non-choice scenes
+  if (cached && Date.now() - cached.timestamp < 300000 && shouldCache) {
     console.log("Using cached scene generation");
     return { ...cached.data, raw: null };
   }
@@ -277,13 +299,19 @@ export const generateNextScene = async (
     const parsed: Scene | null = data?.result ?? data?.parsed ?? null;
     const result = { text, parsed, raw: data };
     
-    // Cache the result
-    sceneCache.set(cacheKey, { data: { parsed, text }, timestamp: Date.now() });
-    
-    // Clean old cache entries (keep only last 10)
-    if (sceneCache.size > 10) {
-      const oldestKey = Array.from(sceneCache.keys())[0];
-      sceneCache.delete(oldestKey);
+    // Cache the result only if appropriate (non-choice scenes)
+    if (shouldCache) {
+      sceneCache.set(cacheKey, { 
+        data: { parsed, text }, 
+        timestamp: Date.now(),
+        choiceId: selectedChoiceId 
+      });
+      
+      // Clean old cache entries (keep only last 5 for choice-based scenes)
+      if (sceneCache.size > 5) {
+        const oldestKey = Array.from(sceneCache.keys())[0];
+        sceneCache.delete(oldestKey);
+      }
     }
 
     return result;
