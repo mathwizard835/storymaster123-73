@@ -15,7 +15,6 @@ export interface DatabaseStory {
   choices_made: string[];
   status: 'active' | 'completed' | 'paused';
   title?: string;
-  inventory_snapshot?: InventoryItem[];
 }
 
 // Save current story to database with inventory snapshot
@@ -41,8 +40,7 @@ export const saveStoryToDatabase = async (story: SavedStory, currentInventory?: 
     scene_count: story.scenes.length,
     choices_made: [], // TODO: track choices made
     status: story.completed ? 'completed' : 'active',
-    title: story.scenes[0]?.sceneTitle || 'Untitled Adventure',
-    inventory_snapshot: inventory // Also save as separate field for reconciliation
+    title: story.scenes[0]?.sceneTitle || 'Untitled Adventure'
   };
 
   const { error } = await (supabase as any)
@@ -76,12 +74,8 @@ export const loadCurrentStoryFromDatabase = async (): Promise<SavedStory | null>
 
   if (!data) return null;
 
-  // Reconcile inventory: prefer profile inventory, fallback to snapshot
-  let inventory = data.profile?.inventory || [];
-  if (inventory.length === 0 && data.inventory_snapshot) {
-    console.log('Reconciling inventory from snapshot');
-    inventory = data.inventory_snapshot;
-  }
+  // Use inventory from profile
+  const inventory = data.profile?.inventory || [];
 
   return {
     id: data.id,
