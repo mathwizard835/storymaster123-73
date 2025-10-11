@@ -196,6 +196,11 @@ const ProfileSetup = () => {
 
       <main className="min-h-screen w-full bg-background">
         <section className="container py-10 md:py-16">
+          <div className="flex justify-end mb-4">
+            <Button variant="outline" onClick={() => navigate('/')}>
+              Go Back
+            </Button>
+          </div>
           <h1 className="font-heading text-3xl md:text-5xl font-extrabold text-center">
             Create Your Hero Profile
           </h1>
