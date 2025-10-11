@@ -16,10 +16,87 @@ export interface DatabaseStory {
   title?: string;
 }
 
-// Save current story to database
-export const saveStoryToDatabase = async (story: SavedStory): Promise<void> => {
+// Phase 1: Clear ALL active stories for the current user
+export const clearAllActiveStoriesForUser = async (): Promise<number> => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
+
+  // Get all active stories
+  const { data: activeStories } = await (supabase as any)
+    .from('user_stories')
+    .select('id')
+    .eq('user_id', user.id)
+    .eq('status', 'active');
+
+  const count = activeStories?.length || 0;
+  
+  if (count > 0) {
+    console.log(`🧹 Cleaning up ${count} orphaned active stories`);
+    
+    // Mark ALL active stories as completed
+    const { error } = await (supabase as any)
+      .from('user_stories')
+      .update({
+        status: 'completed',
+        completed_at: new Date().toISOString()
+      })
+      .eq('user_id', user.id)
+      .eq('status', 'active');
+
+    if (error) {
+      console.error('Error clearing active stories:', error);
+      throw error;
+    }
+  }
+
+  return count;
+};
+
+// Phase 4: Verify a specific story is still active
+export const verifyStoryIsActive = async (storyId: string): Promise<boolean> => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return false;
+
+  const { data, error } = await (supabase as any)
+    .from('user_stories')
+    .select('id')
+    .eq('id', storyId)
+    .eq('user_id', user.id)
+    .eq('status', 'active')
+    .maybeSingle();
+
+  if (error) {
+    console.error('Error verifying story status:', error);
+    return false;
+  }
+
+  return !!data;
+};
+
+// Phase 6: Improved save with verification
+export const saveStoryToDatabase = async (story: SavedStory): Promise<DatabaseStory | null> => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  // Verify no other active stories exist (defensive programming)
+  const { data: otherActiveStories } = await (supabase as any)
+    .from('user_stories')
+    .select('id')
+    .eq('user_id', user.id)
+    .eq('status', 'active')
+    .neq('id', story.id);
+
+  // If found, mark them as archived
+  if (otherActiveStories && otherActiveStories.length > 0) {
+    console.warn(`⚠️ Found ${otherActiveStories.length} other active stories, archiving them`);
+    await (supabase as any)
+      .from('user_stories')
+      .update({ 
+        status: 'archived',
+        completed_at: new Date().toISOString() 
+      })
+      .in('id', otherActiveStories.map((s: any) => s.id));
+  }
 
   const storyData = {
     id: story.id,
@@ -31,19 +108,26 @@ export const saveStoryToDatabase = async (story: SavedStory): Promise<void> => {
     last_played_at: story.lastPlayedAt,
     completed_at: story.completed ? new Date().toISOString() : null,
     scene_count: story.scenes.length,
-    choices_made: [], // TODO: track choices made
+    choices_made: [],
     status: story.completed ? 'completed' : 'active',
     title: story.scenes[0]?.sceneTitle || 'Untitled Adventure'
   };
 
-  const { error } = await (supabase as any)
+  const { data: savedData, error } = await (supabase as any)
     .from('user_stories')
-    .upsert(storyData);
+    .upsert(storyData)
+    .select()
+    .single();
 
   if (error) {
-    console.error('Error saving story:', error);
+    console.error('❌ Error saving story:', error);
     throw error;
   }
+
+  console.log(`✅ Story saved successfully: ${story.id} (scene ${story.currentSceneIndex + 1})`);
+  
+  // Return saved data for verification
+  return savedData;
 };
 
 // Load current active story from database

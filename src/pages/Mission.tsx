@@ -10,7 +10,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useEffect, useState } from "react";
 import { generateNextScene, loadProfile, checkStoryLimit, markStoryCompleted, type Scene, saveCurrentStory, loadCurrentStory, clearCurrentStory, saveCompletedStory, getCompletedStories, type SavedStory, type InventoryItem, saveProfileToLocal, clearSceneCache } from "@/lib/story";
-import { saveStoryToDatabase, loadCurrentStoryFromDatabase, clearCurrentStoryInDatabase } from "@/lib/databaseStory";
+import { saveStoryToDatabase, loadCurrentStoryFromDatabase, clearCurrentStoryInDatabase, clearAllActiveStoriesForUser, verifyStoryIsActive } from "@/lib/databaseStory";
 import { loadInventory, saveInventory, addItemToInventory, useItem, clearInventory, updateProfileInventory } from "@/lib/inventory";
 import { 
   LearningSession, 
@@ -40,6 +40,7 @@ const Mission = () => {
   const [allScenes, setAllScenes] = useState<Scene[]>([]);
   const [sceneCount, setSceneCount] = useState(1);
   const [savedStory, setSavedStory] = useState<SavedStory | null>(null);
+  const [initialStoryId, setInitialStoryId] = useState<string | null>(null); // Phase 5: Track initial story ID
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [storyLimitReached, setStoryLimitReached] = useState(false);
@@ -148,6 +149,20 @@ const Mission = () => {
     }
   };
 
+  // Phase 5: Monitor for unexpected story ID changes
+  useEffect(() => {
+    if (savedStory && initialStoryId && savedStory.id !== initialStoryId) {
+      console.error(`🚨 ALERT: Story ID changed unexpectedly! Initial: ${initialStoryId}, Current: ${savedStory.id}`);
+      toast({
+        title: "Story Corruption Detected",
+        description: "Redirecting to start a fresh adventure...",
+        variant: "destructive",
+        duration: 3000,
+      });
+      setTimeout(() => navigate('/profile?new=true'), 2000);
+    }
+  }, [savedStory?.id, initialStoryId, navigate, toast]);
+
   useEffect(() => {
     const init = async () => {
       try {
@@ -183,34 +198,42 @@ const Mission = () => {
         if (!isTrialMode && !forceNew) {
           const existingStory = await loadCurrentStoryFromDatabase();
           if (existingStory && existingStory.scenes.length > 0) {
-            setSavedStory(existingStory);
-            setAllScenes(existingStory.scenes);
-            setScene(existingStory.scenes[existingStory.currentSceneIndex || 0]);
-            setSceneCount(existingStory.scenes.length);
-            
-            const savedInventory = loadInventory();
-            setInventory(savedInventory);
-            
-            if (savedProfile.mode === 'learning') {
-              initializeLearningSession(savedProfile);
+            // Phase 4 & 5: Verify story is still active and track ID
+            const isActive = await verifyStoryIsActive(existingStory.id);
+            if (isActive) {
+              console.log(`📖 Resuming story: ${existingStory.id}`);
+              setSavedStory(existingStory);
+              setInitialStoryId(existingStory.id); // Phase 5: Track the loaded story ID
+              setAllScenes(existingStory.scenes);
+              setScene(existingStory.scenes[existingStory.currentSceneIndex || 0]);
+              setSceneCount(existingStory.scenes.length);
+              
+              const savedInventory = loadInventory();
+              setInventory(savedInventory);
+              
+              if (savedProfile.mode === 'learning') {
+                initializeLearningSession(savedProfile);
+              }
+              
+              setLoading(false);
+              return;
+            } else {
+              console.warn('⚠️ Story no longer active, starting fresh');
             }
-            
-            setLoading(false);
-            return;
           }
         }
         
-        // If forcing new story, clear ALL existing data to ensure fresh start
-        if (forceNew) {
-          console.log('Starting fresh adventure - clearing all existing data');
+        // Phase 1: Clear ALL existing active stories before starting new one
+        if (forceNew || isTrialMode) {
+          console.log('🧹 Starting fresh adventure - clearing all existing data');
           try {
-            const existingStory = await loadCurrentStoryFromDatabase();
-            if (existingStory) {
-              await clearCurrentStoryInDatabase(existingStory.id);
+            if (!isTrialMode) {
+              const clearedCount = await clearAllActiveStoriesForUser();
+              console.log(`✅ Cleared ${clearedCount} active stories`);
             }
             await clearCurrentStory();
             clearInventory();
-            clearSceneCache(); // Clear the scene cache to prevent cross-story contamination
+            clearSceneCache();
             
             // Clear learning progress if exists
             const existingLearning = loadLearningProgress();
@@ -247,7 +270,8 @@ const Mission = () => {
         const cleanProfile = { ...savedProfile, inventory: savedInventory };
         const profileWithInventory = updateProfileInventory(cleanProfile, savedInventory);
         
-        const { parsed, text } = await generateNextScene(profileWithInventory, undefined, false, 1800, 1, newStoryId);
+        // Phase 3: Use forceNewSession flag for explicit new story
+        const { parsed, text } = await generateNextScene(profileWithInventory, undefined, false, 1800, 1, newStoryId, true);
         if (!parsed) {
           throw new Error("Invalid AI response: " + text.slice(0, 140));
         }
@@ -285,10 +309,15 @@ const Mission = () => {
           completed: false,
         };
         setSavedStory(newStory);
+        setInitialStoryId(newStoryId); // Phase 5: Track initial story ID
         
-        // Only save to database if not in trial mode
+        // Phase 6: Save to database and verify
         if (!isTrialMode) {
-          await saveStoryToDatabase(newStory);
+          const savedData = await saveStoryToDatabase(newStory);
+          if (savedData && savedData.id !== newStoryId) {
+            console.error('❌ Story ID mismatch after save!');
+            throw new Error('Story save verification failed');
+          }
         }
         
       } catch (e: any) {
@@ -305,6 +334,19 @@ const Mission = () => {
 
   const onChoose = async (choiceId: string) => {
     if (!profile || !scene || !savedStory || choiceLoading) return;
+
+    // Phase 5: Validate story ID hasn't changed unexpectedly
+    if (initialStoryId && savedStory.id !== initialStoryId) {
+      console.error(`❌ Story ID corruption detected! Initial: ${initialStoryId}, Current: ${savedStory.id}`);
+      toast({
+        title: "Story Error",
+        description: "Story session corrupted. Redirecting to start a new adventure...",
+        variant: "destructive",
+        duration: 3000,
+      });
+      setTimeout(() => navigate('/profile?new=true'), 2000);
+      return;
+    }
 
     setChoiceLoading(true);
 
@@ -352,7 +394,8 @@ const Mission = () => {
       const nextSceneCount = sceneCount + 1;
       const profileWithInventory = updateProfileInventory(profile, inventory);
       
-      const { parsed, text } = await generateNextScene(profileWithInventory, { ...scene, selectedChoiceId: choiceId }, false, 1200, nextSceneCount, savedStory.id);
+      // Phase 3 & 5: Pass story ID for validation, no forceNewSession
+      const { parsed, text } = await generateNextScene(profileWithInventory, { ...scene, selectedChoiceId: choiceId }, false, 1200, nextSceneCount, savedStory.id, false);
       if (!parsed) throw new Error("Invalid AI response: " + text.slice(0, 140));
       
       if (parsed.itemsFound && parsed.itemsFound.length > 0) {
@@ -390,9 +433,13 @@ const Mission = () => {
       };
       setSavedStory(updatedStory);
       
-      // Save to database immediately with the correct state
+      // Phase 6: Save to database and verify
       if (!isTrialMode) {
-        await saveStoryToDatabase(updatedStory);
+        const savedData = await saveStoryToDatabase(updatedStory);
+        if (savedData && savedData.id !== savedStory.id) {
+          console.error('❌ Story ID changed during save!');
+          throw new Error('Story integrity compromised');
+        }
       }
 
       if (parsed.end) {

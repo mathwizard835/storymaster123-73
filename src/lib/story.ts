@@ -257,20 +257,26 @@ export const generateNextScene = async (
   megastory: boolean = false,
   maxTokens: number = 900,
   sceneCount: number = 1,
-  storyId?: string
+  storyId?: string,
+  forceNewSession: boolean = false
 ): Promise<{ text: string; parsed: Scene | null; raw: any }> => {
-  // For new stories (scene 1), start a fresh session
-  if (sceneCount === 1 && !scene) {
-    console.log("Starting fresh story - bypassing cache and starting new session");
+  // Phase 3: Explicit new session handling
+  if (forceNewSession || (sceneCount === 1 && !scene)) {
     const newStoryId = storyId || crypto.randomUUID();
+    console.log(`🆕 Starting fresh story session: ${newStoryId}`);
     currentStoryId = newStoryId;
-    sceneCache.clear(); // Clear all cached scenes for fresh start
+    sceneCache.clear();
   }
   
-  // If story ID changes mid-story, something is wrong - clear cache
-  if (storyId && currentStoryId && storyId !== currentStoryId) {
-    console.warn("Story ID mismatch detected - clearing cache to prevent contamination");
-    sceneCache.clear();
+  // Phase 3: Strict story ID validation for continuation
+  if (storyId && currentStoryId && storyId !== currentStoryId && sceneCount > 1) {
+    console.error(`❌ CRITICAL: Story ID mismatch! Expected: ${currentStoryId}, Got: ${storyId}`);
+    throw new Error('Story session corrupted - please start a new adventure');
+  }
+  
+  // Update tracking if story ID provided
+  if (storyId && !currentStoryId) {
+    console.log(`📝 Setting current story ID: ${storyId}`);
     currentStoryId = storyId;
   }
   
