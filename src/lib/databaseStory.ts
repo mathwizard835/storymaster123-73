@@ -73,12 +73,13 @@ export const verifyStoryIsActive = async (storyId: string): Promise<boolean> => 
   return !!data;
 };
 
-// Phase 6: Improved save with verification
+// Phase 6: Improved save with verification - CLEAR FIRST, THEN SAVE
 export const saveStoryToDatabase = async (story: SavedStory): Promise<DatabaseStory | null> => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
 
-  // Verify no other active stories exist (defensive programming)
+  // CRITICAL: Clear ALL other active stories FIRST, before attempting to save
+  // This prevents unique constraint violations from the database index
   const { data: otherActiveStories } = await (supabase as any)
     .from('user_stories')
     .select('id')
@@ -86,16 +87,23 @@ export const saveStoryToDatabase = async (story: SavedStory): Promise<DatabaseSt
     .eq('status', 'active')
     .neq('id', story.id);
 
-  // If found, mark them as archived
+  // If found, mark them as completed IMMEDIATELY
   if (otherActiveStories && otherActiveStories.length > 0) {
-    console.warn(`⚠️ Found ${otherActiveStories.length} other active stories, archiving them`);
-    await (supabase as any)
+    console.warn(`⚠️ Found ${otherActiveStories.length} other active stories, marking as completed NOW`);
+    const { error: clearError } = await (supabase as any)
       .from('user_stories')
       .update({ 
-        status: 'archived',
+        status: 'completed',
         completed_at: new Date().toISOString() 
       })
       .in('id', otherActiveStories.map((s: any) => s.id));
+    
+    if (clearError) {
+      console.error('❌ Failed to clear other active stories:', clearError);
+      throw new Error('Failed to clear existing active stories');
+    }
+    
+    console.log('✅ Successfully cleared other active stories');
   }
 
   const storyData = {
