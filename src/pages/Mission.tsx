@@ -200,27 +200,38 @@ const Mission = () => {
           }
         }
         
-        // If forcing new story, clear ALL existing data to ensure fresh start
+        // If forcing new story, clear ALL existing data including profile
         if (forceNew) {
-          console.log('Starting fresh adventure - clearing all existing data');
+          console.log('Starting fresh adventure - clearing all existing data including profile');
           try {
+            // First, import clearProfile function
+            const { clearProfile } = await import("@/lib/story");
+            
+            // Clear profile FIRST
+            await clearProfile();
+            
+            // Clear all story data
             const existingStory = await loadCurrentStoryFromDatabase();
             if (existingStory) {
               await clearCurrentStoryInDatabase(existingStory.id);
             }
-            await clearCurrentStory(); // Clear local storage story
-            clearInventory(); // Clear inventory
+            await clearCurrentStory();
+            clearInventory();
             
-            // Clear learning progress if switching topics
+            // Clear learning progress
             const existingLearning = loadLearningProgress();
-            if (existingLearning && existingLearning.topic !== savedProfile.topic) {
+            if (existingLearning) {
               localStorage.removeItem('smq.learning_progress');
             }
             
-            // Clear scene cache to prevent using old cached responses
+            // Clear scene cache
             if (typeof window !== 'undefined') {
               sessionStorage.removeItem('scene_cache');
             }
+            
+            // Redirect to profile setup to create fresh profile
+            navigate('/profile?new=true');
+            return;
           } catch (e) {
             console.log('No existing data to clear:', e);
           }

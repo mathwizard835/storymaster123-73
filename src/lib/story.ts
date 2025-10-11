@@ -97,6 +97,16 @@ export const loadProfile = async (): Promise<Profile | null> => {
   }
 };
 
+// Clear profile completely from storage
+export const clearProfile = async (): Promise<void> => {
+  try {
+    await mobileStorage.removeItem(PROFILE_KEY);
+    console.log("Profile cleared - ready for fresh start");
+  } catch (e) {
+    console.error("Failed to clear profile", e);
+  }
+};
+
 // Get or create a unique device ID for tracking story completions
 export const getDeviceId = async (): Promise<string> => {
   try {

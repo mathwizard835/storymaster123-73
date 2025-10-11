@@ -75,12 +75,26 @@ const ProfileSetup = () => {
       navigate('/');
     }
 
-    // Reset interests when starting a new adventure
+    // Reset ALL profile fields when starting a new adventure
     const isNewAdventure = searchParams.get('new') === 'true';
     if (isNewAdventure) {
       setName("");
-      setInterests("");
+      setAge(8);
+      setReading("adventurer");
+      setSelectedBadges([]);
+      setMode("thrill");
+      setStoryLength("medium");
       setTopic("");
+      setInterests("");
+      setNameError("");
+      setInterestsError("");
+      setTopicError("");
+      
+      toast({
+        title: "Starting Fresh Adventure! 🎮",
+        description: "All settings have been reset. Create your new hero profile!",
+        duration: 4000,
+      });
     }
   }, [navigate, toast, searchParams]);
 
