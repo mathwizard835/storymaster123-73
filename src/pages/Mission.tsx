@@ -9,7 +9,7 @@ import { Zap, Timer, Star, Heart, Shield, Eye, Wand2, PawPrint, Crosshair, Users
 import { useAuth } from "@/hooks/useAuth";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useEffect, useState } from "react";
-import { generateNextScene, loadProfile, checkStoryLimit, markStoryCompleted, type Scene, saveCurrentStory, loadCurrentStory, clearCurrentStory, saveCompletedStory, getCompletedStories, type SavedStory, type InventoryItem, saveProfileToLocal } from "@/lib/story";
+import { generateNextScene, loadProfile, checkStoryLimit, markStoryCompleted, type Scene, saveCurrentStory, loadCurrentStory, clearCurrentStory, saveCompletedStory, getCompletedStories, type SavedStory, type InventoryItem, saveProfileToLocal, clearSceneCache } from "@/lib/story";
 import { saveStoryToDatabase, loadCurrentStoryFromDatabase, clearCurrentStoryInDatabase } from "@/lib/databaseStory";
 import { loadInventory, saveInventory, addItemToInventory, useItem, clearInventory, updateProfileInventory } from "@/lib/inventory";
 import { 
@@ -210,16 +210,12 @@ const Mission = () => {
             }
             await clearCurrentStory();
             clearInventory();
+            clearSceneCache(); // Clear the scene cache to prevent cross-story contamination
             
             // Clear learning progress if exists
             const existingLearning = loadLearningProgress();
             if (existingLearning) {
               localStorage.removeItem('smq.learning_progress');
-            }
-            
-            // Clear scene cache to prevent using old cached responses
-            if (typeof window !== 'undefined') {
-              sessionStorage.removeItem('scene_cache');
             }
           } catch (e) {
             console.log('No existing data to clear:', e);
@@ -244,11 +240,14 @@ const Mission = () => {
           initializeLearningSession(savedProfile);
         }
 
+        // Create new story ID for this session
+        const newStoryId = crypto.randomUUID();
+        
         // Ensure profile has no old inventory data for fresh start
         const cleanProfile = { ...savedProfile, inventory: savedInventory };
         const profileWithInventory = updateProfileInventory(cleanProfile, savedInventory);
         
-        const { parsed, text } = await generateNextScene(profileWithInventory, undefined, false, 1800, 1);
+        const { parsed, text } = await generateNextScene(profileWithInventory, undefined, false, 1800, 1, newStoryId);
         if (!parsed) {
           throw new Error("Invalid AI response: " + text.slice(0, 140));
         }
@@ -277,7 +276,7 @@ const Mission = () => {
         setSceneCount(1);
         
         const newStory: SavedStory = {
-          id: crypto.randomUUID(),
+          id: newStoryId,
           profile: profileWithInventory,
           scenes: [parsed],
           currentSceneIndex: 0,
@@ -353,7 +352,7 @@ const Mission = () => {
       const nextSceneCount = sceneCount + 1;
       const profileWithInventory = updateProfileInventory(profile, inventory);
       
-      const { parsed, text } = await generateNextScene(profileWithInventory, { ...scene, selectedChoiceId: choiceId }, false, 1200, nextSceneCount);
+      const { parsed, text } = await generateNextScene(profileWithInventory, { ...scene, selectedChoiceId: choiceId }, false, 1200, nextSceneCount, savedStory.id);
       if (!parsed) throw new Error("Invalid AI response: " + text.slice(0, 140));
       
       if (parsed.itemsFound && parsed.itemsFound.length > 0) {

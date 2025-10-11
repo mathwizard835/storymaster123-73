@@ -240,23 +240,43 @@ export const markStoryCompleted = async (
 };
 
 // Simple cache for identical requests (5 minute TTL)
-const sceneCache = new Map<string, { data: { parsed: Scene | null; text: string }, timestamp: number }>();
+const sceneCache = new Map<string, { data: { parsed: Scene | null; text: string }, timestamp: number, storyId: string }>();
+
+// Track current story session to prevent cross-story cache contamination
+let currentStoryId: string | null = null;
+
+export const clearSceneCache = () => {
+  sceneCache.clear();
+  currentStoryId = null;
+  console.log("Scene cache cleared");
+};
 
 export const generateNextScene = async (
   profile: Profile,
   scene?: unknown,
   megastory: boolean = false,
   maxTokens: number = 900,
-  sceneCount: number = 1
+  sceneCount: number = 1,
+  storyId?: string
 ): Promise<{ text: string; parsed: Scene | null; raw: any }> => {
-  // For new stories (scene 1), don't use cache to ensure fresh generation
+  // For new stories (scene 1), start a fresh session
   if (sceneCount === 1 && !scene) {
-    console.log("Starting fresh story - bypassing cache");
+    console.log("Starting fresh story - bypassing cache and starting new session");
+    const newStoryId = storyId || crypto.randomUUID();
+    currentStoryId = newStoryId;
     sceneCache.clear(); // Clear all cached scenes for fresh start
   }
   
-  // Create cache key for identical requests
-  const cacheKey = JSON.stringify({ profile, scene, megastory, maxTokens, sceneCount });
+  // If story ID changes mid-story, something is wrong - clear cache
+  if (storyId && currentStoryId && storyId !== currentStoryId) {
+    console.warn("Story ID mismatch detected - clearing cache to prevent contamination");
+    sceneCache.clear();
+    currentStoryId = storyId;
+  }
+  
+  // Create cache key that includes story session ID
+  const sessionId = storyId || currentStoryId || 'unknown';
+  const cacheKey = JSON.stringify({ sessionId, profile, scene, megastory, maxTokens, sceneCount });
   const cached = sceneCache.get(cacheKey);
   
   // Check cache (5 minute TTL) - skip for first scene
@@ -287,8 +307,12 @@ export const generateNextScene = async (
     const parsed: Scene | null = data?.result ?? data?.parsed ?? null;
     const result = { text, parsed, raw: data };
     
-    // Cache the result
-    sceneCache.set(cacheKey, { data: { parsed, text }, timestamp: Date.now() });
+    // Cache the result with story session ID
+    sceneCache.set(cacheKey, { 
+      data: { parsed, text }, 
+      timestamp: Date.now(),
+      storyId: storyId || currentStoryId || 'unknown'
+    });
     
     // Clean old cache entries (keep only last 10)
     if (sceneCache.size > 10) {
