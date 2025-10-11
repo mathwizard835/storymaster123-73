@@ -1,6 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { Profile, Scene, SavedStory, InventoryItem } from './story';
-import { loadInventory } from './inventory';
+import { Profile, Scene, SavedStory } from './story';
 
 export interface DatabaseStory {
   id: string;
@@ -17,21 +16,15 @@ export interface DatabaseStory {
   title?: string;
 }
 
-// Save current story to database with inventory snapshot
-export const saveStoryToDatabase = async (story: SavedStory, currentInventory?: InventoryItem[]): Promise<void> => {
+// Save current story to database
+export const saveStoryToDatabase = async (story: SavedStory): Promise<void> => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
-
-  // Get current inventory if not provided
-  const inventory = currentInventory || loadInventory();
 
   const storyData = {
     id: story.id,
     user_id: user.id,
-    profile: {
-      ...story.profile,
-      inventory // Save inventory in profile
-    },
+    profile: story.profile,
     scenes: story.scenes,
     current_scene_index: story.currentSceneIndex || 0,
     started_at: story.startedAt,
@@ -53,7 +46,7 @@ export const saveStoryToDatabase = async (story: SavedStory, currentInventory?: 
   }
 };
 
-// Load current active story from database with inventory reconciliation
+// Load current active story from database
 export const loadCurrentStoryFromDatabase = async (): Promise<SavedStory | null> => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
@@ -74,15 +67,9 @@ export const loadCurrentStoryFromDatabase = async (): Promise<SavedStory | null>
 
   if (!data) return null;
 
-  // Use inventory from profile
-  const inventory = data.profile?.inventory || [];
-
   return {
     id: data.id,
-    profile: {
-      ...data.profile,
-      inventory // Ensure inventory is in profile
-    },
+    profile: data.profile,
     scenes: data.scenes,
     currentSceneIndex: data.current_scene_index,
     startedAt: data.started_at,
