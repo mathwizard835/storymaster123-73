@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { saveProfileToLocal } from "@/lib/story";
 import { trackViolation, isUserBanned, getRemainingAttempts } from "@/lib/contentViolations";
+import { cn } from "@/lib/utils";
 
 const badges = [
   { id: "beast", label: "Beast Master", icon: PawPrint, description: "Love animals and nature adventures" },
@@ -283,17 +284,20 @@ const ProfileSetup = () => {
               <TooltipProvider>
                 <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
                   {badges.map((b) => (
-                    <Tooltip key={b.id}>
+                    <Tooltip key={b.id} delayDuration={300}>
                       <TooltipTrigger asChild>
-                        <Toggle
-                          pressed={selectedBadges.includes(b.id)}
-                          onPressedChange={() => toggleBadge(b.id)}
-                          className="justify-start rounded-lg border px-3 py-3 data-[state=on]:bg-primary/10 data-[state=on]:border-primary hover:bg-accent hover:text-foreground"
+                        <button
+                          onClick={() => toggleBadge(b.id)}
+                          className={cn(
+                            "justify-start rounded-lg border px-3 py-3 inline-flex items-center transition-colors hover:bg-accent hover:text-foreground",
+                            selectedBadges.includes(b.id) && "bg-primary/10 border-primary"
+                          )}
                           aria-label={b.label}
+                          type="button"
                         >
                           <b.icon className="mr-2 h-5 w-5" />
                           <span className="text-sm font-semibold">{b.label}</span>
-                        </Toggle>
+                        </button>
                       </TooltipTrigger>
                       <TooltipContent>
                         <p>{b.description}</p>
