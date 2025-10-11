@@ -1,5 +1,6 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 // Rate limiting: Track requests per device
 const requestCounts = new Map<string, { count: number; resetTime: number }>();
@@ -14,6 +15,8 @@ const corsHeaders = {
 };
 
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
 // Strict content blocking for ages 6-11
 const BLOCKED_PATTERNS = [
@@ -330,8 +333,49 @@ serve(async (req) => {
       );
     }
     
-    // Extract device ID for rate limiting
+    // Extract device ID and user info
     const deviceId = req.headers.get('x-device-id') || body?.device_id || 'anonymous';
+    const authHeader = req.headers.get('authorization');
+    
+    // Check ban status using service role
+    const supabaseClient = createClient(SUPABASE_URL ?? '', SUPABASE_SERVICE_ROLE_KEY ?? '');
+    
+    let userId = null;
+    if (authHeader) {
+      const { data: { user } } = await supabaseClient.auth.getUser(authHeader.replace('Bearer ', ''));
+      userId = user?.id;
+    }
+    
+    // Check if user/device is banned
+    let banQuery = supabaseClient
+      .from('banned_users')
+      .select('*');
+    
+    if (userId) {
+      banQuery = banQuery.or(`user_id.eq.${userId},device_id.eq.${deviceId}`);
+    } else {
+      banQuery = banQuery.eq('device_id', deviceId);
+    }
+    
+    const { data: ban } = await banQuery.maybeSingle();
+    
+    if (ban) {
+      // Check if ban has expired
+      if (ban.expires_at && new Date(ban.expires_at) < new Date()) {
+        console.log('Ban expired, removing...');
+        await supabaseClient.from('banned_users').delete().eq('id', ban.id);
+      } else {
+        console.log('User is banned:', ban);
+        return new Response(
+          JSON.stringify({ 
+            error: "Account suspended due to policy violations",
+            reason: ban.reason,
+            banned_at: ban.banned_at
+          }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
     
     // Apply rate limiting
     if (!rateLimit(deviceId)) {

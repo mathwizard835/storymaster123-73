@@ -15,6 +15,7 @@ import Dashboard from "./pages/Dashboard";
 import ErrorBoundary from "./components/ErrorBoundary";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
+import AdminBans from "./pages/AdminBans";
 
 const queryClient = new QueryClient();
 
@@ -74,6 +75,7 @@ const App = () => (
             <Route path="/achievements" element={<ProtectedRoute><Achievements /></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/coming-soon" element={<ProtectedRoute><ComingSoon /></ProtectedRoute>} />
+            <Route path="/admin/bans" element={<AdminBans />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
