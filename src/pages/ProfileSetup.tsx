@@ -161,17 +161,39 @@ const ProfileSetup = () => {
     const profile = { name: name || undefined, age, reading, selectedBadges, mode, storyLength: storyLength as 'short' | 'medium' | 'epic', topic, interests };
     saveProfileToLocal(profile);
     
-    // Check if this should be a new story or trial mode
+    console.log('Profile saved - fresh configuration:', profile);
+    
+    // Check URL parameters
     const forceNew = searchParams.get('new') === 'true';
     const isTrial = searchParams.get('trial') === 'true';
     
-    // Build mission URL with appropriate parameters
+    // CRITICAL FIX: Check if this is a profile update vs new profile creation
+    // If forceNew is NOT set, check if user has an active story
+    if (!forceNew && !isTrial) {
+      try {
+        const { loadCurrentStoryFromDatabase } = await import('@/lib/databaseStory');
+        const existingStory = await loadCurrentStoryFromDatabase();
+        
+        if (existingStory && existingStory.scenes.length > 0) {
+          // Profile update - return to existing story WITHOUT ?new=true
+          console.log('📝 Profile updated, returning to existing story');
+          navigate("/mission");
+          return;
+        }
+      } catch (error) {
+        console.error('Error checking for existing story:', error);
+        // Continue to new story creation if check fails
+      }
+    }
+    
+    // Build mission URL with appropriate parameters for NEW stories
     let missionUrl = '/mission';
     const params = new URLSearchParams();
     if (forceNew) params.set('new', 'true');
     if (isTrial) params.set('trial', 'true');
     if (params.toString()) missionUrl += `?${params.toString()}`;
     
+    console.log('🚀 Navigating to:', missionUrl);
     navigate(missionUrl);
   };
 

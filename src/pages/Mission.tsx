@@ -194,6 +194,21 @@ const Mission = () => {
         // Check if user wants to start fresh (from URL param)
         const forceNew = searchParams.get('new') === 'true';
         
+        // SAFEGUARD: Double-check user intent when forceNew is true
+        if (forceNew && !isTrialMode) {
+          const existingStoryCheck = await loadCurrentStoryFromDatabase();
+          if (existingStoryCheck && existingStoryCheck.scenes.length > 1) {
+            console.warn('⚠️ forceNew=true with active story progress detected');
+            console.log('🔍 Debug info:', {
+              existingStoryId: existingStoryCheck.id,
+              sceneCount: existingStoryCheck.scenes.length,
+              referrer: document.referrer,
+              currentUrl: window.location.href,
+              timestamp: new Date().toISOString()
+            });
+          }
+        }
+        
         // Skip loading existing story for trial mode or if forcing new story
         if (!isTrialMode && !forceNew) {
           const existingStory = await loadCurrentStoryFromDatabase();
@@ -220,6 +235,29 @@ const Mission = () => {
             } else {
               console.warn('⚠️ Story no longer active, starting fresh');
             }
+          }
+        }
+        
+        // Enhanced logging for new story creation
+        if (forceNew) {
+          console.log('🆕 User explicitly requested new story via ?new=true parameter');
+          console.log('📍 Navigation source:', {
+            referrer: document.referrer,
+            url: window.location.href,
+            userAgent: navigator.userAgent.slice(0, 50)
+          });
+          
+          // MONITORING: Detect if this shouldn't be happening
+          const existingStoryForMonitoring = await loadCurrentStoryFromDatabase();
+          if (existingStoryForMonitoring && existingStoryForMonitoring.scenes.length > 1) {
+            console.error('🚨 BUG DETECTED: New story started despite active story with progress', {
+              existingStoryId: existingStoryForMonitoring.id,
+              sceneCount: existingStoryForMonitoring.scenes.length,
+              timestamp: new Date().toISOString(),
+              referrer: document.referrer,
+              url: window.location.href
+            });
+            // This shouldn't happen if confirmation dialogs work correctly
           }
         }
         
