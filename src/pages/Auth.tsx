@@ -22,19 +22,11 @@ const Auth = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check if user is already logged in or just verified email
+    // Check if user is already logged in
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        // Check if this is from email verification
-        const hashParams = new URLSearchParams(window.location.hash.substring(1));
-        if (hashParams.get('type') === 'signup') {
-          toast({
-            title: "Email verified!",
-            description: "Your account is now active. Welcome to StoryMaster Quest!",
-          });
-        }
-        navigate('/dashboard');
+        navigate('/');
       }
     };
     
@@ -49,7 +41,7 @@ const Auth = () => {
     
     setLoading(true);
     try {
-      const redirectUrl = `${window.location.origin}/auth`;
+      const redirectUrl = `${window.location.origin}/dashboard`;
       
       const { error } = await supabase.auth.resend({
         type: 'signup',
@@ -89,7 +81,7 @@ const Auth = () => {
         return;
       }
 
-      const redirectUrl = `${window.location.origin}/auth`;
+      const redirectUrl = `${window.location.origin}/dashboard`;
       
       const { data, error } = await supabase.auth.signUp({
         email: validationResult.data.email,
