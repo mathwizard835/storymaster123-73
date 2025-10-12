@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Textarea } from '@/components/ui/textarea';
+import { clearLocalStorageBan } from '@/lib/contentViolations';
 
 interface BannedUser {
   id: string;
@@ -140,6 +141,14 @@ export default function AdminBans() {
     }
   };
 
+  const clearMyLocalBan = () => {
+    clearLocalStorageBan();
+    toast({
+      title: 'Success',
+      description: 'Your localStorage ban has been cleared. Refresh the page.'
+    });
+  };
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex justify-between items-center">
@@ -147,7 +156,12 @@ export default function AdminBans() {
           <h1 className="text-3xl font-bold">Ban Management</h1>
           <p className="text-muted-foreground">Manage user bans and content violations</p>
         </div>
-        <Button onClick={() => setShowBanDialog(true)}>Ban User</Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={clearMyLocalBan}>
+            Clear My Local Ban
+          </Button>
+          <Button onClick={() => setShowBanDialog(true)}>Ban User</Button>
+        </div>
       </div>
 
       <Card>
