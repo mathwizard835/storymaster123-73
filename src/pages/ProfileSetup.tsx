@@ -27,7 +27,7 @@ import {
   GraduationCap,
 } from "lucide-react";
 import { saveProfileToLocal } from "@/lib/story";
-import { trackViolation, isUserBanned, getRemainingAttempts } from "@/lib/contentViolations";
+import { trackViolation } from "@/lib/contentViolations";
 import { cn } from "@/lib/utils";
 
 const badges = [
@@ -65,16 +65,6 @@ const ProfileSetup = () => {
   const [topicError, setTopicError] = useState<string>("");
 
   useEffect(() => {
-    // Check if user is banned on mount
-    if (isUserBanned()) {
-      toast({
-        title: "Access Denied",
-        description: "You have been banned from the app due to multiple content violations.",
-        variant: "destructive"
-      });
-      navigate('/');
-    }
-
     // Reset ALL profile fields when starting a new adventure
     const isNewAdventure = searchParams.get('new') === 'true';
     if (isNewAdventure) {
@@ -157,25 +147,14 @@ const ProfileSetup = () => {
     const topicValid = topic ? validateTopic(topic) : true;
 
     if (!nameValid || !interestsValid || !topicValid) {
-      // Track violation and check if user should be banned
-      const isBanned = await trackViolation();
-      const remaining = await getRemainingAttempts();
+      // Track violation for manual admin review
+      await trackViolation();
       
-      if (isBanned) {
-        toast({
-          title: "Account Banned",
-          description: "You have been banned from the app due to multiple content violations.",
-          variant: "destructive"
-        });
-        navigate('/');
-      } else {
-        toast({
-          title: "Content Violation Warning",
-          description: `Inappropriate content detected. You have ${remaining} warning${remaining !== 1 ? 's' : ''} remaining before being banned.`,
-          variant: "destructive"
-        });
-        navigate('/');
-      }
+      toast({
+        title: "Content Rejected",
+        description: "Please avoid inappropriate content. This violation has been recorded.",
+        variant: "destructive",
+      });
       return;
     }
 

@@ -2,9 +2,3 @@ project_id = "lwxaqxxuednuwflojlfc"
 
 [functions.generate-story]
 verify_jwt = false
-
-[functions.check-ban-status]
-verify_jwt = false
-
-[functions.manage-bans]
-verify_jwt = true

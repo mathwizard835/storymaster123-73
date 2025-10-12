@@ -312,50 +312,6 @@ serve(async (req) => {
   }
 
   try {
-    // Get Supabase client for ban checks
-    const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    
-    if (supabaseUrl && supabaseServiceKey) {
-      const supabase = createClient(supabaseUrl, supabaseServiceKey);
-      
-      // Extract user/device identifiers
-      const authHeader = req.headers.get('Authorization');
-      let userId = null;
-      
-      if (authHeader) {
-        try {
-          const { data: { user } } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
-          userId = user?.id || null;
-        } catch (e) {
-          console.error('Error getting user from token:', e);
-        }
-      }
-      
-      const deviceId = req.headers.get('x-device-id');
-      
-      // Check if user/device is banned
-      if (userId || deviceId) {
-        const { data: isBanned, error: banError } = await supabase.rpc('is_banned', {
-          _user_id: userId,
-          _device_id: deviceId || null,
-        });
-        
-        if (banError) {
-          console.error('Error checking ban status:', banError);
-        } else if (isBanned) {
-          console.log('Blocked banned user/device:', { userId, deviceId });
-          return new Response(
-            JSON.stringify({ 
-              error: 'Your account has been suspended due to content policy violations. Please contact support.',
-              banned: true 
-            }),
-            { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
-        }
-      }
-    }
-
     // Parse and validate request body
     const contentLength = req.headers.get('content-length');
     if (contentLength && parseInt(contentLength) > 50000) {
