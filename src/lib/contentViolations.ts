@@ -1,5 +1,3 @@
-import { supabase } from '@/integrations/supabase/client';
-
 const VIOLATIONS_KEY = 'content_violations';
 const BANNED_KEY = 'user_banned';
 const MAX_VIOLATIONS = 3;
@@ -9,39 +7,7 @@ interface ViolationRecord {
   lastViolation: string;
 }
 
-// Clear old localStorage bans (migration helper)
-export const clearLocalStorageBan = (): void => {
-  localStorage.removeItem(BANNED_KEY);
-  localStorage.removeItem(VIOLATIONS_KEY);
-};
-
-// Check if user is banned in database
-export const checkDatabaseBan = async (): Promise<boolean> => {
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return false;
-
-    const { data, error } = await supabase.functions.invoke('check-ban-status', {
-      body: { 
-        userId: user.id,
-        email: user.email,
-        deviceId: localStorage.getItem('device_id') || user.id
-      }
-    });
-
-    if (error) {
-      console.error('Error checking ban status:', error);
-      return false;
-    }
-
-    return data?.banned || false;
-  } catch (error) {
-    console.error('Error checking ban status:', error);
-    return false;
-  }
-};
-
-export const trackViolation = async (): Promise<boolean> => {
+export const trackViolation = (): boolean => {
   const record = getViolationRecord();
   const newCount = record.count + 1;
   
@@ -54,28 +20,10 @@ export const trackViolation = async (): Promise<boolean> => {
   
   if (newCount >= MAX_VIOLATIONS) {
     localStorage.setItem(BANNED_KEY, 'true');
-    
-    // Also report to database
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        await supabase.functions.invoke('manage-bans', {
-          body: {
-            action: 'ban',
-            email: user.email,
-            reason: `Automatic ban after ${MAX_VIOLATIONS} content violations`,
-            deviceId: localStorage.getItem('device_id') || user.id
-          }
-        });
-      }
-    } catch (error) {
-      console.error('Error reporting ban to database:', error);
-    }
-    
-    return true;
+    return true; // User is now banned
   }
   
-  return false;
+  return false; // User is not banned yet
 };
 
 export const getViolationRecord = (): ViolationRecord => {
@@ -88,12 +36,7 @@ export const getViolationRecord = (): ViolationRecord => {
   }
 };
 
-export const isUserBanned = async (): Promise<boolean> => {
-  // Check database first
-  const dbBan = await checkDatabaseBan();
-  if (dbBan) return true;
-  
-  // Then check localStorage (for backwards compatibility)
+export const isUserBanned = (): boolean => {
   return localStorage.getItem(BANNED_KEY) === 'true';
 };
 

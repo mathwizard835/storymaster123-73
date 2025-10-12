@@ -14,69 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      banned_users: {
-        Row: {
-          banned_at: string
-          banned_by: string
-          created_at: string
-          device_id: string
-          email: string
-          expires_at: string | null
-          id: string
-          reason: string
-          user_id: string | null
-        }
-        Insert: {
-          banned_at?: string
-          banned_by?: string
-          created_at?: string
-          device_id: string
-          email: string
-          expires_at?: string | null
-          id?: string
-          reason: string
-          user_id?: string | null
-        }
-        Update: {
-          banned_at?: string
-          banned_by?: string
-          created_at?: string
-          device_id?: string
-          email?: string
-          expires_at?: string | null
-          id?: string
-          reason?: string
-          user_id?: string | null
-        }
-        Relationships: []
-      }
-      content_violations: {
-        Row: {
-          content: string | null
-          created_at: string
-          device_id: string
-          id: string
-          user_id: string | null
-          violation_type: string
-        }
-        Insert: {
-          content?: string | null
-          created_at?: string
-          device_id: string
-          id?: string
-          user_id?: string | null
-          violation_type?: string
-        }
-        Update: {
-          content?: string | null
-          created_at?: string
-          device_id?: string
-          id?: string
-          user_id?: string | null
-          violation_type?: string
-        }
-        Relationships: []
-      }
       daily_streaks: {
         Row: {
           bonus_stories_earned: number | null
