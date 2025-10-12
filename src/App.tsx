@@ -4,6 +4,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useEffect } from "react";
+import { clearLocalStorageBan, checkDatabaseBan } from "@/lib/contentViolations";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import ProfileSetup from "./pages/ProfileSetup";
@@ -58,28 +60,50 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+const AppContent = () => {
+  useEffect(() => {
+    // Automatically clear localStorage bans that don't exist in database
+    const migrateOldBans = async () => {
+      const hasLocalBan = localStorage.getItem('user_banned') === 'true';
+      if (hasLocalBan) {
+        const hasDbBan = await checkDatabaseBan();
+        if (!hasDbBan) {
+          console.log('Auto-clearing old localStorage ban - not found in database');
+          clearLocalStorageBan();
+          window.location.reload(); // Reload to apply changes
+        }
+      }
+    };
+    migrateOldBans();
+  }, []);
+
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/auth" element={<PublicRoute><Auth /></PublicRoute>} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/" element={<Index />} />
+        <Route path="/profile" element={<ProtectedRoute><ProfileSetup /></ProtectedRoute>} />
+        <Route path="/mission" element={<Mission />} />
+        <Route path="/gallery" element={<ProtectedRoute><StoryGallery /></ProtectedRoute>} />
+        <Route path="/achievements" element={<ProtectedRoute><Achievements /></ProtectedRoute>} />
+        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path="/coming-soon" element={<ProtectedRoute><ComingSoon /></ProtectedRoute>} />
+        <Route path="/admin/bans" element={<AdminBans />} />
+        {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </BrowserRouter>
+  );
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <ErrorBoundary>
         <Toaster />
         <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/auth" element={<PublicRoute><Auth /></PublicRoute>} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/" element={<Index />} />
-            <Route path="/profile" element={<ProtectedRoute><ProfileSetup /></ProtectedRoute>} />
-            <Route path="/mission" element={<Mission />} />
-            <Route path="/gallery" element={<ProtectedRoute><StoryGallery /></ProtectedRoute>} />
-            <Route path="/achievements" element={<ProtectedRoute><Achievements /></ProtectedRoute>} />
-            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/coming-soon" element={<ProtectedRoute><ComingSoon /></ProtectedRoute>} />
-            <Route path="/admin/bans" element={<AdminBans />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
+        <AppContent />
       </ErrorBoundary>
     </TooltipProvider>
   </QueryClientProvider>
