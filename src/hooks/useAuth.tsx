@@ -22,22 +22,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
     }, 5000);
 
+    // Check for email verification in both URL params and hash
+    const checkEmailVerification = () => {
+      // Check URL params
+      const urlParams = new URLSearchParams(window.location.search);
+      const type = urlParams.get('type');
+      
+      // Check URL hash (Supabase often returns tokens in hash)
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const hashType = hashParams.get('type');
+      const accessToken = hashParams.get('access_token');
+      
+      // If we have a signup confirmation
+      if ((type === 'signup' || hashType === 'signup') && accessToken) {
+        import('@/hooks/use-toast').then(({ toast }) => {
+          toast({
+            title: "Email verified successfully!",
+            description: "Welcome to StoryMaster Quest!",
+          });
+        });
+        
+        // Clean up URL and redirect to dashboard
+        setTimeout(() => {
+          window.history.replaceState({}, document.title, '/dashboard');
+          window.location.href = '/dashboard';
+        }, 500);
+      }
+    };
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         clearTimeout(authTimeout);
         
+        // Handle email verification events
         if (event === 'SIGNED_IN' && session?.user?.email_confirmed_at) {
-          const urlParams = new URLSearchParams(window.location.search);
-          if (urlParams.get('type') === 'signup') {
-            import('@/hooks/use-toast').then(({ toast }) => {
-              toast({
-                title: "Email verified successfully!",
-                description: "Welcome to StoryMaster Quest!",
-              });
-            });
-            // Always redirect to dashboard for both mobile and web
-            window.location.href = '/dashboard';
-          }
+          checkEmailVerification();
+        }
+        
+        if (event === 'TOKEN_REFRESHED') {
+          console.log('Token refreshed successfully');
         }
         
         setSession(session);
@@ -46,11 +69,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     );
 
+    // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       clearTimeout(authTimeout);
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+      
+      // Check if this is an email verification callback
+      if (session) {
+        checkEmailVerification();
+      }
     });
 
     return () => {

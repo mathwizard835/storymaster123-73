@@ -26,11 +26,30 @@ const Auth = () => {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        navigate('/');
+        navigate('/dashboard');
+      }
+    };
+    
+    // Handle email verification callbacks
+    const handleAuthCallback = async () => {
+      // Check URL hash for auth tokens
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const type = hashParams.get('type');
+      const accessToken = hashParams.get('access_token');
+      
+      if (type === 'signup' && accessToken) {
+        toast({
+          title: "Email verified!",
+          description: "Please sign in with your credentials.",
+        });
+        
+        // Clean up URL
+        window.history.replaceState({}, document.title, '/auth');
       }
     };
     
     checkUser();
+    handleAuthCallback();
   }, [navigate, toast]);
 
   const handleResendVerification = async () => {
@@ -41,7 +60,7 @@ const Auth = () => {
     
     setLoading(true);
     try {
-      const redirectUrl = `${window.location.origin}/dashboard`;
+      const redirectUrl = `${window.location.origin}/auth`;
       
       const { error } = await supabase.auth.resend({
         type: 'signup',
@@ -81,7 +100,7 @@ const Auth = () => {
         return;
       }
 
-      const redirectUrl = `${window.location.origin}/dashboard`;
+      const redirectUrl = `${window.location.origin}/auth`;
       
       const { data, error } = await supabase.auth.signUp({
         email: validationResult.data.email,

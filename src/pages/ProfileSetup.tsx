@@ -140,7 +140,7 @@ const ProfileSetup = () => {
     }
   };
 
-  const handleStart = () => {
+  const handleStart = async () => {
     // Check if at least one badge is selected OR interests field has content
     if (selectedBadges.length === 0 && !interests.trim()) {
       toast({
@@ -158,8 +158,8 @@ const ProfileSetup = () => {
 
     if (!nameValid || !interestsValid || !topicValid) {
       // Track violation and check if user should be banned
-      const isBanned = trackViolation();
-      const remaining = getRemainingAttempts();
+      const isBanned = await trackViolation();
+      const remaining = await getRemainingAttempts();
       
       if (isBanned) {
         toast({
