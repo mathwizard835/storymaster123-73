@@ -4,25 +4,50 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { getCompletedStories } from "@/lib/story";
 import { loadAchievements, ALL_ACHIEVEMENTS } from "@/lib/achievements";
 import { loadCharacter } from "@/lib/character";
+import { loadRecentStoriesFromDatabase, loadCurrentStoryFromDatabase, DatabaseStory } from "@/lib/databaseStory";
 import { ArrowLeft, Trophy, BookOpen, Star, Crown, Zap, Plus, TrendingUp, Play } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [progress, setProgress] = useState(loadAchievements());
   const [character, setCharacter] = useState(loadCharacter());
   const completedStories = getCompletedStories();
+  const [recentStories, setRecentStories] = useState<DatabaseStory[]>([]);
+  const [hasActiveStory, setHasActiveStory] = useState(false);
+  const [showNewStoryDialog, setShowNewStoryDialog] = useState(false);
   
   // Refresh data when component mounts
   useEffect(() => {
     setProgress(loadAchievements());
     setCharacter(loadCharacter());
-  }, []);
+    
+    // Load recent stories from database if user is authenticated
+    const loadStories = async () => {
+      if (user) {
+        try {
+          const stories = await loadRecentStoriesFromDatabase();
+          setRecentStories(stories);
+          
+          // Check if there's an active story
+          const activeStory = await loadCurrentStoryFromDatabase();
+          setHasActiveStory(!!activeStory && activeStory.scenes.length > 0);
+        } catch (e) {
+          console.error('Failed to load stories:', e);
+        }
+      }
+    };
+    
+    loadStories();
+  }, [user]);
 
   const formatDate = (dateString: string) => {
     return new Intl.DateTimeFormat('en-US', {
@@ -101,7 +126,13 @@ const Dashboard = () => {
                 Continue Your Quest
               </Button>
               <Button 
-                onClick={() => navigate("/profile")}
+                onClick={() => {
+                  if (hasActiveStory) {
+                    setShowNewStoryDialog(true);
+                  } else {
+                    navigate("/profile?new=true");
+                  }
+                }}
                 variant="outline"
                 className="flex items-center gap-2"
               >
@@ -177,7 +208,7 @@ const Dashboard = () => {
               <div className="flex items-center justify-between mb-4">
                 <h2 className="font-heading text-2xl font-bold flex items-center gap-2">
                   <BookOpen className="h-6 w-6 text-blue-500" />
-                  Recent Stories ({completedStories.length})
+                  Recent Stories ({recentStories.length + completedStories.length})
                 </h2>
                 <Button 
                   variant="ghost" 
@@ -188,12 +219,12 @@ const Dashboard = () => {
                 </Button>
               </div>
               
-              {completedStories.length === 0 ? (
+              {recentStories.length === 0 && completedStories.length === 0 ? (
                 <Card className="glass-panel border-0 p-8 text-center">
                   <BookOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground mb-4">No completed stories yet</p>
+                  <p className="text-muted-foreground mb-4">No stories yet</p>
                   <Button 
-                    onClick={() => navigate("/profile")}
+                    onClick={() => navigate("/profile?new=true")}
                     variant="outline"
                   >
                     Start Your First Adventure
@@ -201,12 +232,75 @@ const Dashboard = () => {
                 </Card>
               ) : (
                 <div className="space-y-4">
-                  {completedStories.slice(0, 3).map((story) => (
+                  {/* Show database stories (both in-progress and completed) */}
+                  {recentStories.slice(0, 3).map((story) => (
+                    <Card key={story.id} className="glass-panel border-0">
+                      <CardContent className="p-4">
+                        <div className="flex justify-between items-start mb-2">
+                          <h3 className="font-semibold text-lg truncate flex-1 mr-4">{story.title || 'Untitled Adventure'}</h3>
+                          <div className="flex items-center gap-2">
+                            {story.status === 'active' || story.status === 'paused' ? (
+                              <Badge className="bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-100">
+                                In Progress
+                              </Badge>
+                            ) : (
+                              <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
+                                Completed
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap gap-2 mb-3">
+                          {story.profile.selectedBadges.slice(0, 2).map((badge) => (
+                            <Badge 
+                              key={badge} 
+                              className={getBadgeColor(badge)}
+                              variant="secondary"
+                            >
+                              {badge}
+                            </Badge>
+                          ))}
+                          {story.profile.selectedBadges.length > 2 && (
+                            <Badge variant="secondary">
+                              +{story.profile.selectedBadges.length - 2}
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <div className="flex gap-4 text-sm text-muted-foreground">
+                            {story.status === 'active' || story.status === 'paused' ? (
+                              <span>Scene {story.current_scene_index + 1} of {story.scene_count}</span>
+                            ) : (
+                              <>
+                                <span>{story.scene_count} scenes</span>
+                                <span>{formatDate(story.completed_at || story.last_played_at)}</span>
+                              </>
+                            )}
+                          </div>
+                          {(story.status === 'active' || story.status === 'paused') && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => navigate("/mission")}
+                              className="flex items-center gap-1"
+                            >
+                              <Play className="h-3 w-3" />
+                              Continue
+                            </Button>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                  {/* Show local storage completed stories if database doesn't have them */}
+                  {recentStories.length < 3 && completedStories.slice(0, 3 - recentStories.length).map((story) => (
                     <Card key={story.id} className="glass-panel border-0">
                       <CardContent className="p-4">
                         <div className="flex justify-between items-start mb-2">
                           <h3 className="font-semibold text-lg truncate flex-1 mr-4">{story.title}</h3>
-                          <span className="text-sm text-muted-foreground">{formatDate(story.completedAt)}</span>
+                          <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
+                            Completed
+                          </Badge>
                         </div>
                         <div className="flex flex-wrap gap-2 mb-3">
                           {story.profile.selectedBadges.slice(0, 2).map((badge) => (
@@ -226,7 +320,7 @@ const Dashboard = () => {
                         </div>
                         <div className="flex gap-4 text-sm text-muted-foreground">
                           <span>{story.sceneCount} scenes</span>
-                          <span>{story.choicesMade.length} choices</span>
+                          <span>{formatDate(story.completedAt)}</span>
                         </div>
                       </CardContent>
                     </Card>
@@ -313,6 +407,36 @@ const Dashboard = () => {
           </div>
         </div>
       </main>
+      
+      {/* New Story Confirmation Dialog */}
+      <Dialog open={showNewStoryDialog} onOpenChange={setShowNewStoryDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Start New Adventure?</DialogTitle>
+            <DialogDescription>
+              You have an adventure in progress. Starting a new one will save your current progress and begin a fresh story.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex gap-3 mt-6">
+            <Button
+              variant="outline"
+              onClick={() => setShowNewStoryDialog(false)}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                setShowNewStoryDialog(false);
+                navigate('/profile?new=true');
+              }}
+              className="flex-1"
+            >
+              Start New Adventure
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };

@@ -170,6 +170,27 @@ export const loadCurrentStoryFromDatabase = async (): Promise<SavedStory | null>
   };
 };
 
+// Load all recent stories (both in-progress and completed) from database
+export const loadRecentStoriesFromDatabase = async (): Promise<DatabaseStory[]> => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data, error } = await (supabase as any)
+    .from('user_stories')
+    .select('*')
+    .eq('user_id', user.id)
+    .in('status', ['active', 'paused', 'completed'])
+    .order('last_played_at', { ascending: false })
+    .limit(10);
+
+  if (error) {
+    console.error('Error loading recent stories:', error);
+    return [];
+  }
+
+  return data || [];
+};
+
 // Load completed stories from database
 export const loadCompletedStoriesFromDatabase = async (): Promise<DatabaseStory[]> => {
   const { data: { user } } = await supabase.auth.getUser();
