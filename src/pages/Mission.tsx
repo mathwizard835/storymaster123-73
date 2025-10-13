@@ -8,7 +8,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Zap, Timer, Star, Heart, Shield, Eye, Wand2, PawPrint, Crosshair, Users, Palette, RefreshCw, Play, BookOpen, Trophy, Target, ArrowLeft, Crown } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { generateNextScene, loadProfile, checkStoryLimit, markStoryCompleted, type Scene, saveCurrentStory, loadCurrentStory, clearCurrentStory, saveCompletedStory, getCompletedStories, type SavedStory, type InventoryItem, saveProfileToLocal, clearSceneCache } from "@/lib/story";
 import { saveStoryToDatabase, loadCurrentStoryFromDatabase, clearCurrentStoryInDatabase, clearAllActiveStoriesForUser, verifyStoryIsActive } from "@/lib/databaseStory";
 import { loadInventory, saveInventory, addItemToInventory, useItem, clearInventory, updateProfileInventory } from "@/lib/inventory";
@@ -149,6 +149,10 @@ const Mission = () => {
     }
   };
 
+  // CRITICAL: Guard against multiple concurrent initializations
+  const initializingRef = useRef(false);
+  const [initComplete, setInitComplete] = useState(false);
+
   // Phase 5: Monitor for unexpected story ID changes
   useEffect(() => {
     if (savedStory && initialStoryId && savedStory.id !== initialStoryId) {
@@ -165,6 +169,15 @@ const Mission = () => {
 
   useEffect(() => {
     const init = async () => {
+      // RACE CONDITION FIX: Prevent multiple simultaneous initializations
+      if (initializingRef.current) {
+        console.log('⏸️ Init already in progress, skipping duplicate call');
+        return;
+      }
+      
+      initializingRef.current = true;
+      console.log('🚀 Starting initialization (locked)');
+      
       try {
         // Check if mobile platform
         const isMobile = typeof window !== 'undefined' && 
@@ -365,10 +378,17 @@ const Mission = () => {
         setError(e.message ?? "Failed to start mission");
       } finally {
         setLoading(false);
+        initializingRef.current = false;
+        setInitComplete(true);
+        console.log('✅ Initialization complete (unlocked)');
       }
     };
-    init();
-  }, [isTrialMode, user, navigate]);
+    
+    // Only run init if not already complete
+    if (!initComplete) {
+      init();
+    }
+  }, [isTrialMode, user, navigate, searchParams, initComplete]);
 
   const [choiceLoading, setChoiceLoading] = useState(false);
 
