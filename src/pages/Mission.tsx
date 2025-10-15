@@ -185,12 +185,20 @@ const Mission = () => {
            (window as any).Capacitor?.getPlatform?.() === 'android' ||
            /Android|iPhone|iPad|iPod/i.test(navigator.userAgent));
         
-        // Check if trial/mobile story already used for non-authenticated users
+        // Check if trial story already COMPLETED (not just started)
         if (!user && (isTrialMode || isMobile)) {
           const trialUsed = localStorage.getItem('trial_story_used');
-          if (trialUsed) {
+          const trialStarted = localStorage.getItem('trial_story_started');
+          
+          // Only block if they've completed a trial story
+          if (trialUsed === 'completed') {
             navigate("/");
             return;
+          }
+          
+          // Mark that they've started a trial (but not completed)
+          if (!trialStarted) {
+            localStorage.setItem('trial_story_started', 'true');
           }
         }
         
@@ -509,9 +517,10 @@ const Mission = () => {
            (window as any).Capacitor?.getPlatform?.() === 'android' ||
            /Android|iPhone|iPad|iPod/i.test(navigator.userAgent));
         
-        // Mark trial/mobile story as used if not authenticated
+        // Mark trial/mobile story as COMPLETED if not authenticated
         if (!user && (isTrialMode || isMobile)) {
-          localStorage.setItem('trial_story_used', 'true');
+          localStorage.setItem('trial_story_used', 'completed');
+          localStorage.setItem('trial_story_started', 'completed');
           toast({
             title: "Story Complete! 🎉",
             description: "Sign up to continue your adventures!",

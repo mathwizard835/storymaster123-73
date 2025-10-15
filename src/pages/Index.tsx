@@ -312,7 +312,12 @@ const Index = () => {
               <Button
                 size="xl"
                 variant="game"
-                onClick={() => navigate("/profile?trial=true")}
+                onClick={() => {
+                  // Clear any previous trial flags to allow fresh trial
+                  localStorage.removeItem('trial_story_used');
+                  localStorage.removeItem('trial_story_started');
+                  navigate("/profile?trial=true");
+                }}
                 className="text-lg px-8 py-4"
               >
                 🎮 Try 1 Story Free
