@@ -185,21 +185,25 @@ const Mission = () => {
            (window as any).Capacitor?.getPlatform?.() === 'android' ||
            /Android|iPhone|iPad|iPod/i.test(navigator.userAgent));
         
-        // Check if trial story already COMPLETED (not just started)
-        if (!user && (isTrialMode || isMobile)) {
+        // ONLY check for completed trials if this is NOT an explicit trial request
+        // When user clicks "Try 1 Story Free", we should always allow it
+        if (!user && !isTrialMode && isMobile) {
+          // This block only runs for mobile users who didn't explicitly request trial
           const trialUsed = localStorage.getItem('trial_story_used');
-          const trialStarted = localStorage.getItem('trial_story_started');
           
-          // Only block if they've completed a trial story
           if (trialUsed === 'completed') {
+            console.log('🚫 Mobile user has completed trial, redirecting to home');
             navigate("/");
             return;
           }
-          
-          // Mark that they've started a trial (but not completed)
-          if (!trialStarted) {
-            localStorage.setItem('trial_story_started', 'true');
-          }
+        }
+
+        // For explicit trial mode (from "Try 1 Story Free" button), always proceed
+        if (!user && isTrialMode) {
+          console.log('✅ Explicit trial mode requested - proceeding');
+          // Don't check localStorage at all - Index page already cleared it
+          // Just mark that trial has started
+          localStorage.setItem('trial_story_started', 'true');
         }
         
         let savedProfile;
@@ -519,13 +523,16 @@ const Mission = () => {
         
         // Mark trial/mobile story as COMPLETED if not authenticated
         if (!user && (isTrialMode || isMobile)) {
+          console.log('📝 Marking trial/mobile story as completed');
           localStorage.setItem('trial_story_used', 'completed');
           localStorage.setItem('trial_story_started', 'completed');
+          
           toast({
             title: "Story Complete! 🎉",
-            description: "Sign up to continue your adventures!",
+            description: "Sign up to continue your adventures and unlock unlimited stories!",
             variant: "default",
           });
+          
           setTimeout(() => {
             navigate("/");
           }, 3000);
