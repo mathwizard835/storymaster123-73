@@ -3,10 +3,10 @@ import { Seo } from "@/components/Seo";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { loadAchievements, ALL_ACHIEVEMENTS, type Achievement } from "@/lib/achievements";
 import { loadCharacter } from "@/lib/character";
-import { CharacterSheet } from "@/components/CharacterSheet";
-import { ArrowLeft, Trophy, Star, TrendingUp, Lock } from "lucide-react";
+import { ArrowLeft, Trophy, Star, Lock, Crown, Zap, TrendingUp } from "lucide-react";
 import { useState, useEffect } from "react";
 
 const Achievements = () => {
@@ -87,21 +87,30 @@ const Achievements = () => {
             </p>
           </div>
 
-          {/* Character Sheet */}
-          <div className="mb-8">
-            <CharacterSheet character={character} />
-          </div>
-          
-          {/* Stats Overview */}
+          {/* Character Stats */}
           <Card className="glass-panel border-0 mb-8">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Star className="h-5 w-5" />
-                Story Stats
+                Character Progress
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
+                <div>
+                  <div className="text-2xl font-bold flex items-center gap-1">
+                    <Crown className="h-6 w-6 text-amber-500" />
+                    {character.level}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Level</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold flex items-center gap-1">
+                    <Zap className="h-6 w-6 text-blue-500" />
+                    {character.experience}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Experience Points</div>
+                </div>
                 <div>
                   <div className="text-2xl font-bold">{progress.totalStories}</div>
                   <div className="text-sm text-muted-foreground">Stories Completed</div>
@@ -115,6 +124,30 @@ const Achievements = () => {
                   <div className="text-sm text-muted-foreground">Achievement Rate</div>
                 </div>
               </div>
+              
+              <div className="mt-6">
+                <div className="flex justify-between text-sm mb-2">
+                  <span>Experience Progress to Level {character.level + 1}</span>
+                  <span>{character.experience} / {character.experienceToNext}</span>
+                </div>
+                <Progress 
+                  value={(character.experience / character.experienceToNext) * 100} 
+                  className="h-3"
+                />
+              </div>
+              
+              {character.titles.length > 0 && (
+                <div className="mt-4">
+                  <div className="text-sm font-medium mb-2">Current Titles:</div>
+                  <div className="flex flex-wrap gap-2">
+                    {character.titles.slice(-3).map((title, index) => (
+                      <Badge key={index} variant="secondary" className="text-xs">
+                        {title}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
           

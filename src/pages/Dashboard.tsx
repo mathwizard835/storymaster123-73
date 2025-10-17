@@ -13,8 +13,6 @@ import { ArrowLeft, Trophy, BookOpen, Star, Crown, Zap, Plus, TrendingUp, Play }
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { CharacterSheet } from "@/components/CharacterSheet";
-import { AchievementsList } from "@/components/AchievementsList";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -153,12 +151,12 @@ const Dashboard = () => {
             </p>
           </div>
 
-          {/* Quick Stats Overview */}
+          {/* Character Stats */}
           <Card className="glass-panel border-0 mb-8">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Star className="h-5 w-5" />
-                Quick Stats
+                Character Progress
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -175,28 +173,34 @@ const Dashboard = () => {
                     <Zap className="h-6 w-6 text-blue-500" />
                     {character.experience}
                   </div>
-                  <div className="text-sm text-muted-foreground">XP</div>
+                  <div className="text-sm text-muted-foreground">Experience Points</div>
                 </div>
                 <div>
                   <div className="text-2xl font-bold">{progress.totalStories}</div>
-                  <div className="text-sm text-muted-foreground">Stories</div>
+                  <div className="text-sm text-muted-foreground">Stories Completed</div>
                 </div>
                 <div>
                   <div className="text-2xl font-bold">{progress.totalChoices}</div>
-                  <div className="text-sm text-muted-foreground">Choices</div>
+                  <div className="text-sm text-muted-foreground">Choices Made</div>
                 </div>
                 <div>
                   <div className="text-2xl font-bold">{completionRate}%</div>
-                  <div className="text-sm text-muted-foreground">Achievements</div>
+                  <div className="text-sm text-muted-foreground">Achievement Rate</div>
                 </div>
+              </div>
+              
+              <div className="mt-6">
+                <div className="flex justify-between text-sm mb-2">
+                  <span>Experience Progress to Level {character.level + 1}</span>
+                  <span>{character.experience} / {character.experienceToNext}</span>
+                </div>
+                <Progress 
+                  value={(character.experience / character.experienceToNext) * 100} 
+                  className="h-3"
+                />
               </div>
             </CardContent>
           </Card>
-
-          {/* Character Sheet */}
-          <div className="mb-8">
-            <CharacterSheet character={character} />
-          </div>
 
           <div className="grid gap-8 tablet-lg:grid-cols-2 lg:grid-cols-2">
             {/* Recent Stories */}
