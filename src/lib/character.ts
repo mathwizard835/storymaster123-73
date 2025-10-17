@@ -64,10 +64,8 @@ export const gainExperience = (
   const character = loadCharacter();
   const newTitles: string[] = [];
   
-  // Calculate experience based on story completion
-  const baseExp = storyLength === 'short' ? 50 : storyLength === 'medium' ? 75 : 100;
-  const choiceBonus = Math.min(choiceCount * 5, 50); // Max 50 bonus from choices
-  const totalExp = baseExp + choiceBonus;
+  // Calculate experience - 25 XP per story completion
+  const totalExp = 25;
   
   character.experience += totalExp;
   
@@ -108,12 +106,21 @@ export const gainExperience = (
 
 const getTitleForLevel = (level: number): string | null => {
   const titles: Record<number, string> = {
-    5: "Apprentice Hero",
-    10: "Seasoned Adventurer", 
+    3: "Aspiring Storyteller",
+    5: "Tale Seeker",
+    8: "Apprentice Hero",
+    10: "Seasoned Adventurer",
+    12: "Quest Master",
     15: "Veteran Explorer",
+    18: "Champion of Tales",
     20: "Master Storyteller",
+    22: "Elite Adventurer",
     25: "Legendary Champion",
+    28: "Grand Master",
     30: "Mythic Hero",
+    35: "Eternal Legend",
+    40: "Storytelling Deity",
+    50: "Transcendent Sage",
   };
   return titles[level] || null;
 };
