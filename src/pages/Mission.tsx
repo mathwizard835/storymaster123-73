@@ -29,8 +29,6 @@ import { validateChoice } from "@/lib/interactionHandlers";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { StoryMagicLoader } from "@/components/StoryMagicLoader";
-import { PortalAnimation } from "@/components/PortalAnimation";
 
 const Mission = () => {
   const navigate = useNavigate();
@@ -55,7 +53,6 @@ const Mission = () => {
   const [showLearningProgress, setShowLearningProgress] = useState(false);
   const [storyReadyToFinish, setStoryReadyToFinish] = useState(false);
   const [showNewStoryDialog, setShowNewStoryDialog] = useState(false);
-  const [showPortalAnimation, setShowPortalAnimation] = useState(false);
   
   const { toast } = useToast();
 
@@ -393,13 +390,6 @@ const Mission = () => {
         setError(e.message ?? "Failed to start mission");
       } finally {
         setLoading(false);
-        
-        // Show portal animation for new stories (check if this is scene 1)
-        const isNewStory = searchParams.get('new') === 'true';
-        if (isNewStory && !isTrialMode) {
-          setShowPortalAnimation(true);
-        }
-        
         initializingRef.current = false;
         setInitComplete(true);
         console.log('✅ Initialization complete (unlocked)');
@@ -604,7 +594,25 @@ const Mission = () => {
   const backgroundImage = getBackgroundForBadge(profile.selectedBadges);
 
   if (loading) {
-    return <StoryMagicLoader mode={profile?.mode} />;
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center">
+        <div className="text-center space-y-6">
+          <div className="relative">
+            <div className="w-20 h-20 border-4 border-purple-300 border-t-transparent rounded-full animate-spin mx-auto"></div>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Wand2 className="h-8 w-8 text-purple-300 animate-pulse" />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-2xl font-bold text-white">Preparing Your Adventure</h2>
+            <p className="text-purple-200">The StoryMaster is weaving your tale...</p>
+            {profile.mode === 'learning' && (
+              <p className="text-blue-200">🎓 Setting up interactive learning experience...</p>
+            )}
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (storyLimitReached) {
@@ -637,31 +645,6 @@ const Mission = () => {
   }
 
   if (!scene) return null;
-
-  // Show portal animation for first story
-  if (showPortalAnimation) {
-    const badgeLabels: Record<string, string> = {
-      beast: "Beast Master",
-      space: "Space Explorer", 
-      mystic: "Mystic Mage",
-      detective: "Detective",
-      action: "Action Hero",
-      social: "Social Champion",
-      creative: "Creative Genius"
-    };
-    
-    const characterType = profile.selectedBadges?.[0] ? 
-      badgeLabels[profile.selectedBadges[0]] || 'adventure' : 
-      'adventure';
-    
-    return (
-      <PortalAnimation
-        characterName={profile.name}
-        characterType={characterType}
-        onComplete={() => setShowPortalAnimation(false)}
-      />
-    );
-  }
 
   return (
     <div 
