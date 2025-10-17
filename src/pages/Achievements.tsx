@@ -190,7 +190,7 @@ const Achievements = () => {
                   <Trophy className="h-6 w-6 text-amber-500" />
                   Unlocked ({unlockedAchievements.length})
                 </h2>
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-4 tablet:grid-cols-2 tablet-lg:grid-cols-3 lg:grid-cols-3 auto-rows-fr">
                   {sortedUnlockedAchievements.map((achievement) => (
                     <Card key={achievement.id} className="glass-panel border-0">
                       <CardHeader className="pb-3">
@@ -223,7 +223,7 @@ const Achievements = () => {
                   <Lock className="h-6 w-6 text-muted-foreground" />
                   Locked ({lockedAchievements.length})
                 </h2>
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-4 tablet:grid-cols-2 tablet-lg:grid-cols-3 lg:grid-cols-3 auto-rows-fr">
                   {lockedAchievements.map((achievement) => (
                     <Card key={achievement.id} className="glass-panel border-0 opacity-60">
                       <CardHeader className="pb-3">

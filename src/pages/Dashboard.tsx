@@ -160,7 +160,7 @@ const Dashboard = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
+              <div className="grid grid-cols-2 tablet:grid-cols-3 lg:grid-cols-5 gap-6">
                 <div>
                   <div className="text-2xl font-bold flex items-center gap-1">
                     <Crown className="h-6 w-6 text-amber-500" />
@@ -202,7 +202,7 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          <div className="grid gap-8 lg:grid-cols-2">
+          <div className="grid gap-8 tablet-lg:grid-cols-2 lg:grid-cols-2">
             {/* Recent Stories */}
             <section>
               <div className="flex items-center justify-between mb-4">

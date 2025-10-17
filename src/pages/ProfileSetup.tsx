@@ -297,7 +297,7 @@ const ProfileSetup = () => {
             <article className="glass-panel rounded-xl p-6 md:col-span-2">
               <h2 className="font-heading text-xl md:text-2xl font-bold">Interest Badges</h2>
               <TooltipProvider>
-                <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+                <div className="mt-4 grid grid-cols-2 gap-3 tablet:grid-cols-3 lg:grid-cols-4">
                   {badges.map((b) => (
                     <Tooltip key={b.id} delayDuration={300}>
                       <TooltipTrigger asChild>
@@ -350,7 +350,7 @@ const ProfileSetup = () => {
               <h2 className="font-heading text-xl md:text-2xl font-bold">Quest Mode</h2>
               <ToggleGroup
                 type="single"
-                className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4"
+                className="mt-4 grid grid-cols-2 gap-3 tablet:grid-cols-3 lg:grid-cols-5"
                 value={mode}
                 onValueChange={(v) => v && setMode(v)}
               >

@@ -685,7 +685,7 @@ const Mission = () => {
 
         {/* Main Content */}
         <div className="flex-1 p-4 overflow-y-auto">
-          <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="max-w-6xl mx-auto grid grid-cols-1 tablet-lg:grid-cols-[2fr_1fr] lg:grid-cols-3 gap-6">
             {/* Story Content */}
             <div className="lg:col-span-2 space-y-6">
               {/* Current Challenge */}
@@ -702,7 +702,7 @@ const Mission = () => {
               {/* HUD */}
               <div className="bg-black/50 backdrop-blur-sm rounded-lg p-4 border border-white/20">
                 <TooltipProvider>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                  <div className="grid grid-cols-2 tablet:grid-cols-4 md:grid-cols-4 gap-4 text-center">
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <div className="flex items-center justify-center space-x-2 cursor-help">
@@ -758,7 +758,7 @@ const Mission = () => {
 
               {/* Narrative */}
               <div className="bg-white/10 backdrop-blur-md rounded-lg p-6 border border-white/20">
-                <div className="prose prose-invert max-w-none">
+                <div className="prose prose-invert max-w-none tablet:max-w-prose tablet:mx-auto">
                   {scene.narrative.split('\n\n').map((paragraph, index) => (
                     <p key={index} className="text-white mb-4 leading-relaxed text-lg">
                       {paragraph}

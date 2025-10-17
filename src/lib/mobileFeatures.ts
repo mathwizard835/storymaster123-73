@@ -88,3 +88,17 @@ export const isMobilePlatform = (): boolean => {
 export const getPlatform = (): string => {
   return Capacitor.getPlatform();
 };
+
+// Tablet device detection with fallback safety
+export const isTabletDevice = (): boolean => {
+  if (typeof window === 'undefined') return false;
+
+  const ua = navigator.userAgent || '';
+  const platform = (window as any).Capacitor?.getPlatform?.() || '';
+  const width = window.innerWidth;
+
+  const isIpad = /iPad/.test(ua) || (platform === 'ios' && navigator.maxTouchPoints > 2);
+  const isAndroidTablet = /Android/.test(ua) && !/Mobile/.test(ua);
+
+  return (isIpad || isAndroidTablet) && width >= 820 && width <= 1024;
+};

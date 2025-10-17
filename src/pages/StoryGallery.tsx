@@ -80,7 +80,7 @@ const StoryGallery = () => {
               </div>
             </div>
           ) : (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-6 tablet:grid-cols-2 lg:grid-cols-3 auto-rows-fr">
               {completedStories.map((story) => (
                 <Card key={story.id} className="glass-panel border-0">
                   <CardHeader>

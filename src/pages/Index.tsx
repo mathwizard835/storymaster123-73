@@ -135,7 +135,7 @@ const Index = () => {
               
               {/* Big Access Buttons for Logged In Users */}
               {user && (
-                <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-4xl mx-auto">
+                <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 tablet-lg:grid-cols-3 gap-4 max-w-4xl mx-auto">
                   <Button
                     size="xl"
                     variant="game"
@@ -367,7 +367,7 @@ const Index = () => {
             </p>
           </div>
           
-          <div className="grid md:grid-cols-3 gap-8 mb-20">
+          <div className="grid grid-cols-1 tablet:grid-cols-2 lg:grid-cols-3 gap-8 mb-20">
             <div className="glass-panel p-8 text-center hover-scale">
               <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Brain className="h-8 w-8 text-primary" />
@@ -465,7 +465,7 @@ const Index = () => {
                 Every adventure is different. Every choice matters. Every story is uniquely yours.
               </p>
               
-              <div className="grid sm:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 tablet:grid-cols-2 gap-6">
                 <div className="glass-panel p-6">
                   <Zap className="h-8 w-8 text-primary mb-3" />
                   <h3 className="font-bold mb-2">Action-Packed</h3>
