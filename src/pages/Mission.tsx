@@ -974,11 +974,28 @@ const Mission = () => {
               {/* Inventory */}
               <InventoryPanel
                 inventory={inventory}
-                onUseItem={(item) => {
+                onUseItem={async (item) => {
                   const { item: usedItem, newInventory } = useItem(item.id, inventory);
                   if (usedItem) {
                     setInventory(newInventory);
                     saveInventory(newInventory);
+                    
+                    // Update savedStory with new inventory
+                    if (savedStory && profile) {
+                      const updatedProfile = updateProfileInventory(profile, newInventory);
+                      const updatedStory = {
+                        ...savedStory,
+                        profile: updatedProfile,
+                        lastPlayedAt: new Date().toISOString()
+                      };
+                      setSavedStory(updatedStory);
+                      
+                      // Save to database to persist the change
+                      if (!isTrialMode) {
+                        await saveStoryToDatabase(updatedStory);
+                      }
+                    }
+                    
                     toast({
                       title: "Item used",
                       description: `${usedItem.name} used successfully`,
