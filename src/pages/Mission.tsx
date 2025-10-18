@@ -56,13 +56,6 @@ const Mission = () => {
   
   const { toast } = useToast();
 
-  // Scroll to top when scene changes (after user makes a choice)
-  useEffect(() => {
-    if (scene && sceneCount > 1) {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  }, [scene, sceneCount]);
-
   // Initialize learning session for learning mode
   const initializeLearningSession = (profile: any) => {
     if (profile.mode !== 'learning') return;
@@ -503,6 +496,9 @@ const Mission = () => {
       setScene(parsed);
       setAllScenes(updatedScenes);
       setSceneCount(nextSceneCount);
+      
+      // Scroll to top to show new story content
+      window.scrollTo({ top: 0, behavior: 'smooth' });
 
       const updatedStory: SavedStory = {
         ...savedStory,
