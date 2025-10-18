@@ -5,7 +5,7 @@ import actionHeroBg from "@/assets/action-hero-bg.jpg";
 import socialChampionBg from "@/assets/social-champion-bg.jpg";
 import creativeGeniusBg from "@/assets/creative-genius-bg.jpg";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Zap, Timer, Star, Heart, Shield, Eye, Wand2, PawPrint, Crosshair, Users, Palette, RefreshCw, Play, BookOpen, Trophy, Target, ArrowLeft, Crown } from "lucide-react";
+import { Zap, Timer, Star, Heart, Shield, Eye, Wand2, PawPrint, Crosshair, Users, Palette, RefreshCw, Play, BookOpen, Trophy, Target, ArrowLeft, Crown, ArrowUp } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useEffect, useState, useRef } from "react";
@@ -46,6 +46,7 @@ const Mission = () => {
   const [storyLimitReached, setStoryLimitReached] = useState(false);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [goBacksUsed, setGoBacksUsed] = useState(0);
+  const [showScrollTop, setShowScrollTop] = useState(false);
   
   // Learning system state
   const [learningSession, setLearningSession] = useState<LearningSession | null>(null);
@@ -401,6 +402,18 @@ const Mission = () => {
       init();
     }
   }, [isTrialMode, user, navigate, searchParams, initComplete]);
+
+  // Show scroll to top button when story updates
+  useEffect(() => {
+    if (sceneCount > 1) {
+      setShowScrollTop(true);
+      // Hide after 5 seconds
+      const timer = setTimeout(() => {
+        setShowScrollTop(false);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [sceneCount]);
 
   const [choiceLoading, setChoiceLoading] = useState(false);
 
@@ -1037,6 +1050,20 @@ const Mission = () => {
                   )}
                 </div>
               </div>
+
+              {/* Scroll to Top Button */}
+              {showScrollTop && (
+                <button
+                  onClick={() => {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    setShowScrollTop(false);
+                  }}
+                  className="fixed bottom-6 right-6 z-50 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full p-4 shadow-lg border-2 border-primary-foreground/20 transition-all hover:scale-110 animate-fade-in flex items-center gap-2 font-semibold"
+                >
+                  <ArrowUp className="h-5 w-5" />
+                  <span className="hidden tablet:inline">Story Updated</span>
+                </button>
+              )}
 
               {/* Navigation */}
               <div className="bg-white/10 backdrop-blur-md rounded-lg p-4 border border-white/20 space-y-3">
