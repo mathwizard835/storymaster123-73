@@ -496,6 +496,9 @@ const Mission = () => {
       setScene(parsed);
       setAllScenes(updatedScenes);
       setSceneCount(nextSceneCount);
+      
+      // Scroll to top to show new story content
+      window.scrollTo({ top: 0, behavior: 'smooth' });
 
       const updatedStory: SavedStory = {
         ...savedStory,
