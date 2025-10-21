@@ -3,6 +3,7 @@ export type CharacterStats = {
   experience: number;
   experienceToNext: number;
   skillPoints: number;
+  totalExperienceEarned: number;
   attributes: {
     courage: number;
     wisdom: number;
@@ -19,8 +20,9 @@ const CHARACTER_KEY = "smq.character";
 export const DEFAULT_CHARACTER: CharacterStats = {
   level: 1,
   experience: 0,
-  experienceToNext: 100,
+  experienceToNext: 60,
   skillPoints: 0,
+  totalExperienceEarned: 0,
   attributes: {
     courage: 1,
     wisdom: 1,
@@ -65,11 +67,12 @@ export const gainExperience = (
   const newTitles: string[] = [];
   
   // Calculate experience based on story completion
-  const baseExp = storyLength === 'short' ? 50 : storyLength === 'medium' ? 75 : 100;
+  const baseExp = storyLength === 'short' ? 75 : storyLength === 'medium' ? 100 : 150;
   const choiceBonus = Math.min(choiceCount * 5, 50); // Max 50 bonus from choices
   const totalExp = baseExp + choiceBonus;
   
   character.experience += totalExp;
+  character.totalExperienceEarned += totalExp;
   
   // Update favorite themes
   badges.forEach(badge => {
@@ -87,7 +90,7 @@ export const gainExperience = (
     leveledUp = true;
     
     // Increase exp requirement for next level
-    character.experienceToNext = Math.floor(character.experienceToNext * 1.2);
+    character.experienceToNext = Math.floor(character.experienceToNext * 1.15);
     
     // Grant new titles based on level milestones
     const newTitle = getTitleForLevel(character.level);
@@ -106,14 +109,61 @@ export const gainExperience = (
   return { character, leveledUp, newTitles, expGained: totalExp };
 };
 
+export const gainSceneExperience = (
+  sceneNumber: number,
+  madeChoice: boolean
+): { character: CharacterStats; leveledUp: boolean; newTitles: string[]; expGained: number } => {
+  const character = loadCharacter();
+  const newTitles: string[] = [];
+  
+  // Award XP for viewing scene and making choice
+  const sceneExp = 8;
+  const choiceExp = madeChoice ? 4 : 0;
+  const totalExp = sceneExp + choiceExp;
+  
+  character.experience += totalExp;
+  character.totalExperienceEarned += totalExp;
+  
+  // Check for level up
+  let leveledUp = false;
+  while (character.experience >= character.experienceToNext) {
+    character.experience -= character.experienceToNext;
+    character.level += 1;
+    character.skillPoints += 2;
+    leveledUp = true;
+    
+    // Increase exp requirement for next level
+    character.experienceToNext = Math.floor(character.experienceToNext * 1.15);
+    
+    // Grant new titles based on level milestones
+    const newTitle = getTitleForLevel(character.level);
+    if (newTitle && !character.titles.includes(newTitle)) {
+      character.titles.push(newTitle);
+      newTitles.push(newTitle);
+    }
+  }
+  
+  saveCharacter(character);
+  return { character, leveledUp, newTitles, expGained: totalExp };
+};
+
 const getTitleForLevel = (level: number): string | null => {
   const titles: Record<number, string> = {
-    5: "Apprentice Hero",
-    10: "Seasoned Adventurer", 
+    2: "Eager Explorer",
+    3: "Brave Beginner",
+    4: "Story Seeker",
+    5: "Tale Tamer",
+    7: "Adventure Ace",
+    10: "Seasoned Adventurer",
+    12: "Skilled Navigator",
     15: "Veteran Explorer",
+    18: "Legend in Training",
     20: "Master Storyteller",
-    25: "Legendary Champion",
-    30: "Mythic Hero",
+    25: "Epic Hero",
+    30: "Legendary Champion",
+    35: "Mythic Wanderer",
+    40: "Supreme Storyteller",
+    50: "Eternal Legend",
   };
   return titles[level] || null;
 };

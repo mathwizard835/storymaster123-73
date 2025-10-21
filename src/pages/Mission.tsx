@@ -29,6 +29,11 @@ import { validateChoice } from "@/lib/interactionHandlers";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { gainSceneExperience, loadCharacter } from "@/lib/character";
+import { ComprehensionQuiz } from "@/components/ComprehensionQuiz";
+import { QuizQuestion } from "@/lib/quizSystem";
+import { supabase } from "@/integrations/supabase/client";
+import confetti from "canvas-confetti";
 
 const Mission = () => {
   const navigate = useNavigate();
@@ -54,6 +59,11 @@ const Mission = () => {
   const [showLearningProgress, setShowLearningProgress] = useState(false);
   const [storyReadyToFinish, setStoryReadyToFinish] = useState(false);
   const [showNewStoryDialog, setShowNewStoryDialog] = useState(false);
+  
+  // Quiz state
+  const [showQuiz, setShowQuiz] = useState(false);
+  const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
+  const [quizLoading, setQuizLoading] = useState(false);
   
   const { toast } = useToast();
 
@@ -513,6 +523,37 @@ const Mission = () => {
       // Scroll to top to show new story content
       window.scrollTo({ top: 0, behavior: 'smooth' });
 
+      // Award per-scene XP
+      const xpResult = gainSceneExperience(nextSceneCount, true);
+      
+      // Show XP toast
+      toast({
+        title: `+${xpResult.expGained} XP`,
+        description: xpResult.leveledUp 
+          ? `🎉 Level Up! You're now Level ${xpResult.character.level}!` 
+          : `Scene Complete • ${xpResult.character.experience}/${xpResult.character.experienceToNext} XP to next level`,
+        duration: 4000,
+      });
+      
+      // Show confetti on level up
+      if (xpResult.leveledUp) {
+        confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 }
+        });
+        
+        if (xpResult.newTitles.length > 0) {
+          setTimeout(() => {
+            toast({
+              title: "🏆 New Title Earned!",
+              description: xpResult.newTitles.join(", "),
+              duration: 5000,
+            });
+          }, 1000);
+        }
+      }
+
       const updatedStory: SavedStory = {
         ...savedStory,
         scenes: updatedScenes,
@@ -852,7 +893,7 @@ const Mission = () => {
               
               {/* Finish Adventure Button (when story is complete) */}
               {storyReadyToFinish && (
-                <div className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 backdrop-blur-md rounded-lg p-6 border border-yellow-400/30">
+                <div className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 backdrop-blur-md rounded-lg p-6 border border-yellow-400/30 space-y-4">
                   <div className="text-center space-y-4">
                     <h3 className="text-2xl font-bold text-yellow-200 flex items-center justify-center gap-2">
                       <Crown className="h-8 w-8 text-yellow-400" />
@@ -860,8 +901,66 @@ const Mission = () => {
                     </h3>
                     <p className="text-white/90">
                       🎉 Congratulations! You've reached the end of your epic journey. 
+                      {!savedStory?.quizTaken && " Take the comprehension quiz for bonus XP, or "}
                       Ready to see your achievements and save this adventure to your gallery?
                     </p>
+                    
+                    {/* Quiz Button */}
+                    {!savedStory?.quizTaken && (
+                      <Button
+                        size="xl"
+                        variant="hero"
+                        onClick={async () => {
+                          setQuizLoading(true);
+                          try {
+                            // Generate quiz questions using the edge function
+                            const { data, error } = await supabase.functions.invoke('generate-story', {
+                              body: {
+                                profile,
+                                previousScene: null,
+                                sceneCount: 1,
+                                action: 'generate-quiz',
+                                scenes: allScenes,
+                              }
+                            });
+                            
+                            if (error) throw error;
+                            
+                            if (data?.questions && Array.isArray(data.questions)) {
+                              setQuizQuestions(data.questions);
+                              setShowQuiz(true);
+                            } else {
+                              throw new Error("Invalid quiz response");
+                            }
+                          } catch (error) {
+                            console.error("Error generating quiz:", error);
+                            toast({
+                              title: "Quiz Error",
+                              description: "Failed to generate quiz. You can still finish the adventure.",
+                              variant: "destructive",
+                              duration: 4000,
+                            });
+                          } finally {
+                            setQuizLoading(false);
+                          }
+                        }}
+                        disabled={quizLoading}
+                        className="w-full max-w-xs mx-auto text-lg font-bold bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                      >
+                        {quizLoading ? (
+                          <>
+                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                            Generating Quiz...
+                          </>
+                        ) : (
+                          <>
+                            <Trophy className="h-5 w-5 mr-2" />
+                            Take Quiz (+Bonus XP)
+                          </>
+                        )}
+                      </Button>
+                    )}
+                    
                     <Button 
                       size="xl"
                       variant="hero"
@@ -1114,6 +1213,66 @@ const Mission = () => {
           </div>
         </DialogContent>
       </Dialog>
+      
+      {/* Comprehension Quiz Modal */}
+      <ComprehensionQuiz
+        open={showQuiz}
+        onClose={() => setShowQuiz(false)}
+        questions={quizQuestions}
+        storyId={savedStory?.id || ''}
+        storyTitle={allScenes[0]?.sceneTitle || scene?.sceneTitle || "Untitled Adventure"}
+        onComplete={(xpEarned) => {
+          // Award quiz XP
+          const character = loadCharacter();
+          character.experience += xpEarned;
+          character.totalExperienceEarned += xpEarned;
+          
+          // Check for level ups
+          let leveledUp = false;
+          const newTitles: string[] = [];
+          
+          while (character.experience >= character.experienceToNext) {
+            character.experience -= character.experienceToNext;
+            character.level += 1;
+            character.skillPoints += 2;
+            leveledUp = true;
+            character.experienceToNext = Math.floor(character.experienceToNext * 1.15);
+          }
+          
+          // Save character
+          import('@/lib/character').then(({ saveCharacter }) => {
+            saveCharacter(character);
+          });
+          
+          // Mark quiz as taken
+          if (savedStory) {
+            const updatedStory = {
+              ...savedStory,
+              quizTaken: true,
+              quizScore: xpEarned,
+            };
+            setSavedStory(updatedStory);
+            saveStoryToDatabase(updatedStory);
+          }
+          
+          // Show success toast
+          toast({
+            title: `+${xpEarned} Quiz XP Earned!`,
+            description: leveledUp 
+              ? `🎉 Level Up! You're now Level ${character.level}!` 
+              : `Great job! Total XP: ${character.totalExperienceEarned}`,
+            duration: 5000,
+          });
+          
+          if (leveledUp) {
+            confetti({
+              particleCount: 150,
+              spread: 90,
+              origin: { y: 0.6 }
+            });
+          }
+        }}
+      />
     </div>
       </div>
     </div>

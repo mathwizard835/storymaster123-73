@@ -65,6 +65,8 @@ export type SavedStory = {
   startedAt: string;
   lastPlayedAt: string;
   completed: boolean;
+  quizTaken?: boolean;
+  quizScore?: number;
 };
 
 export type CompletedStory = {

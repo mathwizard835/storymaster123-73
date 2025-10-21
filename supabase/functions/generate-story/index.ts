@@ -323,6 +323,110 @@ serve(async (req) => {
 
     const body = await req.json();
     
+    // Check if this is a quiz generation request
+    if (body?.action === 'generate-quiz') {
+      const scenes = body?.scenes || [];
+      const profile = body?.profile || {};
+      
+      if (!scenes || scenes.length === 0) {
+        return new Response(
+          JSON.stringify({ error: "No story scenes provided for quiz generation" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      
+      // Build story summary from scenes
+      const storySummary = scenes.map((scene: any, idx: number) => 
+        `Scene ${idx + 1}: ${scene.sceneTitle || 'Untitled'}\n${scene.narrative || ''}`
+      ).join('\n\n');
+      
+      const quizPrompt = `Based on this children's story (age ${profile.age || '8-10'}), generate 5 comprehension quiz questions.
+
+STORY:
+${storySummary}
+
+REQUIREMENTS:
+- 3 multiple-choice questions (with 4 options each)
+- 2 true/false questions
+- Questions should test understanding of: plot events, character decisions, story themes, and key details
+- Age-appropriate language for ${profile.age || 8} year olds
+- Make questions engaging and fun, not overly academic
+- Each question worth 5 points
+
+Return ONLY valid JSON (no markdown, no explanations):
+{
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "question": "What was the main character's goal in the story?",
+      "options": ["Option A", "Option B", "Option C", "Option D"],
+      "correctAnswer": "Option A",
+      "explanation": "Brief explanation of why this is correct",
+      "points": 5
+    },
+    {
+      "id": "q2",
+      "type": "true-false",
+      "question": "The hero found a magic key in the castle.",
+      "correctAnswer": "true",
+      "explanation": "The key was found in Scene 3",
+      "points": 5
+    }
+  ]
+}`;
+
+      try {
+        const quizResponse = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: {
+            "x-api-key": ANTHROPIC_API_KEY,
+            "anthropic-version": "2023-06-01",
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "claude-sonnet-4-20250514",
+            max_tokens: 2000,
+            messages: [
+              { role: "user", content: quizPrompt }
+            ],
+          }),
+        });
+
+        if (!quizResponse.ok) {
+          const errText = await quizResponse.text();
+          console.error("Quiz generation error:", quizResponse.status, errText);
+          return new Response(
+            JSON.stringify({ error: "Failed to generate quiz" }),
+            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        const quizData = await quizResponse.json();
+        const quizText = quizData?.content?.[0]?.text ?? "";
+        const quizParsed = extractJSON(quizText);
+        
+        if (!quizParsed || !quizParsed.questions) {
+          console.error("Invalid quiz response format");
+          return new Response(
+            JSON.stringify({ error: "Invalid quiz format" }),
+            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        return new Response(
+          JSON.stringify(quizParsed),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      } catch (error) {
+        console.error("Quiz generation error:", error);
+        return new Response(
+          JSON.stringify({ error: "Quiz generation failed" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+    
     // Validate request structure and content
     if (!validateRequestSize(body)) {
       return new Response(

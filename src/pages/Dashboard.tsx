@@ -171,9 +171,9 @@ const Dashboard = () => {
                 <div>
                   <div className="text-2xl font-bold flex items-center gap-1">
                     <Zap className="h-6 w-6 text-blue-500" />
-                    {character.experience}
+                    {character.totalExperienceEarned}
                   </div>
-                  <div className="text-sm text-muted-foreground">Experience Points</div>
+                  <div className="text-sm text-muted-foreground">Total XP Earned</div>
                 </div>
                 <div>
                   <div className="text-2xl font-bold">{progress.totalStories}</div>
