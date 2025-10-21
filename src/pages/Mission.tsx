@@ -926,11 +926,11 @@ const Mission = () => {
                             
                             if (error) throw error;
                             
-                            if (data?.questions && Array.isArray(data.questions)) {
+                            if (data?.questions && Array.isArray(data.questions) && data.questions.length > 0) {
                               setQuizQuestions(data.questions);
                               setShowQuiz(true);
                             } else {
-                              throw new Error("Invalid quiz response");
+                              throw new Error("Invalid quiz response - no questions received");
                             }
                           } catch (error) {
                             console.error("Error generating quiz:", error);
@@ -1215,64 +1215,69 @@ const Mission = () => {
       </Dialog>
       
       {/* Comprehension Quiz Modal */}
-      <ComprehensionQuiz
-        open={showQuiz}
-        onClose={() => setShowQuiz(false)}
-        questions={quizQuestions}
-        storyId={savedStory?.id || ''}
-        storyTitle={allScenes[0]?.sceneTitle || scene?.sceneTitle || "Untitled Adventure"}
-        onComplete={(xpEarned) => {
-          // Award quiz XP
-          const character = loadCharacter();
-          character.experience += xpEarned;
-          character.totalExperienceEarned += xpEarned;
-          
-          // Check for level ups
-          let leveledUp = false;
-          const newTitles: string[] = [];
-          
-          while (character.experience >= character.experienceToNext) {
-            character.experience -= character.experienceToNext;
-            character.level += 1;
-            character.skillPoints += 2;
-            leveledUp = true;
-            character.experienceToNext = Math.floor(character.experienceToNext * 1.15);
-          }
-          
-          // Save character
-          import('@/lib/character').then(({ saveCharacter }) => {
-            saveCharacter(character);
-          });
-          
-          // Mark quiz as taken
-          if (savedStory) {
-            const updatedStory = {
-              ...savedStory,
-              quizTaken: true,
-              quizScore: xpEarned,
-            };
-            setSavedStory(updatedStory);
-            saveStoryToDatabase(updatedStory);
-          }
-          
-          // Show success toast
-          toast({
-            title: `+${xpEarned} Quiz XP Earned!`,
-            description: leveledUp 
-              ? `🎉 Level Up! You're now Level ${character.level}!` 
-              : `Great job! Total XP: ${character.totalExperienceEarned}`,
-            duration: 5000,
-          });
-          
-          if (leveledUp) {
-            confetti({
-              particleCount: 150,
-              spread: 90,
-              origin: { y: 0.6 }
+      {showQuiz && quizQuestions.length > 0 && (
+        <ComprehensionQuiz
+          open={showQuiz}
+          onClose={() => {
+            setShowQuiz(false);
+            setQuizQuestions([]);
+          }}
+          questions={quizQuestions}
+          storyId={savedStory?.id || ''}
+          storyTitle={allScenes[0]?.sceneTitle || scene?.sceneTitle || "Untitled Adventure"}
+          onComplete={(xpEarned) => {
+            // Award quiz XP
+            const character = loadCharacter();
+            character.experience += xpEarned;
+            character.totalExperienceEarned += xpEarned;
+            
+            // Check for level ups
+            let leveledUp = false;
+            const newTitles: string[] = [];
+            
+            while (character.experience >= character.experienceToNext) {
+              character.experience -= character.experienceToNext;
+              character.level += 1;
+              character.skillPoints += 2;
+              leveledUp = true;
+              character.experienceToNext = Math.floor(character.experienceToNext * 1.15);
+            }
+            
+            // Save character
+            import('@/lib/character').then(({ saveCharacter }) => {
+              saveCharacter(character);
             });
-          }
-        }}
-      />
+            
+            // Mark quiz as taken
+            if (savedStory) {
+              const updatedStory = {
+                ...savedStory,
+                quizTaken: true,
+                quizScore: xpEarned,
+              };
+              setSavedStory(updatedStory);
+              saveStoryToDatabase(updatedStory);
+            }
+            
+            // Show success toast
+            toast({
+              title: `+${xpEarned} Quiz XP Earned!`,
+              description: leveledUp 
+                ? `🎉 Level Up! You're now Level ${character.level}!` 
+                : `Great job! Total XP: ${character.totalExperienceEarned}`,
+              duration: 5000,
+            });
+            
+            if (leveledUp) {
+              confetti({
+                particleCount: 150,
+                spread: 90,
+                origin: { y: 0.6 }
+              });
+            }
+          }}
+        />
+      )}
     </div>
       </div>
     </div>

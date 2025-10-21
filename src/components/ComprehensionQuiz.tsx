@@ -30,6 +30,11 @@ export const ComprehensionQuiz = ({
   const [score, setScore] = useState(0);
   const [totalPoints, setTotalPoints] = useState(0);
 
+  // Guard: Don't render if questions array is empty
+  if (!questions || questions.length === 0) {
+    return null;
+  }
+
   const currentQuestion = questions[currentQuestionIndex];
   const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
 
