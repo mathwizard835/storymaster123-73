@@ -5,7 +5,7 @@ import actionHeroBg from "@/assets/action-hero-bg.jpg";
 import socialChampionBg from "@/assets/social-champion-bg.jpg";
 import creativeGeniusBg from "@/assets/creative-genius-bg.jpg";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Zap, Timer, Star, Heart, Shield, Eye, Wand2, PawPrint, Crosshair, Users, Palette, RefreshCw, Play, BookOpen, Trophy, Target, ArrowLeft, Crown, ArrowUp } from "lucide-react";
+import { Zap, Timer, Star, Heart, Shield, Eye, Wand2, PawPrint, Crosshair, Users, Palette, RefreshCw, Play, BookOpen, Trophy, Target, ArrowLeft, Crown, ArrowUp, Volume2, VolumeX } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useEffect, useState, useRef } from "react";
@@ -65,9 +65,70 @@ const Mission = () => {
   const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
   const [quizLoading, setQuizLoading] = useState(false);
   
+  // Text-to-speech state
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [audioLoading, setAudioLoading] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  
   const { toast } = useToast();
 
   // Initialize learning session for learning mode
+  // Text-to-speech handler
+  const handleReadToMe = async () => {
+    if (isPlaying) {
+      // Stop playback
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+        setIsPlaying(false);
+      }
+      return;
+    }
+
+    if (!scene?.narrative) return;
+
+    setAudioLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('text-to-speech', {
+        body: { 
+          text: scene.narrative,
+          voiceId: 'OyKUKANp9Wm5JOBO2Tw3' // Comedy mode voice
+        }
+      });
+
+      if (error) throw error;
+
+      if (data?.audioContent) {
+        // Convert base64 to audio
+        const audioBlob = new Blob(
+          [Uint8Array.from(atob(data.audioContent), c => c.charCodeAt(0))],
+          { type: 'audio/mpeg' }
+        );
+        const audioUrl = URL.createObjectURL(audioBlob);
+        
+        if (audioRef.current) {
+          audioRef.current.src = audioUrl;
+          audioRef.current.play();
+          setIsPlaying(true);
+          
+          audioRef.current.onended = () => {
+            setIsPlaying(false);
+            URL.revokeObjectURL(audioUrl);
+          };
+        }
+      }
+    } catch (error) {
+      console.error('Text-to-speech error:', error);
+      toast({
+        title: "Audio Error",
+        description: "Failed to generate audio. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setAudioLoading(false);
+    }
+  };
+
   const initializeLearningSession = (profile: any) => {
     if (profile.mode !== 'learning') return;
     
@@ -815,6 +876,34 @@ const Mission = () => {
 
               {/* Narrative */}
               <div className="bg-white/10 backdrop-blur-md rounded-lg p-6 border border-white/20">
+                {profile.quest_mode === 'fun' && (
+                  <div className="flex justify-end mb-4">
+                    <Button
+                      onClick={handleReadToMe}
+                      disabled={audioLoading}
+                      variant="secondary"
+                      size="sm"
+                      className="gap-2"
+                    >
+                      {audioLoading ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                          Loading...
+                        </>
+                      ) : isPlaying ? (
+                        <>
+                          <VolumeX className="h-4 w-4" />
+                          Stop Reading
+                        </>
+                      ) : (
+                        <>
+                          <Volume2 className="h-4 w-4" />
+                          Read to Me
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
                 <div className="prose prose-invert max-w-none tablet:max-w-prose tablet:mx-auto">
                   {scene.narrative.split('\n\n').map((paragraph, index) => (
                     <p key={index} className="text-white mb-4 leading-relaxed text-lg">
@@ -822,6 +911,7 @@ const Mission = () => {
                     </p>
                   ))}
                 </div>
+                <audio ref={audioRef} className="hidden" />
               </div>
 
               {/* Choices */}
