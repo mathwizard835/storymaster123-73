@@ -121,7 +121,7 @@ const Mission = () => {
       console.error('Text-to-speech error:', error);
       toast({
         title: "Audio Error",
-        description: "Failed to generate audio. Please try again.",
+        description: error?.message || "Failed to generate audio. Please try again.",
         variant: "destructive"
       });
     } finally {

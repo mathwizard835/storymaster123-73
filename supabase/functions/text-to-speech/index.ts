@@ -48,14 +48,29 @@ serve(async (req) => {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('ElevenLabs API error:', response.status, errorText);
-      throw new Error(`ElevenLabs API error: ${response.status}`);
+      
+      // Provide specific error messages
+      if (response.status === 401) {
+        throw new Error('ElevenLabs API key is invalid or account suspended. Please check your API key configuration.');
+      } else if (response.status === 429) {
+        throw new Error('Rate limit exceeded. Please try again later.');
+      } else {
+        throw new Error(`ElevenLabs API error: ${response.status}`);
+      }
     }
 
-    // Convert audio buffer to base64
+    // Convert audio buffer to base64 (chunked for large files)
     const arrayBuffer = await response.arrayBuffer();
-    const base64Audio = btoa(
-      String.fromCharCode(...new Uint8Array(arrayBuffer))
-    );
+    const bytes = new Uint8Array(arrayBuffer);
+    
+    // Process in chunks to avoid stack overflow
+    let binary = '';
+    const chunkSize = 0x8000; // 32KB chunks
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      const chunk = bytes.subarray(i, Math.min(i + chunkSize, bytes.length));
+      binary += String.fromCharCode.apply(null, Array.from(chunk));
+    }
+    const base64Audio = btoa(binary);
 
     console.log('Successfully generated audio, size:', arrayBuffer.byteLength);
 
