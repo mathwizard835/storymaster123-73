@@ -9,7 +9,7 @@ import { Zap, Timer, Star, Heart, Shield, Eye, Wand2, PawPrint, Crosshair, Users
 import { useAuth } from "@/hooks/useAuth";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useEffect, useState, useRef } from "react";
-import { generateNextScene, loadProfile, checkStoryLimit, markStoryCompleted, type Scene, saveCurrentStory, loadCurrentStory, clearCurrentStory, saveCompletedStory, getCompletedStories, type SavedStory, type InventoryItem, saveProfileToLocal, clearSceneCache } from "@/lib/story";
+import { generateNextScene, loadProfile, checkStoryLimit, markStoryCompleted, type Scene, saveCurrentStory, loadCurrentStory, clearCurrentStory, saveCompletedStory, getCompletedStories, type SavedStory, type InventoryItem, saveProfileToLocal, clearSceneCache, recoverStorySession } from "@/lib/story";
 import { saveStoryToDatabase, loadCurrentStoryFromDatabase, clearCurrentStoryInDatabase, clearAllActiveStoriesForUser, verifyStoryIsActive } from "@/lib/databaseStory";
 import { loadInventory, saveInventory, addItemToInventory, useItem, clearInventory, updateProfileInventory } from "@/lib/inventory";
 import { 
@@ -240,6 +240,12 @@ const Mission = () => {
   }, [savedStory?.id, initialStoryId, navigate, toast]);
 
   useEffect(() => {
+    // Phase 5: Prevent reinitialization if story already loaded
+    if (savedStory && savedStory.id && !searchParams.get('new')) {
+      console.log('⏭️ Story already loaded, skipping init');
+      return;
+    }
+
     const init = async () => {
       // RACE CONDITION FIX: Prevent multiple simultaneous initializations
       if (initializingRef.current) {
@@ -314,6 +320,8 @@ const Mission = () => {
             const isActive = await verifyStoryIsActive(existingStory.id);
             if (isActive) {
               console.log(`📖 Resuming story: ${existingStory.id}`);
+              // Phase 3: Recover story session
+              recoverStorySession(existingStory.id, existingStory.scenes.length);
               setSavedStory(existingStory);
               setInitialStoryId(existingStory.id); // Phase 5: Track the loaded story ID
               setAllScenes(existingStory.scenes);
@@ -550,7 +558,26 @@ const Mission = () => {
       const nextSceneCount = sceneCount + 1;
       const profileWithInventory = updateProfileInventory(profile, inventory);
       
-      // Phase 3 & 5: Pass story ID for validation, no forceNewSession
+      // Phase 2: Pre-call validation
+      if (!savedStory.id) {
+        console.error('❌ No story ID present!');
+        throw new Error('Story session lost - please start a new adventure');
+      }
+
+      if (sceneCount < 1) {
+        console.error('❌ Invalid scene count:', sceneCount);
+        throw new Error('Story state corrupted - please start a new adventure');
+      }
+
+      // Phase 4: Defensive logging
+      console.log(`🎯 Choice selected:`, {
+        choiceId,
+        currentStoryId: savedStory.id,
+        currentScene: sceneCount,
+        nextScene: nextSceneCount
+      });
+      
+      // Phase 1 & 2: Pass story ID for validation, no forceNewSession
       const { parsed, text } = await generateNextScene(profileWithInventory, { ...scene, selectedChoiceId: choiceId }, false, 1200, nextSceneCount, savedStory.id, false);
       if (!parsed) throw new Error("Invalid AI response: " + text.slice(0, 140));
       

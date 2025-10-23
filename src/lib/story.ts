@@ -253,6 +253,13 @@ export const clearSceneCache = () => {
   console.log("Scene cache cleared");
 };
 
+// Phase 3: Story session recovery function
+export const recoverStorySession = (storyId: string, currentScene: number) => {
+  console.log(`🔧 Recovering story session: ${storyId} at scene ${currentScene}`);
+  currentStoryId = storyId;
+  // Don't clear cache - keep existing scene data
+};
+
 export const generateNextScene = async (
   profile: Profile,
   scene?: unknown,
@@ -262,21 +269,35 @@ export const generateNextScene = async (
   storyId?: string,
   forceNewSession: boolean = false
 ): Promise<{ text: string; parsed: Scene | null; raw: any }> => {
-  // Phase 3: Explicit new session handling
-  if (forceNewSession || (sceneCount === 1 && !scene)) {
+  // Phase 4: Defensive logging
+  console.log(`🎬 generateNextScene called:`, {
+    sceneCount,
+    hasScene: !!scene,
+    storyId,
+    currentStoryId,
+    forceNewSession,
+    cacheSize: sceneCache.size
+  });
+
+  // Phase 1: ONLY clear cache when explicitly requested (forceNewSession)
+  if (forceNewSession) {
     const newStoryId = storyId || crypto.randomUUID();
     console.log(`🆕 Starting fresh story session: ${newStoryId}`);
     currentStoryId = newStoryId;
     sceneCache.clear();
+  } else if (sceneCount > 1 && !currentStoryId && storyId) {
+    // Phase 3: Resume existing session
+    console.log(`📖 Resuming story session: ${storyId}`);
+    currentStoryId = storyId;
   }
   
-  // Phase 3: Strict story ID validation for continuation
-  if (storyId && currentStoryId && storyId !== currentStoryId && sceneCount > 1) {
+  // Phase 1: CRITICAL - Validate story continuity
+  if (sceneCount > 1 && storyId && currentStoryId && storyId !== currentStoryId) {
     console.error(`❌ CRITICAL: Story ID mismatch! Expected: ${currentStoryId}, Got: ${storyId}`);
     throw new Error('Story session corrupted - please start a new adventure');
   }
   
-  // Update tracking if story ID provided
+  // Update tracking if story ID provided for first scene
   if (storyId && !currentStoryId) {
     console.log(`📝 Setting current story ID: ${storyId}`);
     currentStoryId = storyId;
