@@ -458,11 +458,11 @@ Return ONLY valid JSON (no markdown, no explanations):
     const scene = body?.scene ?? null; // optional current scene context
     const sceneCount = Number(body?.scene_count ?? 1);
     const megastory = Boolean(body?.megastory ?? false);
-    // Smart token management based on story type - increased to prevent cutoffs
+    // Smart token management based on story type
     const getOptimalTokens = (sceneCount: number, isNewStory: boolean) => {
-      if (isNewStory) return 3000; // New stories need complete JSON
-      if (sceneCount >= 12) return 2500; // Ending scenes need more detail
-      return 2000; // Continuation scenes - ensure complete responses
+      if (isNewStory) return 2000; // New stories need complete JSON
+      if (sceneCount >= 12) return 1500; // Ending scenes need more detail
+      return 1200; // Continuation scenes - ensure complete responses
     };
     const max_tokens = Math.min(Number(body?.max_tokens ?? getOptimalTokens(sceneCount, !scene)), 4000);
 

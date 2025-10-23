@@ -58,7 +58,6 @@ const Mission = () => {
   const [currentChallenge, setCurrentChallenge] = useState<LearningChallenge | null>(null);
   const [showLearningProgress, setShowLearningProgress] = useState(false);
   const [storyReadyToFinish, setStoryReadyToFinish] = useState(false);
-  const [showNewStoryDialog, setShowNewStoryDialog] = useState(false);
   
   // Quiz state
   const [showQuiz, setShowQuiz] = useState(false);
@@ -1257,13 +1256,6 @@ const Mission = () => {
               {/* Navigation */}
               <div className="bg-white/10 backdrop-blur-md rounded-lg p-4 border border-white/20 space-y-3">
                 <button
-                  onClick={() => setShowNewStoryDialog(true)}
-                  className="w-full bg-green-600 hover:bg-green-700 text-white py-3 px-4 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
-                >
-                  <Play className="h-4 w-4" />
-                  Start New Adventure
-                </button>
-                <button
                   onClick={() => navigate('/dashboard')}
                   className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 px-4 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
                 >
@@ -1273,36 +1265,6 @@ const Mission = () => {
           </div>
         </div>
       </div>
-      
-      {/* New Story Confirmation Dialog */}
-      <Dialog open={showNewStoryDialog} onOpenChange={setShowNewStoryDialog}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Start New Adventure?</DialogTitle>
-            <DialogDescription>
-              You're currently in the middle of an adventure. Starting a new one will save your current progress and begin a fresh story.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex gap-3 mt-6">
-            <Button
-              variant="outline"
-              onClick={() => setShowNewStoryDialog(false)}
-              className="flex-1"
-            >
-              Continue Current Story
-            </Button>
-            <Button
-              onClick={() => {
-                setShowNewStoryDialog(false);
-                navigate('/profile?new=true');
-              }}
-              className="flex-1"
-            >
-              Start New Adventure
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
       
       {/* Comprehension Quiz Modal */}
       {showQuiz && quizQuestions.length > 0 && (
