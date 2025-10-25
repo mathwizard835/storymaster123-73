@@ -1,25 +1,24 @@
 import { z } from 'zod';
 
-// Strict content blocking for ages 6-11
+// Age-appropriate content blocking for ages 6-11
+// Blocks genuinely harmful content while allowing adventure/fantasy themes
 const BLOCKED_PATTERNS = [
   // Sexual content and innuendo
-  /\b(sex|sexual|porn|pornography|xxx|nsfw|nude|naked|explicit|romantic|kiss|dating|boyfriend|girlfriend|lover|seductive|flirt)\b/i,
+  /\b(sex|sexual|porn|pornography|xxx|nsfw|nude|naked|explicit|seductive)\b/i,
   // Drugs, alcohol, smoking
   /\b(drugs|cocaine|heroin|meth|marijuana|weed|cannabis|alcohol|beer|wine|liquor|drunk|smoking|cigarette|vape|tobacco)\b/i,
-  // Graphic violence and gore
-  /\b(kill|killing|murder|stab|stabbing|blood|bloody|gore|gory|death|die|dying|corpse|torture|mutilate|dismember|decapitate)\b/i,
-  // Weapons and violence
-  /\b(gun|guns|firearm|shoot|shooting|weapon|knife|sword|explosive|bomb|grenade|attack|assault)\b/i,
+  // Graphic violence and gore (but allow fantasy adventure terms)
+  /\b(murder|stab|stabbing|bloody|gore|gory|corpse|torture|mutilate|dismember|decapitate)\b/i,
+  // Real weapons (but allow fantasy items like sword, shield)
+  /\b(gun|guns|firearm|pistol|rifle|explosive|bomb|grenade)\b/i,
   // Hate and discrimination
   /\b(hate|racist|racism|nazi|supremacy|discriminat|bully|bullying|harass|harassment)\b/i,
   // Self-harm and mental health crisis
   /\b(suicide|self-harm|cutting|hanging)\b/i,
   // Gambling and adult themes
   /\b(gambling|casino|betting|adult|mature|18\+|21\+)\b/i,
-  // Dark horror themes
-  /\b(horror|terrifying|nightmare|demon|possessed|haunted|evil|sinister|creepy|scary|frightening)\b/i,
-  // Unsafe behaviors
-  /\b(dangerous|unsafe|reckless|poison|toxic)\b/i,
+  // Extreme horror (but allow "scary" and mild spooky themes)
+  /\b(terrifying|nightmare|possessed|torture)\b/i,
 ];
 
 // Content validation function
