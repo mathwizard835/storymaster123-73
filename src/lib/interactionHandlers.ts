@@ -35,14 +35,28 @@ export const handleObjectInteraction = async (
     }
 
     // Check if object requires this type of item
-    if (object.requiresItem && 
-        item.type !== object.requiresItem && 
-        item.id !== object.requiresItem &&
-        !item.name.toLowerCase().includes(object.requiresItem.toLowerCase())) {
-      return { 
-        success: false, 
-        message: `${object.name} requires a ${object.requiresItem}, but you used ${item.name}` 
-      };
+    if (object.requiresItem) {
+      const requiredItem = object.requiresItem.toLowerCase().trim();
+      const itemName = item.name.toLowerCase().trim();
+      const itemType = item.type.toLowerCase().trim();
+      const itemId = item.id.toLowerCase().trim();
+      
+      const matches = 
+        itemId === requiredItem ||
+        itemType === requiredItem ||
+        itemName === requiredItem ||
+        itemName.includes(requiredItem) ||
+        requiredItem.includes(itemName) ||
+        requiredItem.includes(itemType) ||
+        requiredItem.split(/\s+/).some(word => itemName.includes(word) || itemType === word) ||
+        itemName.split(/\s+/).some(word => requiredItem.includes(word));
+      
+      if (!matches) {
+        return { 
+          success: false, 
+          message: `${object.name} requires a ${object.requiresItem}, but you used ${item.name}` 
+        };
+      }
     }
 
     onInventoryChange(newInventory);
@@ -82,13 +96,42 @@ export const validateChoice = (
 
   // Check if choice requires an item
   if (choice.requiresItem) {
-    const hasItem = inventory.some(item => 
-      item.id === choice.requiresItem ||
-      item.type === choice.requiresItem ||
-      item.name.toLowerCase().includes(choice.requiresItem.toLowerCase())
-    );
+    const requiredItem = choice.requiresItem.toLowerCase().trim();
+    
+    const hasItem = inventory.some(item => {
+      const itemName = item.name.toLowerCase().trim();
+      const itemType = item.type.toLowerCase().trim();
+      const itemId = item.id.toLowerCase().trim();
+      
+      // Match by ID, type, or name (bidirectional contains check)
+      const matches = 
+        itemId === requiredItem ||
+        itemType === requiredItem ||
+        itemName === requiredItem ||
+        itemName.includes(requiredItem) ||
+        requiredItem.includes(itemName) ||
+        // Check if the required item contains the item type (e.g., "magic key" contains "key")
+        requiredItem.includes(itemType) ||
+        // Match individual words (e.g., "golden key" matches item named "Key")
+        requiredItem.split(/\s+/).some(word => itemName.includes(word) || itemType === word) ||
+        itemName.split(/\s+/).some(word => requiredItem.includes(word));
+      
+      if (matches) {
+        console.log(`✅ Item requirement matched:`, { 
+          itemName: item.name, 
+          itemType: item.type,
+          requiresItem: choice.requiresItem 
+        });
+      }
+      
+      return matches;
+    });
     
     if (!hasItem) {
+      console.log(`❌ Item requirement NOT met:`, { 
+        requiresItem: choice.requiresItem,
+        inventory: inventory.map(i => ({ name: i.name, type: i.type, id: i.id }))
+      });
       return { 
         valid: false, 
         reason: `This choice requires: ${choice.requiresItem}` 
