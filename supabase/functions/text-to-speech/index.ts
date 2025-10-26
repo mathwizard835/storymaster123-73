@@ -5,6 +5,35 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Rate limiting for text-to-speech
+const rateLimit = (() => {
+  const ipRequestLog = new Map<string, number[]>();
+  const MAX_REQUESTS_IP = 20; // 20 requests per minute per IP
+  const MAX_TEXT_LENGTH = 5000; // Max 5000 chars per request
+  const TIME_WINDOW = 60000; // 1 minute
+
+  return (ipAddress: string, textLength: number): { allowed: boolean; reason?: string } => {
+    // Check text length
+    if (textLength > MAX_TEXT_LENGTH) {
+      return { allowed: false, reason: 'Text too long. Maximum 5000 characters allowed.' };
+    }
+
+    const now = Date.now();
+    const ipRequests = ipRequestLog.get(ipAddress) || [];
+    const recentIpRequests = ipRequests.filter(timestamp => now - timestamp < TIME_WINDOW);
+    
+    if (recentIpRequests.length >= MAX_REQUESTS_IP) {
+      console.warn(`Rate limit exceeded for IP: ${ipAddress}`);
+      return { allowed: false, reason: 'Too many requests. Please wait a moment before trying again.' };
+    }
+    
+    recentIpRequests.push(now);
+    ipRequestLog.set(ipAddress, recentIpRequests);
+    
+    return { allowed: true };
+  };
+})();
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -15,6 +44,19 @@ serve(async (req) => {
 
     if (!text) {
       throw new Error('Text is required');
+    }
+
+    // Apply rate limiting
+    const ipAddress = req.headers.get('x-forwarded-for')?.split(',')[0] || 
+                      req.headers.get('x-real-ip') || 
+                      'unknown';
+    
+    const rateLimitResult = rateLimit(ipAddress, text.length);
+    if (!rateLimitResult.allowed) {
+      return new Response(
+        JSON.stringify({ error: rateLimitResult.reason }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     const ELEVENLABS_API_KEY = Deno.env.get('ELEVENLABS_API_KEY');

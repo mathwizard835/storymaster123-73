@@ -123,22 +123,36 @@ function validateRequestSize(body: any): boolean {
   return bodyStr.length <= 50000; // 50KB limit
 }
 
-function rateLimit(deviceId: string): boolean {
+function rateLimit(deviceId: string, ipAddress: string): boolean {
   const now = Date.now();
   const deviceKey = deviceId || 'anonymous';
+  const ipKey = ipAddress || 'unknown';
   
-  const current = requestCounts.get(deviceKey);
-  
-  if (!current || now > current.resetTime) {
-    requestCounts.set(deviceKey, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
-    return true;
+  // Check device-based rate limit
+  const deviceData = requestCounts.get(`device_${deviceKey}`);
+  if (deviceData && now <= deviceData.resetTime) {
+    if (deviceData.count >= MAX_REQUESTS_PER_MINUTE) {
+      console.warn(`Rate limit exceeded for device: ${deviceKey}`);
+      return false;
+    }
+    deviceData.count++;
+  } else {
+    requestCounts.set(`device_${deviceKey}`, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
   }
   
-  if (current.count >= MAX_REQUESTS_PER_MINUTE) {
-    return false;
+  // Check IP-based rate limit (30 requests per minute - allows multiple devices per IP)
+  const MAX_REQUESTS_PER_IP = 30;
+  const ipData = requestCounts.get(`ip_${ipKey}`);
+  if (ipData && now <= ipData.resetTime) {
+    if (ipData.count >= MAX_REQUESTS_PER_IP) {
+      console.warn(`Rate limit exceeded for IP: ${ipKey}`);
+      return false;
+    }
+    ipData.count++;
+  } else {
+    requestCounts.set(`ip_${ipKey}`, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
   }
   
-  current.count++;
   return true;
 }
 
@@ -436,11 +450,14 @@ Return ONLY valid JSON (no markdown, no explanations):
       );
     }
     
-    // Extract device ID for rate limiting
+    // Extract device ID and IP address for rate limiting
     const deviceId = req.headers.get('x-device-id') || body?.device_id || 'anonymous';
+    const ipAddress = req.headers.get('x-forwarded-for')?.split(',')[0] || 
+                      req.headers.get('x-real-ip') || 
+                      'unknown';
     
-    // Apply rate limiting
-    if (!rateLimit(deviceId)) {
+    // Apply rate limiting with IP-based backup
+    if (!rateLimit(deviceId, ipAddress)) {
       return new Response(
         JSON.stringify({ error: "Rate limit exceeded. Please wait before making another request." }),
         { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
