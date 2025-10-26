@@ -27,13 +27,29 @@ const Dashboard = () => {
   
   // Refresh data when component mounts
   useEffect(() => {
-    setProgress(loadAchievements());
-    setCharacter(loadCharacter());
-    
-    // Load recent stories from database if user is authenticated
-    const loadStories = async () => {
+    const loadData = async () => {
       if (user) {
         try {
+          // Check if we need to sync from database
+          const { needsSync, syncProgressFromDatabase } = await import('@/lib/syncProgress');
+          const shouldSync = await needsSync();
+          
+          if (shouldSync) {
+            console.log('🔄 Syncing progress from database...');
+            toast({
+              title: "Restoring Your Progress",
+              description: "Loading your achievements and stories from the cloud...",
+            });
+            
+            await syncProgressFromDatabase();
+            
+            toast({
+              title: "Progress Restored!",
+              description: "Your achievements and stats have been synced.",
+            });
+          }
+          
+          // Load recent stories from database
           const stories = await loadRecentStoriesFromDatabase();
           setRecentStories(stories);
           
@@ -42,12 +58,21 @@ const Dashboard = () => {
           setHasActiveStory(!!activeStory && activeStory.scenes.length > 0);
         } catch (e) {
           console.error('Failed to load stories:', e);
+          toast({
+            title: "Error Loading Data",
+            description: "Failed to sync your progress. Please refresh the page.",
+            variant: "destructive",
+          });
         }
       }
+      
+      // Always load from localStorage (may have been updated by sync)
+      setProgress(loadAchievements());
+      setCharacter(loadCharacter());
     };
     
-    loadStories();
-  }, [user]);
+    loadData();
+  }, [user, toast]);
 
   const formatDate = (dateString: string) => {
     return new Intl.DateTimeFormat('en-US', {
