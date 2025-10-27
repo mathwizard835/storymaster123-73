@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SceneChoice, InventoryItem } from "@/lib/story";
 import { validateChoice } from "@/lib/interactionHandlers";
-import { AlertCircle, Key, Hand, Zap } from "lucide-react";
+import { AlertCircle, Key, Hand, Zap, Sparkles } from "lucide-react";
 
 interface InteractiveChoicesProps {
   choices: SceneChoice[];
@@ -19,12 +19,14 @@ export const InteractiveChoices = ({
 }: InteractiveChoicesProps) => {
   
   const getChoiceIcon = (choice: SceneChoice) => {
+    if (choice.type === 'ultra') return Sparkles;
     if (choice.type === 'item_use') return Key;
     if (choice.type === 'object_interact') return Hand;
     return Zap;
   };
 
   const getChoiceVariant = (choice: SceneChoice) => {
+    if (choice.type === 'ultra') return 'default';
     if (choice.type === 'item_use') return 'secondary';
     if (choice.type === 'object_interact') return 'outline';
     return 'hero';
@@ -49,12 +51,27 @@ export const InteractiveChoices = ({
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="font-semibold">{choice.text}</span>
-                  {choice.type && choice.type !== 'standard' && (
+                  {choice.type === 'ultra' && (
+                    <Badge variant="default" className="text-xs bg-gradient-to-r from-purple-500 to-pink-500 border-0">
+                      ✨ Ultra Choice
+                    </Badge>
+                  )}
+                  {choice.type === 'item_use' && (
                     <Badge variant="outline" className="text-xs">
-                      {choice.type === 'item_use' ? 'Use Item' : 'Interact'}
+                      Use Item
+                    </Badge>
+                  )}
+                  {choice.type === 'object_interact' && (
+                    <Badge variant="outline" className="text-xs">
+                      Interact
                     </Badge>
                   )}
                 </div>
+                {choice.requiresAbility && (
+                  <div className="text-xs text-purple-600 dark:text-purple-400 font-medium">
+                    🌟 Requires Ability: {choice.requiresAbility}
+                  </div>
+                )}
                 {choice.requiresItem && (
                   <div className="text-xs text-muted-foreground">
                     Requires: {choice.requiresItem}

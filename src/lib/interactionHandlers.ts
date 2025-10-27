@@ -1,5 +1,6 @@
 import { InventoryItem, Scene } from "./story";
 import { useItem } from "./inventory";
+import { hasAbility, hasAbilityCategory, type AbilityCategory } from "./abilities";
 
 export interface InteractionContext {
   scene: Scene;
@@ -92,6 +93,34 @@ export const validateChoice = (
   
   if (!choice) {
     return { valid: false, reason: "Choice not found" };
+  }
+
+  // Check if choice requires an ability (for Ultra choices)
+  if (choice.requiresAbility) {
+    const requiredAbility = choice.requiresAbility.toLowerCase().trim();
+    
+    // Check if it's a category or specific ability name
+    const validCategories: AbilityCategory[] = ['detective', 'combat', 'diplomacy', 'magic', 'survival', 'creativity', 'leadership'];
+    const isCategory = validCategories.some(cat => cat === requiredAbility);
+    
+    const hasRequiredAbility = isCategory 
+      ? hasAbilityCategory(requiredAbility as AbilityCategory)
+      : hasAbility(requiredAbility);
+    
+    if (!hasRequiredAbility) {
+      console.log(`❌ Ability requirement NOT met:`, { 
+        requiresAbility: choice.requiresAbility,
+        type: isCategory ? 'category' : 'name'
+      });
+      return { 
+        valid: false, 
+        reason: `🌟 Ultra Choice - Requires: ${choice.requiresAbility}` 
+      };
+    }
+    
+    console.log(`✅ Ability requirement matched:`, { 
+      requiresAbility: choice.requiresAbility
+    });
   }
 
   // Check if choice requires an item

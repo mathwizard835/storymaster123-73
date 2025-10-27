@@ -2,6 +2,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { saveAchievements, updateProgress, AchievementProgress } from './achievements';
 import { saveCharacter, gainExperience, DEFAULT_CHARACTER, CharacterStats } from './character';
 import { Profile } from './story';
+import { checkAndAwardAbilities, saveAbilities, type AbilityProgress } from './abilities';
 
 /**
  * Syncs user progress from database to localStorage
@@ -11,6 +12,7 @@ export const syncProgressFromDatabase = async (): Promise<{
   syncedStories: number;
   achievements: AchievementProgress;
   character: CharacterStats;
+  abilities: AbilityProgress;
 }> => {
   try {
     const { data: { user } } = await supabase.auth.getUser();
@@ -19,7 +21,8 @@ export const syncProgressFromDatabase = async (): Promise<{
       return {
         syncedStories: 0,
         achievements: { totalStories: 0, totalChoices: 0, badgeUsage: {}, modeUsage: {}, achievements: [] },
-        character: DEFAULT_CHARACTER
+        character: DEFAULT_CHARACTER,
+        abilities: { abilities: [], totalAbilitiesEarned: 0, abilitiesUsed: 0 }
       };
     }
 
@@ -41,7 +44,8 @@ export const syncProgressFromDatabase = async (): Promise<{
       return {
         syncedStories: 0,
         achievements: { totalStories: 0, totalChoices: 0, badgeUsage: {}, modeUsage: {}, achievements: [] },
-        character: DEFAULT_CHARACTER
+        character: DEFAULT_CHARACTER,
+        abilities: { abilities: [], totalAbilitiesEarned: 0, abilitiesUsed: 0 }
       };
     }
 
@@ -55,6 +59,11 @@ export const syncProgressFromDatabase = async (): Promise<{
       badgeUsage: {},
       modeUsage: {},
       achievements: []
+    };
+    let abilityProgress: AbilityProgress = {
+      abilities: [],
+      totalAbilitiesEarned: 0,
+      abilitiesUsed: 0
     };
 
     // Process each completed story to rebuild progress
@@ -87,6 +96,19 @@ export const syncProgressFromDatabase = async (): Promise<{
         profile.storyLength || 'medium'
       );
       character = expResult.character;
+      
+      // Check and award abilities for this story
+      const newAbilities = checkAndAwardAbilities(
+        profile.selectedBadges || [],
+        choiceCount,
+        true,
+        profile
+      );
+      
+      // Add new abilities to the progress (abilities are saved by checkAndAwardAbilities)
+      if (newAbilities.length > 0) {
+        abilityProgress.totalAbilitiesEarned += newAbilities.length;
+      }
     }
 
     // Now check all achievements at once based on the totals
@@ -95,14 +117,18 @@ export const syncProgressFromDatabase = async (): Promise<{
       '', // Don't pass mode
       0   // Don't add more choices
     );
+    
+    // Save abilities progress
+    saveAbilities(abilityProgress);
 
-    console.log(`✅ Sync complete: ${completedStories.length} stories, ${achievementProgress.totalChoices} choices, ${allNewAchievements.length} achievements unlocked`);
+    console.log(`✅ Sync complete: ${completedStories.length} stories, ${achievementProgress.totalChoices} choices, ${allNewAchievements.length} achievements, ${abilityProgress.totalAbilitiesEarned} abilities unlocked`);
     console.log(`📊 Character: Level ${character.level}, ${character.totalExperienceEarned} total XP`);
 
     return {
       syncedStories: completedStories.length,
       achievements: achievementProgress,
-      character
+      character,
+      abilities: abilityProgress
     };
   } catch (error) {
     console.error('Failed to sync progress from database:', error);

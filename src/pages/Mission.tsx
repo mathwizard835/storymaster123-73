@@ -1084,7 +1084,7 @@ const Mission = () => {
                       onClick={async () => {
                         try {
                           const nextSceneCount = sceneCount;
-                          const { newAchievements, characterProgress } = await markStoryCompleted(profile, nextSceneCount);
+                          const { newAchievements, characterProgress, newAbilities } = await markStoryCompleted(profile, nextSceneCount);
                           
                           // Check if this story was already saved to prevent duplicates
                           const existingStories = getCompletedStories();
@@ -1117,6 +1117,9 @@ const Mission = () => {
                           }
                           if (newAchievements?.length > 0) {
                             progressParts.push(`${newAchievements.length} new achievement${newAchievements.length > 1 ? 's' : ''}`);
+                          }
+                          if (newAbilities?.length > 0) {
+                            progressParts.push(`${newAbilities.length} new abilit${newAbilities.length > 1 ? 'ies' : 'y'}`);
                           }
                           
                           if (progressParts.length > 0) {
@@ -1153,10 +1156,32 @@ const Mission = () => {
                               }, (characterProgress?.leveledUp ? 3500 : 2000) + (index * 2000));
                             });
                           }
+                          
+                          // Show new abilities with staggered timing after achievements
+                          if (newAbilities?.length > 0) {
+                            const abilityStartDelay = (characterProgress?.leveledUp ? 3500 : 2000) + 
+                              (newAchievements?.length || 0) * 2000;
+                            
+                            newAbilities.forEach((ability, index) => {
+                              setTimeout(() => {
+                                confetti({
+                                  particleCount: 100,
+                                  spread: 70,
+                                  origin: { y: 0.6 }
+                                });
+                                toast({
+                                  title: `✨ New Ability Unlocked!`,
+                                  description: `${ability.name}: ${ability.description} - Unlocks Ultra Choices!`,
+                                  duration: 8000,
+                                });
+                              }, abilityStartDelay + (index * 2500));
+                            });
+                          }
 
                           const finalDelay = 2000 + 
                             (characterProgress?.leveledUp ? 2000 : 0) + 
-                            (newAchievements?.length || 0) * 2000;
+                            (newAchievements?.length || 0) * 2000 +
+                            (newAbilities?.length || 0) * 2500;
 
                           setTimeout(() => {
                             toast({

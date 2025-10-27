@@ -2,6 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { updateProgress } from "@/lib/achievements";
 import { gainExperience } from "@/lib/character";
 import { mobileStorage } from "@/lib/mobileStorage";
+import { checkAndAwardAbilities } from "@/lib/abilities";
 
 export type InventoryItem = {
   id: string;
@@ -37,9 +38,10 @@ export type Profile = {
 export type SceneChoice = { 
   id: string; 
   text: string; 
-  type?: 'standard' | 'item_use' | 'object_interact';
+  type?: 'standard' | 'item_use' | 'object_interact' | 'ultra';
   requiresItem?: string;
   consumesItem?: boolean;
+  requiresAbility?: string; // Ability category or name required for Ultra choices
 };
 
 export type Scene = {
@@ -202,7 +204,7 @@ export const getCompletedStories = (): CompletedStory[] => {
 export const markStoryCompleted = async (
   profile: Profile,
   choiceCount: number = 0
-): Promise<{ newAchievements: any[]; characterProgress: any }> => {
+): Promise<{ newAchievements: any[]; characterProgress: any; newAbilities: any[] }> => {
   try {
     const deviceId = await getDeviceId();
     const { error } = await supabase
@@ -233,11 +235,19 @@ export const markStoryCompleted = async (
       choiceCount,
       profile.storyLength || 'medium'
     );
+    
+    // Check and award abilities based on story completion
+    const newAbilities = checkAndAwardAbilities(
+      profile.selectedBadges,
+      choiceCount,
+      true,
+      profile
+    );
 
-    return { newAchievements, characterProgress };
+    return { newAchievements, characterProgress, newAbilities };
   } catch (e) {
     console.error("Failed to mark story as completed", e);
-    return { newAchievements: [], characterProgress: null };
+    return { newAchievements: [], characterProgress: null, newAbilities: [] };
   }
 };
 
