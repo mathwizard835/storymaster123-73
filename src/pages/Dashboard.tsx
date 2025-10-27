@@ -8,8 +8,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { getCompletedStories } from "@/lib/story";
 import { loadAchievements, ALL_ACHIEVEMENTS } from "@/lib/achievements";
 import { loadCharacter } from "@/lib/character";
+import { loadAbilities } from "@/lib/abilities";
 import { loadRecentStoriesFromDatabase, loadCurrentStoryFromDatabase, DatabaseStory } from "@/lib/databaseStory";
-import { ArrowLeft, Trophy, BookOpen, Star, Crown, Zap, Plus, TrendingUp, Play } from "lucide-react";
+import { ArrowLeft, Trophy, BookOpen, Star, Crown, Zap, Plus, TrendingUp, Play, Sparkles } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -20,6 +21,7 @@ const Dashboard = () => {
   const { user } = useAuth();
   const [progress, setProgress] = useState(loadAchievements());
   const [character, setCharacter] = useState(loadCharacter());
+  const [abilities, setAbilities] = useState(loadAbilities());
   const completedStories = getCompletedStories();
   const [recentStories, setRecentStories] = useState<DatabaseStory[]>([]);
   const [hasActiveStory, setHasActiveStory] = useState(false);
@@ -69,6 +71,7 @@ const Dashboard = () => {
       // Always load from localStorage (may have been updated by sync)
       setProgress(loadAchievements());
       setCharacter(loadCharacter());
+      setAbilities(loadAbilities());
     };
     
     loadData();
@@ -93,6 +96,19 @@ const Dashboard = () => {
       space: 'bg-cyan-100 text-cyan-800',
     };
     return colors[badge] || 'bg-gray-100 text-gray-800';
+  };
+
+  const getAbilityCategoryColor = (category: string) => {
+    const colors: Record<string, string> = {
+      detective: 'from-blue-500 to-cyan-500',
+      combat: 'from-red-500 to-orange-500',
+      diplomacy: 'from-green-500 to-emerald-500',
+      magic: 'from-purple-500 to-pink-500',
+      survival: 'from-yellow-500 to-amber-500',
+      creativity: 'from-indigo-500 to-violet-500',
+      leadership: 'from-yellow-600 to-orange-600',
+    };
+    return colors[category] || 'from-gray-500 to-slate-500';
   };
 
   const getRarityColor = (rarity: string) => {
@@ -121,6 +137,10 @@ const Dashboard = () => {
       return unlockTime > oneDayAgo;
     })
     .slice(0, 3); // Show max 3 recent achievements
+
+  // Get available and used abilities
+  const availableAbilities = abilities.abilities.filter(a => !a.used);
+  const usedAbilities = abilities.abilities.filter(a => a.used);
 
   return (
     <>
@@ -212,6 +232,13 @@ const Dashboard = () => {
                   <div className="text-2xl font-bold">{completionRate}%</div>
                   <div className="text-sm text-muted-foreground">Achievement Rate</div>
                 </div>
+                <div>
+                  <div className="text-2xl font-bold flex items-center gap-1">
+                    <Sparkles className="h-6 w-6 text-purple-500" />
+                    {availableAbilities.length}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Abilities Ready</div>
+                </div>
               </div>
               
               <div className="mt-6">
@@ -226,6 +253,84 @@ const Dashboard = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Abilities Section */}
+          {abilities.abilities.length > 0 && (
+            <Card className="glass-panel border-0 mb-8">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-purple-500" />
+                  Ultra Abilities
+                </CardTitle>
+                <CardDescription>
+                  Special abilities earned through your adventures. Use them to unlock Ultra choices in future stories!
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {availableAbilities.length > 0 && (
+                  <div className="mb-6">
+                    <h3 className="font-semibold text-sm mb-3 text-green-600 dark:text-green-400">
+                      ✨ Available ({availableAbilities.length})
+                    </h3>
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                      {availableAbilities.map((ability) => (
+                        <div 
+                          key={ability.id}
+                          className="relative overflow-hidden rounded-lg border bg-card p-4 hover:shadow-lg transition-shadow"
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className={`flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br ${getAbilityCategoryColor(ability.category)} flex items-center justify-center`}>
+                              <Sparkles className="h-5 w-5 text-white" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-semibold text-sm mb-1">{ability.name}</h4>
+                              <Badge variant="outline" className="text-xs capitalize mb-2">
+                                {ability.category}
+                              </Badge>
+                              <p className="text-xs text-muted-foreground line-clamp-2">
+                                {ability.description}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {usedAbilities.length > 0 && (
+                  <div>
+                    <h3 className="font-semibold text-sm mb-3 text-muted-foreground">
+                      Used ({usedAbilities.length})
+                    </h3>
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                      {usedAbilities.map((ability) => (
+                        <div 
+                          key={ability.id}
+                          className="relative overflow-hidden rounded-lg border bg-muted/30 p-4 opacity-60"
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className={`flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br ${getAbilityCategoryColor(ability.category)} flex items-center justify-center opacity-50`}>
+                              <Sparkles className="h-5 w-5 text-white" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-semibold text-sm mb-1">{ability.name}</h4>
+                              <Badge variant="outline" className="text-xs capitalize mb-2">
+                                {ability.category}
+                              </Badge>
+                              <p className="text-xs text-muted-foreground line-clamp-2">
+                                {ability.description}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
           <div className="grid gap-8 tablet-lg:grid-cols-2 lg:grid-cols-2">
             {/* Recent Stories */}
