@@ -48,22 +48,53 @@ export default function ParentDashboard() {
   const getStoryMessage = (story: any) => {
     const name = story.profile?.name || "Your child";
     const badges = story.profile?.badges || [];
-    const qualities: string[] = [];
-
-    if (badges.includes('detective')) qualities.push('curiosity');
-    if (badges.includes('action-hero')) qualities.push('bravery');
-    if (badges.includes('creative-genius')) qualities.push('creativity');
-    if (badges.includes('social-champion')) qualities.push('teamwork');
-    if (badges.includes('mystic-mage')) qualities.push('wisdom');
-    if (badges.includes('beast-master')) qualities.push('kindness');
-
-    if (qualities.length === 0) qualities.push('imagination');
-
-    const qualityText = qualities.slice(0, 3).join(', ');
     const mode = story.profile?.mode || 'adventure';
-    const modeText = mode === 'educational' ? 'learned new concepts' : 'had an amazing adventure';
 
-    return `${name} ${modeText}! They showed ${qualityText}.`;
+    // Map badges to rich qualities
+    const badgeQualities: { [key: string]: { trait: string; action: string } } = {
+      'detective': { trait: 'curiosity and critical thinking', action: 'solved mysteries' },
+      'action-hero': { trait: 'courage and determination', action: 'overcame challenges' },
+      'creative-genius': { trait: 'imagination and innovation', action: 'created amazing solutions' },
+      'social-champion': { trait: 'empathy and teamwork', action: 'built strong friendships' },
+      'mystic-mage': { trait: 'wisdom and insight', action: 'made thoughtful decisions' },
+      'beast-master': { trait: 'compassion and kindness', action: 'cared for others' }
+    };
+
+    // Create personalized messages based on badges
+    if (badges.length === 0) {
+      const templates = [
+        `${name} embarked on an incredible journey and let their imagination soar!`,
+        `${name} discovered new worlds and showed wonderful creativity!`,
+        `${name} explored bravely and made exciting choices throughout their adventure!`
+      ];
+      return templates[Math.floor(Math.random() * templates.length)];
+    }
+
+    // If they have badges, create specific messages
+    const primaryBadge = badges[0];
+    const quality = badgeQualities[primaryBadge] || { trait: 'determination', action: 'made great progress' };
+    
+    const templates = mode === 'educational' 
+      ? [
+          `${name} ${quality.action} while learning important concepts! They demonstrated ${quality.trait}.`,
+          `${name} mastered new skills and showed incredible ${quality.trait} throughout their learning journey!`,
+          `${name} explored educational content with enthusiasm, displaying ${quality.trait} every step of the way!`
+        ]
+      : [
+          `${name} ${quality.action} in an epic adventure! They displayed remarkable ${quality.trait}.`,
+          `${name} journeyed through challenges with ${quality.trait}, proving they can achieve anything!`,
+          `${name} conquered their quest by showing ${quality.trait} and never giving up!`
+        ];
+
+    // Add mention of additional badges if present
+    if (badges.length > 1) {
+      const secondBadge = badges[1];
+      const secondQuality = badgeQualities[secondBadge]?.trait || 'perseverance';
+      const message = templates[Math.floor(Math.random() * templates.length)];
+      return `${message.slice(0, -1)}, plus ${secondQuality}!`;
+    }
+
+    return templates[Math.floor(Math.random() * templates.length)];
   };
 
   const unlockedAchievements = achievements.achievements.filter(a => a.unlockedAt);
