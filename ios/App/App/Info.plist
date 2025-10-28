@@ -45,5 +45,24 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>StoryMaster Quest needs access to your photo library to let you customize your character with photos.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>StoryMaster Quest needs access to your camera to take photos for character customization.</string>
+	<key>NSUserTrackingUsageDescription</key>
+	<string>This helps us provide you with a better personalized experience.</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>storymasterquest</string>
+			</array>
+		</dict>
+	</array>
+	<key>NSSupportsLiveActivities</key>
+	<false/>
 </dict>
 </plist>

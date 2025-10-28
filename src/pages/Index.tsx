@@ -601,6 +601,16 @@ const Index = () => {
           <p className="text-sm text-muted-foreground mt-8">
             ✅ Instant access • ✅ No payment required • ✅ Cancel anytime
           </p>
+          
+          <footer className="mt-12 pt-6 border-t border-border/50">
+            <div className="flex flex-wrap justify-center gap-6 text-sm text-muted-foreground">
+              <a href="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</a>
+              <span>•</span>
+              <a href="/terms" className="hover:text-foreground transition-colors">Terms of Service</a>
+              <span>•</span>
+              <span>© 2025 StoryMaster Quest</span>
+            </div>
+          </footer>
         </div>
       </section>
     </>
