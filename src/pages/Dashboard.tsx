@@ -10,7 +10,7 @@ import { loadAchievements, ALL_ACHIEVEMENTS } from "@/lib/achievements";
 import { loadCharacter } from "@/lib/character";
 import { loadAbilities } from "@/lib/abilities";
 import { loadRecentStoriesFromDatabase, loadCurrentStoryFromDatabase, DatabaseStory } from "@/lib/databaseStory";
-import { ArrowLeft, Trophy, BookOpen, Star, Crown, Zap, Plus, TrendingUp, Play, Sparkles } from "lucide-react";
+import { ArrowLeft, Trophy, BookOpen, Star, Crown, Zap, Plus, TrendingUp, Play, Sparkles, Heart } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -162,6 +162,14 @@ const Dashboard = () => {
               Back to Home
             </Button>
             <div className="flex gap-2">
+              <Button 
+                onClick={() => navigate("/parent-dashboard")}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <Heart className="h-4 w-4" />
+                Parent Mode
+              </Button>
               <Button 
                 onClick={() => navigate("/mission")}
                 variant="hero"
