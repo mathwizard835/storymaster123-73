@@ -112,11 +112,15 @@ Start your adventure today and become the hero of your own story!
 
 ## Support Information
 
-**Support URL:** [Your support website]
+**Support URL:** https://storymasterquest.com/support
 
-**Privacy Policy URL:** [Your app]/privacy
+**Support Email:** support@storymasterquest.com
 
-**Marketing URL:** [Your marketing website]
+**Privacy Policy URL:** https://storymasterquest.com/privacy
+
+**Terms of Service URL:** https://storymasterquest.com/terms
+
+**Marketing URL:** https://storymasterquest.com
 
 ---
 

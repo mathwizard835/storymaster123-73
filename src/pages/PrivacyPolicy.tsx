@@ -112,9 +112,12 @@ const PrivacyPolicy = () => {
             <section>
               <h2 className="text-2xl font-semibold mb-3 text-foreground">Contact Us</h2>
               <p>
-                If you have questions about this Privacy Policy or wish to exercise your rights, 
-                please contact us through the app settings or visit our support page.
+                If you have questions about this Privacy Policy or wish to exercise your rights:
               </p>
+              <ul className="list-disc pl-6 space-y-2 mt-2">
+                <li>Email: support@storymasterquest.com</li>
+                <li>Visit our <a href="/support" className="text-primary hover:underline">Support page</a></li>
+              </ul>
             </section>
 
             <section>

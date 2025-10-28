@@ -608,6 +608,8 @@ const Index = () => {
               <span>•</span>
               <a href="/terms" className="hover:text-foreground transition-colors">Terms of Service</a>
               <span>•</span>
+              <a href="/support" className="hover:text-foreground transition-colors">Support</a>
+              <span>•</span>
               <span>© 2025 StoryMaster Quest</span>
             </div>
           </footer>
