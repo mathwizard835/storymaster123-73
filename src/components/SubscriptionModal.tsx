@@ -60,11 +60,27 @@ export const SubscriptionModal = ({ open, onOpenChange, currentPlan }: Subscript
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl">Choose Your Adventure Level</DialogTitle>
+          <DialogTitle className="text-2xl">Make Reading Your Child's Favorite Activity</DialogTitle>
           <DialogDescription>
-            Upgrade your storytelling experience with unlimited stories and premium features
+            Less than one children's book. Unlimited stories + reading progress tracking parents love.
           </DialogDescription>
         </DialogHeader>
+
+        {/* Value Comparison */}
+        <div className="bg-muted/50 rounded-lg p-4 mb-4">
+          <p className="text-sm font-semibold mb-2">📊 Compare the Value:</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs">
+            <div>
+              <span className="font-medium">Traditional Books:</span> $10-15 each, often unread
+            </div>
+            <div>
+              <span className="font-medium">Other Apps:</span> $9.99+ without personalization
+            </div>
+            <div>
+              <span className="font-medium text-primary">StoryMaster:</span> $4.99/mo = 365 interactive stories/year
+            </div>
+          </div>
+        </div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
           {plans.map((plan) => (
@@ -94,40 +110,66 @@ export const SubscriptionModal = ({ open, onOpenChange, currentPlan }: Subscript
               <CardContent>
                 <ul className="space-y-2 mb-6">
                   <li className="flex items-center">
-                    <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
+                    <CheckCircle className="w-4 h-4 text-green-500 mr-2 flex-shrink-0" />
                     <span className="text-sm">
                       {plan.features.daily_stories === -1 
                         ? "Unlimited daily stories" 
-                        : `${plan.features.daily_stories} stories per day`}
+                        : `${plan.features.daily_stories} story per day (≈15 min reading)`}
                     </span>
                   </li>
+                  {plan.name === 'free' && (
+                    <li className="flex items-center">
+                      <CheckCircle className="w-4 h-4 text-green-500 mr-2 flex-shrink-0" />
+                      <span className="text-sm">Basic progress tracking</span>
+                    </li>
+                  )}
+                  {plan.features.daily_stories === -1 && (
+                    <>
+                      <li className="flex items-center">
+                        <CheckCircle className="w-4 h-4 text-green-500 mr-2 flex-shrink-0" />
+                        <span className="text-sm font-semibold">📊 Parent Reading Analytics</span>
+                      </li>
+                      <li className="flex items-center">
+                        <CheckCircle className="w-4 h-4 text-green-500 mr-2 flex-shrink-0" />
+                        <span className="text-sm">Reading time & word count tracking</span>
+                      </li>
+                      <li className="flex items-center">
+                        <CheckCircle className="w-4 h-4 text-green-500 mr-2 flex-shrink-0" />
+                        <span className="text-sm">Reading streak visualization</span>
+                      </li>
+                      <li className="flex items-center">
+                        <CheckCircle className="w-4 h-4 text-green-500 mr-2 flex-shrink-0" />
+                        <span className="text-sm">Weekly progress reports</span>
+                      </li>
+                    </>
+                  )}
                   {plan.features.premium_characters && (
                     <li className="flex items-center">
-                      <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
+                      <CheckCircle className="w-4 h-4 text-green-500 mr-2 flex-shrink-0" />
                       <span className="text-sm">Premium character types</span>
                     </li>
                   )}
                   {plan.features.squad_missions && (
                     <li className="flex items-center">
-                      <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
+                      <CheckCircle className="w-4 h-4 text-green-500 mr-2 flex-shrink-0" />
                       <span className="text-sm">Squad missions & multiplayer</span>
                     </li>
                   )}
                   {plan.features.priority_support && (
                     <li className="flex items-center">
-                      <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
+                      <CheckCircle className="w-4 h-4 text-green-500 mr-2 flex-shrink-0" />
                       <span className="text-sm">Priority support</span>
                     </li>
                   )}
                   {plan.features.early_access && (
                     <li className="flex items-center">
-                      <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
+                      <CheckCircle className="w-4 h-4 text-green-500 mr-2 flex-shrink-0" />
                       <span className="text-sm">Early access to new features</span>
                     </li>
                   )}
                   {plan.features.custom_avatars && (
                     <li className="flex items-center">
-                      <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
+                      <CheckCircle className="w-4 h-4 text-green-500 mr-2 flex-shrink-0" />
                       <span className="text-sm">Custom avatar creation</span>
                     </li>
                   )}

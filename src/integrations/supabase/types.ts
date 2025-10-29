@@ -134,6 +134,39 @@ export type Database = {
         }
         Relationships: []
       }
+      reading_sessions: {
+        Row: {
+          completed_at: string
+          created_at: string
+          id: string
+          reading_time_seconds: number
+          story_id: string
+          story_title: string | null
+          user_id: string
+          words_read: number
+        }
+        Insert: {
+          completed_at?: string
+          created_at?: string
+          id?: string
+          reading_time_seconds?: number
+          story_id: string
+          story_title?: string | null
+          user_id: string
+          words_read?: number
+        }
+        Update: {
+          completed_at?: string
+          created_at?: string
+          id?: string
+          reading_time_seconds?: number
+          story_id?: string
+          story_title?: string | null
+          user_id?: string
+          words_read?: number
+        }
+        Relationships: []
+      }
       referrals: {
         Row: {
           bonus_stories_earned: number | null
@@ -392,10 +425,7 @@ export type Database = {
         Args: { _device_id?: string; _user_id?: string }
         Returns: boolean
       }
-      validate_device_context: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      validate_device_context: { Args: never; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"

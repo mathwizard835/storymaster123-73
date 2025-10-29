@@ -21,6 +21,7 @@ import {
   calculateLearningScore,
   getNextLearningGoal 
 } from "@/lib/learningSystem";
+import { trackReadingSession } from "@/lib/readingAnalytics";
 import { InventoryPanel } from "@/components/InventoryPanel";
 import { LearningProgress, type LearningConcept } from "@/components/LearningProgress";
 import { LearningChallengeComponent, type LearningChallenge } from "@/components/LearningChallenge";
@@ -1101,6 +1102,15 @@ const Mission = () => {
                             };
                             
                             saveCompletedStory(completedStoryData);
+                            
+                            // Track reading session for analytics
+                            if (user) {
+                              await trackReadingSession(
+                                savedStory.id,
+                                allScenes[0]?.sceneTitle || scene.sceneTitle || "Untitled Adventure",
+                                allScenes
+                              );
+                            }
                           }
                           
                           await clearCurrentStoryInDatabase(savedStory.id);
