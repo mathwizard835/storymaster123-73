@@ -346,13 +346,17 @@ const Index = () => {
               <p className="text-center text-xs text-muted-foreground mt-3">— Parent testimonial</p>
             </div>
             
-            <div className="flex justify-center items-center gap-8 text-sm text-muted-foreground">
+            <div className="flex justify-center items-center gap-8 text-sm text-muted-foreground flex-wrap">
               {content.benefits.map((benefit, index) => (
                 <div key={index} className="flex items-center gap-2">
                   {benefit.icon}
                   <span><strong>{benefit.text}</strong></span>
                 </div>
               ))}
+              <div className="flex items-center gap-2 bg-primary/20 px-3 py-1.5 rounded-full">
+                <Rocket className="h-4 w-4 text-primary" />
+                <span className="text-primary"><strong>Updated Weekly</strong></span>
+              </div>
             </div>
             
             <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
@@ -460,6 +464,16 @@ const Index = () => {
                     <p className="text-muted-foreground">Watch your child's reading confidence and decision-making skills grow.</p>
                   </div>
                 </div>
+                
+                <div className="flex items-start gap-4">
+                  <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
+                    <Rocket className="h-4 w-4 text-orange-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg mb-2">Always Improving</h3>
+                    <p className="text-muted-foreground">Updated weekly with new features, stories, and improvements based on parent & kid feedback.</p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -527,6 +541,10 @@ const Index = () => {
           <div className="bg-primary/10 border border-primary/30 rounded-2xl p-8 mb-8 text-center">
             <p className="text-2xl font-bold text-primary mb-2">⚡ Limited Time: FREE Trial</p>
             <p className="text-lg">No credit card required • Cancel anytime • Instant access</p>
+            <div className="mt-3 inline-flex items-center gap-2 bg-background/50 px-4 py-2 rounded-full text-sm">
+              <Rocket className="h-4 w-4 text-primary" />
+              <span className="font-semibold">Updated weekly</span> with new features & improvements
+            </div>
           </div>
           
           <div className="flex flex-col sm:flex-row gap-6 justify-center mb-8">
