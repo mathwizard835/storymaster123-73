@@ -206,7 +206,7 @@ const Index = () => {
           name: "StoryMaster Quest",
           applicationCategory: "Educational Game",
           genre: ["Interactive Fiction", "Adventure", "Educational"],
-          audience: "Children, Teens, Parents",
+          audience: "Childrem age 5+, Parents",
         }}
       />
 
@@ -245,7 +245,7 @@ const Index = () => {
       <section className="relative min-h-screen w-full overflow-hidden">
         <img
           src={heroLanding}
-          alt="Diverse children and teens engaged with magical interactive stories"
+          alt="Children engaged with magical interactive stories"
           className="absolute inset-0 h-full w-full object-cover"
           loading="eager"
         />
@@ -340,7 +340,7 @@ const Index = () => {
               <div className="flex flex-col sm:flex-row justify-center items-center gap-4 text-sm">
                 <span className="flex items-center gap-2 text-center">
                   <span className="text-lg">📖</span> 
-                  <strong>"My 8-year-old HATED reading. Now he asks for StoryMaster every night!"</strong>
+                  <strong>"My 7-year-old HATED reading. Now he asks for StoryMaster every night!"</strong>
                 </span>
               </div>
               <p className="text-center text-xs text-muted-foreground mt-3">— Parent testimonial</p>
