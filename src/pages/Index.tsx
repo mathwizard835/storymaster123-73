@@ -197,8 +197,8 @@ const Index = () => {
   return (
     <>
       <Seo
-        title="StoryMaster Quest – AI-Powered Interactive Stories for Kids & Teens"
-        description="Revolutionary AI storytelling that adapts to your child's age, interests, and reading level. Safe, educational, and endlessly engaging adventures await!"
+        title="Stop Reading Battles - StoryMaster Quest Turns Reluctant Readers Into Story Lovers"
+        description="Your child will ASK to read! AI-powered interactive adventures that make reading irresistible. Track real progress. No more bedtime battles."
         canonical="/"
         jsonLd={{
           "@context": "https://schema.org",
@@ -259,14 +259,17 @@ const Index = () => {
               </div>
             )}
             <h1 className="font-heading text-5xl md:text-7xl font-extrabold tracking-tight drop-shadow-2xl mb-6">
-              {content.title.split('!')[0]}!<br />
               <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                {content.heroText}
-              </span>
+                Stop Fighting About Reading.
+              </span><br />
+              <span className="text-foreground">Start Celebrating It.</span>
             </h1>
             <p className="text-xl md:text-2xl text-muted-foreground mb-8 leading-relaxed">
-              <strong className="text-foreground text-2xl">{content.subtitle}</strong><br />
-              <span className="text-lg">🌟 Be The Hero • 🏆 Earn Rewards • 🎮 Choose Your Path</span>
+              <strong className="text-foreground text-2xl">
+                Your child who <span className="text-destructive line-through">refuses to read</span> will{" "}
+                <span className="text-primary">beg for "just one more story!"</span>
+              </strong><br />
+              <span className="text-lg">📚 Track Real Progress • ⏱️ See Time & Words Read • 🔥 Build Reading Streaks</span>
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
@@ -333,11 +336,14 @@ const Index = () => {
             </div>
             
             <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 mb-8 border border-white/20">
-              <p className="text-lg font-semibold text-center mb-3">✨ Start Your Magical Story Adventure Today</p>
-              <div className="flex justify-center items-center gap-6 text-sm">
-                <span className="flex items-center gap-2">🌍 <strong>Explore New Worlds and Characters</strong></span>
-                <span className="flex items-center gap-2">📚 <strong>Fun, Interactive Stories for Kids</strong></span>
+              <p className="text-lg font-semibold text-center mb-3">✨ For Parents of Reluctant Readers</p>
+              <div className="flex flex-col sm:flex-row justify-center items-center gap-4 text-sm">
+                <span className="flex items-center gap-2 text-center">
+                  <span className="text-lg">📖</span> 
+                  <strong>"My 8-year-old HATED reading. Now he asks for StoryMaster every night!"</strong>
+                </span>
               </div>
+              <p className="text-center text-xs text-muted-foreground mt-3">— Parent testimonial</p>
             </div>
             
             <div className="flex justify-center items-center gap-8 text-sm text-muted-foreground">
@@ -360,41 +366,46 @@ const Index = () => {
       <section id="learn-more" className="py-20 px-6 bg-gradient-to-b from-background to-muted/20">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold mb-6">The Screen Time Revolution Parents Have Been Waiting For</h2>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6">
+              Make Reading Your Child's Favorite Activity
+            </h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              <strong className="text-foreground">Finally!</strong> Technology that makes kids smarter, more creative, and better decision-makers. 
-              <span className="text-primary font-semibold">Zero guilt. Maximum growth.</span>
+              <strong className="text-foreground">Stop the bedtime battles.</strong> StoryMaster turns reluctant readers into book lovers.{" "}
+              <span className="text-primary font-semibold">Track real progress parents can celebrate.</span>
             </p>
           </div>
           
           <div className="grid grid-cols-1 tablet:grid-cols-2 lg:grid-cols-3 gap-8 mb-20">
             <div className="glass-panel p-8 text-center hover-scale">
               <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <BookOpen className="h-8 w-8 text-primary" />
+              </div>
+              <h3 className="text-2xl font-bold mb-4">📊 Track Real Reading Progress</h3>
+              <p className="text-muted-foreground">
+                <strong>See measurable growth:</strong> Words read, reading time, speed, and daily streaks. 
+                Finally, proof that screen time is actually helping!
+              </p>
+            </div>
+            
+            <div className="glass-panel p-8 text-center hover-scale">
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Heart className="h-8 w-8 text-primary" />
+              </div>
+              <h3 className="text-2xl font-bold mb-4">💖 They'll Actually Ask to Read</h3>
+              <p className="text-muted-foreground">
+                <strong>No more battles:</strong> Interactive stories so engaging, kids beg for "just one more." 
+                Turn reading from a chore into their favorite activity.
+              </p>
+            </div>
+            
+            <div className="glass-panel p-8 text-center hover-scale">
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Brain className="h-8 w-8 text-primary" />
               </div>
               <h3 className="text-2xl font-bold mb-4">🎯 Perfect For Every Child</h3>
               <p className="text-muted-foreground">
-                <strong>Automatic personalization:</strong> Our AI instantly adapts difficulty, vocabulary, and themes to your child's exact level and interests. No setup required.
-              </p>
-            </div>
-            
-            <div className="glass-panel p-8 text-center hover-scale">
-              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Shield className="h-8 w-8 text-primary" />
-              </div>
-              <h3 className="text-2xl font-bold mb-4">🛡️ 100% Parent-Approved</h3>
-              <p className="text-muted-foreground">
-                <strong>Guaranteed safe:</strong> Zero inappropriate content, no ads. Pure educational storytelling with progress tracking, vocabulary building, and character development.
-              </p>
-            </div>
-            
-            <div className="glass-panel p-8 text-center hover-scale">
-              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Gamepad2 className="h-8 w-8 text-primary" />
-              </div>
-              <h3 className="text-2xl font-bold mb-4">🧠 Builds Real Skills</h3>
-              <p className="text-muted-foreground">
-                <strong>Critical thinking in action:</strong> Every choice develops problem-solving, decision-making, and creative thinking. Your child becomes smarter with every story.
+                <strong>Automatic personalization:</strong> AI adapts to your child's reading level and interests. 
+                Whether they're 6 or 16, stories that match their abilities.
               </p>
             </div>
           </div>

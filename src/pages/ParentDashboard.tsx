@@ -21,6 +21,7 @@ export default function ParentDashboard() {
   const [recentStories, setRecentStories] = useState<any[]>([]);
   const [streakStats, setStreakStats] = useState<any>(null);
   const [readingStats, setReadingStats] = useState<ReadingStats | null>(null);
+  const [childName, setChildName] = useState<string>("Your child");
 
   useEffect(() => {
     const loadData = async () => {
@@ -30,6 +31,11 @@ export default function ParentDashboard() {
       setRecentStories(stories.slice(0, 5));
       setStreakStats(stats);
       setReadingStats(reading);
+      
+      // Get child name from most recent story profile
+      if (stories.length > 0 && stories[0].profile?.name) {
+        setChildName(stories[0].profile.name);
+      }
     };
     loadData();
   }, []);
@@ -126,7 +132,7 @@ export default function ParentDashboard() {
             <div className="flex items-center justify-center gap-3 mb-2">
               <Heart className="h-10 w-10 text-rose-500" />
               <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-amber-600 to-rose-600 bg-clip-text text-transparent">
-                📚 {character.name}'s Reading Journey
+                📚 {childName}'s Reading Journey
               </h1>
               <Heart className="h-10 w-10 text-rose-500" />
             </div>
@@ -189,7 +195,7 @@ export default function ParentDashboard() {
                 {readingStats.currentStreak >= 3 && (
                   <div className="p-4 rounded-lg bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/20">
                     <p className="text-center font-semibold text-green-700 dark:text-green-300">
-                      🎉 Amazing! {character.name} is on a {readingStats.currentStreak}-day reading streak!
+                      🎉 Amazing! {childName} is on a {readingStats.currentStreak}-day reading streak!
                     </p>
                   </div>
                 )}
