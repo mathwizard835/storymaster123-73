@@ -88,12 +88,18 @@ const Mission = () => {
 
     if (!scene?.narrative) return;
 
+    // Select voice based on mode
+    const getVoiceId = () => {
+      if (profile.mode === 'mystery') return '1UllZlmEKI6fNlrEtCx7'; // Mystery mode voice
+      return 'OyKUKANp9Wm5JOBO2Tw3'; // Comedy mode voice (default)
+    };
+
     setAudioLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('text-to-speech', {
         body: { 
           text: scene.narrative,
-          voiceId: 'OyKUKANp9Wm5JOBO2Tw3' // Comedy mode voice
+          voiceId: getVoiceId()
         }
       });
 
@@ -904,7 +910,7 @@ const Mission = () => {
 
               {/* Narrative */}
               <div className="bg-white/10 backdrop-blur-md rounded-lg p-6 border border-white/20">
-                {profile.mode === 'comedy' && (
+                {(profile.mode === 'comedy' || profile.mode === 'mystery') && (
                   <div className="flex justify-end mb-4">
                     <Button
                       onClick={handleReadToMe}
