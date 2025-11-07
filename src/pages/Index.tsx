@@ -371,7 +371,7 @@ const Index = () => {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold mb-6">
-              Make Reading Your Child's Favorite Activity
+              The Screen Time Revolution 
             </h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
               <strong className="text-foreground">Stop the bedtime battles.</strong> StoryMaster turns reluctant readers into book lovers.{" "}
