@@ -91,6 +91,7 @@ const Mission = () => {
     // Select voice based on mode
     const getVoiceId = () => {
       if (profile.mode === 'mystery') return '1UllZlmEKI6fNlrEtCx7'; // Mystery mode voice
+      if (profile.mode === 'explore') return 'XGEkEAwj53E5iuoRDhFu'; // Explore mode voice
       return 'OyKUKANp9Wm5JOBO2Tw3'; // Comedy mode voice (default)
     };
 
@@ -910,7 +911,7 @@ const Mission = () => {
 
               {/* Narrative */}
               <div className="bg-white/10 backdrop-blur-md rounded-lg p-6 border border-white/20">
-                {(profile.mode === 'comedy' || profile.mode === 'mystery') && (
+                {(profile.mode === 'comedy' || profile.mode === 'mystery' || profile.mode === 'explore') && (
                   <div className="flex justify-end mb-4">
                     <Button
                       onClick={handleReadToMe}
