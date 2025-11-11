@@ -5,7 +5,7 @@ import actionHeroBg from "@/assets/action-hero-bg.jpg";
 import socialChampionBg from "@/assets/social-champion-bg.jpg";
 import creativeGeniusBg from "@/assets/creative-genius-bg.jpg";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Zap, Timer, Star, Heart, Shield, Eye, Wand2, PawPrint, Crosshair, Users, Palette, RefreshCw, Play, BookOpen, Trophy, Target, ArrowLeft, Crown, ArrowUp, Volume2, VolumeX } from "lucide-react";
+import { Zap, Timer, Star, Heart, Shield, Eye, Wand2, PawPrint, Crosshair, Users, Palette, RefreshCw, Play, BookOpen, Trophy, Target, ArrowLeft, Crown, ArrowUp, Volume2, VolumeX, Sparkles } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useEffect, useState, useRef } from "react";
@@ -35,6 +35,9 @@ import { ComprehensionQuiz } from "@/components/ComprehensionQuiz";
 import { QuizQuestion } from "@/lib/quizSystem";
 import { supabase } from "@/integrations/supabase/client";
 import confetti from "canvas-confetti";
+import { loadAbilities, getAvailableAbilities, type Ability } from "@/lib/abilities";
+import { AbilityToast } from "@/components/AbilityToast";
+import { AbilityProgressIndicator } from "@/components/AbilityProgressIndicator";
 
 const Mission = () => {
   const navigate = useNavigate();
@@ -71,9 +74,20 @@ const Mission = () => {
   const [audioLoading, setAudioLoading] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   
+  // Abilities state
+  const [availableAbilities, setAvailableAbilities] = useState<Ability[]>([]);
+  
   const { toast } = useToast();
 
   // Initialize learning session for learning mode
+  useEffect(() => {
+    // Load available abilities
+    const abilities = loadAbilities();
+    const available = getAvailableAbilities();
+    setAvailableAbilities(available);
+    console.log(`Loaded ${available.length} available abilities`);
+  }, []);
+
   // Text-to-speech handler
   const handleReadToMe = async () => {
     if (isPlaying) {
@@ -460,6 +474,7 @@ const Mission = () => {
           startedAt: new Date().toISOString(),
           lastPlayedAt: new Date().toISOString(),
           completed: false,
+          choicesMade: 0, // Initialize choice counter
         };
         setSavedStory(newStory);
         setInitialStoryId(newStoryId); // Phase 5: Track initial story ID
@@ -655,6 +670,7 @@ const Mission = () => {
         scenes: updatedScenes,
         currentSceneIndex: updatedIndex,
         lastPlayedAt: new Date().toISOString(),
+        choicesMade: (savedStory.choicesMade || 0) + 1, // Track choices made
       };
       setSavedStory(updatedStory);
       
@@ -905,6 +921,36 @@ const Mission = () => {
                         <p className="max-w-xs">❤️ Status Display: Shows your current story status (display only, not interactive).</p>
                       </TooltipContent>
                     </Tooltip>
+                    
+                    {/* Abilities Indicator */}
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="flex items-center justify-center space-x-2 cursor-help">
+                          <Sparkles className={`h-5 w-5 ${availableAbilities.length > 0 ? 'text-purple-400 animate-pulse' : 'text-gray-500 opacity-50'}`} />
+                          <span className={`text-white font-semibold ${availableAbilities.length > 0 ? 'text-purple-300' : 'text-gray-400 opacity-70'}`}>
+                            {availableAbilities.length}
+                          </span>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" sideOffset={12} className="z-[9999] bg-popover/95 backdrop-blur-sm">
+                        <div className="max-w-xs">
+                          <p className="font-semibold mb-2">✨ Ultra Abilities: {availableAbilities.length}</p>
+                          {availableAbilities.length > 0 ? (
+                            <>
+                              <p className="mb-2">Unlock Ultra Choices with these abilities:</p>
+                              <ul className="text-sm space-y-1">
+                                {availableAbilities.slice(0, 3).map(ability => (
+                                  <li key={ability.id}>• {ability.name}</li>
+                                ))}
+                                {availableAbilities.length > 3 && <li className="text-muted-foreground">...and {availableAbilities.length - 3} more</li>}
+                              </ul>
+                            </>
+                          ) : (
+                            <p>Complete stories with your chosen badges to unlock powerful abilities that enable Ultra Choices!</p>
+                          )}
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
                   </div>
                 </TooltipProvider>
               </div>
@@ -1091,8 +1137,9 @@ const Mission = () => {
                       variant="hero"
                       onClick={async () => {
                         try {
-                          const nextSceneCount = sceneCount;
-                          const { newAchievements, characterProgress, newAbilities } = await markStoryCompleted(profile, nextSceneCount);
+                          const actualChoicesMade = savedStory?.choicesMade || 0;
+                          console.log(`Story completed with ${actualChoicesMade} choices made, ${profile.selectedBadges.length} badges`);
+                          const { newAchievements, characterProgress, newAbilities } = await markStoryCompleted(profile, actualChoicesMade);
                           
                           // Check if this story was already saved to prevent duplicates
                           const existingStories = getCompletedStories();
@@ -1103,7 +1150,7 @@ const Mission = () => {
                               id: savedStory.id,
                               title: allScenes[0]?.sceneTitle || scene.sceneTitle || "Untitled Adventure",
                               completedAt: new Date().toISOString(),
-                              sceneCount: nextSceneCount,
+                              sceneCount: sceneCount,
                               choicesMade: [],
                               profile: savedStory.profile,
                             };
@@ -1179,6 +1226,10 @@ const Mission = () => {
                             const abilityStartDelay = (characterProgress?.leveledUp ? 3500 : 2000) + 
                               (newAchievements?.length || 0) * 2000;
                             
+                            // Update available abilities state
+                            const updatedAbilities = getAvailableAbilities();
+                            setAvailableAbilities(updatedAbilities);
+                            
                             newAbilities.forEach((ability, index) => {
                               setTimeout(() => {
                                 confetti({
@@ -1188,7 +1239,7 @@ const Mission = () => {
                                 });
                                 toast({
                                   title: `✨ New Ability Unlocked!`,
-                                  description: `${ability.name}: ${ability.description} - Unlocks Ultra Choices!`,
+                                  description: <AbilityToast ability={ability} />,
                                   duration: 8000,
                                 });
                               }, abilityStartDelay + (index * 2500));
@@ -1203,7 +1254,7 @@ const Mission = () => {
                           setTimeout(() => {
                             toast({
                               title: "✨ Adventure Saved!",
-                              description: `Your ${nextSceneCount}-scene adventure is now in your gallery!`,
+                              description: `Your ${sceneCount}-scene adventure is now in your gallery!`,
                               duration: 5000,
                             });
                           }, finalDelay);
@@ -1230,6 +1281,13 @@ const Mission = () => {
 
             {/* Sidebar */}
             <div className="space-y-6">
+              {/* Ability Progress Indicator */}
+              <AbilityProgressIndicator 
+                choicesMade={savedStory?.choicesMade || 0}
+                selectedBadges={profile.selectedBadges}
+                availableAbilitiesCount={availableAbilities.length}
+              />
+
               {/* Learning Progress */}
               {profile.mode === 'learning' && learningSession && showLearningProgress && (
                 <LearningProgress

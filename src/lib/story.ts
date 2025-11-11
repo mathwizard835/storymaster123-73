@@ -67,6 +67,7 @@ export type SavedStory = {
   startedAt: string;
   lastPlayedAt: string;
   completed: boolean;
+  choicesMade: number; // Track number of choices made
   quizTaken?: boolean;
   quizScore?: number;
 };

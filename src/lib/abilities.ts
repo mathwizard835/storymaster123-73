@@ -131,7 +131,7 @@ export const checkAndAwardAbilities = (
   const newAbilities: Ability[] = [];
   
   // Award detective ability for solving mysteries
-  if (badges.includes('detective') && choicesMade >= 5 && !hasAbilityCategory('detective')) {
+  if (badges.includes('detective') && choicesMade >= 3 && !hasAbilityCategory('detective')) {
     newAbilities.push(
       awardAbility(
         'Master Detective',
@@ -144,7 +144,7 @@ export const checkAndAwardAbilities = (
   }
   
   // Award combat ability for action heroes
-  if (badges.includes('action') && choicesMade >= 5 && !hasAbilityCategory('combat')) {
+  if (badges.includes('action') && choicesMade >= 3 && !hasAbilityCategory('combat')) {
     newAbilities.push(
       awardAbility(
         'Combat Expert',
@@ -157,7 +157,7 @@ export const checkAndAwardAbilities = (
   }
   
   // Award diplomacy for social champions
-  if (badges.includes('social') && choicesMade >= 5 && !hasAbilityCategory('diplomacy')) {
+  if (badges.includes('social') && choicesMade >= 3 && !hasAbilityCategory('diplomacy')) {
     newAbilities.push(
       awardAbility(
         'Master Diplomat',
@@ -170,7 +170,7 @@ export const checkAndAwardAbilities = (
   }
   
   // Award magic for mystic achievements
-  if (badges.includes('mystic') && choicesMade >= 5 && !hasAbilityCategory('magic')) {
+  if (badges.includes('mystic') && choicesMade >= 3 && !hasAbilityCategory('magic')) {
     newAbilities.push(
       awardAbility(
         'Arcane Master',
@@ -183,7 +183,7 @@ export const checkAndAwardAbilities = (
   }
   
   // Award survival for beast masters
-  if (badges.includes('beast') && choicesMade >= 5 && !hasAbilityCategory('survival')) {
+  if (badges.includes('beast') && choicesMade >= 3 && !hasAbilityCategory('survival')) {
     newAbilities.push(
       awardAbility(
         'Wilderness Expert',
@@ -196,7 +196,7 @@ export const checkAndAwardAbilities = (
   }
   
   // Award creativity for creative geniuses
-  if (badges.includes('creative') && choicesMade >= 5 && !hasAbilityCategory('creativity')) {
+  if (badges.includes('creative') && choicesMade >= 3 && !hasAbilityCategory('creativity')) {
     newAbilities.push(
       awardAbility(
         'Creative Genius',
@@ -209,7 +209,7 @@ export const checkAndAwardAbilities = (
   }
   
   // Award leadership for completing epic stories
-  if (storyCompleted && profile.storyLength === 'epic' && choicesMade >= 8 && !hasAbilityCategory('leadership')) {
+  if (storyCompleted && profile.storyLength === 'epic' && choicesMade >= 5 && !hasAbilityCategory('leadership')) {
     newAbilities.push(
       awardAbility(
         'Natural Leader',

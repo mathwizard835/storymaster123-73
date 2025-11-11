@@ -37,6 +37,7 @@ export const InteractiveChoices = ({
       {choices.map((choice) => {
         const validation = validateChoice(choice.id, { choices } as any, inventory);
         const ChoiceIcon = getChoiceIcon(choice);
+        const isUltra = choice.type === 'ultra';
         
         return (
           <div key={choice.id} className="space-y-2">
@@ -45,14 +46,18 @@ export const InteractiveChoices = ({
               disabled={loading || !validation.valid}
               variant={getChoiceVariant(choice)}
               size="lg"
-              className="w-full text-left h-auto p-4 flex items-start gap-3"
+              className={`w-full text-left h-auto p-4 flex items-start gap-3 transition-all ${
+                isUltra && validation.valid 
+                  ? 'ring-2 ring-purple-500/50 hover:ring-purple-400 shadow-lg shadow-purple-500/20 bg-gradient-to-br from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500' 
+                  : ''
+              }`}
             >
-              <ChoiceIcon className="h-5 w-5 mt-0.5 flex-shrink-0" />
+              <ChoiceIcon className={`h-5 w-5 mt-0.5 flex-shrink-0 ${isUltra ? 'animate-pulse' : ''}`} />
               <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
                   <span className="font-semibold">{choice.text}</span>
                   {choice.type === 'ultra' && (
-                    <Badge variant="default" className="text-xs bg-gradient-to-r from-purple-500 to-pink-500 border-0">
+                    <Badge variant="default" className="text-xs bg-white/20 backdrop-blur-sm border-0 animate-pulse">
                       ✨ Ultra Choice
                     </Badge>
                   )}
@@ -68,8 +73,11 @@ export const InteractiveChoices = ({
                   )}
                 </div>
                 {choice.requiresAbility && (
-                  <div className="text-xs text-purple-600 dark:text-purple-400 font-medium">
-                    🌟 Requires Ability: {choice.requiresAbility}
+                  <div className={`text-xs font-medium flex items-center gap-1 ${
+                    validation.valid ? 'text-purple-200' : 'text-purple-600 dark:text-purple-400'
+                  }`}>
+                    <Sparkles className="h-3 w-3" />
+                    <span>Requires Ability: {choice.requiresAbility}</span>
                   </div>
                 )}
                 {choice.requiresItem && (

@@ -166,7 +166,8 @@ export const loadCurrentStoryFromDatabase = async (): Promise<SavedStory | null>
     currentSceneIndex: data.current_scene_index,
     startedAt: data.started_at,
     lastPlayedAt: data.last_played_at,
-    completed: data.status === 'completed'
+    completed: data.status === 'completed',
+    choicesMade: 0 // Reset choice counter for loaded stories
   };
 };
 
