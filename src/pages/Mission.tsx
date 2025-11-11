@@ -104,6 +104,7 @@ const Mission = () => {
 
     // Select voice based on mode
     const getVoiceId = () => {
+      if (profile.mode === 'thrill') return 'oXo2A4ac7KxEZkQ69ZxG'; // Thrill mode voice
       if (profile.mode === 'mystery') return '1UllZlmEKI6fNlrEtCx7'; // Mystery mode voice
       if (profile.mode === 'explore') return 'XGEkEAwj53E5iuoRDhFu'; // Explore mode voice
       return 'OyKUKANp9Wm5JOBO2Tw3'; // Comedy mode voice (default)
