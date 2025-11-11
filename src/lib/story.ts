@@ -204,7 +204,13 @@ export const getCompletedStories = (): CompletedStory[] => {
 // Mark a story as completed
 export const markStoryCompleted = async (
   profile: Profile,
-  choiceCount: number = 0
+  choiceCount: number = 0,
+  qualityMetrics?: {
+    quizScore?: number;
+    strategicChoices?: number;
+    ultraChoicesUsed?: number;
+    scenes?: Scene[];
+  }
 ): Promise<{ newAchievements: any[]; characterProgress: any; newAbilities: any[] }> => {
   try {
     const deviceId = await getDeviceId();
@@ -237,12 +243,23 @@ export const markStoryCompleted = async (
       profile.storyLength || 'medium'
     );
     
-    // Check and award abilities based on story completion
+    // Check and award abilities based on story completion with quality metrics
+    const scenes = qualityMetrics?.scenes || [];
     const newAbilities = checkAndAwardAbilities(
       profile.selectedBadges,
       choiceCount,
       true,
-      profile
+      profile,
+      {
+        quizScore: qualityMetrics?.quizScore,
+        strategicChoices: qualityMetrics?.strategicChoices || scenes.filter(s => 
+          s.interactiveObjects?.some(obj => obj.highlighted) || 
+          (s.itemsFound && s.itemsFound.length > 0)
+        ).length,
+        ultraChoicesUsed: qualityMetrics?.ultraChoicesUsed || scenes.filter(s => 
+          s.choices.some(c => c.type === 'ultra')
+        ).length
+      }
     );
 
     return { newAchievements, characterProgress, newAbilities };

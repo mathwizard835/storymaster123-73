@@ -126,12 +126,35 @@ export const checkAndAwardAbilities = (
   badges: string[],
   choicesMade: number,
   storyCompleted: boolean,
-  profile: any
+  profile: any,
+  qualityMetrics?: {
+    quizScore?: number;
+    strategicChoices?: number; // Item use, object interactions
+    ultraChoicesUsed?: number;
+  }
 ): Ability[] => {
   const newAbilities: Ability[] = [];
   
-  // Award detective ability for solving mysteries
-  if (badges.includes('detective') && choicesMade >= 3 && !hasAbilityCategory('detective')) {
+  // Calculate quality score (0-100)
+  const quizPerformance = qualityMetrics?.quizScore || 0;
+  const strategicChoiceBonus = (qualityMetrics?.strategicChoices || 0) * 10;
+  const ultraChoiceBonus = (qualityMetrics?.ultraChoicesUsed || 0) * 20;
+  const qualityScore = Math.min(100, quizPerformance + strategicChoiceBonus + ultraChoiceBonus);
+  
+  // Require: 3+ meaningful choices AND (80+ quiz score OR 2+ strategic/ultra choices OR story completion with decent engagement)
+  const hasQualityEngagement = storyCompleted && (
+    quizPerformance >= 80 || 
+    (qualityMetrics?.strategicChoices || 0) >= 2 ||
+    (qualityMetrics?.ultraChoicesUsed || 0) >= 1 ||
+    choicesMade >= 5
+  );
+  
+  if (!hasQualityEngagement) {
+    return []; // No abilities without quality engagement
+  }
+  
+  // Award detective ability for solving mysteries with good comprehension
+  if (badges.includes('detective') && !hasAbilityCategory('detective')) {
     newAbilities.push(
       awardAbility(
         'Master Detective',
@@ -144,7 +167,7 @@ export const checkAndAwardAbilities = (
   }
   
   // Award combat ability for action heroes
-  if (badges.includes('action') && choicesMade >= 3 && !hasAbilityCategory('combat')) {
+  if (badges.includes('action') && !hasAbilityCategory('combat')) {
     newAbilities.push(
       awardAbility(
         'Combat Expert',
@@ -157,7 +180,7 @@ export const checkAndAwardAbilities = (
   }
   
   // Award diplomacy for social champions
-  if (badges.includes('social') && choicesMade >= 3 && !hasAbilityCategory('diplomacy')) {
+  if (badges.includes('social') && !hasAbilityCategory('diplomacy')) {
     newAbilities.push(
       awardAbility(
         'Master Diplomat',
@@ -170,7 +193,7 @@ export const checkAndAwardAbilities = (
   }
   
   // Award magic for mystic achievements
-  if (badges.includes('mystic') && choicesMade >= 3 && !hasAbilityCategory('magic')) {
+  if (badges.includes('mystic') && !hasAbilityCategory('magic')) {
     newAbilities.push(
       awardAbility(
         'Arcane Master',
@@ -183,7 +206,7 @@ export const checkAndAwardAbilities = (
   }
   
   // Award survival for beast masters
-  if (badges.includes('beast') && choicesMade >= 3 && !hasAbilityCategory('survival')) {
+  if (badges.includes('beast') && !hasAbilityCategory('survival')) {
     newAbilities.push(
       awardAbility(
         'Wilderness Expert',
@@ -196,7 +219,7 @@ export const checkAndAwardAbilities = (
   }
   
   // Award creativity for creative geniuses
-  if (badges.includes('creative') && choicesMade >= 3 && !hasAbilityCategory('creativity')) {
+  if (badges.includes('creative') && !hasAbilityCategory('creativity')) {
     newAbilities.push(
       awardAbility(
         'Creative Genius',
@@ -208,8 +231,8 @@ export const checkAndAwardAbilities = (
     );
   }
   
-  // Award leadership for completing epic stories
-  if (storyCompleted && profile.storyLength === 'epic' && choicesMade >= 5 && !hasAbilityCategory('leadership')) {
+  // Award leadership for completing epic stories with excellence
+  if (profile.storyLength === 'epic' && qualityScore >= 70 && !hasAbilityCategory('leadership')) {
     newAbilities.push(
       awardAbility(
         'Natural Leader',

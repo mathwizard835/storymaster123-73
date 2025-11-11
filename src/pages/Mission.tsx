@@ -1139,7 +1139,14 @@ const Mission = () => {
                         try {
                           const actualChoicesMade = savedStory?.choicesMade || 0;
                           console.log(`Story completed with ${actualChoicesMade} choices made, ${profile.selectedBadges.length} badges`);
-                          const { newAchievements, characterProgress, newAbilities } = await markStoryCompleted(profile, actualChoicesMade);
+                          const { newAchievements, characterProgress, newAbilities } = await markStoryCompleted(
+                            profile, 
+                            actualChoicesMade,
+                            {
+                              quizScore: savedStory?.quizScore,
+                              scenes: allScenes
+                            }
+                          );
                           
                           // Check if this story was already saved to prevent duplicates
                           const existingStories = getCompletedStories();

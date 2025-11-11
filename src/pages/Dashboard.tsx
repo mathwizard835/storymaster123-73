@@ -262,42 +262,76 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          {/* Abilities Section */}
+          {/* Abilities Section - Enhanced Showcase */}
           {abilities.abilities.length > 0 && (
-            <Card className="glass-panel border-0 mb-8">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Sparkles className="h-5 w-5 text-purple-500" />
-                  Ultra Abilities
-                </CardTitle>
-                <CardDescription>
-                  Special abilities earned through your adventures. Use them to unlock Ultra choices in future stories!
-                </CardDescription>
+            <Card className="relative overflow-hidden border-0 mb-8 bg-gradient-to-br from-purple-900/20 via-pink-900/20 to-purple-900/20 backdrop-blur-sm">
+              {/* Animated background effect */}
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 via-pink-500/5 to-purple-500/5 animate-pulse" />
+              
+              <CardHeader className="relative">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-3 text-2xl">
+                      <div className="relative">
+                        <Sparkles className="h-7 w-7 text-purple-400 animate-pulse" />
+                        <Sparkles className="h-4 w-4 text-pink-400 absolute -top-1 -right-1 animate-pulse" style={{ animationDelay: '0.5s' }} />
+                      </div>
+                      Ultra Abilities
+                    </CardTitle>
+                    <CardDescription className="mt-2">
+                      Earned through excellence: master comprehension, strategic thinking, and heroic choices
+                    </CardDescription>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                      {abilities.abilities.length}
+                    </div>
+                    <div className="text-xs text-muted-foreground">Total Earned</div>
+                  </div>
+                </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="relative">
                 {availableAbilities.length > 0 && (
-                  <div className="mb-6">
-                    <h3 className="font-semibold text-sm mb-3 text-green-600 dark:text-green-400">
-                      ✨ Available ({availableAbilities.length})
-                    </h3>
-                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  <div className="mb-8">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="font-bold text-lg flex items-center gap-2">
+                        <span className="inline-block w-3 h-3 rounded-full bg-gradient-to-r from-green-400 to-emerald-400 animate-pulse" />
+                        Ready for Action
+                      </h3>
+                      <Badge className="bg-green-500/20 text-green-300 border-green-500/30">
+                        {availableAbilities.length} Available
+                      </Badge>
+                    </div>
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                       {availableAbilities.map((ability) => (
                         <div 
                           key={ability.id}
-                          className="relative overflow-hidden rounded-lg border bg-card p-4 hover:shadow-lg transition-shadow"
+                          className="group relative overflow-hidden rounded-xl border border-purple-500/30 bg-gradient-to-br from-background/95 to-background/80 backdrop-blur-sm p-5 hover:border-purple-500/60 hover:shadow-xl hover:shadow-purple-500/20 transition-all duration-300 hover:scale-105"
                         >
-                          <div className="flex items-start gap-3">
-                            <div className={`flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br ${getAbilityCategoryColor(ability.category)} flex items-center justify-center`}>
-                              <Sparkles className="h-5 w-5 text-white" />
+                          {/* Shine effect */}
+                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+                          
+                          <div className="relative">
+                            <div className="flex items-start gap-4 mb-3">
+                              <div className={`flex-shrink-0 w-14 h-14 rounded-xl bg-gradient-to-br ${getAbilityCategoryColor(ability.category)} flex items-center justify-center shadow-lg transform group-hover:rotate-12 transition-transform`}>
+                                <Sparkles className="h-7 w-7 text-white" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h4 className="font-bold text-base mb-1 text-foreground">{ability.name}</h4>
+                                <Badge variant="outline" className="text-xs capitalize font-medium border-purple-500/30 text-purple-300">
+                                  {ability.category}
+                                </Badge>
+                              </div>
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <h4 className="font-semibold text-sm mb-1">{ability.name}</h4>
-                              <Badge variant="outline" className="text-xs capitalize mb-2">
-                                {ability.category}
-                              </Badge>
-                              <p className="text-xs text-muted-foreground line-clamp-2">
-                                {ability.description}
-                              </p>
+                            <p className="text-sm text-muted-foreground leading-relaxed mb-3">
+                              {ability.description}
+                            </p>
+                            <div className="flex items-center justify-between text-xs text-muted-foreground pt-3 border-t border-border/30">
+                              <span>From: {ability.storySource}</span>
+                              <span className="flex items-center gap-1 text-green-400">
+                                <Crown className="h-3 w-3" />
+                                Active
+                              </span>
                             </div>
                           </div>
                         </div>
@@ -308,27 +342,30 @@ const Dashboard = () => {
                 
                 {usedAbilities.length > 0 && (
                   <div>
-                    <h3 className="font-semibold text-sm mb-3 text-muted-foreground">
-                      Used ({usedAbilities.length})
-                    </h3>
-                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="font-semibold text-sm flex items-center gap-2 text-muted-foreground">
+                        <span className="inline-block w-2 h-2 rounded-full bg-muted" />
+                        Previously Used
+                      </h3>
+                      <Badge variant="outline" className="text-muted-foreground">
+                        {usedAbilities.length} Consumed
+                      </Badge>
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                       {usedAbilities.map((ability) => (
                         <div 
                           key={ability.id}
-                          className="relative overflow-hidden rounded-lg border bg-muted/30 p-4 opacity-60"
+                          className="relative overflow-hidden rounded-lg border border-border/30 bg-muted/20 backdrop-blur-sm p-3 opacity-50"
                         >
-                          <div className="flex items-start gap-3">
-                            <div className={`flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br ${getAbilityCategoryColor(ability.category)} flex items-center justify-center opacity-50`}>
+                          <div className="flex items-center gap-3">
+                            <div className={`flex-shrink-0 w-10 h-10 rounded-lg bg-gradient-to-br ${getAbilityCategoryColor(ability.category)} flex items-center justify-center opacity-40`}>
                               <Sparkles className="h-5 w-5 text-white" />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <h4 className="font-semibold text-sm mb-1">{ability.name}</h4>
-                              <Badge variant="outline" className="text-xs capitalize mb-2">
+                              <h4 className="font-semibold text-xs mb-1 truncate">{ability.name}</h4>
+                              <Badge variant="outline" className="text-xs capitalize opacity-60">
                                 {ability.category}
                               </Badge>
-                              <p className="text-xs text-muted-foreground line-clamp-2">
-                                {ability.description}
-                              </p>
                             </div>
                           </div>
                         </div>
