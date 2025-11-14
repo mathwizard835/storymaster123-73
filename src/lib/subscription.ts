@@ -9,6 +9,7 @@ export type SubscriptionPlan = {
     daily_stories: number;
     premium_characters: boolean;
     squad_missions: boolean;
+    read_to_me?: boolean;
     priority_support?: boolean;
     early_access?: boolean;
     custom_avatars?: boolean;
