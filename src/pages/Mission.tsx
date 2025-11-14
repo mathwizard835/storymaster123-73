@@ -958,7 +958,7 @@ const Mission = () => {
 
               {/* Narrative */}
               <div className="bg-white/10 backdrop-blur-md rounded-lg p-6 border border-white/20">
-                {(profile.mode === 'comedy' || profile.mode === 'mystery' || profile.mode === 'explore') && (
+                {(profile.mode === 'comedy' || profile.mode === 'mystery' || profile.mode === 'explore' || profile.mode === 'thrill') && (
                   <div className="flex justify-end mb-4">
                     <Button
                       onClick={handleReadToMe}
