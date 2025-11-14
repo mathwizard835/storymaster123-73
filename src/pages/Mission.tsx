@@ -88,6 +88,17 @@ const Mission = () => {
     const available = getAvailableAbilities();
     setAvailableAbilities(available);
     console.log(`Loaded ${available.length} available abilities`);
+
+    // Load user subscription plan
+    getUserSubscription().then(({ plan }) => {
+      setUserPlan(plan);
+    });
+
+    // Load saved theme
+    const savedTheme = localStorage.getItem("premium-theme");
+    if (savedTheme && savedTheme !== "default") {
+      document.documentElement.setAttribute("data-theme", savedTheme);
+    }
   }, []);
 
   // Text-to-speech handler

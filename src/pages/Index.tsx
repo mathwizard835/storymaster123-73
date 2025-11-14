@@ -96,6 +96,17 @@ const Index = () => {
           <div className="absolute inset-0 bg-gradient-to-b from-background/20 to-background/60" />
 
           <section className="relative z-10 flex min-h-screen items-center justify-center px-6">
+            {/* Floating Premium Button - Top Right */}
+            {user && (
+              <Button
+                onClick={() => navigate("/subscription")}
+                className="fixed top-8 right-8 h-16 w-16 rounded-full bg-gradient-to-br from-purple-600 via-purple-500 to-pink-500 hover:from-purple-700 hover:via-purple-600 hover:to-pink-600 shadow-2xl shadow-purple-500/50 hover:shadow-purple-500/80 transition-all duration-500 hover:scale-110 border-2 border-white/20 z-50 flex items-center justify-center group animate-pulse hover:animate-none"
+                aria-label="Upgrade to Premium"
+              >
+                <Crown className="h-7 w-7 text-white group-hover:scale-125 transition-transform duration-300" />
+              </Button>
+            )}
+
             <div className="max-w-3xl text-center animate-enter">
               {user && (
                 <div className="mb-8 flex items-center justify-end">
@@ -279,6 +290,17 @@ const Index = () => {
         <div className="absolute inset-0 bg-gradient-to-b from-background/30 via-background/50 to-background/70" />
 
         <div className="relative z-10 flex min-h-screen items-center justify-center px-6">
+          {/* Floating Premium Button - Top Right */}
+          {user && (
+            <Button
+              onClick={() => navigate("/subscription")}
+              className="fixed top-8 right-8 h-16 w-16 rounded-full bg-gradient-to-br from-purple-600 via-purple-500 to-pink-500 hover:from-purple-700 hover:via-purple-600 hover:to-pink-600 shadow-2xl shadow-purple-500/50 hover:shadow-purple-500/80 transition-all duration-500 hover:scale-110 border-2 border-white/20 z-50 flex items-center justify-center group animate-pulse hover:animate-none"
+              aria-label="Upgrade to Premium"
+            >
+              <Crown className="h-7 w-7 text-white group-hover:scale-125 transition-transform duration-300" />
+            </Button>
+          )}
+
           <div className="max-w-4xl text-center animate-enter">
             {user && (
               <div className="mb-8 flex items-center justify-end">
