@@ -38,6 +38,7 @@ import confetti from "canvas-confetti";
 import { loadAbilities, getAvailableAbilities, type Ability } from "@/lib/abilities";
 import { AbilityToast } from "@/components/AbilityToast";
 import { AbilityProgressIndicator } from "@/components/AbilityProgressIndicator";
+import { getUserSubscription } from "@/lib/subscription";
 
 const Mission = () => {
   const navigate = useNavigate();
@@ -45,6 +46,7 @@ const Mission = () => {
   const { user } = useAuth();
   const isTrialMode = searchParams.get('trial') === 'true';
   const [profile, setProfile] = useState(null);
+  const [userPlan, setUserPlan] = useState<any>(null);
   const [scene, setScene] = useState<Scene | null>(null);
   const [allScenes, setAllScenes] = useState<Scene[]>([]);
   const [sceneCount, setSceneCount] = useState(1);
@@ -958,32 +960,45 @@ const Mission = () => {
 
               {/* Narrative */}
               <div className="bg-white/10 backdrop-blur-md rounded-lg p-6 border border-white/20">
-                {(profile.mode === 'comedy' || profile.mode === 'mystery' || profile.mode === 'explore' || profile.mode === 'thrill') && (
+              {(profile.mode === 'comedy' || profile.mode === 'mystery' || profile.mode === 'explore' || profile.mode === 'thrill') && (
                   <div className="flex justify-end mb-4">
-                    <Button
-                      onClick={handleReadToMe}
-                      disabled={audioLoading}
-                      variant="secondary"
-                      size="sm"
-                      className="gap-2"
-                    >
-                      {audioLoading ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
-                          Loading...
-                        </>
-                      ) : isPlaying ? (
-                        <>
-                          <VolumeX className="h-4 w-4" />
-                          Stop Reading
-                        </>
-                      ) : (
-                        <>
-                          <Volume2 className="h-4 w-4" />
-                          Read to Me
-                        </>
-                      )}
-                    </Button>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span>
+                            <Button
+                              onClick={handleReadToMe}
+                              disabled={audioLoading || !userPlan?.features?.read_to_me}
+                              variant="secondary"
+                              size="sm"
+                              className="gap-2"
+                            >
+                              {audioLoading ? (
+                                <>
+                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                                  Loading...
+                                </>
+                              ) : isPlaying ? (
+                                <>
+                                  <VolumeX className="h-4 w-4" />
+                                  Stop Reading
+                                </>
+                              ) : (
+                                <>
+                                  <Volume2 className="h-4 w-4" />
+                                  Read to Me
+                                </>
+                              )}
+                            </Button>
+                          </span>
+                        </TooltipTrigger>
+                        {!userPlan?.features?.read_to_me && (
+                          <TooltipContent>
+                            <p>Only Available for Premium</p>
+                          </TooltipContent>
+                        )}
+                      </Tooltip>
+                    </TooltipProvider>
                   </div>
                 )}
                 <div className="prose prose-invert max-w-none tablet:max-w-prose tablet:mx-auto">

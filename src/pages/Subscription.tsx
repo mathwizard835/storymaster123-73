@@ -33,7 +33,7 @@ export default function Subscription() {
       "Full character customization",
       "Progress tracking & achievements",
       "Ability system & Ultra Choices",
-      "Offline mode"
+      "Priority support"
     ]
   };
 
