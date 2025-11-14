@@ -52,21 +52,32 @@ export default function Subscription() {
   const handleSubscribe = async () => {
     setLoading(true);
     
-    // Simulate subscription - in real implementation, this would integrate with in-app purchase
+    // Structured for In-App Purchase integration
+    // Currently simulates the experience by granting premium access
     try {
-      // For now, we'll create a mock plan ID based on selection
-      const mockPlanId = readToMeEnabled ? 'premium-with-audio' : 'premium-basic';
+      // Plan IDs from database:
+      // premium: $4.99/mo - 10 stories/day, no read-to-me
+      // premium_plus: $5.99/mo - 10 stories/day, with read-to-me
+      const planId = readToMeEnabled 
+        ? '1f07f062-4123-4e51-9c5d-9541836a8f1c' // premium_plus
+        : 'c414127f-af31-47f1-b474-d59bf4956e1f'; // premium
       
-      toast({
-        title: "🎉 Subscription Preview",
-        description: `This would subscribe you to the $${totalPrice.toFixed(2)}/mo plan. In-app purchase integration coming soon!`,
-      });
-
-      // Uncomment when real IAP is implemented:
-      // const success = await upgradeSubscription(mockPlanId);
-      // if (success) {
-      //   navigate('/dashboard');
-      // }
+      // TODO: When implementing real IAP, replace this with:
+      // 1. Trigger platform-specific purchase flow (App Store/Google Play)
+      // 2. Verify purchase with platform
+      // 3. Then call upgradeSubscription with verified receipt
+      
+      const success = await upgradeSubscription(planId);
+      
+      if (success) {
+        toast({
+          title: "🎉 Welcome to Premium!",
+          description: `You now have access to all premium features!`,
+        });
+        navigate('/dashboard');
+      } else {
+        throw new Error('Subscription upgrade failed');
+      }
     } catch (error) {
       toast({
         title: "Error",
