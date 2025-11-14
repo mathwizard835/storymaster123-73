@@ -35,7 +35,7 @@ import { ComprehensionQuiz } from "@/components/ComprehensionQuiz";
 import { QuizQuestion } from "@/lib/quizSystem";
 import { supabase } from "@/integrations/supabase/client";
 import confetti from "canvas-confetti";
-import { loadAbilities, getAvailableAbilities, type Ability } from "@/lib/abilities";
+import { loadAbilities, getAvailableAbilities, type Ability, awardAbility, type AbilityCategory } from "@/lib/abilities";
 import { AbilityToast } from "@/components/AbilityToast";
 import { AbilityProgressIndicator } from "@/components/AbilityProgressIndicator";
 import { getUserSubscription } from "@/lib/subscription";
@@ -532,6 +532,87 @@ const Mission = () => {
   }, [sceneCount]);
 
   const [choiceLoading, setChoiceLoading] = useState(false);
+
+  // Handler to unlock abilities instantly
+  const handleUnlockAbility = () => {
+    if (!profile || !savedStory) return;
+
+    const badge = profile.selectedBadges?.[0];
+    if (!badge) return;
+
+    // Map badge to ability details
+    const abilityMapping: Record<string, { name: string; description: string; category: AbilityCategory; icon: string }> = {
+      'detective': {
+        name: 'Master Detective',
+        description: 'Your keen observation skills unlock hidden clues and reveal secrets others miss',
+        category: 'detective',
+        icon: 'search'
+      },
+      'action': {
+        name: 'Combat Expert',
+        description: 'Years of training allow you to face any threat with confidence and skill',
+        category: 'combat',
+        icon: 'sword'
+      },
+      'social': {
+        name: 'Master Diplomat',
+        description: 'Your words can sway even the hardest hearts and resolve conflicts peacefully',
+        category: 'diplomacy',
+        icon: 'users'
+      },
+      'mystic': {
+        name: 'Arcane Master',
+        description: 'You command powerful magical forces and understand mystical energies',
+        category: 'magic',
+        icon: 'wand'
+      },
+      'beast': {
+        name: 'Wilderness Expert',
+        description: 'You can survive and thrive in any environment, bonding with nature itself',
+        category: 'survival',
+        icon: 'leaf'
+      },
+      'creative': {
+        name: 'Creative Genius',
+        description: 'Your imagination finds unique solutions that others would never consider',
+        category: 'creativity',
+        icon: 'lightbulb'
+      }
+    };
+
+    const abilityInfo = abilityMapping[badge];
+    if (!abilityInfo) return;
+
+    // Award the ability
+    const newAbility = awardAbility(
+      abilityInfo.name,
+      abilityInfo.description,
+      abilityInfo.category,
+      'Current Adventure',
+      abilityInfo.icon
+    );
+
+    // Update available abilities state
+    const updatedAbilities = getAvailableAbilities();
+    setAvailableAbilities(updatedAbilities);
+
+    // Show success toast with ability details
+    toast({
+      title: "🎉 Ability Unlocked!",
+      description: (
+        <AbilityToast ability={newAbility} />
+      ),
+      duration: 8000,
+    });
+
+    // Trigger confetti celebration
+    confetti({
+      particleCount: 150,
+      spread: 100,
+      origin: { y: 0.6 },
+      colors: ['#a855f7', '#ec4899', '#8b5cf6']
+    });
+  };
 
   const onChoose = async (choiceId: string) => {
     if (!profile || !scene || !savedStory || choiceLoading) return;
@@ -1320,6 +1401,7 @@ const Mission = () => {
                 choicesMade={savedStory?.choicesMade || 0}
                 selectedBadges={profile.selectedBadges}
                 availableAbilitiesCount={availableAbilities.length}
+                onUnlockAbility={handleUnlockAbility}
               />
 
               {/* Learning Progress */}
