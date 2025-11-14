@@ -100,6 +100,62 @@ All colors MUST be HSL.
     --gradient-choice: linear-gradient(135deg, hsl(var(--brand-2) / 0.95), hsl(var(--brand) / 0.95) 60%, hsl(var(--brand-3) / 0.95));
     --shadow-glow: 0 10px 30px -10px hsl(var(--brand) / 0.5), 0 0 40px hsl(var(--brand-2) / 0.35);
   }
+
+  /* Premium Theme: Ocean Wave */
+  [data-theme="ocean"] {
+    --background: 200 30% 8%;
+    --foreground: 180 30% 95%;
+    --card: 200 30% 10%;
+    --card-foreground: 180 30% 95%;
+    --brand: 180 85% 50%;
+    --brand-2: 200 90% 55%;
+    --brand-3: 160 75% 45%;
+    --primary: var(--brand);
+    --gradient-hero: linear-gradient(135deg, hsl(160 75% 35%), hsl(180 85% 45%), hsl(200 90% 50%));
+    --gradient-choice: linear-gradient(135deg, hsl(200 90% 50%), hsl(180 85% 45%), hsl(160 75% 35%));
+  }
+
+  /* Premium Theme: Purple Dream */
+  [data-theme="purple"] {
+    --background: 270 40% 8%;
+    --foreground: 270 20% 95%;
+    --card: 270 40% 10%;
+    --card-foreground: 270 20% 95%;
+    --brand: 270 85% 60%;
+    --brand-2: 290 80% 65%;
+    --brand-3: 250 75% 55%;
+    --primary: var(--brand);
+    --gradient-hero: linear-gradient(135deg, hsl(250 75% 45%), hsl(270 85% 55%), hsl(290 80% 60%));
+    --gradient-choice: linear-gradient(135deg, hsl(290 80% 60%), hsl(270 85% 55%), hsl(250 75% 45%));
+  }
+
+  /* Premium Theme: Pink Sunset */
+  [data-theme="pink"] {
+    --background: 330 30% 8%;
+    --foreground: 330 20% 95%;
+    --card: 330 30% 10%;
+    --card-foreground: 330 20% 95%;
+    --brand: 330 85% 60%;
+    --brand-2: 310 75% 65%;
+    --brand-3: 350 80% 55%;
+    --primary: var(--brand);
+    --gradient-hero: linear-gradient(135deg, hsl(310 75% 50%), hsl(330 85% 55%), hsl(350 80% 50%));
+    --gradient-choice: linear-gradient(135deg, hsl(350 80% 50%), hsl(330 85% 55%), hsl(310 75% 50%));
+  }
+
+  /* Premium Theme: Deep Blue */
+  [data-theme="deepblue"] {
+    --background: 220 50% 8%;
+    --foreground: 220 30% 95%;
+    --card: 220 50% 10%;
+    --card-foreground: 220 30% 95%;
+    --brand: 220 85% 55%;
+    --brand-2: 240 80% 60%;
+    --brand-3: 200 75% 50%;
+    --primary: var(--brand);
+    --gradient-hero: linear-gradient(135deg, hsl(200 75% 40%), hsl(220 85% 50%), hsl(240 80% 55%));
+    --gradient-choice: linear-gradient(135deg, hsl(240 80% 55%), hsl(220 85% 50%), hsl(200 75% 40%));
+  }
 }
 
 @layer base {

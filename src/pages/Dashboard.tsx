@@ -14,6 +14,8 @@ import { ArrowLeft, Trophy, BookOpen, Star, Crown, Zap, Plus, TrendingUp, Play, 
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { PremiumThemeSelector } from "@/components/PremiumThemeSelector";
+import { getUserSubscription } from "@/lib/subscription";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -26,12 +28,17 @@ const Dashboard = () => {
   const [recentStories, setRecentStories] = useState<DatabaseStory[]>([]);
   const [hasActiveStory, setHasActiveStory] = useState(false);
   const [showNewStoryDialog, setShowNewStoryDialog] = useState(false);
+  const [isPremium, setIsPremium] = useState(false);
   
   // Refresh data when component mounts
   useEffect(() => {
     const loadData = async () => {
       if (user) {
         try {
+          // Check premium status
+          const { plan } = await getUserSubscription();
+          setIsPremium(plan?.name === "premium" || plan?.name === "premium_plus");
+
           // Check if we need to sync from database
           const { needsSync, syncProgressFromDatabase } = await import('@/lib/syncProgress');
           const shouldSync = await needsSync();
@@ -164,10 +171,14 @@ const Dashboard = () => {
               </Button>
               <Button 
                 onClick={() => navigate("/subscription")}
-                className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 text-white shadow-lg shadow-purple-500/50 hover:shadow-purple-500/70 transition-all duration-300 hover:scale-105 font-semibold"
+                className={`flex items-center gap-2 ${
+                  isPremium 
+                    ? "bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 shadow-lg shadow-amber-500/50 hover:shadow-amber-500/70" 
+                    : "bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 shadow-lg shadow-purple-500/50 hover:shadow-purple-500/70"
+                } text-white transition-all duration-300 hover:scale-105 font-semibold`}
               >
                 <Crown className="h-5 w-5" />
-                Upgrade to Premium
+                {isPremium ? "Premium Member ✨" : "Upgrade to Premium"}
               </Button>
             </div>
             <div className="flex gap-2">
@@ -209,12 +220,25 @@ const Dashboard = () => {
           </div>
 
           <div className="mb-8">
-            <h1 className="font-heading text-3xl md:text-4xl font-extrabold">
-              🎮 Adventure Dashboard
-            </h1>
+            <div className="flex items-center gap-3 flex-wrap">
+              <h1 className="font-heading text-3xl md:text-4xl font-extrabold">
+                🎮 Adventure Dashboard
+              </h1>
+              {isPremium && (
+                <Badge className="bg-gradient-to-r from-amber-500 to-yellow-500 text-white border-0 shadow-lg shadow-amber-500/30 px-3 py-1 text-sm font-semibold">
+                  <Crown className="h-3.5 w-3.5 mr-1" />
+                  PREMIUM
+                </Badge>
+              )}
+            </div>
             <p className="text-muted-foreground mt-2">
-              Your stories, achievements, and progress
+              {isPremium ? "Enjoying your premium experience with custom themes!" : "Your stories, achievements, and progress"}
             </p>
+          </div>
+
+          {/* Premium Theme Selector */}
+          <div className="mb-8">
+            <PremiumThemeSelector />
           </div>
 
           {/* Character Stats */}
