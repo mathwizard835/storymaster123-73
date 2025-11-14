@@ -17,6 +17,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { getCompletedStories } from "@/lib/story";
 import { loadCurrentStoryFromDatabase } from "@/lib/databaseStory";
 import { isMobilePlatform } from "@/lib/mobileFeatures";
+import { getStoriesRemaining } from "@/lib/subscription";
 import {
   BookOpen,
   Star,
@@ -122,7 +123,14 @@ const Index = () => {
                     <Button
                       size="xl"
                       variant="outline"
-                      onClick={() => setShowNewStoryDialog(true)}
+                      onClick={async () => {
+                        const { canPlay } = await getStoriesRemaining();
+                        if (!canPlay) {
+                          navigate("/subscription");
+                        } else {
+                          setShowNewStoryDialog(true);
+                        }
+                      }}
                       aria-label="Start new adventure"
                       className="flex items-center gap-2"
                     >
@@ -134,9 +142,14 @@ const Index = () => {
                   <Button
                     size="xl"
                     variant="hero"
-                    onClick={() => {
+                    onClick={async () => {
                       if (user) {
-                        navigate("/profile?new=true");
+                        const { canPlay } = await getStoriesRemaining();
+                        if (!canPlay) {
+                          navigate("/subscription");
+                        } else {
+                          navigate("/profile?new=true");
+                        }
                       } else if (isMobilePlatform()) {
                         navigate("/profile?trial=true");
                       } else {

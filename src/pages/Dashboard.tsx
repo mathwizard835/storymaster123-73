@@ -153,14 +153,23 @@ const Dashboard = () => {
       <main className="min-h-screen bg-background">
         <div className="container py-8">
           <div className="flex items-center justify-between mb-8">
-            <Button 
-              variant="ghost" 
-              onClick={() => navigate("/")}
-              className="flex items-center gap-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back to Home
-            </Button>
+            <div className="flex items-center gap-4">
+              <Button 
+                variant="ghost" 
+                onClick={() => navigate("/")}
+                className="flex items-center gap-2"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back to Home
+              </Button>
+              <Button 
+                onClick={() => navigate("/subscription")}
+                className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 text-white shadow-lg shadow-purple-500/50 hover:shadow-purple-500/70 transition-all duration-300 hover:scale-105 font-semibold"
+              >
+                <Crown className="h-5 w-5" />
+                Upgrade to Premium
+              </Button>
+            </div>
             <div className="flex gap-2">
               <Button 
                 onClick={() => navigate("/parent-dashboard")}
@@ -179,8 +188,12 @@ const Dashboard = () => {
                 Continue Your Quest
               </Button>
               <Button 
-                onClick={() => {
-                  if (hasActiveStory) {
+                onClick={async () => {
+                  const { getStoriesRemaining } = await import('@/lib/subscription');
+                  const { canPlay } = await getStoriesRemaining();
+                  if (!canPlay) {
+                    navigate("/subscription");
+                  } else if (hasActiveStory) {
                     setShowNewStoryDialog(true);
                   } else {
                     navigate("/profile?new=true");
