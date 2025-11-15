@@ -59,31 +59,21 @@ export const getUserSubscription = async (): Promise<{
         subscription_plans (*)
       `)
       .eq('device_id', deviceId)
-      .in('status', ['active', 'cancelled'])
+      .eq('status', 'active')
       .single();
 
     if (error && error.code !== 'PGRST116') throw error;
 
-    // Check if subscription has expired
-    if (data?.expires_at && new Date(data.expires_at) < new Date()) {
-      return { subscription: null, plan: null };
-    }
-
-    // Only return if status is active or cancelled but not yet expired
-    if (data && (data.status === 'active' || data.status === 'cancelled')) {
-      return {
-        subscription: {
-          ...data,
-          status: data.status as 'active' | 'cancelled' | 'expired'
-        },
-        plan: data.subscription_plans ? {
-          ...data.subscription_plans,
-          features: data.subscription_plans.features as SubscriptionPlan['features']
-        } : null
-      };
-    }
-
-    return { subscription: null, plan: null };
+    return {
+      subscription: data ? {
+        ...data,
+        status: data.status as 'active' | 'cancelled' | 'expired'
+      } : null,
+      plan: data?.subscription_plans ? {
+        ...data.subscription_plans,
+        features: data.subscription_plans.features as SubscriptionPlan['features']
+      } : null
+    };
   } catch (e) {
     console.error("Failed to fetch user subscription", e);
     return { subscription: null, plan: null };
@@ -122,26 +112,9 @@ export const cancelSubscription = async (): Promise<boolean> => {
   try {
     const deviceId = await getDeviceId();
     
-    // Get current subscription to calculate end of billing period
-    const { data: currentSub } = await supabase
-      .from('user_subscriptions')
-      .select('starts_at')
-      .eq('device_id', deviceId)
-      .eq('status', 'active')
-      .single();
-
-    if (!currentSub) return false;
-
-    // Set expiration to 1 month from start date (end of billing period)
-    const expiresAt = new Date(currentSub.starts_at);
-    expiresAt.setMonth(expiresAt.getMonth() + 1);
-
     const { error } = await supabase
       .from('user_subscriptions')
-      .update({ 
-        status: 'cancelled',
-        expires_at: expiresAt.toISOString()
-      })
+      .update({ status: 'cancelled' })
       .eq('device_id', deviceId)
       .eq('status', 'active');
 
