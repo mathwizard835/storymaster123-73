@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { CheckCircle, X, Volume2, BookOpen, Star, Sparkles, Crown, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { upgradeSubscription, getUserSubscription, cancelSubscription, type SubscriptionPlan } from "@/lib/subscription";
+import { upgradeSubscription, getUserSubscription, type SubscriptionPlan } from "@/lib/subscription";
 
 export default function Subscription() {
   const navigate = useNavigate();
@@ -89,35 +89,6 @@ export default function Subscription() {
     }
   };
 
-  const handleCancelSubscription = async () => {
-    if (!confirm("Are you sure you want to cancel your subscription? You'll lose access to premium features.")) {
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const success = await cancelSubscription();
-
-      if (success) {
-        toast({
-          title: "Subscription Cancelled",
-          description: "Your subscription has been cancelled successfully.",
-        });
-        await loadCurrentPlan();
-      } else {
-        throw new Error("Cancellation failed");
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to cancel subscription. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary via-purple-900 to-indigo-900">
       {/* Header */}
@@ -134,61 +105,8 @@ export default function Subscription() {
       </div>
 
       <div className="max-w-6xl mx-auto px-4 py-12">
-        {/* Active Subscription View */}
-        {currentPlan && (
-          <div className="max-w-2xl mx-auto mb-8">
-            <Card className="bg-white/10 backdrop-blur-md border-white/20">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-2xl text-white">{currentPlan.name}</CardTitle>
-                    <CardDescription className="text-purple-200">
-                      ${currentPlan.price_monthly}/month - Active Subscription
-                    </CardDescription>
-                  </div>
-                  <Badge className="bg-green-500/20 text-green-300 border-green-500/30">
-                    Active
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <p className="text-purple-200 text-sm font-semibold">Your Plan Includes:</p>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-white">
-                      <CheckCircle className="h-4 w-4 text-green-400" />
-                      <span>{currentPlan.features.daily_stories} stories per day</span>
-                    </div>
-                    {currentPlan.features.read_to_me && (
-                      <div className="flex items-center gap-2 text-white">
-                        <CheckCircle className="h-4 w-4 text-green-400" />
-                        <span>Read-To-Me feature</span>
-                      </div>
-                    )}
-                    {currentPlan.features.priority_support && (
-                      <div className="flex items-center gap-2 text-white">
-                        <CheckCircle className="h-4 w-4 text-green-400" />
-                        <span>Priority support</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <Button
-                  onClick={handleCancelSubscription}
-                  disabled={loading}
-                  variant="destructive"
-                  className="w-full"
-                >
-                  {loading ? "Cancelling..." : "Cancel Subscription"}
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {/* Hero Section - Only show if no active subscription */}
-        {!currentPlan && (
-          <div className="text-center mb-12 space-y-4">
+        {/* Hero Section */}
+        <div className="text-center mb-12 space-y-4">
           <div className="inline-flex items-center gap-2 bg-yellow-500/20 text-yellow-300 px-4 py-2 rounded-full border border-yellow-500/30 mb-4">
             <Sparkles className="h-4 w-4" />
             <span className="text-sm font-semibold">Limited Time Offer</span>
@@ -205,12 +123,10 @@ export default function Subscription() {
             Transform screen time into reading time with personalized, interactive stories that adapt to your child's
             choices.
           </p>
-          </div>
-        )}
+        </div>
 
-        {/* Value Comparison - Only show if no active subscription */}
-        {!currentPlan && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12 max-w-4xl mx-auto">
+        {/* Value Comparison */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12 max-w-4xl mx-auto">
           <Card className="bg-white/5 backdrop-blur-sm border-white/10 relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-red-500/10 to-transparent" />
             <CardHeader className="relative">
@@ -254,15 +170,13 @@ export default function Subscription() {
             </CardHeader>
             <CardContent className="relative">
               <p className="text-3xl font-bold text-white mb-2">$4.99</p>
-              <p className="text-green-300 text-sm font-semibold">120+ stories/year</p>
+              <p className="text-green-300 text-sm font-semibold">100+ stories/year</p>
             </CardContent>
           </Card>
-          </div>
-        )}
+        </div>
 
-        {/* Main Pricing Card - Only show if no active subscription */}
-        {!currentPlan && (
-          <Card className="max-w-2xl mx-auto bg-white/10 backdrop-blur-md border-white/20 overflow-hidden">
+        {/* Main Pricing Card */}
+        <Card className="max-w-2xl mx-auto bg-white/10 backdrop-blur-md border-white/20 overflow-hidden">
           <CardHeader className="text-center border-b border-white/10 pb-6">
             <div className="flex justify-center mb-4">
               <div className="bg-gradient-to-r from-purple-500 to-pink-500 p-4 rounded-full">
@@ -300,7 +214,9 @@ export default function Subscription() {
                   </div>
                   <div>
                     <h3 className="text-xl font-bold text-white">Add Read-To-Me</h3>
-                    <p className="text-purple-300 text-sm">Perfect For Kids who don't like Reading but love Listening</p>
+                    <p className="text-purple-300 text-sm">
+                      Perfect For Kids who don't like Reading but love Listening
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
@@ -344,8 +260,7 @@ export default function Subscription() {
               <p className="text-center text-purple-300 text-sm">Cancel anytime. No long-term commitment required.</p>
             </div>
           </CardContent>
-          </Card>
-        )}
+        </Card>
 
         {/* Social Proof */}
         <div className="max-w-4xl mx-auto mt-12 grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
