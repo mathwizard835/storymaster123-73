@@ -351,19 +351,22 @@ export default function Subscription() {
         </Card>
         )}
 
-        {/* Social Proof */}
+        {/* Premium Guarantees */}
         <div className="max-w-4xl mx-auto mt-12 grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
           <div className="bg-white/5 backdrop-blur-sm rounded-lg p-6 border border-white/10">
-            <div className="text-4xl font-bold text-white mb-2">10,000+</div>
-            <div className="text-purple-300">Happy Families</div>
+            <div className="text-4xl mb-2">🎯</div>
+            <div className="text-xl font-bold text-white mb-2">No Commitment</div>
+            <div className="text-purple-300">Cancel anytime, no questions asked</div>
           </div>
           <div className="bg-white/5 backdrop-blur-sm rounded-lg p-6 border border-white/10">
-            <div className="text-4xl font-bold text-white mb-2">4.9★</div>
-            <div className="text-purple-300">Average Rating</div>
+            <div className="text-4xl mb-2">⚡</div>
+            <div className="text-xl font-bold text-white mb-2">Instant Access</div>
+            <div className="text-purple-300">Start reading immediately after signup</div>
           </div>
           <div className="bg-white/5 backdrop-blur-sm rounded-lg p-6 border border-white/10">
-            <div className="text-4xl font-bold text-white mb-2">500K+</div>
-            <div className="text-purple-300">Stories Created</div>
+            <div className="text-4xl mb-2">🛡️</div>
+            <div className="text-xl font-bold text-white mb-2">Safe Content</div>
+            <div className="text-purple-300">Age-appropriate stories, always</div>
           </div>
         </div>
 
