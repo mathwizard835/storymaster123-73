@@ -535,10 +535,18 @@ const Mission = () => {
 
   // Handler to unlock abilities instantly
   const handleUnlockAbility = () => {
-    if (!profile || !savedStory) return;
+    console.log('🎯 handleUnlockAbility called', { profile, savedStory, badges: profile?.selectedBadges });
+    
+    if (!profile || !savedStory) {
+      console.error('❌ Missing profile or savedStory', { profile, savedStory });
+      return;
+    }
 
     const badge = profile.selectedBadges?.[0];
-    if (!badge) return;
+    if (!badge) {
+      console.error('❌ No badge found', { selectedBadges: profile.selectedBadges });
+      return;
+    }
 
     // Map badge to ability details
     const abilityMapping: Record<string, { name: string; description: string; category: AbilityCategory; icon: string }> = {
@@ -577,17 +585,16 @@ const Mission = () => {
         description: 'Your imagination finds unique solutions that others would never consider',
         category: 'creativity',
         icon: 'lightbulb'
-      },
-      'space': {
-        name: 'Space Pioneer',
-        description: 'You boldly venture into the unknown, leading expeditions across the cosmos',
-        category: 'leadership',
-        icon: 'rocket'
       }
     };
 
     const abilityInfo = abilityMapping[badge];
-    if (!abilityInfo) return;
+    if (!abilityInfo) {
+      console.error('❌ No ability info for badge', { badge });
+      return;
+    }
+
+    console.log('✅ Awarding ability', abilityInfo);
 
     // Award the ability
     const newAbility = awardAbility(
@@ -598,8 +605,11 @@ const Mission = () => {
       abilityInfo.icon
     );
 
+    console.log('✅ Ability awarded', newAbility);
+
     // Update available abilities state
     const updatedAbilities = getAvailableAbilities();
+    console.log('✅ Updated abilities', updatedAbilities);
     setAvailableAbilities(updatedAbilities);
 
     // Show success toast with ability details

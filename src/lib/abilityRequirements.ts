@@ -60,8 +60,7 @@ export const getRequirementForBadge = (badge: string): AbilityRequirement => {
     'social': 'diplomacy',
     'beast': 'survival',
     'mystic': 'magic',
-    'creative': 'creativity',
-    'space': 'leadership'
+    'creative': 'creativity'
   };
   
   const category = mapping[badge] || 'combat';
