@@ -15,7 +15,7 @@ import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { PremiumThemeSelector } from "@/components/PremiumThemeSelector";
-import { getUserSubscription } from "@/lib/subscription";
+import { getUserSubscription, getStoriesRemaining } from "@/lib/subscription";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -203,7 +203,7 @@ const Dashboard = () => {
                   const { getStoriesRemaining } = await import('@/lib/subscription');
                   const { canPlay } = await getStoriesRemaining();
                   if (!canPlay) {
-                    navigate("/subscription");
+                    navigate("/subscription?limitReached=true");
                   } else if (hasActiveStory) {
                     setShowNewStoryDialog(true);
                   } else {
@@ -638,7 +638,16 @@ const Dashboard = () => {
               Cancel
             </Button>
             <Button
-              onClick={() => {
+              onClick={async () => {
+                // Check story limits again before actually starting
+                const { canPlay } = await getStoriesRemaining();
+                
+                if (!canPlay) {
+                  setShowNewStoryDialog(false);
+                  navigate("/subscription?limitReached=true");
+                  return;
+                }
+                
                 setShowNewStoryDialog(false);
                 navigate('/profile?new=true');
               }}
