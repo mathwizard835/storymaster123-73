@@ -6,7 +6,12 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { CheckCircle, X, Volume2, BookOpen, Star, Sparkles, Crown, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { upgradeSubscription, cancelSubscription, getUserSubscription, type SubscriptionPlan } from "@/lib/subscription";
+import {
+  upgradeSubscription,
+  cancelSubscription,
+  getUserSubscription,
+  type SubscriptionPlan,
+} from "@/lib/subscription";
 
 export default function Subscription() {
   const navigate = useNavigate();
@@ -50,18 +55,23 @@ export default function Subscription() {
   const totalPrice = readToMeEnabled ? basePlan.price + readToMeUpsell.price : basePlan.price;
 
   const handleCancelSubscription = async () => {
-    if (!confirm("Are you sure you want to cancel your subscription? You'll lose access to premium features at the end of your billing period.")) {
+    if (
+      !confirm(
+        "Are you sure you want to cancel your subscription? You'll lose access to premium features at the end of your billing period.",
+      )
+    ) {
       return;
     }
 
     setLoading(true);
     try {
       const success = await cancelSubscription();
-      
+
       if (success) {
         toast({
           title: "Subscription Cancelled",
-          description: "Your subscription has been cancelled. You'll retain access until the end of your billing period.",
+          description:
+            "Your subscription has been cancelled. You'll retain access until the end of your billing period.",
         });
         await loadCurrentPlan();
       } else {
@@ -85,8 +95,8 @@ export default function Subscription() {
     // Currently simulates the experience by granting premium access
     try {
       // Plan IDs from database:
-      // premium: $4.99/mo - 10 stories/day, no read-to-me
-      // premium_plus: $5.99/mo - 10 stories/day, with read-to-me
+      // premium: $4.99/mo - 10 stories/month, no read-to-me
+      // premium_plus: $5.99/mo - 10 stories/month, with read-to-me
       const planId = readToMeEnabled
         ? "1f07f062-4123-4e51-9c5d-9541836a8f1c" // premium_plus
         : "c414127f-af31-47f1-b474-d59bf4956e1f"; // premium
@@ -213,142 +223,142 @@ export default function Subscription() {
         {/* Value Comparison - Only show if no premium */}
         {!currentPlan && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12 max-w-4xl mx-auto">
-          <Card className="bg-white/5 backdrop-blur-sm border-white/10 relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-red-500/10 to-transparent" />
-            <CardHeader className="relative">
-              <div className="flex items-center justify-between mb-2">
-                <BookOpen className="h-8 w-8 text-red-400" />
-                <X className="h-5 w-5 text-red-400" />
-              </div>
-              <CardTitle className="text-white text-lg">Traditional Books</CardTitle>
-            </CardHeader>
-            <CardContent className="relative">
-              <p className="text-3xl font-bold text-white mb-2">$10-15</p>
-              <p className="text-purple-300 text-sm">per book, often unread</p>
-            </CardContent>
-          </Card>
+            <Card className="bg-white/5 backdrop-blur-sm border-white/10 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-red-500/10 to-transparent" />
+              <CardHeader className="relative">
+                <div className="flex items-center justify-between mb-2">
+                  <BookOpen className="h-8 w-8 text-red-400" />
+                  <X className="h-5 w-5 text-red-400" />
+                </div>
+                <CardTitle className="text-white text-lg">Traditional Books</CardTitle>
+              </CardHeader>
+              <CardContent className="relative">
+                <p className="text-3xl font-bold text-white mb-2">$10-15</p>
+                <p className="text-purple-300 text-sm">per book, often unread</p>
+              </CardContent>
+            </Card>
 
-          <Card className="bg-white/5 backdrop-blur-sm border-white/10 relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 to-transparent" />
-            <CardHeader className="relative">
-              <div className="flex items-center justify-between mb-2">
-                <Star className="h-8 w-8 text-orange-400" />
-                <X className="h-5 w-5 text-orange-400" />
-              </div>
-              <CardTitle className="text-white text-lg">Other Apps</CardTitle>
-            </CardHeader>
-            <CardContent className="relative">
-              <p className="text-3xl font-bold text-white mb-2">$9.99+</p>
-              <p className="text-purple-300 text-sm">no personalization</p>
-            </CardContent>
-          </Card>
+            <Card className="bg-white/5 backdrop-blur-sm border-white/10 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 to-transparent" />
+              <CardHeader className="relative">
+                <div className="flex items-center justify-between mb-2">
+                  <Star className="h-8 w-8 text-orange-400" />
+                  <X className="h-5 w-5 text-orange-400" />
+                </div>
+                <CardTitle className="text-white text-lg">Other Apps</CardTitle>
+              </CardHeader>
+              <CardContent className="relative">
+                <p className="text-3xl font-bold text-white mb-2">$9.99+</p>
+                <p className="text-purple-300 text-sm">no personalization</p>
+              </CardContent>
+            </Card>
 
-          <Card className="bg-gradient-to-br from-green-500/20 to-emerald-500/20 backdrop-blur-sm border-green-400/30 relative overflow-hidden ring-2 ring-green-400/50">
-            <div className="absolute top-0 right-0 bg-green-400 text-green-900 px-3 py-1 text-xs font-bold rounded-bl-lg">
-              BEST VALUE
-            </div>
-            <CardHeader className="relative">
-              <div className="flex items-center justify-between mb-2">
-                <Crown className="h-8 w-8 text-green-400" />
-                <CheckCircle className="h-5 w-5 text-green-400" />
+            <Card className="bg-gradient-to-br from-green-500/20 to-emerald-500/20 backdrop-blur-sm border-green-400/30 relative overflow-hidden ring-2 ring-green-400/50">
+              <div className="absolute top-0 right-0 bg-green-400 text-green-900 px-3 py-1 text-xs font-bold rounded-bl-lg">
+                BEST VALUE
               </div>
-              <CardTitle className="text-white text-lg">StoryMaster</CardTitle>
-            </CardHeader>
-            <CardContent className="relative">
-              <p className="text-3xl font-bold text-white mb-2">$4.99</p>
-              <p className="text-green-300 text-sm font-semibold">100+ stories/year</p>
-            </CardContent>
-          </Card>
-        </div>
+              <CardHeader className="relative">
+                <div className="flex items-center justify-between mb-2">
+                  <Crown className="h-8 w-8 text-green-400" />
+                  <CheckCircle className="h-5 w-5 text-green-400" />
+                </div>
+                <CardTitle className="text-white text-lg">StoryMaster</CardTitle>
+              </CardHeader>
+              <CardContent className="relative">
+                <p className="text-3xl font-bold text-white mb-2">$4.99</p>
+                <p className="text-green-300 text-sm font-semibold">100+ stories/year</p>
+              </CardContent>
+            </Card>
+          </div>
         )}
 
         {/* Main Pricing Card - Only show if no premium */}
         {!currentPlan && (
-        <Card className="max-w-2xl mx-auto bg-white/10 backdrop-blur-md border-white/20 overflow-hidden">
-          <CardHeader className="text-center border-b border-white/10 pb-6">
-            <div className="flex justify-center mb-4">
-              <div className="bg-gradient-to-r from-purple-500 to-pink-500 p-4 rounded-full">
-                <BookOpen className="h-12 w-12 text-white" />
-              </div>
-            </div>
-            <CardTitle className="text-3xl text-white mb-2">StoryMaster Premium</CardTitle>
-            <CardDescription className="text-purple-200 text-lg">Unlimited interactive storytelling</CardDescription>
-          </CardHeader>
-
-          <CardContent className="p-8 space-y-8">
-            {/* Base Plan Features */}
-            <div>
-              <div className="flex items-baseline justify-center mb-6">
-                <span className="text-5xl font-bold text-white">${basePlan.price}</span>
-                <span className="text-purple-300 ml-2">/month</span>
-              </div>
-
-              <div className="space-y-3">
-                {basePlan.features.map((feature, index) => (
-                  <div key={index} className="flex items-start gap-3">
-                    <CheckCircle className="h-5 w-5 text-green-400 shrink-0 mt-0.5" />
-                    <span className="text-white">{feature}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Read-To-Me Upsell */}
-            <div className="border-t border-white/10 pt-8">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="bg-purple-500/20 p-2 rounded-lg">
-                    <Volume2 className="h-6 w-6 text-purple-300" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-white">Add Read-To-Me</h3>
-                    <p className="text-purple-300 text-sm">
-                      Perfect For Kids who don't like Reading but love Listening
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <span className="text-2xl font-bold text-white">+${readToMeUpsell.price}</span>
-                  <Switch
-                    checked={readToMeEnabled}
-                    onCheckedChange={setReadToMeEnabled}
-                    className="data-[state=checked]:bg-purple-500"
-                  />
+          <Card className="max-w-2xl mx-auto bg-white/10 backdrop-blur-md border-white/20 overflow-hidden">
+            <CardHeader className="text-center border-b border-white/10 pb-6">
+              <div className="flex justify-center mb-4">
+                <div className="bg-gradient-to-r from-purple-500 to-pink-500 p-4 rounded-full">
+                  <BookOpen className="h-12 w-12 text-white" />
                 </div>
               </div>
+              <CardTitle className="text-3xl text-white mb-2">StoryMaster Premium</CardTitle>
+              <CardDescription className="text-purple-200 text-lg">Unlimited interactive storytelling</CardDescription>
+            </CardHeader>
 
-              {readToMeEnabled && (
-                <div className="space-y-3 bg-purple-900/20 rounded-lg p-4 border border-purple-500/20">
-                  {readToMeUpsell.features.map((feature, index) => (
+            <CardContent className="p-8 space-y-8">
+              {/* Base Plan Features */}
+              <div>
+                <div className="flex items-baseline justify-center mb-6">
+                  <span className="text-5xl font-bold text-white">${basePlan.price}</span>
+                  <span className="text-purple-300 ml-2">/month</span>
+                </div>
+
+                <div className="space-y-3">
+                  {basePlan.features.map((feature, index) => (
                     <div key={index} className="flex items-start gap-3">
-                      <CheckCircle className="h-5 w-5 text-purple-400 shrink-0 mt-0.5" />
-                      <span className="text-purple-200">{feature}</span>
+                      <CheckCircle className="h-5 w-5 text-green-400 shrink-0 mt-0.5" />
+                      <span className="text-white">{feature}</span>
                     </div>
                   ))}
                 </div>
-              )}
-            </div>
-
-            {/* Total & CTA */}
-            <div className="border-t border-white/10 pt-8 space-y-4">
-              <div className="flex items-center justify-between text-2xl">
-                <span className="text-white font-semibold">Total</span>
-                <span className="text-white font-bold">${totalPrice.toFixed(2)}/month</span>
               </div>
 
-              <Button
-                onClick={handleSubscribe}
-                disabled={loading}
-                size="lg"
-                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold text-lg py-6"
-              >
-                {loading ? "Processing..." : "Start Your Adventure"}
-              </Button>
+              {/* Read-To-Me Upsell */}
+              <div className="border-t border-white/10 pt-8">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-purple-500/20 p-2 rounded-lg">
+                      <Volume2 className="h-6 w-6 text-purple-300" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-white">Add Read-To-Me</h3>
+                      <p className="text-purple-300 text-sm">
+                        Perfect For Kids who don't like Reading but love Listening
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <span className="text-2xl font-bold text-white">+${readToMeUpsell.price}</span>
+                    <Switch
+                      checked={readToMeEnabled}
+                      onCheckedChange={setReadToMeEnabled}
+                      className="data-[state=checked]:bg-purple-500"
+                    />
+                  </div>
+                </div>
 
-              <p className="text-center text-purple-300 text-sm">Cancel anytime. No long-term commitment required.</p>
-            </div>
+                {readToMeEnabled && (
+                  <div className="space-y-3 bg-purple-900/20 rounded-lg p-4 border border-purple-500/20">
+                    {readToMeUpsell.features.map((feature, index) => (
+                      <div key={index} className="flex items-start gap-3">
+                        <CheckCircle className="h-5 w-5 text-purple-400 shrink-0 mt-0.5" />
+                        <span className="text-purple-200">{feature}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Total & CTA */}
+              <div className="border-t border-white/10 pt-8 space-y-4">
+                <div className="flex items-center justify-between text-2xl">
+                  <span className="text-white font-semibold">Total</span>
+                  <span className="text-white font-bold">${totalPrice.toFixed(2)}/month</span>
+                </div>
+
+                <Button
+                  onClick={handleSubscribe}
+                  disabled={loading}
+                  size="lg"
+                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold text-lg py-6"
+                >
+                  {loading ? "Processing..." : "Start Your Adventure"}
+                </Button>
+
+                <p className="text-center text-purple-300 text-sm">Cancel anytime. No long-term commitment required.</p>
+              </div>
             </CardContent>
-        </Card>
+          </Card>
         )}
 
         {/* Social Proof */}
