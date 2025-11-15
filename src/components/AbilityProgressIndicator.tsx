@@ -1,5 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
 import { Sparkles, Lock } from "lucide-react";
 import { AbilityCategory } from "@/lib/abilities";
 import { getRequirementForBadge, getRarityColor } from "@/lib/abilityRequirements";
@@ -23,6 +24,25 @@ export const AbilityProgressIndicator = ({
   const progress = Math.min((choicesMade / requiredChoices) * 100, 100);
   const canEarnAbility = choicesMade >= requiredChoices;
   const rarityColor = getRarityColor(requirement.rarity);
+
+  console.log('🎯 AbilityProgressIndicator render:', {
+    choicesMade,
+    requiredChoices,
+    canEarnAbility,
+    availableAbilitiesCount,
+    badge,
+    hasUnlockCallback: !!onUnlockAbility
+  });
+
+  const handleButtonClick = () => {
+    console.log('🔥 UNLOCK BUTTON CLICKED!');
+    if (!onUnlockAbility) {
+      console.error('❌ onUnlockAbility is undefined!');
+      return;
+    }
+    console.log('✅ Calling onUnlockAbility...');
+    onUnlockAbility();
+  };
 
   const getBadgeAbilityName = (badge: string): string => {
     const mapping: Record<string, string> = {
@@ -62,6 +82,7 @@ export const AbilityProgressIndicator = ({
   }
 
   if (canEarnAbility && availableAbilitiesCount === 0) {
+    console.log('🎨 Rendering UNLOCK BUTTON state');
     return (
       <Card className={`bg-gradient-to-br ${rarityColor}/40 border-purple-400/50 p-4`}>
         <div className="flex flex-col gap-3">
@@ -79,13 +100,14 @@ export const AbilityProgressIndicator = ({
               </div>
             </div>
           </div>
-          <button
-            onClick={onUnlockAbility}
+          <Button
+            type="button"
+            onClick={handleButtonClick}
             className={`w-full bg-gradient-to-r ${rarityColor} hover:opacity-90 text-white font-bold py-3 px-4 rounded-lg transition-all transform hover:scale-105 shadow-lg hover:shadow-purple-500/50 flex items-center justify-center gap-2`}
           >
             <Sparkles className="h-5 w-5 animate-pulse" />
             Ready to Unlock! Gain Access to Ultra Choices
-          </button>
+          </Button>
         </div>
       </Card>
     );
