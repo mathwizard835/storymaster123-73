@@ -19,14 +19,16 @@ export default function Subscription() {
   const [readToMeEnabled, setReadToMeEnabled] = useState(false);
   const [loading, setLoading] = useState(false);
   const [currentPlan, setCurrentPlan] = useState<SubscriptionPlan | null>(null);
+  const [subscription, setSubscription] = useState<any>(null);
 
   useEffect(() => {
     loadCurrentPlan();
   }, []);
 
   const loadCurrentPlan = async () => {
-    const { plan } = await getUserSubscription();
+    const { plan, subscription } = await getUserSubscription();
     setCurrentPlan(plan);
+    setSubscription(subscription);
   };
 
   const basePlan = {
@@ -153,7 +155,9 @@ export default function Subscription() {
                   <Crown className="h-12 w-12 text-white" />
                 </div>
               </div>
-              <CardTitle className="text-3xl text-white mb-2">Active Premium Subscription</CardTitle>
+              <CardTitle className="text-3xl text-white mb-2">
+                {subscription?.status === 'cancelled' ? 'Premium Subscription (Cancelling)' : 'Active Premium Subscription'}
+              </CardTitle>
               <CardDescription className="text-green-200 text-lg">{currentPlan.name}</CardDescription>
             </CardHeader>
 
@@ -161,6 +165,13 @@ export default function Subscription() {
               <div className="text-center">
                 <div className="text-5xl font-bold text-white mb-2">${currentPlan.price_monthly}</div>
                 <div className="text-green-300">per month</div>
+                {subscription?.status === 'cancelled' && subscription?.expires_at && (
+                  <div className="mt-4 p-3 bg-red-500/20 border border-red-400/30 rounded-lg">
+                    <p className="text-red-300 font-semibold">
+                      Expires on {new Date(subscription.expires_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-3 bg-white/5 rounded-lg p-4 border border-white/10">
@@ -182,18 +193,26 @@ export default function Subscription() {
                 </div>
               </div>
 
-              <Button
-                onClick={handleCancelSubscription}
-                variant="outline"
-                size="lg"
-                className="w-full border-red-500/50 text-red-400 hover:bg-red-500/10 hover:text-red-300"
-              >
-                Cancel Subscription
-              </Button>
+              {subscription?.status !== 'cancelled' && (
+                <Button
+                  onClick={handleCancelSubscription}
+                  variant="outline"
+                  size="lg"
+                  className="w-full border-red-500/50 text-red-400 hover:bg-red-500/10 hover:text-red-300"
+                >
+                  Cancel Subscription
+                </Button>
+              )}
 
-              <p className="text-center text-green-300 text-sm">
-                Your subscription will remain active until the end of the billing period.
-              </p>
+              {subscription?.status === 'cancelled' ? (
+                <p className="text-center text-green-300 text-sm">
+                  Your subscription has been cancelled and will remain active until the end of your billing period.
+                </p>
+              ) : (
+                <p className="text-center text-green-300 text-sm">
+                  Your subscription will remain active until the end of the billing period if cancelled.
+                </p>
+              )}
             </CardContent>
           </Card>
         )}
