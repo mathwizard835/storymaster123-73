@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,9 +11,11 @@ import { upgradeSubscription, cancelSubscription, getUserSubscription, type Subs
 export default function Subscription() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
   const [readToMeEnabled, setReadToMeEnabled] = useState(false);
   const [loading, setLoading] = useState(false);
   const [currentPlan, setCurrentPlan] = useState<SubscriptionPlan | null>(null);
+  const limitReached = searchParams.get('limitReached') === 'true';
 
   useEffect(() => {
     loadCurrentPlan();
@@ -134,6 +136,36 @@ export default function Subscription() {
       </div>
 
       <div className="max-w-6xl mx-auto px-4 py-12">
+        {/* Story Limit Reached Alert */}
+        {limitReached && !currentPlan && (
+          <Card className="max-w-2xl mx-auto mb-8 border-2 border-amber-500/50 bg-gradient-to-br from-amber-900/20 to-orange-900/20 backdrop-blur-md">
+            <CardHeader className="text-center pb-4">
+              <div className="flex justify-center mb-4">
+                <div className="bg-gradient-to-r from-amber-500 to-orange-500 p-3 rounded-full">
+                  <Crown className="h-10 w-10 text-white" />
+                </div>
+              </div>
+              <CardTitle className="text-2xl text-white mb-2">
+                You've Reached Your Story Limit
+              </CardTitle>
+              <CardDescription className="text-purple-200 text-base">
+                You've completed all 3 free stories for this month!
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="bg-white/5 backdrop-blur-sm rounded-lg p-4 border border-white/10 mb-4">
+                <div className="flex items-start gap-3 text-purple-100">
+                  <Sparkles className="h-5 w-5 text-amber-500 flex-shrink-0 mt-1" />
+                  <div>
+                    <p className="font-semibold">Your stories will reset on the 1st of next month</p>
+                    <p className="text-sm text-purple-300 mt-1">Or upgrade to Premium now for unlimited stories!</p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Current Subscription Status - Only show if user has premium */}
         {currentPlan && (
           <Card className="max-w-2xl mx-auto mb-12 bg-gradient-to-br from-green-500/20 to-emerald-500/20 backdrop-blur-md border-green-400/30 overflow-hidden">
