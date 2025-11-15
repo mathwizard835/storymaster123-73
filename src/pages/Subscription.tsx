@@ -33,50 +33,50 @@ export default function Subscription() {
       "Full character customization",
       "Progress tracking & achievements",
       "Ability system & Ultra Choices",
-      "Priority support"
-    ]
+      "Priority support",
+    ],
   };
 
   const readToMeUpsell = {
-    price: 1.00,
+    price: 1.0,
     features: [
-      "Professional voice narration for all stories",
+      "Professional voice narration for all stories - Perfect for Kids who don't like reading but love to listen ",
       "Multiple voice options per story mode",
       "High-quality AI voices",
-      "Perfect for bedtime reading"
-    ]
+      "Perfect for bedtime reading",
+    ],
   };
 
   const totalPrice = readToMeEnabled ? basePlan.price + readToMeUpsell.price : basePlan.price;
 
   const handleSubscribe = async () => {
     setLoading(true);
-    
+
     // Structured for In-App Purchase integration
     // Currently simulates the experience by granting premium access
     try {
       // Plan IDs from database:
       // premium: $4.99/mo - 10 stories/day, no read-to-me
       // premium_plus: $5.99/mo - 10 stories/day, with read-to-me
-      const planId = readToMeEnabled 
-        ? '1f07f062-4123-4e51-9c5d-9541836a8f1c' // premium_plus
-        : 'c414127f-af31-47f1-b474-d59bf4956e1f'; // premium
-      
+      const planId = readToMeEnabled
+        ? "1f07f062-4123-4e51-9c5d-9541836a8f1c" // premium_plus
+        : "c414127f-af31-47f1-b474-d59bf4956e1f"; // premium
+
       // TODO: When implementing real IAP, replace this with:
       // 1. Trigger platform-specific purchase flow (App Store/Google Play)
       // 2. Verify purchase with platform
       // 3. Then call upgradeSubscription with verified receipt
-      
+
       const success = await upgradeSubscription(planId);
-      
+
       if (success) {
         toast({
           title: "🎉 Welcome to Premium!",
           description: `You now have access to all premium features!`,
         });
-        navigate('/dashboard');
+        navigate("/dashboard");
       } else {
-        throw new Error('Subscription upgrade failed');
+        throw new Error("Subscription upgrade failed");
       }
     } catch (error) {
       toast({
@@ -94,11 +94,7 @@ export default function Subscription() {
       {/* Header */}
       <div className="bg-black/20 backdrop-blur-sm border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <Button
-            variant="ghost"
-            onClick={() => navigate(-1)}
-            className="text-white hover:bg-white/10"
-          >
+          <Button variant="ghost" onClick={() => navigate(-1)} className="text-white hover:bg-white/10">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
@@ -115,16 +111,17 @@ export default function Subscription() {
             <Sparkles className="h-4 w-4" />
             <span className="text-sm font-semibold">Limited Time Offer</span>
           </div>
-          
+
           <h1 className="text-5xl md:text-6xl font-bold text-white mb-4">
             Make Reading an
             <span className="block bg-gradient-to-r from-yellow-300 via-pink-300 to-purple-300 bg-clip-text text-transparent">
               Epic Adventure
             </span>
           </h1>
-          
+
           <p className="text-xl text-purple-200 max-w-2xl mx-auto">
-            Transform screen time into reading time with personalized, interactive stories that adapt to your child's choices.
+            Transform screen time into reading time with personalized, interactive stories that adapt to your child's
+            choices.
           </p>
         </div>
 
@@ -187,9 +184,7 @@ export default function Subscription() {
               </div>
             </div>
             <CardTitle className="text-3xl text-white mb-2">StoryMaster Premium</CardTitle>
-            <CardDescription className="text-purple-200 text-lg">
-              Unlimited interactive storytelling
-            </CardDescription>
+            <CardDescription className="text-purple-200 text-lg">Unlimited interactive storytelling</CardDescription>
           </CardHeader>
 
           <CardContent className="p-8 space-y-8">
@@ -260,9 +255,7 @@ export default function Subscription() {
                 {loading ? "Processing..." : "Start Your Adventure"}
               </Button>
 
-              <p className="text-center text-purple-300 text-sm">
-                Cancel anytime. No long-term commitment required.
-              </p>
+              <p className="text-center text-purple-300 text-sm">Cancel anytime. No long-term commitment required.</p>
             </div>
           </CardContent>
         </Card>
@@ -286,13 +279,16 @@ export default function Subscription() {
         {/* FAQ / Trust Builders */}
         <div className="max-w-3xl mx-auto mt-12 space-y-4">
           <h2 className="text-2xl font-bold text-white text-center mb-6">Why Parents Love StoryMaster</h2>
-          
+
           <Card className="bg-white/5 backdrop-blur-sm border-white/10">
             <CardHeader>
               <CardTitle className="text-white">🎯 Personalized Learning</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-purple-200">Stories adapt to your child's reading level and interests, making every adventure engaging and educational.</p>
+              <p className="text-purple-200">
+                Stories adapt to your child's reading level and interests, making every adventure engaging and
+                educational.
+              </p>
             </CardContent>
           </Card>
 
@@ -301,7 +297,9 @@ export default function Subscription() {
               <CardTitle className="text-white">📊 Track Progress</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-purple-200">See your child's reading growth with detailed analytics, comprehension scores, and achievement tracking.</p>
+              <p className="text-purple-200">
+                See your child's reading growth with detailed analytics, comprehension scores, and achievement tracking.
+              </p>
             </CardContent>
           </Card>
 
@@ -310,7 +308,9 @@ export default function Subscription() {
               <CardTitle className="text-white">✨ Screen Time Worth It</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-purple-200">Transform passive screen time into active learning. Every session builds reading skills and imagination.</p>
+              <p className="text-purple-200">
+                Transform passive screen time into active learning. Every session builds reading skills and imagination.
+              </p>
             </CardContent>
           </Card>
         </div>
