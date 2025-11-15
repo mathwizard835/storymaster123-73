@@ -108,6 +108,24 @@ export const upgradeSubscription = async (planId: string): Promise<boolean> => {
   }
 };
 
+export const cancelSubscription = async (): Promise<boolean> => {
+  try {
+    const deviceId = await getDeviceId();
+    
+    const { error } = await supabase
+      .from('user_subscriptions')
+      .update({ status: 'cancelled' })
+      .eq('device_id', deviceId)
+      .eq('status', 'active');
+
+    if (error) throw error;
+    return true;
+  } catch (e) {
+    console.error("Failed to cancel subscription", e);
+    return false;
+  }
+};
+
 export const getStoriesRemaining = async (): Promise<{
   storiesUsedToday: number;
   dailyLimit: number;
