@@ -15,7 +15,6 @@ export default function Subscription() {
   const [loading, setLoading] = useState(false);
   const [currentPlan, setCurrentPlan] = useState<SubscriptionPlan | null>(null);
 
-  useEffect(() => {
     loadCurrentPlan();
   }, []);
 
@@ -40,9 +39,9 @@ export default function Subscription() {
   const readToMeUpsell = {
     price: 1.0,
     features: [
-      "Professional voice narration for all stories - Perfect for Kids who don't like reading but love to listen ",
+      "Professional voice narration for all stories ",
       "Multiple voice options per story mode",
-      "High-quality AI voices",
+      "High-quality ElevenLabs voices",
       "Perfect for bedtime reading",
     ],
   };
@@ -214,7 +213,7 @@ export default function Subscription() {
                   </div>
                   <div>
                     <h3 className="text-xl font-bold text-white">Add Read-To-Me</h3>
-                    <p className="text-purple-300 text-sm">Professional voice narration</p>
+                    <p className="text-purple-300 text-sm">Perfect For Kids who don't like Reading but love Listening</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
