@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { CheckCircle, X, Volume2, BookOpen, Star, Sparkles, Crown, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { upgradeSubscription, getUserSubscription, type SubscriptionPlan } from "@/lib/subscription";
+import { upgradeSubscription, cancelSubscription, getUserSubscription, type SubscriptionPlan } from "@/lib/subscription";
 
 export default function Subscription() {
   const navigate = useNavigate();
@@ -48,6 +48,35 @@ export default function Subscription() {
   };
 
   const totalPrice = readToMeEnabled ? basePlan.price + readToMeUpsell.price : basePlan.price;
+
+  const handleCancelSubscription = async () => {
+    if (!confirm("Are you sure you want to cancel your subscription? You'll lose access to premium features at the end of your billing period.")) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const success = await cancelSubscription();
+      
+      if (success) {
+        toast({
+          title: "Subscription Cancelled",
+          description: "Your subscription has been cancelled. You'll retain access until the end of your billing period.",
+        });
+        await loadCurrentPlan();
+      } else {
+        throw new Error("Failed to cancel subscription");
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to cancel subscription. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubscribe = async () => {
     setLoading(true);
@@ -105,28 +134,85 @@ export default function Subscription() {
       </div>
 
       <div className="max-w-6xl mx-auto px-4 py-12">
-        {/* Hero Section */}
-        <div className="text-center mb-12 space-y-4">
-          <div className="inline-flex items-center gap-2 bg-yellow-500/20 text-yellow-300 px-4 py-2 rounded-full border border-yellow-500/30 mb-4">
-            <Sparkles className="h-4 w-4" />
-            <span className="text-sm font-semibold">Limited Time Offer</span>
+        {/* Current Subscription Status - Only show if user has premium */}
+        {currentPlan && (
+          <Card className="max-w-2xl mx-auto mb-12 bg-gradient-to-br from-green-500/20 to-emerald-500/20 backdrop-blur-md border-green-400/30 overflow-hidden">
+            <CardHeader className="text-center border-b border-white/10 pb-6">
+              <div className="flex justify-center mb-4">
+                <div className="bg-gradient-to-r from-green-500 to-emerald-500 p-4 rounded-full">
+                  <Crown className="h-12 w-12 text-white" />
+                </div>
+              </div>
+              <CardTitle className="text-3xl text-white mb-2">Active Premium Subscription</CardTitle>
+              <CardDescription className="text-green-200 text-lg">{currentPlan.name}</CardDescription>
+            </CardHeader>
+
+            <CardContent className="p-8 space-y-6">
+              <div className="text-center">
+                <div className="text-5xl font-bold text-white mb-2">${currentPlan.price_monthly}</div>
+                <div className="text-green-300">per month</div>
+              </div>
+
+              <div className="space-y-3 bg-white/5 rounded-lg p-4 border border-white/10">
+                {(currentPlan.features as any).daily_stories && (
+                  <div className="flex items-start gap-3">
+                    <CheckCircle className="h-5 w-5 text-green-400 shrink-0 mt-0.5" />
+                    <span className="text-white">{(currentPlan.features as any).daily_stories} stories per day</span>
+                  </div>
+                )}
+                {(currentPlan.features as any).read_to_me && (
+                  <div className="flex items-start gap-3">
+                    <CheckCircle className="h-5 w-5 text-green-400 shrink-0 mt-0.5" />
+                    <span className="text-white">Read-to-me feature included</span>
+                  </div>
+                )}
+                <div className="flex items-start gap-3">
+                  <CheckCircle className="h-5 w-5 text-green-400 shrink-0 mt-0.5" />
+                  <span className="text-white">All premium features unlocked</span>
+                </div>
+              </div>
+
+              <Button
+                onClick={handleCancelSubscription}
+                variant="outline"
+                size="lg"
+                className="w-full border-red-500/50 text-red-400 hover:bg-red-500/10 hover:text-red-300"
+              >
+                Cancel Subscription
+              </Button>
+
+              <p className="text-center text-green-300 text-sm">
+                Your subscription will remain active until the end of the billing period.
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Hero Section - Only show if no premium */}
+        {!currentPlan && (
+          <div className="text-center mb-12 space-y-4">
+            <div className="inline-flex items-center gap-2 bg-yellow-500/20 text-yellow-300 px-4 py-2 rounded-full border border-yellow-500/30 mb-4">
+              <Sparkles className="h-4 w-4" />
+              <span className="text-sm font-semibold">Limited Time Offer</span>
+            </div>
+
+            <h1 className="text-5xl md:text-6xl font-bold text-white mb-4">
+              Make Reading an
+              <span className="block bg-gradient-to-r from-yellow-300 via-pink-300 to-purple-300 bg-clip-text text-transparent">
+                Epic Adventure
+              </span>
+            </h1>
+
+            <p className="text-xl text-purple-200 max-w-2xl mx-auto">
+              Transform screen time into reading time with personalized, interactive stories that adapt to your child's
+              choices.
+            </p>
           </div>
+        )}
 
-          <h1 className="text-5xl md:text-6xl font-bold text-white mb-4">
-            Make Reading an
-            <span className="block bg-gradient-to-r from-yellow-300 via-pink-300 to-purple-300 bg-clip-text text-transparent">
-              Epic Adventure
-            </span>
-          </h1>
-
-          <p className="text-xl text-purple-200 max-w-2xl mx-auto">
-            Transform screen time into reading time with personalized, interactive stories that adapt to your child's
-            choices.
-          </p>
-        </div>
-
-        {/* Value Comparison */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12 max-w-4xl mx-auto">
+        {/* Value Comparison - Only show if no premium */}
+        {!currentPlan && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12 max-w-4xl mx-auto">
           <Card className="bg-white/5 backdrop-blur-sm border-white/10 relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-red-500/10 to-transparent" />
             <CardHeader className="relative">
@@ -174,8 +260,10 @@ export default function Subscription() {
             </CardContent>
           </Card>
         </div>
+        )}
 
-        {/* Main Pricing Card */}
+        {/* Main Pricing Card - Only show if no premium */}
+        {!currentPlan && (
         <Card className="max-w-2xl mx-auto bg-white/10 backdrop-blur-md border-white/20 overflow-hidden">
           <CardHeader className="text-center border-b border-white/10 pb-6">
             <div className="flex justify-center mb-4">
@@ -259,8 +347,9 @@ export default function Subscription() {
 
               <p className="text-center text-purple-300 text-sm">Cancel anytime. No long-term commitment required.</p>
             </div>
-          </CardContent>
+            </CardContent>
         </Card>
+        )}
 
         {/* Social Proof */}
         <div className="max-w-4xl mx-auto mt-12 grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
