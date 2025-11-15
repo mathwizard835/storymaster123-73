@@ -15,7 +15,8 @@ export default function Subscription() {
   const [loading, setLoading] = useState(false);
   const [currentPlan, setCurrentPlan] = useState<SubscriptionPlan | null>(null);
 
-  loadCurrentPlan();
+  useEffect(() => {
+    loadCurrentPlan();
   }, []);
 
   const loadCurrentPlan = async () => {
