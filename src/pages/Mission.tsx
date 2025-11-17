@@ -74,6 +74,7 @@ const Mission = () => {
   // Text-to-speech state
   const [isPlaying, setIsPlaying] = useState(false);
   const [audioLoading, setAudioLoading] = useState(false);
+  const [hasUsedReadToMe, setHasUsedReadToMe] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   
   // Abilities state
@@ -101,6 +102,17 @@ const Mission = () => {
     }
   }, []);
 
+  // Reset Read-To-Me usage when scene changes
+  useEffect(() => {
+    setHasUsedReadToMe(false);
+    // Stop any playing audio when scene changes
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      setIsPlaying(false);
+    }
+  }, [scene]);
+
   // Text-to-speech handler
   const handleReadToMe = async () => {
     if (isPlaying) {
@@ -113,7 +125,10 @@ const Mission = () => {
       return;
     }
 
-    if (!scene?.narrative) return;
+    if (!scene?.narrative || hasUsedReadToMe) return;
+    
+    // Mark as used for this scene
+    setHasUsedReadToMe(true);
 
     // Select voice based on mode
     const getVoiceId = () => {
@@ -1076,7 +1091,7 @@ const Mission = () => {
                           <span>
                             <Button
                               onClick={handleReadToMe}
-                              disabled={audioLoading || !userPlan?.features?.read_to_me}
+                              disabled={audioLoading || !userPlan?.features?.read_to_me || hasUsedReadToMe}
                               variant="secondary"
                               size="sm"
                               className="gap-2"
@@ -1100,11 +1115,15 @@ const Mission = () => {
                             </Button>
                           </span>
                         </TooltipTrigger>
-                        {!userPlan?.features?.read_to_me && (
+                        {!userPlan?.features?.read_to_me ? (
                           <TooltipContent>
                             <p>Only Available for Premium</p>
                           </TooltipContent>
-                        )}
+                        ) : hasUsedReadToMe ? (
+                          <TooltipContent>
+                            <p>Already used on this scene</p>
+                          </TooltipContent>
+                        ) : null}
                       </Tooltip>
                     </TooltipProvider>
                   </div>
