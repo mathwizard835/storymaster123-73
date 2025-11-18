@@ -89,6 +89,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signOut = async () => {
+    // Reset premium theme to default
+    localStorage.removeItem("premium-theme");
+    document.documentElement.removeAttribute("data-theme");
+    
     await supabase.auth.signOut();
   };
 
