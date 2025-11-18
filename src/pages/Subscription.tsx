@@ -61,6 +61,10 @@ export default function Subscription() {
       const success = await cancelSubscription();
       
       if (success) {
+        // Reset premium theme to default
+        localStorage.removeItem("premium-theme");
+        document.documentElement.removeAttribute("data-theme");
+        
         toast({
           title: "Subscription Cancelled",
           description: "Your subscription has been cancelled. You'll retain access until the end of your billing period.",
