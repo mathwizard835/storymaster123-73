@@ -7,6 +7,9 @@ import { Switch } from "@/components/ui/switch";
 import { CheckCircle, X, Volume2, BookOpen, Star, Sparkles, Crown, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { upgradeSubscription, cancelSubscription, getUserSubscription, type SubscriptionPlan } from "@/lib/subscription";
+import { isMobilePlatform, getPlatform } from "@/lib/mobileFeatures";
+import { supabase } from "@/integrations/supabase/client";
+import { getDeviceId } from "@/lib/story";
 
 export default function Subscription() {
   const navigate = useNavigate();
@@ -16,10 +19,23 @@ export default function Subscription() {
   const [loading, setLoading] = useState(false);
   const [currentPlan, setCurrentPlan] = useState<SubscriptionPlan | null>(null);
   const limitReached = searchParams.get('limitReached') === 'true';
+  const cancelled = searchParams.get('cancelled') === 'true';
+  const platform = getPlatform();
+  const isNative = isMobilePlatform();
 
   useEffect(() => {
     loadCurrentPlan();
   }, []);
+
+  useEffect(() => {
+    if (cancelled) {
+      toast({
+        title: "Payment Cancelled",
+        description: "Your payment was cancelled. No charges were made.",
+        variant: "destructive",
+      });
+    }
+  }, [cancelled, toast]);
 
   const loadCurrentPlan = async () => {
     const { plan } = await getUserSubscription();
@@ -87,39 +103,43 @@ export default function Subscription() {
   const handleSubscribe = async () => {
     setLoading(true);
 
-    // Structured for In-App Purchase integration
-    // Currently simulates the experience by granting premium access
     try {
-      // Plan IDs from database:
-      // premium: $4.99/mo - 10 stories/day, no read-to-me
-      // premium_plus: $5.99/mo - 10 stories/day, with read-to-me
-      const planId = readToMeEnabled
-        ? "1f07f062-4123-4e51-9c5d-9541836a8f1c" // premium_plus
-        : "c414127f-af31-47f1-b474-d59bf4956e1f"; // premium
-
-      // TODO: When implementing real IAP, replace this with:
-      // 1. Trigger platform-specific purchase flow (App Store/Google Play)
-      // 2. Verify purchase with platform
-      // 3. Then call upgradeSubscription with verified receipt
-
-      const success = await upgradeSubscription(planId);
-
-      if (success) {
+      // Check platform
+      if (isNative) {
+        // Mobile platform - show App Store/Play Store message
         toast({
-          title: "🎉 Welcome to Premium!",
-          description: `You now have access to all premium features!`,
+          title: "Mobile Subscriptions",
+          description: `Please manage subscriptions through ${platform === 'ios' ? 'App Store' : 'Google Play Store'}`,
+          variant: "destructive",
         });
-        navigate("/dashboard");
+        setLoading(false);
+        return;
+      }
+
+      // Web platform - use Stripe
+      const planType = readToMeEnabled ? 'premium_plus' : 'premium';
+      const deviceId = await getDeviceId();
+
+      // Call edge function to create Stripe checkout session
+      const { data, error } = await supabase.functions.invoke('create-checkout-session', {
+        body: { planType, deviceId },
+      });
+
+      if (error) throw error;
+
+      // Redirect to Stripe checkout
+      if (data?.url) {
+        window.location.href = data.url;
       } else {
-        throw new Error("Subscription upgrade failed");
+        throw new Error('No checkout URL returned');
       }
     } catch (error) {
+      console.error('Subscription error:', error);
       toast({
         title: "Error",
         description: "Failed to process subscription. Please try again.",
         variant: "destructive",
       });
-    } finally {
       setLoading(false);
     }
   };
