@@ -40,11 +40,13 @@ const Auth = () => {
       if (type === 'signup' && accessToken) {
         toast({
           title: "Email verified!",
-          description: "Please sign in with your credentials.",
+          description: "Redirecting to your dashboard...",
         });
         
-        // Clean up URL
-        window.history.replaceState({}, document.title, '/auth');
+        // Redirect to dashboard after successful verification
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 1500);
       }
     };
     
