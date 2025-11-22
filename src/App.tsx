@@ -57,8 +57,12 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
     );
   }
   
-  if (user) {
-    return <Navigate to="/" replace />;
+  // Allow email verification callbacks to complete before redirecting
+  const hashParams = new URLSearchParams(window.location.hash.substring(1));
+  const isEmailVerification = hashParams.get('type') === 'signup' || hashParams.get('type') === 'recovery';
+  
+  if (user && !isEmailVerification) {
+    return <Navigate to="/dashboard" replace />;
   }
   
   return <>{children}</>;
