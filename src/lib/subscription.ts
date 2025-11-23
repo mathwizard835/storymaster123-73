@@ -20,6 +20,7 @@ export type SubscriptionPlan = {
 export type UserSubscription = {
   id: string;
   device_id: string;
+  user_id?: string;
   plan_id: string;
   status: 'active' | 'cancelled' | 'expired';
   starts_at: string;
@@ -52,7 +53,9 @@ export const getUserSubscription = async (): Promise<{
 }> => {
   try {
     const deviceId = await getDeviceId();
-    const { data, error } = await supabase
+    
+    // First try to find by device_id
+    let { data, error } = await supabase
       .from('user_subscriptions')
       .select(`
         *,
@@ -60,9 +63,28 @@ export const getUserSubscription = async (): Promise<{
       `)
       .eq('device_id', deviceId)
       .eq('status', 'active')
-      .single();
+      .maybeSingle();
 
     if (error && error.code !== 'PGRST116') throw error;
+
+    // If no subscription found by device_id, try by user_id
+    if (!data) {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const result = await supabase
+          .from('user_subscriptions')
+          .select(`
+            *,
+            subscription_plans (*)
+          `)
+          .eq('user_id', user.id)
+          .eq('status', 'active')
+          .maybeSingle();
+        
+        data = result.data;
+        if (result.error && result.error.code !== 'PGRST116') throw result.error;
+      }
+    }
 
     return {
       subscription: data ? {
