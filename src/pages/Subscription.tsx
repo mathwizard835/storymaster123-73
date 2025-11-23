@@ -103,6 +103,11 @@ export default function Subscription() {
   const handleSubscribe = async () => {
     setLoading(true);
 
+    toast({
+      title: "Redirecting to checkout...",
+      description: "Opening secure payment window",
+    });
+
     try {
       // Check platform
       if (isNative) {
@@ -127,9 +132,25 @@ export default function Subscription() {
 
       if (error) throw error;
 
-      // Redirect to Stripe checkout
+      // Open Stripe checkout in new tab
       if (data?.url) {
-        window.location.href = data.url;
+        const checkoutWindow = window.open(data.url, '_blank');
+        
+        if (!checkoutWindow) {
+          // Popup was blocked
+          toast({
+            title: "Popup Blocked",
+            description: "Please allow popups for this site and try again.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Checkout opened",
+            description: "Complete your purchase in the new window",
+          });
+        }
+        
+        setLoading(false);
       } else {
         throw new Error('No checkout URL returned');
       }
