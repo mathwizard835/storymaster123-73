@@ -34,7 +34,7 @@ export const AbilityToast = ({ ability }: AbilityToastProps) => {
         </div>
         <p className="text-sm text-muted-foreground">{ability.description}</p>
         <p className="text-xs text-purple-600 dark:text-purple-400 mt-2 font-medium">
-          ✨ Unlocks Ultra Choices in future stories!
+          ✨ Unlocks Secret Choices in future stories!
         </p>
       </div>
     </div>

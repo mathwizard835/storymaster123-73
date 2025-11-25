@@ -4,10 +4,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, Trophy, Star, Heart, Lightbulb, Shield, Users, Sparkles, Target, TrendingUp, Award, BookOpen, Clock, Book, Flame, Zap } from "lucide-react";
+import { ArrowLeft, Trophy, Star, Heart, Lightbulb, Shield, Users, Sparkles, Target, TrendingUp, Award, BookOpen, Clock, Book, Flame, Zap, Lock, Unlock } from "lucide-react";
 import { loadCharacter } from "@/lib/character";
 import { loadAchievements } from "@/lib/achievements";
-import { loadAbilities } from "@/lib/abilities";
+import { loadAbilities, type Ability } from "@/lib/abilities";
 import { loadCompletedStoriesFromDatabase } from "@/lib/databaseStory";
 import { getStreakStats } from "@/lib/streaks";
 import { getReadingStats, type ReadingStats } from "@/lib/readingAnalytics";
@@ -17,7 +17,7 @@ export default function ParentDashboard() {
   const navigate = useNavigate();
   const [character, setCharacter] = useState(loadCharacter());
   const [achievements, setAchievements] = useState(loadAchievements());
-  const [abilities, setAbilities] = useState(loadAbilities());
+  const [abilityProgress, setAbilityProgress] = useState(loadAbilities());
   const [recentStories, setRecentStories] = useState<any[]>([]);
   const [streakStats, setStreakStats] = useState<any>(null);
   const [readingStats, setReadingStats] = useState<ReadingStats | null>(null);
@@ -53,6 +53,19 @@ export default function ParentDashboard() {
 
   const getAttributeLabel = (attr: string) => {
     return attr.charAt(0).toUpperCase() + attr.slice(1);
+  };
+
+  const getAbilityIcon = (category: string) => {
+    switch (category) {
+      case 'detective': return '🔍';
+      case 'combat': return '⚔️';
+      case 'diplomacy': return '🤝';
+      case 'magic': return '✨';
+      case 'survival': return '🏕️';
+      case 'creativity': return '🎨';
+      case 'leadership': return '👑';
+      default: return '⭐';
+    }
   };
 
   const getStoryMessage = (story: any) => {
@@ -111,6 +124,10 @@ export default function ParentDashboard() {
     icon: getAttributeIcon(key)
   }));
   const totalStories = achievements.totalStories;
+
+  // Calculate Secret Choices used from ability usage
+  const secretChoicesUsed = abilityProgress.abilitiesUsed;
+  const activeAbilities = abilityProgress.abilities.filter(a => !a.used);
 
   return (
     <>
@@ -196,6 +213,85 @@ export default function ParentDashboard() {
                   <div className="p-4 rounded-lg bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/20">
                     <p className="text-center font-semibold text-green-700 dark:text-green-300">
                       🎉 Amazing! {childName} is on a {readingStats.currentStreak}-day reading streak!
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Special Abilities - NEW SECTION */}
+          {abilityProgress.abilities.length > 0 && (
+            <Card className="border-2 border-purple-200 dark:border-purple-800 bg-gradient-to-br from-purple-50/50 to-pink-50/50 dark:from-purple-950/50 dark:to-pink-950/50">
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-6 w-6 text-purple-600" />
+                  <CardTitle className="text-2xl">✨ Special Abilities Unlocked</CardTitle>
+                </div>
+                <CardDescription>
+                  Abilities earned through quality story choices unlock Secret Choices in adventures!
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  <div className="text-center p-4 rounded-lg bg-purple-100 dark:bg-purple-900/30 border border-purple-300 dark:border-purple-700">
+                    <Award className="w-8 h-8 mx-auto mb-2 text-purple-600" />
+                    <div className="text-3xl font-bold">{abilityProgress.abilities.length}</div>
+                    <div className="text-sm text-muted-foreground">Abilities Earned</div>
+                  </div>
+                  <div className="text-center p-4 rounded-lg bg-pink-100 dark:bg-pink-900/30 border border-pink-300 dark:border-pink-700">
+                    <Unlock className="w-8 h-8 mx-auto mb-2 text-pink-600" />
+                    <div className="text-3xl font-bold">{secretChoicesUsed}</div>
+                    <div className="text-sm text-muted-foreground">Secret Choices Used</div>
+                  </div>
+                  <div className="text-center p-4 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 border border-indigo-300 dark:border-indigo-700">
+                    <Lock className="w-8 h-8 mx-auto mb-2 text-indigo-600" />
+                    <div className="text-3xl font-bold">{activeAbilities.length}</div>
+                    <div className="text-sm text-muted-foreground">Ready to Use</div>
+                  </div>
+                </div>
+
+                {abilityProgress.abilities.length > 0 && (
+                  <div className="space-y-3">
+                    <h3 className="font-semibold text-lg">Earned Abilities:</h3>
+                    <div className="grid gap-3">
+                      {abilityProgress.abilities.map((ability: Ability) => (
+                        <div 
+                          key={ability.id} 
+                          className={`p-4 rounded-lg border ${
+                            ability.used 
+                              ? 'bg-muted/50 border-muted opacity-75' 
+                              : 'bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/50 dark:to-pink-950/50 border-purple-200 dark:border-purple-700'
+                          }`}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="text-3xl">{getAbilityIcon(ability.category)}</div>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <h4 className="font-bold">{ability.name}</h4>
+                                <Badge variant={ability.used ? "secondary" : "default"} className="text-xs">
+                                  {ability.used ? "Used" : "Available"}
+                                </Badge>
+                                <Badge variant="outline" className="text-xs capitalize">
+                                  {ability.category}
+                                </Badge>
+                              </div>
+                              <p className="text-sm text-muted-foreground">{ability.description}</p>
+                              <p className="text-xs text-purple-600 dark:text-purple-400 mt-2">
+                                Earned from story adventures
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {secretChoicesUsed > 0 && (
+                  <div className="p-4 rounded-lg bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/20">
+                    <p className="text-center font-semibold text-purple-700 dark:text-purple-300">
+                      🌟 {childName} has used {secretChoicesUsed} Secret Choice{secretChoicesUsed !== 1 ? 's' : ''} to unlock unique story paths!
                     </p>
                   </div>
                 )}

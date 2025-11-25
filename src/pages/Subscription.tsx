@@ -50,7 +50,7 @@ export default function Subscription() {
       "All story modes (Mystery, Comedy, Thrill, Explore)",
       "Full character customization",
       "Progress tracking & achievements",
-      "Ability system & Ultra Choices",
+      "Ability system & Secret Choices",
       "Priority support",
     ],
   };
