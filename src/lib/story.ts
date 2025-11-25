@@ -38,10 +38,10 @@ export type Profile = {
 export type SceneChoice = { 
   id: string; 
   text: string; 
-  type?: 'standard' | 'item_use' | 'object_interact' | 'ultra';
+  type?: 'standard' | 'item_use' | 'object_interact' | 'secret';
   requiresItem?: string;
   consumesItem?: boolean;
-  requiresAbility?: string; // Ability category or name required for Ultra choices
+  requiresAbility?: string; // Ability category or name required for Secret choices
 };
 
 export type Scene = {
@@ -257,7 +257,7 @@ export const markStoryCompleted = async (
           (s.itemsFound && s.itemsFound.length > 0)
         ).length,
         ultraChoicesUsed: qualityMetrics?.ultraChoicesUsed || scenes.filter(s => 
-          s.choices.some(c => c.type === 'ultra')
+          s.choices.some(c => c.type === 'secret')
         ).length
       }
     );
@@ -295,7 +295,8 @@ export const generateNextScene = async (
   maxTokens: number = 900,
   sceneCount: number = 1,
   storyId?: string,
-  forceNewSession: boolean = false
+  forceNewSession: boolean = false,
+  availableAbilities: string[] = []
 ): Promise<{ text: string; parsed: Scene | null; raw: any }> => {
   // Phase 4: Defensive logging
   console.log(`🎬 generateNextScene called:`, {
@@ -351,7 +352,7 @@ export const generateNextScene = async (
   
   try {
     const { data, error } = await supabase.functions.invoke("generate-story", {
-      body: { profile, scene, megastory, max_tokens: adjustedTokens, scene_count: sceneCount },
+      body: { profile, scene, megastory, max_tokens: adjustedTokens, scene_count: sceneCount, abilities: availableAbilities },
     });
 
     if (error) throw error;

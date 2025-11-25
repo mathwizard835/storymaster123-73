@@ -19,14 +19,14 @@ export const InteractiveChoices = ({
 }: InteractiveChoicesProps) => {
   
   const getChoiceIcon = (choice: SceneChoice) => {
-    if (choice.type === 'ultra') return Sparkles;
+    if (choice.type === 'secret') return Sparkles;
     if (choice.type === 'item_use') return Key;
     if (choice.type === 'object_interact') return Hand;
     return Zap;
   };
 
   const getChoiceVariant = (choice: SceneChoice) => {
-    if (choice.type === 'ultra') return 'default';
+    if (choice.type === 'secret') return 'default';
     if (choice.type === 'item_use') return 'secondary';
     if (choice.type === 'object_interact') return 'outline';
     return 'hero';
@@ -37,7 +37,7 @@ export const InteractiveChoices = ({
       {choices.map((choice) => {
         const validation = validateChoice(choice.id, { choices } as any, inventory);
         const ChoiceIcon = getChoiceIcon(choice);
-        const isUltra = choice.type === 'ultra';
+        const isSecret = choice.type === 'secret';
         
         return (
           <div key={choice.id} className="space-y-2">
@@ -47,18 +47,18 @@ export const InteractiveChoices = ({
               variant={getChoiceVariant(choice)}
               size="lg"
               className={`w-full text-left h-auto p-4 flex items-start gap-3 transition-all ${
-                isUltra && validation.valid 
+                isSecret && validation.valid 
                   ? 'ring-2 ring-purple-500/50 hover:ring-purple-400 shadow-lg shadow-purple-500/20 bg-gradient-to-br from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500' 
                   : ''
               }`}
             >
-              <ChoiceIcon className={`h-5 w-5 mt-0.5 flex-shrink-0 ${isUltra ? 'animate-pulse' : ''}`} />
+              <ChoiceIcon className={`h-5 w-5 mt-0.5 flex-shrink-0 ${isSecret ? 'animate-pulse' : ''}`} />
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1 flex-wrap">
                   <span className="font-semibold">{choice.text}</span>
-                  {choice.type === 'ultra' && (
+                  {choice.type === 'secret' && (
                     <Badge variant="default" className="text-xs bg-white/20 backdrop-blur-sm border-0 animate-pulse">
-                      ✨ Ultra Choice
+                      ✨ Secret Choice
                     </Badge>
                   )}
                   {choice.type === 'item_use' && (

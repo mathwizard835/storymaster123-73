@@ -483,6 +483,18 @@ Return ONLY valid JSON (no markdown, no explanations):
     };
     const max_tokens = Math.min(Number(body?.max_tokens ?? getOptimalTokens(sceneCount, !scene)), 4000);
 
+    const abilities = body?.abilities || [];
+    const abilityContext = abilities.length > 0 ? 
+      `\n\n🔐 PLAYER HAS UNLOCKED ABILITIES:
+${abilities.join(", ")}
+
+When generating choices, include ONE "Secret Choice" that requires one of these abilities. Secret Choices should:
+- Have type: "secret"
+- Have requiresAbility set to one of the ability categories the player has
+- Offer a uniquely powerful, creative, or advantageous option
+- Make the player feel rewarded for earning abilities
+- Be clearly more interesting than standard choices` : '';
+
     const inventoryContext = profile.inventory && profile.inventory.length > 0 ? 
       `\nCurrent Inventory: ${profile.inventory.map((item: any) => `${item.name} (${item.type})`).join(", ")}` : 
       "\nInventory: Empty";
@@ -551,10 +563,11 @@ ${sceneContext}
 ${storyProgressContext}
 ${learningModeInstructions}
 ${inventoryContext}
+${abilityContext}
 
 === RESPONSE FORMAT ===
 Return ONLY valid JSON (no markdown, no explanations):
-{"sceneTitle":"...","hud":{"energy":0-100,"time":"...","choicePoints":0-50,"ui":["..."]},"narrative":"...","choices":[{"id":"a","text":"...","type":"standard|item_use|object_interact","requiresItem":"...","consumesItem":true}],"interactiveObjects":[{"id":"...","name":"...","description":"...","actions":["Examine","Search"],"requiresItem":"..."}],"itemsFound":[{"id":"...","name":"...","description":"...","type":"key|tool|consumable|document|weapon|potion","usable":true,"consumable":false}],"end":false}
+{"sceneTitle":"...","hud":{"energy":0-100,"time":"...","choicePoints":0-50,"ui":["..."]},"narrative":"...","choices":[{"id":"a","text":"...","type":"standard|item_use|object_interact|secret","requiresItem":"...","consumesItem":true,"requiresAbility":"..."}],"interactiveObjects":[{"id":"...","name":"...","description":"...","actions":["Examine","Search"],"requiresItem":"..."}],"itemsFound":[{"id":"...","name":"...","description":"...","type":"key|tool|consumable|document|weapon|potion","usable":true,"consumable":false}],"end":false}
 
 SCENE REQUIREMENTS:
 - ${scene ? 'Continue the story naturally from previous scene' : `Open with immediate action hook that establishes setting, character, and conflict. Introduce ${profile.name || "the hero"} as the protagonist.`}

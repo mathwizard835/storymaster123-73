@@ -65,7 +65,7 @@ export const AbilityProgressIndicator = ({
           </div>
           <div className="flex-1 space-y-2">
             <div className="flex items-center justify-between">
-              <h3 className="font-bold text-white">Unlock Ultra Abilities</h3>
+              <h3 className="font-bold text-white">Unlock Secret Abilities</h3>
               <span className="text-sm text-purple-300">{choicesMade}/{requiredChoices}</span>
             </div>
             <Progress value={progress} className={`h-2 bg-purple-950/50`} />
@@ -106,7 +106,7 @@ export const AbilityProgressIndicator = ({
             className={`w-full bg-gradient-to-r ${rarityColor} hover:opacity-90 text-white font-bold py-3 px-4 rounded-lg transition-all transform hover:scale-105 shadow-lg hover:shadow-purple-500/50 flex items-center justify-center gap-2`}
           >
             <Sparkles className="h-5 w-5 animate-pulse" />
-            Ready to Unlock! Gain Access to Ultra Choices
+            Ready to Unlock! Gain Access to Secret Choices
           </Button>
         </div>
       </Card>
@@ -121,11 +121,11 @@ export const AbilityProgressIndicator = ({
         </div>
         <div className="flex-1">
           <div className="flex items-center justify-between mb-1">
-            <h3 className="font-bold text-white">Ultra Abilities</h3>
+            <h3 className="font-bold text-white">Secret Abilities</h3>
             <span className="text-sm font-semibold text-purple-200">{availableAbilitiesCount} Active</span>
           </div>
           <p className="text-sm text-purple-100">
-            Your abilities unlock special Ultra Choices throughout your adventures!
+            Your abilities unlock special Secret Choices throughout your adventures!
           </p>
         </div>
       </div>

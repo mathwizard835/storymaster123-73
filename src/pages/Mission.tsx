@@ -466,8 +466,9 @@ const Mission = () => {
         const cleanProfile = { ...savedProfile, inventory: savedInventory };
         const profileWithInventory = updateProfileInventory(cleanProfile, savedInventory);
         
-        // Phase 3: Use forceNewSession flag for explicit new story
-        const { parsed, text } = await generateNextScene(profileWithInventory, undefined, false, 1800, 1, newStoryId, true);
+        // Phase 3: Use forceNewSession flag for explicit new story, pass abilities
+        const abilityCategories = availableAbilities.map(a => a.category);
+        const { parsed, text } = await generateNextScene(profileWithInventory, undefined, false, 1800, 1, newStoryId, true, abilityCategories);
         if (!parsed) {
           throw new Error("Invalid AI response: " + text.slice(0, 140));
         }
@@ -726,8 +727,9 @@ const Mission = () => {
         nextScene: nextSceneCount
       });
       
-      // Phase 1 & 2: Pass story ID for validation, no forceNewSession
-      const { parsed, text } = await generateNextScene(profileWithInventory, { ...scene, selectedChoiceId: choiceId }, false, 1200, nextSceneCount, savedStory.id, false);
+      // Phase 1 & 2: Pass story ID for validation, no forceNewSession, pass abilities
+      const abilityCategories = availableAbilities.map(a => a.category);
+      const { parsed, text } = await generateNextScene(profileWithInventory, { ...scene, selectedChoiceId: choiceId }, false, 1200, nextSceneCount, savedStory.id, false, abilityCategories);
       if (!parsed) throw new Error("Invalid AI response: " + text.slice(0, 140));
       
       if (parsed.itemsFound && parsed.itemsFound.length > 0) {
@@ -1060,10 +1062,10 @@ const Mission = () => {
                       </TooltipTrigger>
                       <TooltipContent side="bottom" sideOffset={12} className="z-[9999] bg-popover/95 backdrop-blur-sm">
                         <div className="max-w-xs">
-                          <p className="font-semibold mb-2">✨ Ultra Abilities: {availableAbilities.length}</p>
+                          <p className="font-semibold mb-2">✨ Secret Abilities: {availableAbilities.length}</p>
                           {availableAbilities.length > 0 ? (
                             <>
-                              <p className="mb-2">Unlock Ultra Choices with these abilities:</p>
+                              <p className="mb-2">Unlock Secret Choices with these abilities:</p>
                               <ul className="text-sm space-y-1">
                                 {availableAbilities.slice(0, 3).map(ability => (
                                   <li key={ability.id}>• {ability.name}</li>
@@ -1072,7 +1074,7 @@ const Mission = () => {
                               </ul>
                             </>
                           ) : (
-                            <p>Complete stories with your chosen badges to unlock powerful abilities that enable Ultra Choices!</p>
+                            <p>Complete stories with your chosen badges to unlock powerful abilities that enable Secret Choices!</p>
                           )}
                         </div>
                       </TooltipContent>
