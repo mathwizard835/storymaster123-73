@@ -1217,7 +1217,7 @@ const Mission = () => {
                     </h3>
                     <p className="text-white/90">
                       🎉 Congratulations! You've reached the end of your epic journey. 
-                      {!savedStory?.quizTaken && " Take the comprehension quiz for bonus XP, or "}
+                      {!savedStory?.quizTaken && " Take the comprehension challenge for Bonus Points, or "}
                       Ready to see your achievements and save this adventure to your gallery?
                     </p>
                     
@@ -1271,7 +1271,7 @@ const Mission = () => {
                         ) : (
                           <>
                             <Trophy className="h-5 w-5 mr-2" />
-                            Take Quiz (+Bonus XP)
+                            Take Challenge (+Bonus Points)
                           </>
                         )}
                       </Button>

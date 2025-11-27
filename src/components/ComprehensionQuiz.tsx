@@ -84,10 +84,10 @@ export const ComprehensionQuiz = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-2xl">
             <Trophy className="h-6 w-6 text-yellow-500" />
-            Comprehension Quiz
+            Comprehension Challenge
           </DialogTitle>
           <DialogDescription>
-            Test your understanding of the story and earn bonus XP!
+            Test your understanding of the story and earn Bonus Points!
           </DialogDescription>
         </DialogHeader>
 
