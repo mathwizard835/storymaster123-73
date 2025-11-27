@@ -1271,7 +1271,7 @@ const Mission = () => {
                         ) : (
                           <>
                             <Trophy className="h-5 w-5 mr-2" />
-                            Take Challenge (+Bonus Points)
+                            Do Challenge for Bonus Points
                           </>
                         )}
                       </Button>
