@@ -54,11 +54,14 @@ serve(async (req) => {
         const session = event.data.object as Stripe.Checkout.Session;
         const deviceId = session.metadata?.device_id;
         const planType = session.metadata?.plan_type;
+        const userId = session.metadata?.user_id;
 
         if (!deviceId || !planType) {
           console.error('Missing metadata in checkout session');
           break;
         }
+
+        console.log('Processing checkout completion:', { deviceId, planType, userId });
 
         // Map plan type to plan ID
         const planIds = {
@@ -68,18 +71,27 @@ serve(async (req) => {
 
         const planId = planIds[planType as keyof typeof planIds];
 
-        // Cancel any existing active subscriptions for this device
-        await supabaseClient
-          .from('user_subscriptions')
-          .update({ status: 'cancelled' })
-          .eq('device_id', deviceId)
-          .eq('status', 'active');
+        // Cancel any existing active subscriptions for this device or user
+        if (userId) {
+          await supabaseClient
+            .from('user_subscriptions')
+            .update({ status: 'cancelled' })
+            .or(`device_id.eq.${deviceId},user_id.eq.${userId}`)
+            .eq('status', 'active');
+        } else {
+          await supabaseClient
+            .from('user_subscriptions')
+            .update({ status: 'cancelled' })
+            .eq('device_id', deviceId)
+            .eq('status', 'active');
+        }
 
-        // Create new subscription record
+        // Create new subscription record with both device_id and user_id
         const { error } = await supabaseClient
           .from('user_subscriptions')
           .insert({
             device_id: deviceId,
+            user_id: userId || null,
             plan_id: planId,
             status: 'active',
             starts_at: new Date().toISOString(),
@@ -88,7 +100,7 @@ serve(async (req) => {
         if (error) {
           console.error('Error creating subscription:', error);
         } else {
-          console.log('Subscription created for device:', deviceId);
+          console.log('Subscription created:', { deviceId, userId, planType });
         }
         break;
       }

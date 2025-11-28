@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import Stripe from 'https://esm.sh/stripe@14.21.0';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -17,6 +18,19 @@ serve(async (req) => {
     });
 
     const { planType, deviceId } = await req.json();
+    
+    // Get user_id from auth header if available
+    let userId = null;
+    const authHeader = req.headers.get('Authorization');
+    if (authHeader) {
+      const supabaseClient = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+      );
+      const token = authHeader.replace('Bearer ', '');
+      const { data: { user } } = await supabaseClient.auth.getUser(token);
+      userId = user?.id || null;
+    }
 
     if (!planType || !deviceId) {
       throw new Error('Missing required parameters: planType and deviceId');
@@ -52,11 +66,13 @@ serve(async (req) => {
       metadata: {
         device_id: deviceId,
         plan_type: planType,
+        user_id: userId || '',
       },
       subscription_data: {
         metadata: {
           device_id: deviceId,
           plan_type: planType,
+          user_id: userId || '',
         },
       },
     });
