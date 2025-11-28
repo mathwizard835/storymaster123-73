@@ -9,8 +9,8 @@ import { SubscriptionModal } from "@/components/SubscriptionModal";
 
 export const StoryLimitWidget = () => {
   const [storyData, setStoryData] = useState({
-    storiesUsedToday: 0,
-    dailyLimit: 1,
+    storiesUsedThisMonth: 0,
+    monthlyLimit: 3,
     bonusStories: 0,
     canPlay: true
   });
@@ -32,9 +32,9 @@ export const StoryLimitWidget = () => {
     setSubscription({ subscription, plan });
   };
 
-  const totalAllowed = storyData.dailyLimit + storyData.bonusStories;
-  const usagePercent = (storyData.storiesUsedToday / Math.max(totalAllowed, 1)) * 100;
-  const remaining = Math.max(0, totalAllowed - storyData.storiesUsedToday);
+  const totalAllowed = storyData.monthlyLimit + storyData.bonusStories;
+  const usagePercent = (storyData.storiesUsedThisMonth / Math.max(totalAllowed, 1)) * 100;
+  const remaining = Math.max(0, totalAllowed - storyData.storiesUsedThisMonth);
 
   const getPlanBadge = () => {
     if (!subscription?.plan) return <Badge variant="outline">Free</Badge>;
@@ -51,15 +51,16 @@ export const StoryLimitWidget = () => {
 
   const getTimeUntilReset = () => {
     const now = new Date();
-    const tomorrow = new Date(now);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    tomorrow.setHours(0, 0, 0, 0);
+    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
     
-    const diff = tomorrow.getTime() - now.getTime();
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const diff = nextMonth.getTime() - now.getTime();
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
     
-    return `${hours}h ${minutes}m`;
+    if (days > 0) {
+      return `${days}d ${hours}h`;
+    }
+    return `${hours}h`;
   };
 
   return (
@@ -69,23 +70,23 @@ export const StoryLimitWidget = () => {
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
               <BookOpen className="w-5 h-5" />
-              Daily Stories
+              Monthly Stories
             </CardTitle>
             {getPlanBadge()}
           </div>
           <CardDescription>
             {storyData.canPlay ? 
               "Keep creating amazing stories!" : 
-              "You've reached your daily limit. Upgrade or wait for tomorrow!"
+              "You've reached your monthly limit. Upgrade or wait for next month!"
             }
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
-              <span>Stories Used Today</span>
+              <span>Stories Used This Month</span>
               <span className="font-medium">
-                {storyData.storiesUsedToday}/{totalAllowed}
+                {storyData.storiesUsedThisMonth}/{totalAllowed}
               </span>
             </div>
             <Progress 
@@ -105,27 +106,27 @@ export const StoryLimitWidget = () => {
           {!storyData.canPlay && (
             <div className="bg-muted p-3 rounded-lg text-center">
               <Clock className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />
-              <div className="text-sm font-medium">Next reset in {getTimeUntilReset()}</div>
+              <div className="text-sm font-medium">Stories reset on the 1st</div>
               <div className="text-xs text-muted-foreground mt-1">
-                Or upgrade for unlimited stories!
+                {getTimeUntilReset()} until reset
               </div>
             </div>
           )}
 
-          {subscription?.plan?.name === 'free' && (
+          {(!subscription?.plan || subscription?.plan?.name === 'free') && (
             <Button 
               onClick={() => setShowUpgrade(true)}
               className="w-full"
               variant={storyData.canPlay ? "outline" : "default"}
             >
               <Crown className="w-4 h-4 mr-2" />
-              Upgrade for Unlimited Stories
+              Upgrade for 10 Stories/Month
             </Button>
           )}
 
           {subscription?.plan && subscription.plan.name !== 'free' && (
             <div className="text-center text-sm text-muted-foreground">
-              Enjoying {subscription.plan.features.daily_stories === -1 ? 'unlimited' : subscription.plan.features.daily_stories} daily stories
+              Enjoying {subscription.plan.name === 'premium' || subscription.plan.name === 'premium_plus' ? '10' : subscription.plan.features.daily_stories} monthly stories
             </div>
           )}
         </CardContent>

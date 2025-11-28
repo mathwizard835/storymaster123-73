@@ -89,6 +89,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signOut = async () => {
+    // Clear subscription cache
+    const { clearSubscriptionCache } = await import('@/lib/subscriptionSync');
+    clearSubscriptionCache();
+    
     // Reset premium theme to default
     localStorage.removeItem("premium-theme");
     document.documentElement.removeAttribute("data-theme");
