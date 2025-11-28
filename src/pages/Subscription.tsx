@@ -292,9 +292,7 @@ export default function Subscription() {
 
             <CardContent className="p-8 space-y-6 relative">
               <div className="text-center bg-gradient-to-r from-purple-900/40 to-pink-900/40 rounded-xl p-6 border border-purple-400/30">
-                <div className="text-sm text-purple-300 mb-2">Your New Price</div>
                 <div className="flex items-baseline justify-center gap-2 mb-2">
-                  <span className="text-2xl text-purple-400 line-through">$4.99</span>
                   <span className="text-5xl font-bold text-white">$5.99</span>
                   <span className="text-purple-300">/month</span>
                 </div>
@@ -316,8 +314,60 @@ export default function Subscription() {
 
               <Button
                 onClick={async () => {
-                  setReadToMeEnabled(true);
-                  await handleSubscribe();
+                  setLoading(true);
+                  
+                  toast({
+                    title: "Redirecting to checkout...",
+                    description: "Opening secure payment window",
+                  });
+
+                  try {
+                    if (isNative) {
+                      toast({
+                        title: "Mobile Subscriptions",
+                        description: `Please manage subscriptions through ${platform === 'ios' ? 'App Store' : 'Google Play Store'}`,
+                        variant: "destructive",
+                      });
+                      setLoading(false);
+                      return;
+                    }
+
+                    const deviceId = await getDeviceId();
+                    const { data, error } = await supabase.functions.invoke('create-checkout-session', {
+                      body: { planType: 'premium_plus', deviceId },
+                    });
+
+                    if (error) throw error;
+
+                    if (data?.url) {
+                      const checkoutWindow = window.open(data.url, '_blank');
+                      
+                      if (!checkoutWindow) {
+                        toast({
+                          title: "Popup Blocked",
+                          description: "Please allow popups for this site and try again.",
+                          variant: "destructive",
+                        });
+                      } else {
+                        toast({
+                          title: "Checkout opened",
+                          description: "Complete your purchase in the new window",
+                        });
+                      }
+                      
+                      setLoading(false);
+                    } else {
+                      throw new Error('No checkout URL returned');
+                    }
+                  } catch (error) {
+                    console.error('Upgrade error:', error);
+                    toast({
+                      title: "Error",
+                      description: "Failed to process upgrade. Please try again.",
+                      variant: "destructive",
+                    });
+                    setLoading(false);
+                  }
                 }}
                 disabled={loading}
                 size="lg"
