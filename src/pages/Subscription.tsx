@@ -265,6 +265,80 @@ export default function Subscription() {
           </Card>
         )}
 
+        {/* Upgrade to Premium Plus - Show for Premium users only */}
+        {currentPlan && currentPlan.price_monthly === 4.99 && (
+          <Card className="max-w-2xl mx-auto mb-12 bg-gradient-to-br from-purple-500/30 via-pink-500/30 to-yellow-500/20 backdrop-blur-md border-purple-400/40 overflow-hidden relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 via-pink-500/10 to-yellow-500/10 animate-pulse" />
+            <div className="absolute top-4 right-4 bg-gradient-to-r from-yellow-400 to-amber-500 text-purple-900 px-4 py-2 rounded-full text-sm font-bold flex items-center gap-2 shadow-lg">
+              <Sparkles className="h-4 w-4" />
+              UPGRADE AVAILABLE
+            </div>
+            
+            <CardHeader className="text-center border-b border-white/10 pb-6 relative">
+              <div className="flex justify-center mb-4">
+                <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 p-4 rounded-full shadow-lg animate-pulse">
+                  <Volume2 className="h-12 w-12 text-white" />
+                </div>
+              </div>
+              <CardTitle className="text-3xl text-white mb-2 flex items-center justify-center gap-2">
+                <Sparkles className="h-6 w-6 text-yellow-400" />
+                Upgrade to Premium Plus
+                <Sparkles className="h-6 w-6 text-yellow-400" />
+              </CardTitle>
+              <CardDescription className="text-purple-200 text-lg">
+                Add Read-to-Me for just <span className="font-bold text-white">$1 more per month!</span>
+              </CardDescription>
+            </CardHeader>
+
+            <CardContent className="p-8 space-y-6 relative">
+              <div className="text-center bg-gradient-to-r from-purple-900/40 to-pink-900/40 rounded-xl p-6 border border-purple-400/30">
+                <div className="text-sm text-purple-300 mb-2">Your New Price</div>
+                <div className="flex items-baseline justify-center gap-2 mb-2">
+                  <span className="text-2xl text-purple-400 line-through">$4.99</span>
+                  <span className="text-5xl font-bold text-white">$5.99</span>
+                  <span className="text-purple-300">/month</span>
+                </div>
+                <div className="text-sm text-yellow-400 font-semibold flex items-center justify-center gap-1">
+                  <Sparkles className="h-4 w-4" />
+                  Just $1 more for premium narration!
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="text-lg font-bold text-white text-center mb-3">You'll Get:</div>
+                {readToMeUpsell.features.map((feature, index) => (
+                  <div key={index} className="flex items-start gap-3 bg-white/5 rounded-lg p-3 border border-purple-400/20">
+                    <CheckCircle className="h-5 w-5 text-yellow-400 shrink-0 mt-0.5" />
+                    <span className="text-white">{feature}</span>
+                  </div>
+                ))}
+              </div>
+
+              <Button
+                onClick={async () => {
+                  setReadToMeEnabled(true);
+                  await handleSubscribe();
+                }}
+                disabled={loading}
+                size="lg"
+                className="w-full bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 hover:from-purple-700 hover:via-pink-700 hover:to-purple-700 text-white font-bold text-lg py-6 shadow-lg hover:shadow-xl transition-all duration-300"
+              >
+                {loading ? "Processing..." : (
+                  <span className="flex items-center gap-2">
+                    <Crown className="h-5 w-5" />
+                    Upgrade to Premium Plus Now
+                    <Sparkles className="h-5 w-5" />
+                  </span>
+                )}
+              </Button>
+
+              <p className="text-center text-purple-300 text-sm">
+                Perfect for kids who love listening to stories! 🎧
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Hero Section - Only show if no premium */}
         {!currentPlan && (
           <div className="text-center mb-12 space-y-4">
