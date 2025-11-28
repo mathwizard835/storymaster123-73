@@ -60,35 +60,34 @@ serve(async (req) => {
 
     const planId = planIds[planType as keyof typeof planIds];
 
-    // Check if subscription already exists
+    // Check if subscription already exists for this session
     const { data: existingSub } = await supabaseClient
       .from('user_subscriptions')
       .select('*')
       .eq('device_id', deviceId)
       .eq('status', 'active')
+      .order('created_at', { ascending: false })
+      .limit(1)
       .maybeSingle();
 
-    if (existingSub) {
-      console.log('Subscription already exists:', existingSub.id);
+    if (existingSub && existingSub.starts_at && new Date(existingSub.starts_at) > new Date(Date.now() - 60000)) {
+      console.log('Recent subscription already exists:', existingSub.id);
       return new Response(
         JSON.stringify({ success: true, subscription: existingSub }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
       );
     }
 
-    // Cancel any existing active subscriptions
+    // Cancel any existing active subscriptions for this device/user
+    const cancelQuery = supabaseClient
+      .from('user_subscriptions')
+      .update({ status: 'cancelled' })
+      .eq('status', 'active');
+
     if (userId) {
-      await supabaseClient
-        .from('user_subscriptions')
-        .update({ status: 'cancelled' })
-        .or(`device_id.eq.${deviceId},user_id.eq.${userId}`)
-        .eq('status', 'active');
+      await cancelQuery.or(`device_id.eq.${deviceId},user_id.eq.${userId}`);
     } else {
-      await supabaseClient
-        .from('user_subscriptions')
-        .update({ status: 'cancelled' })
-        .eq('device_id', deviceId)
-        .eq('status', 'active');
+      await cancelQuery.eq('device_id', deviceId);
     }
 
     // Create new subscription

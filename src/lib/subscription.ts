@@ -54,8 +54,8 @@ export const getUserSubscription = async (): Promise<{
   try {
     const deviceId = await getDeviceId();
     
-    // First try to find by device_id
-    let { data, error } = await supabase
+    // First try to find by device_id - get most recent if multiple exist
+    let { data: deviceSubs, error } = await supabase
       .from('user_subscriptions')
       .select(`
         *,
@@ -63,15 +63,18 @@ export const getUserSubscription = async (): Promise<{
       `)
       .eq('device_id', deviceId)
       .eq('status', 'active')
-      .maybeSingle();
+      .order('created_at', { ascending: false })
+      .limit(1);
 
     if (error && error.code !== 'PGRST116') throw error;
+
+    let data = deviceSubs?.[0] || null;
 
     // If no subscription found by device_id, try by user_id
     if (!data) {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        const result = await supabase
+        const { data: userSubs, error: userError } = await supabase
           .from('user_subscriptions')
           .select(`
             *,
@@ -79,10 +82,11 @@ export const getUserSubscription = async (): Promise<{
           `)
           .eq('user_id', user.id)
           .eq('status', 'active')
-          .maybeSingle();
+          .order('created_at', { ascending: false })
+          .limit(1);
         
-        data = result.data;
-        if (result.error && result.error.code !== 'PGRST116') throw result.error;
+        data = userSubs?.[0] || null;
+        if (userError && userError.code !== 'PGRST116') throw userError;
       }
     }
 

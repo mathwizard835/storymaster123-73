@@ -16,13 +16,15 @@ export default function SubscriptionSuccess() {
   const [subscriptionActive, setSubscriptionActive] = useState(false);
 
   useEffect(() => {
+    let hasRun = false;
+    
     const verifyAndActivate = async () => {
-      if (!sessionId) return;
+      if (!sessionId || hasRun) return;
+      hasRun = true;
 
       try {
         console.log('Verifying checkout session:', sessionId);
         
-        // First, verify the session and create subscription if needed
         const { data, error } = await supabase.functions.invoke('verify-checkout-session', {
           body: { sessionId },
         });
@@ -32,13 +34,9 @@ export default function SubscriptionSuccess() {
           throw error;
         }
 
-        console.log('Verification response:', data);
-
         if (data.success) {
-          // Wait a moment for the database to sync
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          await new Promise(resolve => setTimeout(resolve, 1500));
           
-          // Now check subscription status
           const { subscription } = await getUserSubscription();
           
           if (subscription?.status === 'active') {
@@ -49,34 +47,11 @@ export default function SubscriptionSuccess() {
               description: "Your subscription is now active. Enjoy unlimited stories!",
             });
           } else {
-            // If still not active, poll a few more times
-            let attempts = 0;
-            const maxAttempts = 5;
-            
-            const pollSubscription = async () => {
-              const { subscription } = await getUserSubscription();
-              
-              if (subscription?.status === 'active') {
-                setSubscriptionActive(true);
-                setIsVerifying(false);
-                toast({
-                  title: "🎉 Welcome to Premium!",
-                  description: "Your subscription is now active. Enjoy unlimited stories!",
-                });
-              } else if (attempts < maxAttempts) {
-                attempts++;
-                setTimeout(pollSubscription, 1500);
-              } else {
-                setIsVerifying(false);
-                toast({
-                  title: "Subscription Activated",
-                  description: "Your premium access is ready! Reload the page if needed.",
-                  variant: "default",
-                });
-              }
-            };
-            
-            pollSubscription();
+            setIsVerifying(false);
+            toast({
+              title: "Subscription Activated",
+              description: "Your premium access is ready! Reload the page if needed.",
+            });
           }
         } else {
           throw new Error('Failed to verify checkout session');
