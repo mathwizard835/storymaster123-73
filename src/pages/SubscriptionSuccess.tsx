@@ -1,22 +1,53 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, Sparkles } from "lucide-react";
+import { CheckCircle, Sparkles, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { getUserSubscription } from "@/lib/subscription";
 
 export default function SubscriptionSuccess() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
   const sessionId = searchParams.get('session_id');
+  const [isVerifying, setIsVerifying] = useState(true);
+  const [subscriptionActive, setSubscriptionActive] = useState(false);
 
   useEffect(() => {
+    let attempts = 0;
+    const maxAttempts = 10;
+    
+    const checkSubscription = async () => {
+      try {
+        const { subscription } = await getUserSubscription();
+        
+        if (subscription?.status === 'active') {
+          setSubscriptionActive(true);
+          setIsVerifying(false);
+          toast({
+            title: "🎉 Welcome to Premium!",
+            description: "Your subscription is now active. Enjoy unlimited stories!",
+          });
+        } else if (attempts < maxAttempts) {
+          attempts++;
+          setTimeout(checkSubscription, 2000); // Check every 2 seconds
+        } else {
+          // After max attempts, assume success but show warning
+          setIsVerifying(false);
+          toast({
+            title: "Payment Received",
+            description: "Your subscription is being processed. Please refresh if you don't see premium features.",
+          });
+        }
+      } catch (error) {
+        console.error('Error checking subscription:', error);
+        setIsVerifying(false);
+      }
+    };
+
     if (sessionId) {
-      toast({
-        title: "🎉 Welcome to Premium!",
-        description: "Your subscription is now active. Enjoy unlimited stories!",
-      });
+      checkSubscription();
     }
   }, [sessionId, toast]);
 
@@ -63,19 +94,37 @@ export default function SubscriptionSuccess() {
             </ul>
           </div>
 
+          {isVerifying && (
+            <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4 flex items-center gap-3">
+              <Loader2 className="w-5 h-5 animate-spin text-yellow-500" />
+              <p className="text-sm text-yellow-500">
+                Activating your subscription... This may take a few moments.
+              </p>
+            </div>
+          )}
+
           <div className="flex flex-col sm:flex-row gap-3">
             <Button 
               onClick={() => navigate('/dashboard')}
               className="flex-1"
               size="lg"
+              disabled={isVerifying}
             >
-              Go to Dashboard
+              {isVerifying ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Activating...
+                </>
+              ) : (
+                'Go to Dashboard'
+              )}
             </Button>
             <Button 
               onClick={() => navigate('/subscription')}
               variant="outline"
               className="flex-1"
               size="lg"
+              disabled={isVerifying}
             >
               View Subscription
             </Button>
