@@ -35,28 +35,21 @@ const Dashboard = () => {
     const loadData = async () => {
       if (user) {
         try {
-          // Check premium status
+          // ALWAYS sync progress from database on login to ensure consistency across devices
+          console.log('🔄 Syncing progress from database...');
+          const { syncProgressFromDatabase } = await import('@/lib/syncProgress');
+          
+          try {
+            await syncProgressFromDatabase();
+            console.log('✅ Progress synced successfully');
+          } catch (syncError) {
+            console.error('Failed to sync progress:', syncError);
+            // Continue even if sync fails
+          }
+          
+          // ALWAYS check premium status fresh from database
           const { plan } = await getUserSubscription();
           setIsPremium(plan?.name === "premium" || plan?.name === "premium_plus");
-
-          // Check if we need to sync from database
-          const { needsSync, syncProgressFromDatabase } = await import('@/lib/syncProgress');
-          const shouldSync = await needsSync();
-          
-          if (shouldSync) {
-            console.log('🔄 Syncing progress from database...');
-            toast({
-              title: "Restoring Your Progress",
-              description: "Loading your achievements and stories from the cloud...",
-            });
-            
-            await syncProgressFromDatabase();
-            
-            toast({
-              title: "Progress Restored!",
-              description: "Your achievements and stats have been synced.",
-            });
-          }
           
           // Load recent stories from database
           const stories = await loadRecentStoriesFromDatabase();

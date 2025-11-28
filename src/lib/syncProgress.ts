@@ -6,7 +6,7 @@ import { checkAndAwardAbilities, saveAbilities, type AbilityProgress } from './a
 
 /**
  * Syncs user progress from database to localStorage
- * This is needed when localStorage is cleared or user switches devices
+ * ALWAYS call this on login to ensure cross-device consistency
  */
 export const syncProgressFromDatabase = async (): Promise<{
   syncedStories: number;
@@ -26,20 +26,33 @@ export const syncProgressFromDatabase = async (): Promise<{
       };
     }
 
-    // Get all completed stories from database
-    const { data: completedStories, error } = await supabase
-      .from('user_stories')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('status', 'completed')
-      .order('completed_at', { ascending: true });
+    // Get all completed stories from BOTH user_stories and story_completions
+    // This ensures we count all stories across all devices
+    const [userStoriesResult, completionsResult] = await Promise.all([
+      supabase
+        .from('user_stories')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('status', 'completed')
+        .order('completed_at', { ascending: true }),
+      supabase
+        .from('story_completions')
+        .select('*')
+        .order('completed_at', { ascending: true })
+    ]);
 
-    if (error) {
-      console.error('Failed to fetch completed stories:', error);
-      throw error;
+    const completedStories = userStoriesResult.data || [];
+    const storyCompletions = completionsResult.data || [];
+    
+    // Use story_completions count as the source of truth for total stories
+    const totalStoriesCompleted = storyCompletions.length;
+
+    if (userStoriesResult.error || completionsResult.error) {
+      console.error('Failed to fetch completed stories:', userStoriesResult.error || completionsResult.error);
+      throw userStoriesResult.error || completionsResult.error;
     }
 
-    if (!completedStories || completedStories.length === 0) {
+    if (totalStoriesCompleted === 0) {
       console.log('No completed stories found in database');
       return {
         syncedStories: 0,
@@ -49,12 +62,12 @@ export const syncProgressFromDatabase = async (): Promise<{
       };
     }
 
-    console.log(`🔄 Syncing ${completedStories.length} completed stories from database...`);
+    console.log(`🔄 Syncing ${totalStoriesCompleted} completed stories from database (${completedStories.length} detailed)...`);
 
     // Initialize fresh progress tracking
     let character = { ...DEFAULT_CHARACTER };
     let achievementProgress: AchievementProgress = {
-      totalStories: 0,
+      totalStories: totalStoriesCompleted, // Use actual count from story_completions
       totalChoices: 0,
       badgeUsage: {},
       modeUsage: {},
@@ -66,14 +79,13 @@ export const syncProgressFromDatabase = async (): Promise<{
       abilitiesUsed: 0
     };
 
-    // Process each completed story to rebuild progress
+    // Process detailed stories to rebuild progress accurately
     for (const story of completedStories) {
       const profile = story.profile as unknown as Profile;
       const sceneCount = story.scene_count || 0;
       const choiceCount = Math.max(0, sceneCount - 1); // Approximate choices
 
       // Update achievements
-      achievementProgress.totalStories += 1;
       achievementProgress.totalChoices += choiceCount;
 
       // Update badge usage
@@ -121,11 +133,11 @@ export const syncProgressFromDatabase = async (): Promise<{
     // Save abilities progress
     saveAbilities(abilityProgress);
 
-    console.log(`✅ Sync complete: ${completedStories.length} stories, ${achievementProgress.totalChoices} choices, ${allNewAchievements.length} achievements, ${abilityProgress.totalAbilitiesEarned} abilities unlocked`);
+    console.log(`✅ Sync complete: ${totalStoriesCompleted} stories, ${achievementProgress.totalChoices} choices, ${allNewAchievements.length} achievements, ${abilityProgress.totalAbilitiesEarned} abilities unlocked`);
     console.log(`📊 Character: Level ${character.level}, ${character.totalExperienceEarned} total XP`);
 
     return {
-      syncedStories: completedStories.length,
+      syncedStories: totalStoriesCompleted,
       achievements: achievementProgress,
       character,
       abilities: abilityProgress

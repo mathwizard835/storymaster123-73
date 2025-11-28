@@ -153,30 +153,45 @@ export const cancelSubscription = async (): Promise<boolean> => {
 };
 
 export const getStoriesRemaining = async (): Promise<{
-  storiesUsedToday: number;
-  dailyLimit: number;
+  storiesUsedThisMonth: number;
+  monthlyLimit: number;
   bonusStories: number;
   canPlay: boolean;
 }> => {
   try {
     const deviceId = await getDeviceId();
-    const today = new Date().toISOString().split('T')[0];
+    
+    // Get first and last day of current month
+    const now = new Date();
+    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
     
     // Get current subscription plan
     const { plan } = await getUserSubscription();
-    const dailyLimit = plan?.features.daily_stories || 1;
+    
+    // Monthly limits: Free = 3, Premium = 10, Premium Plus = 10
+    let monthlyLimit = 3; // Default for free users
+    if (plan) {
+      // Check plan name or features to determine limit
+      if (plan.name === 'premium' || plan.name === 'premium_plus') {
+        monthlyLimit = 10;
+      } else if (plan.features.daily_stories) {
+        // Fallback: use daily_stories feature if set
+        monthlyLimit = plan.features.daily_stories;
+      }
+    }
 
-    // Count stories completed today
-    const { data: todayStories, error: storiesError } = await supabase
+    // Count stories completed THIS MONTH
+    const { data: monthStories, error: storiesError } = await supabase
       .from('story_completions')
       .select('id')
       .eq('device_id', deviceId)
-      .gte('completed_at', `${today}T00:00:00.000Z`)
-      .lt('completed_at', `${today}T23:59:59.999Z`);
+      .gte('completed_at', firstDayOfMonth.toISOString())
+      .lte('completed_at', lastDayOfMonth.toISOString());
 
     if (storiesError) throw storiesError;
 
-    const storiesUsedToday = todayStories?.length || 0;
+    const storiesUsedThisMonth = monthStories?.length || 0;
 
     // Get bonus stories from referrals and streaks
     const { data: referralData } = await supabase
@@ -195,20 +210,22 @@ export const getStoriesRemaining = async (): Promise<{
     const streakBonus = streakData?.bonus_stories_earned || 0;
     const bonusStories = referralBonus + streakBonus;
 
-    const totalAllowed = dailyLimit + bonusStories;
-    const canPlay = storiesUsedToday < totalAllowed;
+    const totalAllowed = monthlyLimit + bonusStories;
+    const canPlay = storiesUsedThisMonth < totalAllowed;
+
+    console.log(`📊 Story limits: ${storiesUsedThisMonth}/${monthlyLimit} used this month (${bonusStories} bonus, canPlay: ${canPlay})`);
 
     return {
-      storiesUsedToday,
-      dailyLimit,
+      storiesUsedThisMonth,
+      monthlyLimit,
       bonusStories,
       canPlay
     };
   } catch (e) {
     console.error("Failed to check stories remaining", e);
     return {
-      storiesUsedToday: 0,
-      dailyLimit: 1,
+      storiesUsedThisMonth: 0,
+      monthlyLimit: 3,
       bonusStories: 0,
       canPlay: true
     };

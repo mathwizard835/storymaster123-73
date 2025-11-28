@@ -308,6 +308,23 @@ const Mission = () => {
       console.log('🚀 Starting initialization (locked)');
       
       try {
+        // ENFORCE STORY LIMITS BEFORE STARTING NEW STORY
+        if (user && !isTrialMode && !searchParams.get('resume')) {
+          const { getStoriesRemaining } = await import('@/lib/subscription');
+          const { canPlay, storiesUsedThisMonth, monthlyLimit } = await getStoriesRemaining();
+          
+          if (!canPlay) {
+            console.log('🚫 Monthly story limit reached, redirecting to subscription page');
+            toast({
+              title: "Monthly Story Limit Reached",
+              description: `You've used all ${storiesUsedThisMonth} of your ${monthlyLimit} monthly stories. Upgrade for 10 stories per month!`,
+              variant: "destructive",
+            });
+            navigate("/subscription?limitReached=true");
+            return;
+          }
+        }
+        
         // Check if mobile platform
         const isMobile = typeof window !== 'undefined' && 
           ((window as any).Capacitor?.getPlatform?.() === 'ios' || 

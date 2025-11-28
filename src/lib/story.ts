@@ -127,23 +127,24 @@ export const getDeviceId = async (): Promise<string> => {
   }
 };
 
-// Check if the player can start a new story based on subscription and daily limits
+// Check if the player can start a new story based on subscription and monthly limits
 export const checkStoryLimit = async (): Promise<{ canPlay: boolean; completedCount: number; reason?: string }> => {
   try {
     const { getStoriesRemaining } = await import("@/lib/subscription");
-    const { storiesUsedToday, dailyLimit, bonusStories, canPlay } = await getStoriesRemaining();
+    const { storiesUsedThisMonth, monthlyLimit, bonusStories, canPlay } = await getStoriesRemaining();
     
     if (!canPlay) {
-      let reason = `You've used ${storiesUsedToday}/${dailyLimit} daily stories.`;
+      let reason = `You've used ${storiesUsedThisMonth}/${monthlyLimit} monthly stories.`;
       if (bonusStories > 0) {
         reason += ` (${bonusStories} bonus stories included)`;
       }
-      reason += " Upgrade for unlimited stories or wait until tomorrow!";
+      reason += " Upgrade to Premium for 10 stories per month or wait until next month!";
       
-      return { canPlay: false, completedCount: storiesUsedToday, reason };
+      return { canPlay: false, completedCount: storiesUsedThisMonth, reason };
     }
 
-    return { canPlay: true, completedCount: storiesUsedToday };
+
+    return { canPlay: true, completedCount: storiesUsedThisMonth };
   } catch (e) {
     console.error("Failed to check story limit", e);
     return { canPlay: true, completedCount: 0 }; // Allow play on error to avoid blocking
