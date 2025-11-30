@@ -230,11 +230,9 @@ const Index = () => {
     heroText: "Every Story is YOUR Adventure!",
     ctaButton: "🚀 Start My Epic Quest!",
     benefits: [
-      { icon: <Gamepad2 className="h-5 w-5 text-blue-400" />, text: "Built Like a Game" },
-      { icon: <BookOpen className="h-5 w-5 text-green-400" />, text: "Builds Real Reading Skills" },
-      { icon: <Brain className="h-5 w-5 text-purple-400" />, text: "Healthy Screen Time" },
-      { icon: <Sparkles className="h-5 w-5 text-yellow-400" />, text: "Personalized Adventures" },
-      { icon: <Zap className="h-5 w-5 text-orange-400" />, text: "Zero Reading Fights Ever Again" },
+      { icon: <Shield className="h-5 w-5 text-green-400" />, text: "100% Safe Content" },
+      { icon: <Brain className="h-5 w-5 text-blue-400" />, text: "Educational & Engaging" },
+      { icon: <Sparkles className="h-5 w-5 text-purple-400" />, text: "Personalized Adventures" },
     ],
   };
 
@@ -289,7 +287,7 @@ const Index = () => {
           className="absolute inset-0 h-full w-full object-cover"
           loading="eager"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/60 to-background/80" />
+        <div className="absolute inset-0 bg-gradient-to-b from-background/30 via-background/50 to-background/70" />
 
         <div className="relative z-10 flex min-h-screen items-center justify-center px-6">
           {/* Floating Premium Button - Top Right */}
@@ -309,11 +307,22 @@ const Index = () => {
                 <SignOutButton />
               </div>
             )}
-            <h1 className="font-heading text-5xl md:text-7xl font-extrabold tracking-tight drop-shadow-2xl mb-6 text-foreground">
-              Replace Mindless Screen Time With Adventures Your Child Actually Learns From.
+            <h1 className="font-heading text-5xl md:text-7xl font-extrabold tracking-tight drop-shadow-2xl mb-6">
+              <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                Ditch Roblox & YouTube Shorts.
+              </span>
+              <br />
+              <span className="text-foreground">Get Hooked on Stories.</span>
             </h1>
-            <p className="text-xl md:text-2xl text-foreground mb-8 leading-relaxed">
-              Just as exciting as gaming — but finally good for their brain. Your child gets the fun they crave, and you get real reading growth.
+            <p className="text-xl md:text-2xl text-muted-foreground mb-8 leading-relaxed">
+              <strong className="text-foreground text-2xl">
+                Replace <span className="text-destructive line-through">mindless gaming & scrolling</span> with{" "}
+                <span className="text-primary">addictive interactive adventures!</span>
+              </strong>
+              <br />
+              <span className="text-lg">
+                🎮 Game-like Fun • 📚 Real Reading Skills • 🧠 Brain-Building Entertainment
+              </span>
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
@@ -375,15 +384,17 @@ const Index = () => {
             </div>
 
             <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 mb-8 border border-white/20">
-              <div className="flex justify-center items-center gap-4 text-lg">
+              <p className="text-lg font-semibold text-center mb-3">✨ A Better Screen Time Alternative</p>
+              <div className="flex flex-col sm:flex-row justify-center items-center gap-4 text-sm">
                 <span className="flex items-center gap-2 text-center">
-                  <strong className="text-foreground">"My son swapped Roblox for StoryMaster. Same excitement — but now he's actually learning."</strong>
+                  <span className="text-lg">🎮</span>
+                  <strong>"My son swapped Roblox for StoryMaster. Same engagement, but he's actually learning!"</strong>
                 </span>
               </div>
-              <p className="text-center text-sm text-muted-foreground mt-3">— Parent</p>
+              <p className="text-center text-xs text-muted-foreground mt-3">— Parent testimonial</p>
             </div>
 
-            <div className="flex justify-center items-center gap-6 text-sm text-foreground flex-wrap">
+            <div className="flex justify-center items-center gap-8 text-sm text-muted-foreground flex-wrap">
               {content.benefits.map((benefit, index) => (
                 <div key={index} className="flex items-center gap-2">
                   {benefit.icon}
@@ -392,6 +403,12 @@ const Index = () => {
                   </span>
                 </div>
               ))}
+              <div className="flex items-center gap-2 bg-primary/20 px-3 py-1.5 rounded-full">
+                <Rocket className="h-4 w-4 text-primary" />
+                <span className="text-primary">
+                  <strong>Updated Weekly</strong>
+                </span>
+              </div>
             </div>
 
             <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
@@ -407,11 +424,8 @@ const Index = () => {
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold mb-6">The Screen Time Revolution Is Here</h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              <strong className="text-foreground">Better than Roblox, YouTube, or TikTok.</strong> StoryMaster delivers
-              the same dopamine hit{" "}
-              <span className="text-primary font-semibold">
-                but builds reading skills instead of wasting brain cells.
-              </span>
+              <strong className="text-foreground">Better than Roblox, YouTube, or TikTok.</strong> StoryMaster delivers the same dopamine hit{" "}
+              <span className="text-primary font-semibold">but builds reading skills instead of wasting brain cells.</span>
             </p>
           </div>
 
@@ -433,8 +447,7 @@ const Index = () => {
               </div>
               <h3 className="text-2xl font-bold mb-4">🎮 Healthier Screen Time</h3>
               <p className="text-muted-foreground">
-                <strong>Same engagement as gaming:</strong> All the fun of Roblox or Minecraft, but builds vocabulary,
-                reading speed, and critical thinking instead of just button-mashing.
+                <strong>Same engagement as gaming:</strong> All the fun of Roblox or Minecraft, but builds vocabulary, reading speed, and critical thinking instead of just button-mashing.
               </p>
             </div>
 
@@ -478,8 +491,7 @@ const Index = () => {
                   <div>
                     <h3 className="font-semibold text-lg mb-2">Productive Screen Time</h3>
                     <p className="text-muted-foreground">
-                      Same dopamine as YouTube Shorts, but builds vocabulary, critical thinking, and creativity instead
-                      of rotting their brain.
+                      Same dopamine as YouTube Shorts, but builds vocabulary, critical thinking, and creativity instead of rotting their brain.
                     </p>
                   </div>
                 </div>
