@@ -239,8 +239,8 @@ const Index = () => {
   return (
     <>
       <Seo
-        title="Stop Reading Battles - StoryMaster Quest Turns Reluctant Readers Into Story Lovers"
-        description="Your child will ASK to read! AI-powered interactive adventures that make reading irresistible. Track real progress. No more bedtime battles."
+        title="Better Than Roblox, YouTube Shorts & Mindless Gaming - StoryMaster Quest"
+        description="Your child's new favorite screen time! Addictive interactive stories that build reading skills. The engaging alternative to mindless gaming and endless scrolling."
         canonical="/"
         jsonLd={{
           "@context": "https://schema.org",
@@ -309,19 +309,19 @@ const Index = () => {
             )}
             <h1 className="font-heading text-5xl md:text-7xl font-extrabold tracking-tight drop-shadow-2xl mb-6">
               <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                Stop Fighting About Reading.
+                Ditch Roblox & YouTube Shorts.
               </span>
               <br />
-              <span className="text-foreground">Start Celebrating It.</span>
+              <span className="text-foreground">Get Hooked on Stories.</span>
             </h1>
             <p className="text-xl md:text-2xl text-muted-foreground mb-8 leading-relaxed">
               <strong className="text-foreground text-2xl">
-                Your child who <span className="text-destructive line-through">refuses to read</span> will{" "}
-                <span className="text-primary">beg for "just one more story!"</span>
+                Replace <span className="text-destructive line-through">mindless gaming & scrolling</span> with{" "}
+                <span className="text-primary">addictive interactive adventures!</span>
               </strong>
               <br />
               <span className="text-lg">
-                📚 Track Real Progress • ⏱️ See Time & Words Read • 🔥 Build Reading Streaks
+                🎮 Game-like Fun • 📚 Real Reading Skills • 🧠 Brain-Building Entertainment
               </span>
             </p>
 
@@ -384,11 +384,11 @@ const Index = () => {
             </div>
 
             <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 mb-8 border border-white/20">
-              <p className="text-lg font-semibold text-center mb-3">✨ For Parents of Reluctant Readers</p>
+              <p className="text-lg font-semibold text-center mb-3">✨ A Better Screen Time Alternative</p>
               <div className="flex flex-col sm:flex-row justify-center items-center gap-4 text-sm">
                 <span className="flex items-center gap-2 text-center">
-                  <span className="text-lg">📖</span>
-                  <strong>"My 7-year-old HATED reading. Now he asks for StoryMaster every night!"</strong>
+                  <span className="text-lg">🎮</span>
+                  <strong>"My son swapped Roblox for StoryMaster. Same engagement, but he's actually learning!"</strong>
                 </span>
               </div>
               <p className="text-center text-xs text-muted-foreground mt-3">— Parent testimonial</p>
@@ -424,9 +424,8 @@ const Index = () => {
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold mb-6">The Screen Time Revolution Is Here</h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              <strong className="text-foreground">Stop the bedtime battles.</strong> StoryMaster turns reluctant readers
-              into book lovers.{" "}
-              <span className="text-primary font-semibold">Track real progress parents can celebrate.</span>
+              <strong className="text-foreground">Better than Roblox, YouTube, or TikTok.</strong> StoryMaster delivers the same dopamine hit{" "}
+              <span className="text-primary font-semibold">but builds reading skills instead of wasting brain cells.</span>
             </p>
           </div>
 
@@ -446,10 +445,9 @@ const Index = () => {
               <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Heart className="h-8 w-8 text-primary" />
               </div>
-              <h3 className="text-2xl font-bold mb-4">💖 They'll Actually Ask to Read</h3>
+              <h3 className="text-2xl font-bold mb-4">🎮 Healthier Screen Time</h3>
               <p className="text-muted-foreground">
-                <strong>No more battles:</strong> Interactive stories so engaging, kids beg for "just one more." Turn
-                reading from a chore into their favorite activity.
+                <strong>Same engagement as gaming:</strong> All the fun of Roblox or Minecraft, but builds vocabulary, reading speed, and critical thinking instead of just button-mashing.
               </p>
             </div>
 
@@ -480,9 +478,9 @@ const Index = () => {
               />
             </div>
             <div>
-              <h2 className="text-4xl md:text-5xl font-bold mb-6">For Parents Who Care</h2>
+              <h2 className="text-4xl md:text-5xl font-bold mb-6">For Parents Who Want Better Screen Time</h2>
               <p className="text-xl text-muted-foreground mb-8">
-                Finally, screen time that makes you feel good about what your kids are doing.
+                Replace mindless gaming and scrolling with engaging stories that actually build skills.
               </p>
 
               <div className="space-y-6">
@@ -491,9 +489,9 @@ const Index = () => {
                     <Heart className="h-4 w-4 text-green-600" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-lg mb-2">Educational Value</h3>
+                    <h3 className="font-semibold text-lg mb-2">Productive Screen Time</h3>
                     <p className="text-muted-foreground">
-                      Builds vocabulary, critical thinking, and creativity while having fun.
+                      Same dopamine as YouTube Shorts, but builds vocabulary, critical thinking, and creativity instead of rotting their brain.
                     </p>
                   </div>
                 </div>
@@ -544,9 +542,9 @@ const Index = () => {
         <div className="max-w-6xl mx-auto">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="order-2 md:order-1">
-              <h2 className="text-4xl md:text-5xl font-bold mb-6">Your Story, Your Rules</h2>
+              <h2 className="text-4xl md:text-5xl font-bold mb-6">More Fun Than Gaming</h2>
               <p className="text-xl text-muted-foreground mb-8">
-                Every adventure is different. Every choice matters. Every story is uniquely yours.
+                Every adventure is different. Every choice matters. Better than any video game.
               </p>
 
               <div className="grid grid-cols-1 tablet:grid-cols-2 gap-6">
