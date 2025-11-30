@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { CheckCircle, X, Volume2, BookOpen, Star, Sparkles, Crown, ArrowLeft } from "lucide-react";
+import { CheckCircle, X, Volume2, BookOpen, Star, Sparkles, Crown, ArrowLeft, Gamepad2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { upgradeSubscription, cancelSubscription, getUserSubscription, type SubscriptionPlan } from "@/lib/subscription";
 import { isMobilePlatform, getPlatform } from "@/lib/mobileFeatures";
@@ -398,15 +398,14 @@ export default function Subscription() {
             </div>
 
             <h1 className="text-5xl md:text-6xl font-bold text-white mb-4">
-              Make Reading an
+              Replace Gaming &amp; Scrolling With
               <span className="block bg-gradient-to-r from-yellow-300 via-pink-300 to-purple-300 bg-clip-text text-transparent">
-                Epic Adventure
+                Addictive Stories
               </span>
             </h1>
 
             <p className="text-xl text-purple-200 max-w-2xl mx-auto">
-              Transform screen time into reading time with personalized, interactive stories that adapt to your child's
-              choices.
+              Better than Roblox. More engaging than YouTube. StoryMaster turns mindless screen time into brain-building adventures.
             </p>
           </div>
         )}
@@ -418,14 +417,14 @@ export default function Subscription() {
             <div className="absolute inset-0 bg-gradient-to-br from-red-500/10 to-transparent" />
             <CardHeader className="relative">
               <div className="flex items-center justify-between mb-2">
-                <BookOpen className="h-8 w-8 text-red-400" />
+                <Gamepad2 className="h-8 w-8 text-red-400" />
                 <X className="h-5 w-5 text-red-400" />
               </div>
-              <CardTitle className="text-white text-lg">Traditional Books</CardTitle>
+              <CardTitle className="text-white text-lg">Roblox/Gaming</CardTitle>
             </CardHeader>
             <CardContent className="relative">
-              <p className="text-3xl font-bold text-white mb-2">$10-15</p>
-              <p className="text-purple-300 text-sm">per book, often unread</p>
+              <p className="text-3xl font-bold text-white mb-2">$19.99</p>
+              <p className="text-purple-300 text-sm">mindless entertainment</p>
             </CardContent>
           </Card>
 
@@ -436,11 +435,11 @@ export default function Subscription() {
                 <Star className="h-8 w-8 text-orange-400" />
                 <X className="h-5 w-5 text-orange-400" />
               </div>
-              <CardTitle className="text-white text-lg">Other Apps</CardTitle>
+              <CardTitle className="text-white text-lg">YouTube Premium</CardTitle>
             </CardHeader>
             <CardContent className="relative">
-              <p className="text-3xl font-bold text-white mb-2">$9.99+</p>
-              <p className="text-purple-300 text-sm">no personalization</p>
+              <p className="text-3xl font-bold text-white mb-2">$13.99</p>
+              <p className="text-purple-300 text-sm">passive scrolling</p>
             </CardContent>
           </Card>
 
@@ -457,7 +456,7 @@ export default function Subscription() {
             </CardHeader>
             <CardContent className="relative">
               <p className="text-3xl font-bold text-white mb-2">$4.99</p>
-              <p className="text-green-300 text-sm font-semibold">100+ stories/year</p>
+              <p className="text-green-300 text-sm font-semibold">engaging + educational</p>
             </CardContent>
           </Card>
         </div>
