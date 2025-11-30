@@ -312,7 +312,7 @@ const Index = () => {
                 Ditch Roblox & YouTube Shorts.
               </span>
               <br />
-              <span className="text-foreground">Get Hooked on Stories.</span>
+              <span className="text-foreground">Get Hooked on Reading.</span>
             </h1>
             <p className="text-xl md:text-2xl text-muted-foreground mb-8 leading-relaxed">
               <strong className="text-foreground text-2xl">
@@ -424,8 +424,11 @@ const Index = () => {
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold mb-6">The Screen Time Revolution Is Here</h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              <strong className="text-foreground">Better than Roblox, YouTube, or TikTok.</strong> StoryMaster delivers the same dopamine hit{" "}
-              <span className="text-primary font-semibold">but builds reading skills instead of wasting brain cells.</span>
+              <strong className="text-foreground">Better than Roblox, YouTube, or TikTok.</strong> StoryMaster delivers
+              the same dopamine hit{" "}
+              <span className="text-primary font-semibold">
+                but builds reading skills instead of wasting brain cells.
+              </span>
             </p>
           </div>
 
@@ -447,7 +450,8 @@ const Index = () => {
               </div>
               <h3 className="text-2xl font-bold mb-4">🎮 Healthier Screen Time</h3>
               <p className="text-muted-foreground">
-                <strong>Same engagement as gaming:</strong> All the fun of Roblox or Minecraft, but builds vocabulary, reading speed, and critical thinking instead of just button-mashing.
+                <strong>Same engagement as gaming:</strong> All the fun of Roblox or Minecraft, but builds vocabulary,
+                reading speed, and critical thinking instead of just button-mashing.
               </p>
             </div>
 
@@ -491,7 +495,8 @@ const Index = () => {
                   <div>
                     <h3 className="font-semibold text-lg mb-2">Productive Screen Time</h3>
                     <p className="text-muted-foreground">
-                      Same dopamine as YouTube Shorts, but builds vocabulary, critical thinking, and creativity instead of rotting their brain.
+                      Same dopamine as YouTube Shorts, but builds vocabulary, critical thinking, and creativity instead
+                      of rotting their brain.
                     </p>
                   </div>
                 </div>
