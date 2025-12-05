@@ -16,7 +16,6 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { getCompletedStories } from "@/lib/story";
 import { loadCurrentStoryFromDatabase } from "@/lib/databaseStory";
-import { isMobilePlatform } from "@/lib/mobileFeatures";
 import { getStoriesRemaining } from "@/lib/subscription";
 import {
   BookOpen,
@@ -161,8 +160,6 @@ const Index = () => {
                         } else {
                           navigate("/profile?new=true");
                         }
-                      } else if (isMobilePlatform()) {
-                        navigate("/profile?trial=true");
                       } else {
                         navigate("/auth");
                       }
@@ -350,8 +347,6 @@ const Index = () => {
                   onClick={() => {
                     if (user) {
                       navigate("/dashboard");
-                    } else if (isMobilePlatform()) {
-                      navigate("/profile?trial=true");
                     } else {
                       navigate("/auth");
                     }
