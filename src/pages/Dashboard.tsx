@@ -9,7 +9,7 @@ import { getCompletedStories } from "@/lib/story";
 import { loadAchievements, ALL_ACHIEVEMENTS } from "@/lib/achievements";
 import { loadCharacter } from "@/lib/character";
 import { loadAbilities } from "@/lib/abilities";
-import { loadRecentStoriesFromDatabase, loadCurrentStoryFromDatabase, DatabaseStory } from "@/lib/databaseStory";
+import { loadRecentStoriesFromDatabase, loadCurrentStoryFromDatabase, loadInProgressStoriesFromDatabase, pauseStoryInDatabase, DatabaseStory } from "@/lib/databaseStory";
 import { ArrowLeft, Trophy, BookOpen, Star, Crown, Zap, Plus, TrendingUp, Play, Sparkles, Heart } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -26,8 +26,10 @@ const Dashboard = () => {
   const [abilities, setAbilities] = useState(loadAbilities());
   const completedStories = getCompletedStories();
   const [recentStories, setRecentStories] = useState<DatabaseStory[]>([]);
+  const [inProgressStories, setInProgressStories] = useState<DatabaseStory[]>([]);
   const [hasActiveStory, setHasActiveStory] = useState(false);
   const [showNewStoryDialog, setShowNewStoryDialog] = useState(false);
+  const [showStoryPickerDialog, setShowStoryPickerDialog] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
   
   // Refresh data when component mounts
@@ -54,6 +56,10 @@ const Dashboard = () => {
           // Load recent stories from database
           const stories = await loadRecentStoriesFromDatabase();
           setRecentStories(stories);
+          
+          // Load in-progress stories separately
+          const inProgress = await loadInProgressStoriesFromDatabase();
+          setInProgressStories(inProgress);
           
           // Check if there's an active story
           const activeStory = await loadCurrentStoryFromDatabase();
@@ -184,7 +190,16 @@ const Dashboard = () => {
                 Parent Mode
               </Button>
               <Button 
-                onClick={() => navigate("/mission")}
+                onClick={() => {
+                  // If multiple in-progress stories, show picker
+                  if (inProgressStories.length > 1) {
+                    setShowStoryPickerDialog(true);
+                  } else if (inProgressStories.length === 1) {
+                    navigate(`/mission?resume=${inProgressStories[0].id}`);
+                  } else {
+                    navigate("/mission");
+                  }
+                }}
                 variant="hero"
                 className="flex items-center gap-2"
               >
@@ -486,7 +501,7 @@ const Dashboard = () => {
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => navigate("/mission")}
+                              onClick={() => navigate(`/mission?resume=${story.id}`)}
                               className="flex items-center gap-1"
                             >
                               <Play className="h-3 w-3" />
@@ -619,7 +634,7 @@ const Dashboard = () => {
           <DialogHeader>
             <DialogTitle>Start New Adventure?</DialogTitle>
             <DialogDescription>
-              You have an adventure in progress. Starting a new one will save your current progress and begin a fresh story.
+              You have {inProgressStories.length} adventure{inProgressStories.length > 1 ? 's' : ''} in progress. Starting a new one will save your current progress and begin a fresh story.
             </DialogDescription>
           </DialogHeader>
           <div className="flex gap-3 mt-6">
@@ -641,6 +656,15 @@ const Dashboard = () => {
                   return;
                 }
                 
+                // Pause all active stories before starting new one
+                for (const story of inProgressStories) {
+                  try {
+                    await pauseStoryInDatabase(story.id);
+                  } catch (e) {
+                    console.error('Error pausing story:', e);
+                  }
+                }
+                
                 setShowNewStoryDialog(false);
                 navigate('/profile?new=true');
               }}
@@ -648,6 +672,55 @@ const Dashboard = () => {
             >
               Start New Adventure
             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Story Picker Dialog */}
+      <Dialog open={showStoryPickerDialog} onOpenChange={setShowStoryPickerDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Choose an Adventure to Continue</DialogTitle>
+            <DialogDescription>
+              You have {inProgressStories.length} adventures in progress. Select one to continue.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 mt-4 max-h-[400px] overflow-y-auto">
+            {inProgressStories.map((story) => (
+              <Card 
+                key={story.id} 
+                className="cursor-pointer hover:bg-accent/50 transition-colors"
+                onClick={() => {
+                  setShowStoryPickerDialog(false);
+                  navigate(`/mission?resume=${story.id}`);
+                }}
+              >
+                <CardContent className="p-4">
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="font-semibold text-base truncate flex-1 mr-4">
+                      {story.title || 'Untitled Adventure'}
+                    </h3>
+                    <Badge className="bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-100 text-xs">
+                      Scene {(story.current_scene_index || 0) + 1}
+                    </Badge>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 mb-2">
+                    {story.profile.selectedBadges.slice(0, 3).map((badge) => (
+                      <Badge 
+                        key={badge} 
+                        className={`${getBadgeColor(badge)} text-xs`}
+                        variant="secondary"
+                      >
+                        {badge}
+                      </Badge>
+                    ))}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Last played: {formatDate(story.last_played_at)}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </DialogContent>
       </Dialog>

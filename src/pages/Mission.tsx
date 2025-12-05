@@ -10,7 +10,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useEffect, useState, useRef } from "react";
 import { generateNextScene, loadProfile, checkStoryLimit, markStoryCompleted, type Scene, saveCurrentStory, loadCurrentStory, clearCurrentStory, saveCompletedStory, getCompletedStories, type SavedStory, type InventoryItem, saveProfileToLocal, clearSceneCache, recoverStorySession } from "@/lib/story";
-import { saveStoryToDatabase, loadCurrentStoryFromDatabase, clearCurrentStoryInDatabase, clearAllActiveStoriesForUser, verifyStoryIsActive } from "@/lib/databaseStory";
+import { saveStoryToDatabase, loadCurrentStoryFromDatabase, loadStoryByIdFromDatabase, clearCurrentStoryInDatabase, clearAllActiveStoriesForUser, verifyStoryIsActive, pauseStoryInDatabase } from "@/lib/databaseStory";
 import { loadInventory, saveInventory, addItemToInventory, useItem, clearInventory, updateProfileInventory } from "@/lib/inventory";
 import { 
   LearningSession, 
@@ -380,9 +380,22 @@ const Mission = () => {
           }
         }
         
+        // Check if resuming a specific story
+        const resumeStoryId = searchParams.get('resume');
+        
         // Skip loading existing story for trial mode or if forcing new story
         if (!isTrialMode && !forceNew) {
-          const existingStory = await loadCurrentStoryFromDatabase();
+          let existingStory = null;
+          
+          // If resuming a specific story, load that one
+          if (resumeStoryId) {
+            console.log(`🎯 Loading specific story: ${resumeStoryId}`);
+            existingStory = await loadStoryByIdFromDatabase(resumeStoryId);
+          } else {
+            // Otherwise load the most recent active story
+            existingStory = await loadCurrentStoryFromDatabase();
+          }
+          
           if (existingStory && existingStory.scenes.length > 0) {
             // Phase 4 & 5: Verify story is still active and track ID
             const isActive = await verifyStoryIsActive(existingStory.id);
@@ -395,12 +408,13 @@ const Mission = () => {
               setAllScenes(existingStory.scenes);
               setScene(existingStory.scenes[existingStory.currentSceneIndex || 0]);
               setSceneCount(existingStory.scenes.length);
+              setProfile(existingStory.profile); // Use the story's profile
               
               const savedInventory = loadInventory();
               setInventory(savedInventory);
               
-              if (savedProfile.mode === 'learning') {
-                initializeLearningSession(savedProfile);
+              if (existingStory.profile.mode === 'learning') {
+                initializeLearningSession(existingStory.profile);
               }
               
               setLoading(false);
