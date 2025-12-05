@@ -52,7 +52,7 @@ export const clearAllActiveStoriesForUser = async (): Promise<number> => {
   return count;
 };
 
-// Phase 4: Verify a specific story is still active
+// Phase 4: Verify a specific story is still active or paused
 export const verifyStoryIsActive = async (storyId: string): Promise<boolean> => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return false;
@@ -62,7 +62,7 @@ export const verifyStoryIsActive = async (storyId: string): Promise<boolean> => 
     .select('id')
     .eq('id', storyId)
     .eq('user_id', user.id)
-    .eq('status', 'active')
+    .in('status', ['active', 'paused']) // Include paused stories
     .maybeSingle();
 
   if (error) {
@@ -169,6 +169,79 @@ export const loadCurrentStoryFromDatabase = async (): Promise<SavedStory | null>
     completed: data.status === 'completed',
     choicesMade: 0 // Reset choice counter for loaded stories
   };
+};
+
+// Load a specific story by ID from database
+export const loadStoryByIdFromDatabase = async (storyId: string): Promise<SavedStory | null> => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data, error } = await (supabase as any)
+    .from('user_stories')
+    .select('*')
+    .eq('id', storyId)
+    .eq('user_id', user.id) // Ensure user owns this story
+    .maybeSingle();
+
+  if (error) {
+    console.error('Error loading story by ID:', error);
+    return null;
+  }
+
+  if (!data) return null;
+
+  return {
+    id: data.id,
+    profile: data.profile,
+    scenes: data.scenes,
+    currentSceneIndex: data.current_scene_index,
+    startedAt: data.started_at,
+    lastPlayedAt: data.last_played_at,
+    completed: data.status === 'completed',
+    choicesMade: 0
+  };
+};
+
+// Get all in-progress stories for the current user
+export const loadInProgressStoriesFromDatabase = async (): Promise<DatabaseStory[]> => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data, error } = await (supabase as any)
+    .from('user_stories')
+    .select('*')
+    .eq('user_id', user.id)
+    .in('status', ['active', 'paused'])
+    .order('last_played_at', { ascending: false });
+
+  if (error) {
+    console.error('Error loading in-progress stories:', error);
+    return [];
+  }
+
+  return data || [];
+};
+
+// Pause current story (mark as paused instead of completed)
+export const pauseStoryInDatabase = async (storyId: string): Promise<void> => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  const { error } = await (supabase as any)
+    .from('user_stories')
+    .update({
+      status: 'paused',
+      last_played_at: new Date().toISOString()
+    })
+    .eq('id', storyId)
+    .eq('user_id', user.id);
+
+  if (error) {
+    console.error('Error pausing story:', error);
+    throw error;
+  }
+  
+  console.log(`⏸️ Story ${storyId} paused`);
 };
 
 // Load all recent stories (both in-progress and completed) from database
