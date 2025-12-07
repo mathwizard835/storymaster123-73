@@ -139,7 +139,16 @@ const Mission = () => {
       return;
     }
 
-    if (!scene?.narrative || hasUsedReadToMe) return;
+    if (!scene?.narrative) return;
+    
+    // If already used for this scene, don't allow another attempt
+    if (hasUsedReadToMe) {
+      toast({
+        title: "Already Used",
+        description: "Read-to-Me can only be used once per scene.",
+      });
+      return;
+    }
 
     // Check premium access for Read-to-Me
     if (!hasReadToMeAccess()) {
@@ -150,15 +159,12 @@ const Mission = () => {
       });
       return;
     }
-    
-    // Mark as used for this scene
-    setHasUsedReadToMe(true);
 
     // Select voice based on mode
     const getVoiceId = () => {
-      if (profile.mode === 'thrill') return 'oXo2A4ac7KxEZkQ69ZxG'; // Thrill mode voice
-      if (profile.mode === 'mystery') return '1UllZlmEKI6fNlrEtCx7'; // Mystery mode voice
-      if (profile.mode === 'explore') return 'XGEkEAwj53E5iuoRDhFu'; // Explore mode voice
+      if (profile?.mode === 'thrill') return 'oXo2A4ac7KxEZkQ69ZxG'; // Thrill mode voice
+      if (profile?.mode === 'mystery') return '1UllZlmEKI6fNlrEtCx7'; // Mystery mode voice
+      if (profile?.mode === 'explore') return 'XGEkEAwj53E5iuoRDhFu'; // Explore mode voice
       return 'OyKUKANp9Wm5JOBO2Tw3'; // Comedy mode voice (default)
     };
 
@@ -171,9 +177,19 @@ const Mission = () => {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Text-to-speech function error:', error);
+        throw new Error(error.message || 'Failed to generate audio');
+      }
+
+      if (data?.error) {
+        throw new Error(data.error);
+      }
 
       if (data?.audioContent) {
+        // Mark as used ONLY after successful audio generation
+        setHasUsedReadToMe(true);
+        
         // Convert base64 to audio
         const audioBlob = new Blob(
           [Uint8Array.from(atob(data.audioContent), c => c.charCodeAt(0))],
@@ -191,14 +207,17 @@ const Mission = () => {
             URL.revokeObjectURL(audioUrl);
           };
         }
+      } else {
+        throw new Error('No audio content returned');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Text-to-speech error:', error);
       toast({
         title: "Audio Error",
         description: error?.message || "Failed to generate audio. Please try again.",
         variant: "destructive"
       });
+      // Don't mark as used on failure - allow retry
     } finally {
       setAudioLoading(false);
     }
