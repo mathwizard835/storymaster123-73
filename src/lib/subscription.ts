@@ -172,10 +172,15 @@ export const getStoriesRemaining = async (): Promise<{
     // Monthly limits: Free = 3, Premium = 10, Premium Plus = 10
     let monthlyLimit = 3; // Default for free users
     if (plan) {
-      // Check plan name or features to determine limit
-      if (plan.name === 'premium' || plan.name === 'premium_plus') {
+      // Normalize plan name for comparison (case-insensitive, handle variations)
+      const planName = plan.name?.toLowerCase().trim().replace(/\s+/g, '_');
+      if (planName === 'premium' || planName === 'premium_plus' || 
+          planName?.includes('premium') || plan.story_limit === null) {
         monthlyLimit = 10;
-      } else if (plan.features.daily_stories) {
+      } else if (plan.story_limit && plan.story_limit > 0) {
+        // Use explicit story_limit if set
+        monthlyLimit = plan.story_limit;
+      } else if (plan.features?.daily_stories) {
         // Fallback: use daily_stories feature if set
         monthlyLimit = plan.features.daily_stories;
       }
