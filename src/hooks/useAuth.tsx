@@ -63,6 +63,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           console.log('Token refreshed successfully');
         }
         
+        // Handle sign out - clear state
+        if (event === 'SIGNED_OUT') {
+          console.log('Session ended, clearing state');
+          setSession(null);
+          setUser(null);
+          // Clear any stale tokens
+          localStorage.removeItem('supabase.auth.token');
+        }
+        
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);

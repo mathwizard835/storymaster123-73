@@ -82,18 +82,25 @@ const Mission = () => {
   
   const { toast } = useToast();
 
-  // Initialize learning session for learning mode
-  useEffect(() => {
-    // Load available abilities
-    const abilities = loadAbilities();
-    const available = getAvailableAbilities();
-    setAvailableAbilities(available);
-    console.log(`Loaded ${available.length} available abilities`);
+  // Track abilities loading state
+  const [abilitiesLoaded, setAbilitiesLoaded] = useState(false);
 
-    // Load user subscription plan
-    getUserSubscription().then(({ plan }) => {
+  // Initialize abilities and subscription on mount - BEFORE story generation
+  useEffect(() => {
+    const initializeAbilitiesAndPlan = async () => {
+      // Load available abilities first
+      const abilities = loadAbilities();
+      const available = getAvailableAbilities();
+      setAvailableAbilities(available);
+      setAbilitiesLoaded(true);
+      console.log(`Loaded ${available.length} available abilities`);
+
+      // Load user subscription plan
+      const { plan } = await getUserSubscription();
       setUserPlan(plan);
-    });
+    };
+
+    initializeAbilitiesAndPlan();
 
     // Load saved theme
     const savedTheme = localStorage.getItem("premium-theme");
@@ -113,6 +120,13 @@ const Mission = () => {
     }
   }, [scene]);
 
+  // Check if user has Read-to-Me access (premium_plus only)
+  const hasReadToMeAccess = () => {
+    if (!userPlan) return false;
+    const planName = userPlan.name?.toLowerCase().trim().replace(/\s+/g, '_');
+    return planName === 'premium_plus' || userPlan.features?.read_to_me === true;
+  };
+
   // Text-to-speech handler
   const handleReadToMe = async () => {
     if (isPlaying) {
@@ -126,6 +140,16 @@ const Mission = () => {
     }
 
     if (!scene?.narrative || hasUsedReadToMe) return;
+
+    // Check premium access for Read-to-Me
+    if (!hasReadToMeAccess()) {
+      toast({
+        title: "Premium+ Feature",
+        description: "Upgrade to Premium+ to unlock Read-to-Me for all stories!",
+        variant: "destructive",
+      });
+      return;
+    }
     
     // Mark as used for this scene
     setHasUsedReadToMe(true);
@@ -560,11 +584,11 @@ const Mission = () => {
       }
     };
     
-    // Only run init if not already complete
-    if (!initComplete) {
+    // Only run init if not already complete AND abilities are loaded
+    if (!initComplete && abilitiesLoaded) {
       init();
     }
-  }, [isTrialMode, user, navigate, searchParams, initComplete]);
+  }, [isTrialMode, user, navigate, searchParams, initComplete, abilitiesLoaded]);
 
   // Show scroll to top button when story updates
   useEffect(() => {
