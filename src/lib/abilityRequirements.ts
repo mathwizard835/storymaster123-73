@@ -52,18 +52,24 @@ export const ABILITY_REQUIREMENTS: Record<AbilityCategory, AbilityRequirement> =
   }
 };
 
+// Badge to category mapping
+export const BADGE_TO_CATEGORY: Record<string, AbilityCategory> = {
+  'action': 'combat',
+  'detective': 'detective',
+  'social': 'diplomacy',
+  'beast': 'survival',
+  'mystic': 'magic',
+  'creative': 'creativity'
+};
+
+// Helper function to get category for a badge
+export const getCategoryForBadge = (badge: string): AbilityCategory => {
+  return BADGE_TO_CATEGORY[badge] || 'combat';
+};
+
 // Helper function to get requirement for a badge
 export const getRequirementForBadge = (badge: string): AbilityRequirement => {
-  const mapping: Record<string, AbilityCategory> = {
-    'action': 'combat',
-    'detective': 'detective',
-    'social': 'diplomacy',
-    'beast': 'survival',
-    'mystic': 'magic',
-    'creative': 'creativity'
-  };
-  
-  const category = mapping[badge] || 'combat';
+  const category = getCategoryForBadge(badge);
   return ABILITY_REQUIREMENTS[category];
 };
 
