@@ -381,12 +381,12 @@ const Index = () => {
             </div>
 
             <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 mb-8 border border-white/20">
-              <p className="text-lg font-semibold text-center mb-3">📚 Why Interactive Stories Work</p>
-              <div className="flex flex-col sm:flex-row justify-center items-center gap-4 text-sm">
-                <span className="flex items-center gap-2 text-center">
-                  <span className="text-lg">🧠</span>
-                  <strong>Kids read more when they control the story. Choices force them to think critically about consequences.</strong>
-                </span>
+              <p className="text-lg font-semibold text-center mb-3">💬 What Parents Are Saying</p>
+              <div className="flex flex-col justify-center items-center gap-3 text-sm">
+                <p className="italic text-center max-w-lg">
+                  "My son used to fight me every night about reading. Now he asks for 'just one more chapter.' I never thought I'd see the day."
+                </p>
+                <span className="text-muted-foreground">— Sarah M., mom of two</span>
               </div>
               <p className="text-center text-xs text-muted-foreground mt-3">Research shows interactive reading improves comprehension by 40%</p>
             </div>
@@ -419,10 +419,9 @@ const Index = () => {
       <section id="learn-more" className="py-20 px-6 bg-gradient-to-b from-background to-muted/20">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold mb-6">How StoryMaster Builds Real Skills</h2>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6">Why Parents Love StoryMaster</h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              <strong className="text-foreground">Not just entertainment—an innovative reading format</strong> that transforms passive screen time into{" "}
-              <span className="text-primary font-semibold">active learning through meaningful choices.</span>
+              <strong className="text-foreground">Finally, screen time you can feel good about.</strong> Watch your child go from reluctant reader to eager adventurer.
             </p>
           </div>
 
@@ -473,9 +472,9 @@ const Index = () => {
               />
             </div>
             <div>
-              <h2 className="text-4xl md:text-5xl font-bold mb-6">The Science Behind StoryMaster</h2>
+              <h2 className="text-4xl md:text-5xl font-bold mb-6">Screen Time That Makes You Proud</h2>
               <p className="text-xl text-muted-foreground mb-8">
-                Our innovative format turns reading from a chore into a choice—here's why it works.
+                Imagine watching your child choose reading over videos—and actually enjoy it.
               </p>
 
               <div className="space-y-6">
@@ -537,9 +536,9 @@ const Index = () => {
         <div className="max-w-6xl mx-auto">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="order-2 md:order-1">
-              <h2 className="text-4xl md:text-5xl font-bold mb-6">Learning Disguised as Adventure</h2>
+              <h2 className="text-4xl md:text-5xl font-bold mb-6">The Joy of "Just One More Chapter"</h2>
               <p className="text-xl text-muted-foreground mb-8">
-                Kids don't realize they're building skills—they just know it's fun.
+                When kids are invested in the story, reading stops feeling like homework—and starts feeling like an adventure.
               </p>
 
               <div className="grid grid-cols-1 tablet:grid-cols-2 gap-6">
@@ -588,18 +587,15 @@ const Index = () => {
       {/* Final CTA Section */}
       <section className="py-20 px-6 bg-gradient-to-b from-primary/5 to-background">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl md:text-5xl font-bold mb-6">Reading, Problem-Solving & Critical Thinking—All in One</h2>
+          <h2 className="text-4xl md:text-5xl font-bold mb-6">Give Your Child the Gift of Loving to Read</h2>
           <p className="text-xl text-muted-foreground mb-8">
-            <strong className="text-foreground">An innovative format that works.</strong> Kids stay engaged because they're in control. They improve because every choice requires reading, analysis, and decision-making.
+            <strong className="text-foreground">No more reading battles.</strong> No more guilt about screen time. Just a child who genuinely looks forward to their next adventure.
           </p>
 
           <div className="bg-primary/10 border border-primary/30 rounded-2xl p-8 mb-8 text-center">
-            <p className="text-2xl font-bold text-primary mb-2">📚 Why This Format Works</p>
-            <p className="text-lg">Interactive reading increases engagement by 3x compared to traditional books</p>
-            <div className="mt-3 inline-flex items-center gap-2 bg-background/50 px-4 py-2 rounded-full text-sm">
-              <Brain className="h-4 w-4 text-primary" />
-              <span className="font-semibold">Decision-making practice</span> in every story scene
-            </div>
+            <p className="text-2xl font-bold text-primary mb-2">💜 Join Families Who Made the Switch</p>
+            <p className="text-lg italic">"I wish we had found this sooner. It changed everything about how my daughter sees reading."</p>
+            <p className="text-sm text-muted-foreground mt-2">— Jennifer K., mom of 8-year-old</p>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-6 justify-center mb-8">
@@ -632,7 +628,7 @@ const Index = () => {
           </div>
 
           <div className="bg-muted/30 rounded-2xl p-8 max-w-4xl mx-auto">
-            <h3 className="text-2xl font-bold mb-6 text-center">🎯 Skills Built Through Every Adventure</h3>
+            <h3 className="text-2xl font-bold mb-6 text-center">✨ What Your Child Will Gain</h3>
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
