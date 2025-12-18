@@ -8,7 +8,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { getCompletedStories } from "@/lib/story";
 import { loadAchievements, ALL_ACHIEVEMENTS } from "@/lib/achievements";
 import { loadCharacter } from "@/lib/character";
-import { loadAbilities } from "@/lib/abilities";
+// ABILITIES DISABLED - Uncomment to re-enable
+// import { loadAbilities } from "@/lib/abilities";
 import { loadRecentStoriesFromDatabase, loadCurrentStoryFromDatabase, loadInProgressStoriesFromDatabase, pauseStoryInDatabase, DatabaseStory } from "@/lib/databaseStory";
 import { ArrowLeft, Trophy, BookOpen, Star, Crown, Zap, Plus, TrendingUp, Play, Sparkles, Heart } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -23,7 +24,9 @@ const Dashboard = () => {
   const { user } = useAuth();
   const [progress, setProgress] = useState(loadAchievements());
   const [character, setCharacter] = useState(loadCharacter());
-  const [abilities, setAbilities] = useState(loadAbilities());
+  // ABILITIES DISABLED - Uncomment to re-enable
+  // const [abilities, setAbilities] = useState(loadAbilities());
+  const abilities = { abilities: [], totalAbilitiesEarned: 0, abilitiesUsed: 0 }; // Placeholder
   const completedStories = getCompletedStories();
   const [recentStories, setRecentStories] = useState<DatabaseStory[]>([]);
   const [inProgressStories, setInProgressStories] = useState<DatabaseStory[]>([]);
@@ -77,7 +80,8 @@ const Dashboard = () => {
       // Always load from localStorage (may have been updated by sync)
       setProgress(loadAchievements());
       setCharacter(loadCharacter());
-      setAbilities(loadAbilities());
+      // ABILITIES DISABLED - Uncomment to re-enable
+      // setAbilities(loadAbilities());
     };
     
     loadData();
@@ -307,10 +311,9 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          {/* Abilities Section - Enhanced Showcase */}
-          {abilities.abilities.length > 0 && (
+          {/* ABILITIES DISABLED - Uncomment to re-enable */}
+          {/* {abilities.abilities.length > 0 && (
             <Card className="relative overflow-hidden border-0 mb-8 bg-gradient-to-br from-purple-900/20 via-pink-900/20 to-purple-900/20 backdrop-blur-sm">
-              {/* Animated background effect */}
               <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 via-pink-500/5 to-purple-500/5 animate-pulse" />
               
               <CardHeader className="relative">
@@ -353,7 +356,6 @@ const Dashboard = () => {
                           key={ability.id}
                           className="group relative overflow-hidden rounded-xl border border-purple-500/30 bg-gradient-to-br from-background/95 to-background/80 backdrop-blur-sm p-5 hover:border-purple-500/60 hover:shadow-xl hover:shadow-purple-500/20 transition-all duration-300 hover:scale-105"
                         >
-                          {/* Shine effect */}
                           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
                           
                           <div className="relative">
@@ -420,7 +422,7 @@ const Dashboard = () => {
                 )}
               </CardContent>
             </Card>
-          )}
+          )} */}
 
           <div className="grid gap-8 tablet-lg:grid-cols-2 lg:grid-cols-2">
             {/* Recent Stories */}

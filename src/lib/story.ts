@@ -2,7 +2,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { updateProgress } from "@/lib/achievements";
 import { gainExperience } from "@/lib/character";
 import { mobileStorage } from "@/lib/mobileStorage";
-import { checkAndAwardAbilities } from "@/lib/abilities";
+// ABILITIES DISABLED - Uncomment to re-enable
+// import { checkAndAwardAbilities } from "@/lib/abilities";
 
 export type InventoryItem = {
   id: string;
@@ -244,24 +245,26 @@ export const markStoryCompleted = async (
       profile.storyLength || 'medium'
     );
     
+    // ABILITIES DISABLED - Uncomment to re-enable
     // Check and award abilities based on story completion with quality metrics
-    const scenes = qualityMetrics?.scenes || [];
-    const newAbilities = checkAndAwardAbilities(
-      profile.selectedBadges,
-      choiceCount,
-      true,
-      profile,
-      {
-        quizScore: qualityMetrics?.quizScore,
-        strategicChoices: qualityMetrics?.strategicChoices || scenes.filter(s => 
-          s.interactiveObjects?.some(obj => obj.highlighted) || 
-          (s.itemsFound && s.itemsFound.length > 0)
-        ).length,
-        ultraChoicesUsed: qualityMetrics?.ultraChoicesUsed || scenes.filter(s => 
-          s.choices.some(c => c.type === 'secret')
-        ).length
-      }
-    );
+    // const scenes = qualityMetrics?.scenes || [];
+    // const newAbilities = checkAndAwardAbilities(
+    //   profile.selectedBadges,
+    //   choiceCount,
+    //   true,
+    //   profile,
+    //   {
+    //     quizScore: qualityMetrics?.quizScore,
+    //     strategicChoices: qualityMetrics?.strategicChoices || scenes.filter(s => 
+    //       s.interactiveObjects?.some(obj => obj.highlighted) || 
+    //       (s.itemsFound && s.itemsFound.length > 0)
+    //     ).length,
+    //     ultraChoicesUsed: qualityMetrics?.ultraChoicesUsed || scenes.filter(s => 
+    //       s.choices.some(c => c.type === 'secret')
+    //     ).length
+    //   }
+    // );
+    const newAbilities: any[] = []; // Placeholder for disabled abilities
 
     return { newAchievements, characterProgress, newAbilities };
   } catch (e) {
