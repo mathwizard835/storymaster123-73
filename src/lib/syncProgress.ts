@@ -2,7 +2,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { saveAchievements, updateProgress, AchievementProgress } from './achievements';
 import { saveCharacter, gainExperience, DEFAULT_CHARACTER, CharacterStats } from './character';
 import { Profile } from './story';
-import { checkAndAwardAbilities, saveAbilities, type AbilityProgress } from './abilities';
+// ABILITIES DISABLED - Uncomment to re-enable
+// import { checkAndAwardAbilities, saveAbilities, type AbilityProgress } from './abilities';
+type AbilityProgress = { abilities: any[]; totalAbilitiesEarned: number; abilitiesUsed: number }; // Placeholder type
 
 /**
  * Syncs user progress from database to localStorage
@@ -109,18 +111,19 @@ export const syncProgressFromDatabase = async (): Promise<{
       );
       character = expResult.character;
       
-      // Check and award abilities for this story
-      const newAbilities = checkAndAwardAbilities(
-        profile.selectedBadges || [],
-        choiceCount,
-        true,
-        profile
-      );
-      
-      // Add new abilities to the progress (abilities are saved by checkAndAwardAbilities)
-      if (newAbilities.length > 0) {
-        abilityProgress.totalAbilitiesEarned += newAbilities.length;
-      }
+      // ABILITIES DISABLED - Uncomment to re-enable
+      // // Check and award abilities for this story
+      // const newAbilities = checkAndAwardAbilities(
+      //   profile.selectedBadges || [],
+      //   choiceCount,
+      //   true,
+      //   profile
+      // );
+      // 
+      // // Add new abilities to the progress (abilities are saved by checkAndAwardAbilities)
+      // if (newAbilities.length > 0) {
+      //   abilityProgress.totalAbilitiesEarned += newAbilities.length;
+      // }
     }
 
     // Now check all achievements at once based on the totals
@@ -130,8 +133,8 @@ export const syncProgressFromDatabase = async (): Promise<{
       0   // Don't add more choices
     );
     
-    // Save abilities progress
-    saveAbilities(abilityProgress);
+    // ABILITIES DISABLED - Uncomment to re-enable
+    // saveAbilities(abilityProgress);
 
     console.log(`✅ Sync complete: ${totalStoriesCompleted} stories, ${achievementProgress.totalChoices} choices, ${allNewAchievements.length} achievements, ${abilityProgress.totalAbilitiesEarned} abilities unlocked`);
     console.log(`📊 Character: Level ${character.level}, ${character.totalExperienceEarned} total XP`);

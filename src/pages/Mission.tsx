@@ -35,9 +35,10 @@ import { ComprehensionQuiz } from "@/components/ComprehensionQuiz";
 import { QuizQuestion } from "@/lib/quizSystem";
 import { supabase } from "@/integrations/supabase/client";
 import confetti from "canvas-confetti";
-import { loadAbilities, getAvailableAbilities, type Ability, awardAbility, type AbilityCategory } from "@/lib/abilities";
-import { AbilityToast } from "@/components/AbilityToast";
-import { AbilityProgressIndicator } from "@/components/AbilityProgressIndicator";
+// ABILITIES DISABLED - Uncomment to re-enable
+// import { loadAbilities, getAvailableAbilities, type Ability, awardAbility, type AbilityCategory } from "@/lib/abilities";
+// import { AbilityToast } from "@/components/AbilityToast";
+// import { AbilityProgressIndicator } from "@/components/AbilityProgressIndicator";
 import { getUserSubscription } from "@/lib/subscription";
 
 const Mission = () => {
@@ -77,30 +78,32 @@ const Mission = () => {
   const [hasUsedReadToMe, setHasUsedReadToMe] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   
-  // Abilities state
-  const [availableAbilities, setAvailableAbilities] = useState<Ability[]>([]);
+  // ABILITIES DISABLED - Uncomment to re-enable
+  // const [availableAbilities, setAvailableAbilities] = useState<Ability[]>([]);
+  const availableAbilities: any[] = []; // Placeholder for disabled abilities
   
   const { toast } = useToast();
 
-  // Track abilities loading state
-  const [abilitiesLoaded, setAbilitiesLoaded] = useState(false);
+  // ABILITIES DISABLED - Uncomment to re-enable
+  // const [abilitiesLoaded, setAbilitiesLoaded] = useState(false);
+  const abilitiesLoaded = true; // Always true when abilities disabled
 
-  // Initialize abilities and subscription on mount - BEFORE story generation
+  // ABILITIES DISABLED - Initialize subscription on mount
   useEffect(() => {
-    const initializeAbilitiesAndPlan = async () => {
-      // Load available abilities first
-      const abilities = loadAbilities();
-      const available = getAvailableAbilities();
-      setAvailableAbilities(available);
-      setAbilitiesLoaded(true);
-      console.log(`Loaded ${available.length} available abilities`);
+    const initializePlan = async () => {
+      // ABILITIES DISABLED - Uncomment to re-enable
+      // const abilities = loadAbilities();
+      // const available = getAvailableAbilities();
+      // setAvailableAbilities(available);
+      // setAbilitiesLoaded(true);
+      // console.log(`Loaded ${available.length} available abilities`);
 
       // Load user subscription plan
       const { plan } = await getUserSubscription();
       setUserPlan(plan);
     };
 
-    initializeAbilitiesAndPlan();
+    initializePlan();
 
     // Load saved theme
     const savedTheme = localStorage.getItem("premium-theme");
@@ -623,102 +626,103 @@ const Mission = () => {
 
   const [choiceLoading, setChoiceLoading] = useState(false);
 
-  // Handler to unlock abilities instantly
-  const handleUnlockAbility = () => {
-    console.log('🎯 handleUnlockAbility called', { profile, savedStory, badges: profile?.selectedBadges });
-    
-    if (!profile || !savedStory) {
-      console.error('❌ Missing profile or savedStory', { profile, savedStory });
-      return;
-    }
-
-    const badge = profile.selectedBadges?.[0];
-    if (!badge) {
-      console.error('❌ No badge found', { selectedBadges: profile.selectedBadges });
-      return;
-    }
-
-    // Map badge to ability details
-    const abilityMapping: Record<string, { name: string; description: string; category: AbilityCategory; icon: string }> = {
-      'detective': {
-        name: 'Master Detective',
-        description: 'Your keen observation skills unlock hidden clues and reveal secrets others miss',
-        category: 'detective',
-        icon: 'search'
-      },
-      'action': {
-        name: 'Combat Expert',
-        description: 'Years of training allow you to face any threat with confidence and skill',
-        category: 'combat',
-        icon: 'sword'
-      },
-      'social': {
-        name: 'Master Diplomat',
-        description: 'Your words can sway even the hardest hearts and resolve conflicts peacefully',
-        category: 'diplomacy',
-        icon: 'users'
-      },
-      'mystic': {
-        name: 'Arcane Master',
-        description: 'You command powerful magical forces and understand mystical energies',
-        category: 'magic',
-        icon: 'wand'
-      },
-      'beast': {
-        name: 'Wilderness Expert',
-        description: 'You can survive and thrive in any environment, bonding with nature itself',
-        category: 'survival',
-        icon: 'leaf'
-      },
-      'creative': {
-        name: 'Creative Genius',
-        description: 'Your imagination finds unique solutions that others would never consider',
-        category: 'creativity',
-        icon: 'lightbulb'
-      }
-    };
-
-    const abilityInfo = abilityMapping[badge];
-    if (!abilityInfo) {
-      console.error('❌ No ability info for badge', { badge });
-      return;
-    }
-
-    console.log('✅ Awarding ability', abilityInfo);
-
-    // Award the ability
-    const newAbility = awardAbility(
-      abilityInfo.name,
-      abilityInfo.description,
-      abilityInfo.category,
-      'Current Adventure',
-      abilityInfo.icon
-    );
-
-    console.log('✅ Ability awarded', newAbility);
-
-    // Update available abilities state
-    const updatedAbilities = getAvailableAbilities();
-    console.log('✅ Updated abilities', updatedAbilities);
-    setAvailableAbilities(updatedAbilities);
-
-    // Show success toast with ability details
-    toast({
-      title: "🎉 Ability Unlocked!",
-      description: (
-        <AbilityToast ability={newAbility} />
-      ),
-      duration: 8000,
-    });
-
-    // Trigger confetti celebration
-    confetti({
-      particleCount: 150,
-      spread: 100,
-      origin: { y: 0.6 },
-      colors: ['#a855f7', '#ec4899', '#8b5cf6']
-    });
-  };
+  // ABILITIES DISABLED - Handler to unlock abilities instantly
+  // const handleUnlockAbility = () => {
+  //   console.log('🎯 handleUnlockAbility called', { profile, savedStory, badges: profile?.selectedBadges });
+  //   
+  //   if (!profile || !savedStory) {
+  //     console.error('❌ Missing profile or savedStory', { profile, savedStory });
+  //     return;
+  //   }
+  //
+  //   const badge = profile.selectedBadges?.[0];
+  //   if (!badge) {
+  //     console.error('❌ No badge found', { selectedBadges: profile.selectedBadges });
+  //     return;
+  //   }
+  //
+  //   // Map badge to ability details
+  //   const abilityMapping: Record<string, { name: string; description: string; category: AbilityCategory; icon: string }> = {
+  //     'detective': {
+  //       name: 'Master Detective',
+  //       description: 'Your keen observation skills unlock hidden clues and reveal secrets others miss',
+  //       category: 'detective',
+  //       icon: 'search'
+  //     },
+  //     'action': {
+  //       name: 'Combat Expert',
+  //       description: 'Years of training allow you to face any threat with confidence and skill',
+  //       category: 'combat',
+  //       icon: 'sword'
+  //     },
+  //     'social': {
+  //       name: 'Master Diplomat',
+  //       description: 'Your words can sway even the hardest hearts and resolve conflicts peacefully',
+  //       category: 'diplomacy',
+  //       icon: 'users'
+  //     },
+  //     'mystic': {
+  //       name: 'Arcane Master',
+  //       description: 'You command powerful magical forces and understand mystical energies',
+  //       category: 'magic',
+  //       icon: 'wand'
+  //     },
+  //     'beast': {
+  //       name: 'Wilderness Expert',
+  //       description: 'You can survive and thrive in any environment, bonding with nature itself',
+  //       category: 'survival',
+  //       icon: 'leaf'
+  //     },
+  //     'creative': {
+  //       name: 'Creative Genius',
+  //       description: 'Your imagination finds unique solutions that others would never consider',
+  //       category: 'creativity',
+  //       icon: 'lightbulb'
+  //     }
+  //   };
+  //
+  //   const abilityInfo = abilityMapping[badge];
+  //   if (!abilityInfo) {
+  //     console.error('❌ No ability info for badge', { badge });
+  //     return;
+  //   }
+  //
+  //   console.log('✅ Awarding ability', abilityInfo);
+  //
+  //   // Award the ability
+  //   const newAbility = awardAbility(
+  //     abilityInfo.name,
+  //     abilityInfo.description,
+  //     abilityInfo.category,
+  //     'Current Adventure',
+  //     abilityInfo.icon
+  //   );
+  //
+  //   console.log('✅ Ability awarded', newAbility);
+  //
+  //   // Update available abilities state
+  //   const updatedAbilities = getAvailableAbilities();
+  //   console.log('✅ Updated abilities', updatedAbilities);
+  //   setAvailableAbilities(updatedAbilities);
+  //
+  //   // Show success toast with ability details
+  //   toast({
+  //     title: "🎉 Ability Unlocked!",
+  //     description: (
+  //       <AbilityToast ability={newAbility} />
+  //     ),
+  //     duration: 8000,
+  //   });
+  //
+  //   // Trigger confetti celebration
+  //   confetti({
+  //     particleCount: 150,
+  //     spread: 100,
+  //     origin: { y: 0.6 },
+  //     colors: ['#a855f7', '#ec4899', '#8b5cf6']
+  //   });
+  // };
+  const handleUnlockAbility = () => {}; // Placeholder for disabled abilities
 
   const onChoose = async (choiceId: string) => {
     if (!profile || !scene || !savedStory || choiceLoading) return;
@@ -1124,8 +1128,8 @@ const Mission = () => {
                       </TooltipContent>
                     </Tooltip>
                     
-                    {/* Abilities Indicator */}
-                    <Tooltip>
+                    {/* ABILITIES DISABLED - Uncomment to re-enable */}
+                    {/* <Tooltip>
                       <TooltipTrigger asChild>
                         <div className="flex items-center justify-center space-x-2 cursor-help">
                           <Sparkles className={`h-5 w-5 ${availableAbilities.length > 0 ? 'text-purple-400 animate-pulse' : 'text-gray-500 opacity-50'}`} />
@@ -1152,7 +1156,7 @@ const Mission = () => {
                           )}
                         </div>
                       </TooltipContent>
-                    </Tooltip>
+                    </Tooltip> */}
                   </div>
                 </TooltipProvider>
               </div>
@@ -1449,27 +1453,28 @@ const Mission = () => {
                           
                           // Show new abilities with staggered timing after achievements
                           if (newAbilities?.length > 0) {
-                            const abilityStartDelay = (characterProgress?.leveledUp ? 3500 : 2000) + 
-                              (newAchievements?.length || 0) * 2000;
-                            
-                            // Update available abilities state
-                            const updatedAbilities = getAvailableAbilities();
-                            setAvailableAbilities(updatedAbilities);
-                            
-                            newAbilities.forEach((ability, index) => {
-                              setTimeout(() => {
-                                confetti({
-                                  particleCount: 100,
-                                  spread: 70,
-                                  origin: { y: 0.6 }
-                                });
-                                toast({
-                                  title: `✨ New Ability Unlocked!`,
-                                  description: <AbilityToast ability={ability} />,
-                                  duration: 8000,
-                                });
-                              }, abilityStartDelay + (index * 2500));
-                            });
+                            // ABILITIES DISABLED - Uncomment to re-enable
+                            // const abilityStartDelay = (characterProgress?.leveledUp ? 3500 : 2000) + 
+                            //   (newAchievements?.length || 0) * 2000;
+                            // 
+                            // // Update available abilities state
+                            // const updatedAbilities = getAvailableAbilities();
+                            // setAvailableAbilities(updatedAbilities);
+                            // 
+                            // newAbilities.forEach((ability, index) => {
+                            //   setTimeout(() => {
+                            //     confetti({
+                            //       particleCount: 100,
+                            //       spread: 70,
+                            //       origin: { y: 0.6 }
+                            //     });
+                            //     toast({
+                            //       title: `✨ New Ability Unlocked!`,
+                            //       description: <AbilityToast ability={ability} />,
+                            //       duration: 8000,
+                            //     });
+                            //   }, abilityStartDelay + (index * 2500));
+                            // });
                           }
 
                           const finalDelay = 2000 + 
@@ -1507,13 +1512,13 @@ const Mission = () => {
 
             {/* Sidebar */}
             <div className="space-y-6">
-              {/* Ability Progress Indicator */}
-              <AbilityProgressIndicator 
+              {/* ABILITIES DISABLED - Uncomment to re-enable */}
+              {/* <AbilityProgressIndicator 
                 choicesMade={savedStory?.choicesMade || 0}
                 selectedBadges={profile.selectedBadges}
                 availableAbilitiesCount={availableAbilities.length}
                 onUnlockAbility={handleUnlockAbility}
-              />
+              /> */}
 
               {/* Learning Progress */}
               {profile.mode === 'learning' && learningSession && showLearningProgress && (

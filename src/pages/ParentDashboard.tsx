@@ -7,7 +7,8 @@ import { Progress } from "@/components/ui/progress";
 import { ArrowLeft, Trophy, Star, Heart, Lightbulb, Shield, Users, Sparkles, Target, TrendingUp, Award, BookOpen, Clock, Book, Flame, Zap, Lock, Unlock } from "lucide-react";
 import { loadCharacter } from "@/lib/character";
 import { loadAchievements } from "@/lib/achievements";
-import { loadAbilities, type Ability } from "@/lib/abilities";
+// ABILITIES DISABLED - Uncomment to re-enable
+// import { loadAbilities, type Ability } from "@/lib/abilities";
 import { loadCompletedStoriesFromDatabase } from "@/lib/databaseStory";
 import { getStreakStats } from "@/lib/streaks";
 import { getReadingStats, type ReadingStats } from "@/lib/readingAnalytics";
@@ -17,7 +18,9 @@ export default function ParentDashboard() {
   const navigate = useNavigate();
   const [character, setCharacter] = useState(loadCharacter());
   const [achievements, setAchievements] = useState(loadAchievements());
-  const [abilityProgress, setAbilityProgress] = useState(loadAbilities());
+  // ABILITIES DISABLED - Uncomment to re-enable
+  // const [abilityProgress, setAbilityProgress] = useState(loadAbilities());
+  const abilityProgress = { abilities: [], totalAbilitiesEarned: 0, abilitiesUsed: 0 }; // Placeholder
   const [recentStories, setRecentStories] = useState<any[]>([]);
   const [streakStats, setStreakStats] = useState<any>(null);
   const [readingStats, setReadingStats] = useState<ReadingStats | null>(null);
@@ -251,7 +254,8 @@ export default function ParentDashboard() {
                   </div>
                 </div>
 
-                {abilityProgress.abilities.length > 0 && (
+                {/* ABILITIES DISABLED - Uncomment to re-enable */}
+                {/* {abilityProgress.abilities.length > 0 && (
                   <div className="space-y-3">
                     <h3 className="font-semibold text-lg">Earned Abilities:</h3>
                     <div className="grid gap-3">
@@ -286,7 +290,7 @@ export default function ParentDashboard() {
                       ))}
                     </div>
                   </div>
-                )}
+                )} */}
 
                 {secretChoicesUsed > 0 && (
                   <div className="p-4 rounded-lg bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/20">
