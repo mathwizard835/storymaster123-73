@@ -7,7 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { CheckCircle, X, Volume2, BookOpen, Star, Sparkles, Crown, ArrowLeft, Gamepad2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { upgradeSubscription, cancelSubscription, getUserSubscription, type SubscriptionPlan } from "@/lib/subscription";
-import { isMobilePlatform, getPlatform } from "@/lib/mobileFeatures";
+
 import { supabase } from "@/integrations/supabase/client";
 import { getDeviceId } from "@/lib/story";
 
@@ -20,8 +20,6 @@ export default function Subscription() {
   const [currentPlan, setCurrentPlan] = useState<SubscriptionPlan | null>(null);
   const limitReached = searchParams.get('limitReached') === 'true';
   const cancelled = searchParams.get('cancelled') === 'true';
-  const platform = getPlatform();
-  const isNative = isMobilePlatform();
 
   useEffect(() => {
     loadCurrentPlan();
@@ -109,17 +107,6 @@ export default function Subscription() {
     });
 
     try {
-      // Check platform
-      if (isNative) {
-        // Mobile platform - show App Store/Play Store message
-        toast({
-          title: "Mobile Subscriptions",
-          description: `Please manage subscriptions through ${platform === 'ios' ? 'App Store' : 'Google Play Store'}`,
-          variant: "destructive",
-        });
-        setLoading(false);
-        return;
-      }
 
       // Web platform - use Stripe
       const planType = readToMeEnabled ? 'premium_plus' : 'premium';
@@ -322,15 +309,6 @@ export default function Subscription() {
                   });
 
                   try {
-                    if (isNative) {
-                      toast({
-                        title: "Mobile Subscriptions",
-                        description: `Please manage subscriptions through ${platform === 'ios' ? 'App Store' : 'Google Play Store'}`,
-                        variant: "destructive",
-                      });
-                      setLoading(false);
-                      return;
-                    }
 
                     const deviceId = await getDeviceId();
                     const { data, error } = await supabase.functions.invoke('create-checkout-session', {
