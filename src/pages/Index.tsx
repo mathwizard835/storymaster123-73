@@ -655,18 +655,18 @@ const Index = () => {
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="bg-background p-6 rounded-xl shadow-sm border border-border text-center">
-              <div className="text-3xl font-extrabold text-primary mb-2">2x</div>
-              <p className="text-sm font-medium">More Engagement</p>
-              <p className="text-xs text-muted-foreground mt-1">vs. traditional e-books</p>
+              <div className="text-3xl font-extrabold text-primary mb-2">12</div>
+              <p className="text-sm font-medium">Scenes Per Epic Story</p>
+              <p className="text-xs text-muted-foreground mt-1">with meaningful choices at each step</p>
             </div>
             <div className="bg-background p-6 rounded-xl shadow-sm border border-border text-center">
-              <div className="text-3xl font-extrabold text-primary mb-2">38%</div>
-              <p className="text-sm font-medium">Better Comprehension</p>
-              <p className="text-xs text-muted-foreground mt-1">through choice-based learning</p>
+              <div className="text-3xl font-extrabold text-primary mb-2">3-4</div>
+              <p className="text-sm font-medium">Choices Per Scene</p>
+              <p className="text-xs text-muted-foreground mt-1">building decision-making skills</p>
             </div>
             <div className="bg-background p-6 rounded-xl shadow-sm border border-border text-center">
-              <div className="text-3xl font-extrabold text-primary mb-2">1,800+</div>
-              <p className="text-sm font-medium">Words Per Story</p>
+              <div className="text-3xl font-extrabold text-primary mb-2">2,500+</div>
+              <p className="text-sm font-medium">Words in Epic Stories</p>
               <p className="text-xs text-muted-foreground mt-1">meaningful reading practice</p>
             </div>
             <div className="bg-background p-6 rounded-xl shadow-sm border border-border text-center">
