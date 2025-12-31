@@ -398,18 +398,75 @@ const Mission = () => {
           localStorage.setItem('trial_story_started', 'true');
         }
         
-        let savedProfile;
+        // Check if user wants to start fresh (from URL param)
+        const forceNew = searchParams.get('new') === 'true';
+        const resumeStoryId = searchParams.get('resume');
         
-        // Always load the profile from localStorage, even in trial mode
-        savedProfile = await loadProfile();
+        // CRITICAL FIX: Check for resume FIRST before profile check
+        // In new tabs, localStorage may not have the profile, but the database story does
+        if (!isTrialMode && !forceNew && resumeStoryId) {
+          console.log(`🎯 [Resume Priority] Loading specific story: ${resumeStoryId}`);
+          const existingStory = await loadStoryByIdFromDatabase(resumeStoryId);
+          
+          if (existingStory && existingStory.scenes.length > 0) {
+            const isActive = await verifyStoryIsActive(existingStory.id);
+            if (isActive) {
+              console.log(`📖 [Resume Priority] Story found and active: ${existingStory.id}`);
+              console.log(`👤 [Resume Priority] Using embedded profile from story`);
+              
+              // Use the profile embedded in the story - this is the fix!
+              recoverStorySession(existingStory.id, existingStory.scenes.length);
+              setSavedStory(existingStory);
+              setInitialStoryId(existingStory.id);
+              setAllScenes(existingStory.scenes);
+              setScene(existingStory.scenes[existingStory.currentSceneIndex || 0]);
+              setSceneCount(existingStory.scenes.length);
+              setProfile(existingStory.profile); // Use story's embedded profile!
+              
+              // Also save the profile to localStorage for future use
+              if (existingStory.profile) {
+                saveProfileToLocal(existingStory.profile);
+              }
+              
+              const savedInventory = loadInventory();
+              setInventory(savedInventory);
+              
+              if (existingStory.profile.mode === 'learning') {
+                initializeLearningSession(existingStory.profile);
+              }
+              
+              setLoading(false);
+              return;
+            } else {
+              console.warn('⚠️ [Resume Priority] Story no longer active/paused, checking status...');
+              // Story exists but is completed - redirect to dashboard with message
+              toast({
+                title: "Story Already Completed",
+                description: "This adventure has already been completed. Choose another story or start a new one.",
+              });
+              navigate('/dashboard');
+              return;
+            }
+          } else {
+            console.warn('⚠️ [Resume Priority] Story not found in database:', resumeStoryId);
+            toast({
+              title: "Story Not Found",
+              description: "The story you're trying to continue could not be found.",
+              variant: "destructive",
+            });
+            navigate('/dashboard');
+            return;
+          }
+        }
+        
+        // Now check for profile (only needed for new stories or non-resume flows)
+        let savedProfile = await loadProfile();
         if (!savedProfile) {
+          console.log('👤 No profile in localStorage, redirecting to profile setup');
           navigate("/profile");
           return;
         }
         setProfile(savedProfile);
-
-        // Check if user wants to start fresh (from URL param)
-        const forceNew = searchParams.get('new') === 'true';
         
         // SAFEGUARD: Double-check user intent when forceNew is true
         if (forceNew && !isTrialMode) {
@@ -426,35 +483,22 @@ const Mission = () => {
           }
         }
         
-        // Check if resuming a specific story
-        const resumeStoryId = searchParams.get('resume');
-        
         // Skip loading existing story for trial mode or if forcing new story
         if (!isTrialMode && !forceNew) {
-          let existingStory = null;
-          
-          // If resuming a specific story, load that one
-          if (resumeStoryId) {
-            console.log(`🎯 Loading specific story: ${resumeStoryId}`);
-            existingStory = await loadStoryByIdFromDatabase(resumeStoryId);
-          } else {
-            // Otherwise load the most recent active story
-            existingStory = await loadCurrentStoryFromDatabase();
-          }
+          // Load the most recent active story (no resume param at this point)
+          const existingStory = await loadCurrentStoryFromDatabase();
           
           if (existingStory && existingStory.scenes.length > 0) {
-            // Phase 4 & 5: Verify story is still active and track ID
             const isActive = await verifyStoryIsActive(existingStory.id);
             if (isActive) {
-              console.log(`📖 Resuming story: ${existingStory.id}`);
-              // Phase 3: Recover story session
+              console.log(`📖 Resuming most recent story: ${existingStory.id}`);
               recoverStorySession(existingStory.id, existingStory.scenes.length);
               setSavedStory(existingStory);
-              setInitialStoryId(existingStory.id); // Phase 5: Track the loaded story ID
+              setInitialStoryId(existingStory.id);
               setAllScenes(existingStory.scenes);
               setScene(existingStory.scenes[existingStory.currentSceneIndex || 0]);
               setSceneCount(existingStory.scenes.length);
-              setProfile(existingStory.profile); // Use the story's profile
+              setProfile(existingStory.profile);
               
               const savedInventory = loadInventory();
               setInventory(savedInventory);
@@ -1623,7 +1667,20 @@ const Mission = () => {
                   Start New Adventure
                 </button>
                 <button
-                  onClick={() => navigate('/dashboard')}
+                  onClick={async () => {
+                    // CRITICAL FIX: Pause the story before navigating away
+                    if (savedStory?.id) {
+                      try {
+                        console.log(`⏸️ Pausing story ${savedStory.id} before exit...`);
+                        await pauseStoryInDatabase(savedStory.id);
+                        console.log(`✅ Story ${savedStory.id} paused successfully`);
+                      } catch (error) {
+                        console.error('Error pausing story:', error);
+                        // Still navigate even if pause fails - story is saved
+                      }
+                    }
+                    navigate('/dashboard');
+                  }}
                   className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 px-4 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
                 >
                   <Shield className="h-4 w-4" />
