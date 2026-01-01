@@ -16,8 +16,8 @@ export interface DatabaseStory {
   title?: string;
 }
 
-// Phase 1: Clear ALL active stories for the current user
-export const clearAllActiveStoriesForUser = async (): Promise<number> => {
+// Phase 1: Pause ALL active stories for the current user (not complete, so they can resume)
+export const pauseAllActiveStoriesForUser = async (): Promise<number> => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
 
@@ -31,26 +31,29 @@ export const clearAllActiveStoriesForUser = async (): Promise<number> => {
   const count = activeStories?.length || 0;
   
   if (count > 0) {
-    console.log(`🧹 Cleaning up ${count} orphaned active stories`);
+    console.log(`⏸️ Pausing ${count} active stories for user`);
     
-    // Mark ALL active stories as completed
+    // Mark ALL active stories as PAUSED (not completed) so users can continue them later
     const { error } = await (supabase as any)
       .from('user_stories')
       .update({
-        status: 'completed',
-        completed_at: new Date().toISOString()
+        status: 'paused',
+        last_played_at: new Date().toISOString()
       })
       .eq('user_id', user.id)
       .eq('status', 'active');
 
     if (error) {
-      console.error('Error clearing active stories:', error);
+      console.error('Error pausing active stories:', error);
       throw error;
     }
   }
 
   return count;
 };
+
+// Legacy function name for backwards compatibility - now pauses instead of completing
+export const clearAllActiveStoriesForUser = pauseAllActiveStoriesForUser;
 
 // Phase 4: Verify a specific story is still active or paused
 export const verifyStoryIsActive = async (storyId: string): Promise<boolean> => {
@@ -73,13 +76,14 @@ export const verifyStoryIsActive = async (storyId: string): Promise<boolean> => 
   return !!data;
 };
 
-// Phase 6: Improved save with verification - CLEAR FIRST, THEN SAVE
+// Phase 6: Improved save with verification - PAUSE OTHER STORIES, THEN SAVE
 export const saveStoryToDatabase = async (story: SavedStory): Promise<DatabaseStory | null> => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
 
-  // CRITICAL: Clear ALL other active stories FIRST, before attempting to save
+  // CRITICAL: Pause ALL other active stories FIRST, before attempting to save
   // This prevents unique constraint violations from the database index
+  // IMPORTANT: We now PAUSE (not complete) other stories so users can continue them later
   const { data: otherActiveStories } = await (supabase as any)
     .from('user_stories')
     .select('id')
@@ -87,23 +91,23 @@ export const saveStoryToDatabase = async (story: SavedStory): Promise<DatabaseSt
     .eq('status', 'active')
     .neq('id', story.id);
 
-  // If found, mark them as completed IMMEDIATELY
+  // If found, mark them as PAUSED (not completed) so users can continue them later
   if (otherActiveStories && otherActiveStories.length > 0) {
-    console.warn(`⚠️ Found ${otherActiveStories.length} other active stories, marking as completed NOW`);
-    const { error: clearError } = await (supabase as any)
+    console.log(`⏸️ Found ${otherActiveStories.length} other active stories, pausing them`);
+    const { error: pauseError } = await (supabase as any)
       .from('user_stories')
       .update({ 
-        status: 'completed',
-        completed_at: new Date().toISOString() 
+        status: 'paused',
+        last_played_at: new Date().toISOString() 
       })
       .in('id', otherActiveStories.map((s: any) => s.id));
     
-    if (clearError) {
-      console.error('❌ Failed to clear other active stories:', clearError);
-      throw new Error('Failed to clear existing active stories');
+    if (pauseError) {
+      console.error('❌ Failed to pause other active stories:', pauseError);
+      throw new Error('Failed to pause existing active stories');
     }
     
-    console.log('✅ Successfully cleared other active stories');
+    console.log('✅ Successfully paused other active stories');
   }
 
   const storyData = {

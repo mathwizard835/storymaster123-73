@@ -941,20 +941,25 @@ const Mission = () => {
            /Android|iPhone|iPad|iPod/i.test(navigator.userAgent));
         
         // Mark trial/mobile story as COMPLETED if not authenticated
+        // IMPORTANT: Set storyReadyToFinish FIRST so user can see the final scene content
         if (!user && (isTrialMode || isMobile)) {
           console.log('📝 Marking trial/mobile story as completed');
           localStorage.setItem('trial_story_used', 'completed');
           localStorage.setItem('trial_story_started', 'completed');
           
+          // Set storyReadyToFinish to true so the final scene UI is displayed
+          // User can see the completion screen before being redirected
+          setStoryReadyToFinish(true);
+          
+          // Show toast informing user of completion - do NOT auto-redirect
+          // Let user read the final scene and see the completion UI
           toast({
             title: "Story Complete! 🎉",
             description: "Sign up to continue your adventures and unlock unlimited stories!",
             variant: "default",
           });
           
-          setTimeout(() => {
-            navigate("/");
-          }, 3000);
+          // Don't auto-navigate - let user click "Return Home" button on completion screen
           return;
         }
         
@@ -1337,218 +1342,240 @@ const Mission = () => {
                       <Crown className="h-8 w-8 text-yellow-400" />
                       Adventure Complete!
                     </h3>
-                    <p className="text-white/90">
-                      🎉 Congratulations! You've reached the end of your epic journey. 
-                      {!savedStory?.quizTaken && " Take the comprehension challenge for Bonus Points, or "}
-                      Ready to see your achievements and save this adventure to your gallery?
-                    </p>
                     
-                    {/* Quiz Button */}
-                    {!savedStory?.quizTaken && (
-                      <Button
-                        size="xl"
-                        variant="hero"
-                        onClick={async () => {
-                          setQuizLoading(true);
-                          try {
-                            // Generate quiz questions using the edge function
-                            const { data, error } = await supabase.functions.invoke('generate-story', {
-                              body: {
-                                profile,
-                                previousScene: null,
-                                sceneCount: 1,
-                                action: 'generate-quiz',
-                                scenes: allScenes,
+                    {/* Trial/unauthenticated user completion */}
+                    {(!user && isTrialMode) ? (
+                      <>
+                        <p className="text-white/90">
+                          🎉 Congratulations! You've completed your free trial story. 
+                          Sign up to save your progress, unlock achievements, and continue your adventures!
+                        </p>
+                        <Button 
+                          size="xl"
+                          variant="hero"
+                          onClick={() => navigate("/")}
+                          className="w-full max-w-xs mx-auto text-lg font-bold"
+                        >
+                          <Crown className="h-5 w-5 mr-2" />
+                          Return Home & Sign Up
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-white/90">
+                          🎉 Congratulations! You've reached the end of your epic journey. 
+                          {!savedStory?.quizTaken && " Take the comprehension challenge for Bonus Points, or "}
+                          Ready to see your achievements and save this adventure to your gallery?
+                        </p>
+                        
+                        {/* Quiz Button */}
+                        {!savedStory?.quizTaken && (
+                          <Button
+                            size="xl"
+                            variant="hero"
+                            onClick={async () => {
+                              setQuizLoading(true);
+                              try {
+                                // Generate quiz questions using the edge function
+                                const { data, error } = await supabase.functions.invoke('generate-story', {
+                                  body: {
+                                    profile,
+                                    previousScene: null,
+                                    sceneCount: 1,
+                                    action: 'generate-quiz',
+                                    scenes: allScenes,
+                                  }
+                                });
+                                
+                                if (error) throw error;
+                                
+                                if (data?.questions && Array.isArray(data.questions) && data.questions.length > 0) {
+                                  setQuizQuestions(data.questions);
+                                  setShowQuiz(true);
+                                } else {
+                                  throw new Error("Invalid quiz response - no questions received");
+                                }
+                              } catch (error) {
+                                console.error("Error generating quiz:", error);
+                                toast({
+                                  title: "Quiz Error",
+                                  description: "Failed to generate quiz. You can still finish the adventure.",
+                                  variant: "destructive",
+                                  duration: 4000,
+                                });
+                              } finally {
+                                setQuizLoading(false);
                               }
-                            });
-                            
-                            if (error) throw error;
-                            
-                            if (data?.questions && Array.isArray(data.questions) && data.questions.length > 0) {
-                              setQuizQuestions(data.questions);
-                              setShowQuiz(true);
-                            } else {
-                              throw new Error("Invalid quiz response - no questions received");
-                            }
-                          } catch (error) {
-                            console.error("Error generating quiz:", error);
-                            toast({
-                              title: "Quiz Error",
-                              description: "Failed to generate quiz. You can still finish the adventure.",
-                              variant: "destructive",
-                              duration: 4000,
-                            });
-                          } finally {
-                            setQuizLoading(false);
-                          }
-                        }}
-                        disabled={quizLoading}
-                        className="w-full max-w-xs mx-auto text-lg font-bold bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
-                      >
-                        {quizLoading ? (
-                          <>
-                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                            Generating Quiz...
-                          </>
-                        ) : (
-                          <>
-                            <Trophy className="h-5 w-5 mr-2" />
-                            Do Challenge for Bonus Points
-                          </>
+                            }}
+                            disabled={quizLoading}
+                            className="w-full max-w-xs mx-auto text-lg font-bold bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                          >
+                            {quizLoading ? (
+                              <>
+                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                                Generating Quiz...
+                              </>
+                            ) : (
+                              <>
+                                <Trophy className="h-5 w-5 mr-2" />
+                                Do Challenge for Bonus Points
+                              </>
+                            )}
+                          </Button>
                         )}
-                      </Button>
-                    )}
-                    
-                    <Button 
-                      size="xl"
-                      variant="hero"
-                      onClick={async () => {
-                        try {
-                          const actualChoicesMade = savedStory?.choicesMade || 0;
-                          console.log(`Story completed with ${actualChoicesMade} choices made, ${profile.selectedBadges.length} badges`);
-                          const { newAchievements, characterProgress, newAbilities } = await markStoryCompleted(
-                            profile, 
-                            actualChoicesMade,
-                            {
-                              quizScore: savedStory?.quizScore,
-                              scenes: allScenes
-                            }
-                          );
-                          
-                          // Check if this story was already saved to prevent duplicates
-                          const existingStories = getCompletedStories();
-                          const alreadySaved = existingStories.some(story => story.id === savedStory.id);
-                          
-                          if (!alreadySaved) {
-                            const completedStoryData = {
-                              id: savedStory.id,
-                              title: allScenes[0]?.sceneTitle || scene.sceneTitle || "Untitled Adventure",
-                              completedAt: new Date().toISOString(),
-                              sceneCount: sceneCount,
-                              choicesMade: [],
-                              profile: savedStory.profile,
-                            };
-                            
-                            saveCompletedStory(completedStoryData);
-                            
-                            // Track reading session for analytics
-                            if (user) {
-                              await trackReadingSession(
-                                savedStory.id,
-                                allScenes[0]?.sceneTitle || scene.sceneTitle || "Untitled Adventure",
-                                allScenes
+                        
+                        <Button 
+                          size="xl"
+                          variant="hero"
+                          onClick={async () => {
+                            try {
+                              const actualChoicesMade = savedStory?.choicesMade || 0;
+                              console.log(`Story completed with ${actualChoicesMade} choices made, ${profile.selectedBadges.length} badges`);
+                              const { newAchievements, characterProgress, newAbilities } = await markStoryCompleted(
+                                profile, 
+                                actualChoicesMade,
+                                {
+                                  quizScore: savedStory?.quizScore,
+                                  scenes: allScenes
+                                }
                               );
-                            }
-                          }
-                          
-                          await clearCurrentStoryInDatabase(savedStory.id);
-                          clearInventory();
-                          setInventory([]);
+                              
+                              // Check if this story was already saved to prevent duplicates
+                              const existingStories = getCompletedStories();
+                              const alreadySaved = existingStories.some(story => story.id === savedStory.id);
+                              
+                              if (!alreadySaved) {
+                                const completedStoryData = {
+                                  id: savedStory.id,
+                                  title: allScenes[0]?.sceneTitle || scene.sceneTitle || "Untitled Adventure",
+                                  completedAt: new Date().toISOString(),
+                                  sceneCount: sceneCount,
+                                  choicesMade: [],
+                                  profile: savedStory.profile,
+                                };
+                                
+                                saveCompletedStory(completedStoryData);
+                                
+                                // Track reading session for analytics
+                                if (user) {
+                                  await trackReadingSession(
+                                    savedStory.id,
+                                    allScenes[0]?.sceneTitle || scene.sceneTitle || "Untitled Adventure",
+                                    allScenes
+                                  );
+                                }
+                              }
+                              
+                              await clearCurrentStoryInDatabase(savedStory.id);
+                              clearInventory();
+                              setInventory([]);
 
-                          // Show comprehensive progress summary first
-                          const progressParts = [];
-                          if (characterProgress?.expGained) {
-                            progressParts.push(`+${characterProgress.expGained} XP`);
-                          }
-                          if (characterProgress?.leveledUp) {
-                            progressParts.push(`Level ${characterProgress.character.level}`);
-                          }
-                          if (newAchievements?.length > 0) {
-                            progressParts.push(`${newAchievements.length} new achievement${newAchievements.length > 1 ? 's' : ''}`);
-                          }
-                          if (newAbilities?.length > 0) {
-                            progressParts.push(`${newAbilities.length} new abilit${newAbilities.length > 1 ? 'ies' : 'y'}`);
-                          }
-                          
-                          if (progressParts.length > 0) {
-                            toast({
-                              title: "🎉 Story Complete!",
-                              description: progressParts.join(' • '),
-                              duration: 6000,
-                            });
-                          }
+                              // Show comprehensive progress summary first
+                              const progressParts = [];
+                              if (characterProgress?.expGained) {
+                                progressParts.push(`+${characterProgress.expGained} XP`);
+                              }
+                              if (characterProgress?.leveledUp) {
+                                progressParts.push(`Level ${characterProgress.character.level}`);
+                              }
+                              if (newAchievements?.length > 0) {
+                                progressParts.push(`${newAchievements.length} new achievement${newAchievements.length > 1 ? 's' : ''}`);
+                              }
+                              if (newAbilities?.length > 0) {
+                                progressParts.push(`${newAbilities.length} new abilit${newAbilities.length > 1 ? 'ies' : 'y'}`);
+                              }
+                              
+                              if (progressParts.length > 0) {
+                                toast({
+                                  title: "🎉 Story Complete!",
+                                  description: progressParts.join(' • '),
+                                  duration: 6000,
+                                });
+                              }
 
-                          // Show level up notification
-                          if (characterProgress?.leveledUp) {
-                            setTimeout(() => {
-                              const titleInfo = characterProgress.newTitles?.length > 0 
-                                ? ` • ${characterProgress.newTitles[0]}` 
-                                : '';
-                              toast({
-                                title: `🎉 Level Up! Level ${characterProgress.character.level}${titleInfo}`,
-                                description: `+${characterProgress.character.skillPoints} skill points earned!`,
-                                duration: 8000,
-                              });
-                            }, 1500);
-                          }
+                              // Show level up notification
+                              if (characterProgress?.leveledUp) {
+                                setTimeout(() => {
+                                  const titleInfo = characterProgress.newTitles?.length > 0 
+                                    ? ` • ${characterProgress.newTitles[0]}` 
+                                    : '';
+                                  toast({
+                                    title: `🎉 Level Up! Level ${characterProgress.character.level}${titleInfo}`,
+                                    description: `+${characterProgress.character.skillPoints} skill points earned!`,
+                                    duration: 8000,
+                                  });
+                                }, 1500);
+                              }
 
-                          // Show new achievements with staggered timing
-                          if (newAchievements?.length > 0) {
-                            newAchievements.forEach((achievement, index) => {
+                              // Show new achievements with staggered timing
+                              if (newAchievements?.length > 0) {
+                                newAchievements.forEach((achievement, index) => {
+                                  setTimeout(() => {
+                                    toast({
+                                      title: `🏆 Achievement Unlocked!`,
+                                      description: `${achievement.icon} ${achievement.name}: ${achievement.description}`,
+                                      duration: 7000,
+                                    });
+                                  }, (characterProgress?.leveledUp ? 3500 : 2000) + (index * 2000));
+                                });
+                              }
+                              
+                              // Show new abilities with staggered timing after achievements
+                              if (newAbilities?.length > 0) {
+                                // ABILITIES DISABLED - Uncomment to re-enable
+                                // const abilityStartDelay = (characterProgress?.leveledUp ? 3500 : 2000) + 
+                                //   (newAchievements?.length || 0) * 2000;
+                                // 
+                                // // Update available abilities state
+                                // const updatedAbilities = getAvailableAbilities();
+                                // setAvailableAbilities(updatedAbilities);
+                                // 
+                                // newAbilities.forEach((ability, index) => {
+                                //   setTimeout(() => {
+                                //     confetti({
+                                //       particleCount: 100,
+                                //       spread: 70,
+                                //       origin: { y: 0.6 }
+                                //     });
+                                //     toast({
+                                //       title: `✨ New Ability Unlocked!`,
+                                //       description: <AbilityToast ability={ability} />,
+                                //       duration: 8000,
+                                //     });
+                                //   }, abilityStartDelay + (index * 2500));
+                                // });
+                              }
+
+                              const finalDelay = 2000 + 
+                                (characterProgress?.leveledUp ? 2000 : 0) + 
+                                (newAchievements?.length || 0) * 2000 +
+                                (newAbilities?.length || 0) * 2500;
+
                               setTimeout(() => {
                                 toast({
-                                  title: `🏆 Achievement Unlocked!`,
-                                  description: `${achievement.icon} ${achievement.name}: ${achievement.description}`,
-                                  duration: 7000,
+                                  title: "✨ Adventure Saved!",
+                                  description: `Your ${sceneCount}-scene adventure is now in your gallery!`,
+                                  duration: 5000,
                                 });
-                              }, (characterProgress?.leveledUp ? 3500 : 2000) + (index * 2000));
-                            });
-                          }
-                          
-                          // Show new abilities with staggered timing after achievements
-                          if (newAbilities?.length > 0) {
-                            // ABILITIES DISABLED - Uncomment to re-enable
-                            // const abilityStartDelay = (characterProgress?.leveledUp ? 3500 : 2000) + 
-                            //   (newAchievements?.length || 0) * 2000;
-                            // 
-                            // // Update available abilities state
-                            // const updatedAbilities = getAvailableAbilities();
-                            // setAvailableAbilities(updatedAbilities);
-                            // 
-                            // newAbilities.forEach((ability, index) => {
-                            //   setTimeout(() => {
-                            //     confetti({
-                            //       particleCount: 100,
-                            //       spread: 70,
-                            //       origin: { y: 0.6 }
-                            //     });
-                            //     toast({
-                            //       title: `✨ New Ability Unlocked!`,
-                            //       description: <AbilityToast ability={ability} />,
-                            //       duration: 8000,
-                            //     });
-                            //   }, abilityStartDelay + (index * 2500));
-                            // });
-                          }
+                              }, finalDelay);
 
-                          const finalDelay = 2000 + 
-                            (characterProgress?.leveledUp ? 2000 : 0) + 
-                            (newAchievements?.length || 0) * 2000 +
-                            (newAbilities?.length || 0) * 2500;
-
-                          setTimeout(() => {
-                            toast({
-                              title: "✨ Adventure Saved!",
-                              description: `Your ${sceneCount}-scene adventure is now in your gallery!`,
-                              duration: 5000,
-                            });
-                          }, finalDelay);
-
-                          setTimeout(() => navigate('/'), finalDelay + 3000);
-                        } catch (error) {
-                          console.error("Error finishing adventure:", error);
-                          toast({
-                            title: "Error saving adventure",
-                            description: "There was an issue saving your progress. Please try again.",
-                            variant: "destructive",
-                          });
-                        }
-                      }}
-                      className="w-full max-w-xs mx-auto text-lg font-bold"
-                    >
-                      <Crown className="h-5 w-5 mr-2" />
-                      Finish Adventure
-                    </Button>
+                              setTimeout(() => navigate('/'), finalDelay + 3000);
+                            } catch (error) {
+                              console.error("Error finishing adventure:", error);
+                              toast({
+                                title: "Error saving adventure",
+                                description: "There was an issue saving your progress. Please try again.",
+                                variant: "destructive",
+                              });
+                            }
+                          }}
+                          className="w-full max-w-xs mx-auto text-lg font-bold"
+                        >
+                          <Crown className="h-5 w-5 mr-2" />
+                          Finish Adventure
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </div>
               )}
