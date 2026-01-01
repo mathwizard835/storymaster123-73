@@ -237,13 +237,15 @@ Ages:
 
 10–11: Rich but clear vocabulary, 1–2 interwoven story threads per scene, emotional arcs understandable at this age, character growth, leadership, and long-term choices. Subtle hints and callbacks allowed, but keep events and cause/effect clear.
 
-Player Levels:
+Lexile-Based Reading Levels:
 
-Apprentice: Simple story, gentle pacing, few items, clear outcomes.
+200L-400L: Simple vocabulary, short sentences (5-10 words), clear single-idea paragraphs, gentle pacing, explicit cause-and-effect.
 
-Adventurer: Moderate difficulty, mild twists, evolving item logic, small long-term effects.
+400L-650L: Moderate vocabulary with context clues, varied sentence lengths, connected ideas across paragraphs, mild complexity.
 
-Hero: Deep narrative, branching logic, hidden paths, layered objectives, cumulative rewards.
+650L-900L: Rich vocabulary, compound-complex sentences, multiple story threads, emotional arcs, character development.
+
+900L-1200L: Advanced vocabulary, sophisticated sentence structures, layered narratives, abstract concepts, nuanced themes.
 
 📖 STORY STRUCTURE
 
@@ -502,7 +504,7 @@ When generating choices, include ONE "Secret Choice" that requires one of these 
     const profileSummary = `Player Profile:
 - Hero Name: ${profile.name || "the hero"}
 - Age: ${profile.age ?? "unknown"}
-- Reading Level: ${profile.reading ?? profile.readingSkill ?? "unknown"}
+- Lexile Score: ${profile.lexileScore ?? 500}L
 - Interest: ${(profile.selectedBadges || []).join(", ") || "none"}${profile.interests ? `\n- Personal Interests: ${profile.interests}` : ""}
 - Mode: ${profile.mode ?? "unknown"}
 - Story Length: ${profile.storyLength ?? "medium"}${profile.topic ? `\n- Topic: ${profile.topic}` : ""}${inventoryContext}`;
@@ -554,7 +556,7 @@ ${profileSummary}
 ⚠️ MANDATORY REQUIREMENTS:
 - PROTAGONIST NAME: ${profile.name || "the hero"} - Use this as the main character's name throughout the story. Refer to the protagonist by this name in the narrative and choices. Make the player feel like THEY are the hero.
 - AGE ${profile.age ?? "unknown"}: Use ${profile.age && profile.age <= 7 ? 'simple, clear vocabulary for young readers' : profile.age && profile.age <= 10 ? 'age-appropriate vocabulary with moderate complexity' : 'advanced vocabulary and complex themes'}
-- READING LEVEL "${profile.reading ?? 'unknown'}": ${profile.reading === 'Apprentice' ? 'Clear, simple structure' : profile.reading === 'Adventurer' ? 'Moderate complexity, layered plot' : 'Advanced structure with deeper concepts'}
+- LEXILE SCORE ${profile.lexileScore ?? 500}L: ${(profile.lexileScore ?? 500) <= 400 ? 'Use simple vocabulary (common words), short sentences (5-10 words), single-idea paragraphs, and very clear structure' : (profile.lexileScore ?? 500) <= 650 ? 'Use moderate vocabulary with context clues, varied sentence lengths (8-15 words), and connected ideas' : (profile.lexileScore ?? 500) <= 900 ? 'Use rich vocabulary, compound-complex sentences, multiple story threads, and emotional depth' : 'Use advanced vocabulary, sophisticated structures, layered narratives, and nuanced themes'}
 - INTERESTS/BADGES: ${(profile.selectedBadges || []).join(", ") || "general"} - Story MUST incorporate these themes prominently
 - **QUEST MODE "${profile.mode ?? 'unknown'}" - THIS IS YOUR PRIMARY TONE**: ${profile.mode === 'Fun' ? '🎭 COMEDY MODE - Make everything silly, funny, and ridiculous! Use wacky situations, goofy characters, playful language, absurd humor. The story should make kids LAUGH and GIGGLE, NOT feel suspense or danger. Think cartoon comedy!' : profile.mode === 'Thrill' ? '⚡ THRILL MODE - High-stakes, urgent, time-sensitive danger and intense action' : profile.mode === 'Mystery' ? '🔍 MYSTERY MODE - Suspenseful, clue-driven investigation with slow tension' : profile.mode === 'Explore' ? '🗺️ EXPLORE MODE - Imaginative, wonder-filled, open-ended discovery' : 'Adventure-focused'}
 - STORY LENGTH: ${profile.storyLength ?? 'medium'} story${profile.topic ? `\n- TOPIC: ${profile.topic} - weave this into the narrative` : ''}
@@ -580,7 +582,7 @@ ${profile.mode === 'learning' ? '- Embed educational content naturally into the 
 
     // Log profile for validation
     console.log(`Story generation request: ${max_tokens} tokens, scene ${sceneCount}`);
-    console.log(`Profile validation - Age: ${profile.age}, Reading: ${profile.reading}, Badges: ${(profile.selectedBadges || []).join(", ")}, Mode: ${profile.mode}`);
+    console.log(`Profile validation - Age: ${profile.age}, Lexile: ${profile.lexileScore}L, Badges: ${(profile.selectedBadges || []).join(", ")}, Mode: ${profile.mode}`);
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
