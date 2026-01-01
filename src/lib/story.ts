@@ -27,7 +27,7 @@ export type InteractiveObject = {
 export type Profile = {
   name?: string;
   age: number;
-  reading: string; // apprentice | adventurer | hero
+  lexileScore: number; // Lexile score (200-1200)
   selectedBadges: string[];
   mode: string; // thrill | comedy | mystery | explore
   storyLength?: 'short' | 'medium' | 'epic';

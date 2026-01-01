@@ -95,7 +95,7 @@ export const waitlistSchema = z.object({
 export const storyGenerationSchema = z.object({
   profile: z.object({
     age: z.number().min(6).max(11).optional(),
-    reading: z.enum(['Apprentice', 'Adventurer', 'Hero']).optional(),
+    lexileScore: z.number().min(200).max(1200).optional(),
     selectedBadges: z.array(z.string()).max(10).optional(),
     interests: z.string().max(500).optional(),
     mode: z.enum(['Thrill', 'Comedy', 'Mystery', 'Explore', 'Learning']).optional(),
@@ -120,7 +120,7 @@ export const profileSetupSchema = z.object({
     { message: "Inappropriate content detected in name" }
   ),
   age: z.number().min(6).max(11),
-  reading: z.enum(['Apprentice', 'Adventurer', 'Hero']),
+  lexileScore: z.number().min(200).max(1200),
   selectedBadges: z.array(z.string()).min(1).max(5),
   interests: safeContentSchema.optional().or(z.literal('')),
   mode: z.enum(['Thrill', 'Comedy', 'Mystery', 'Explore', 'Learning']),

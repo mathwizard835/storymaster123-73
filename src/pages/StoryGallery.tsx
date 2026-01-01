@@ -122,7 +122,7 @@ const StoryGallery = () => {
 
                       <div className="pt-2 border-t">
                         <div className="text-sm text-muted-foreground">
-                          Age: {story.profile.age} • {story.profile.reading} level • {story.profile.mode} mode
+                          Age: {story.profile.age} • {story.profile.lexileScore ?? 500}L • {story.profile.mode} mode
                         </div>
                         {story.profile.topic && (
                           <div className="text-sm text-muted-foreground mt-1">

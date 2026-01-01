@@ -48,6 +48,19 @@ const modes = [
   { id: "learning", label: "Learning Quest", icon: GraduationCap },
 ];
 
+// Calculate default Lexile score based on age
+const getDefaultLexileForAge = (age: number): number => {
+  const lexileByAge: Record<number, number> = {
+    6: 300,
+    7: 400,
+    8: 500,
+    9: 600,
+    10: 750,
+    11: 900,
+  };
+  return lexileByAge[age] ?? 500;
+};
+
 const ProfileSetup = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -55,7 +68,7 @@ const ProfileSetup = () => {
   const [name, setName] = useState<string>("");
   const [nameError, setNameError] = useState<string>("");
   const [age, setAge] = useState<number>(8);
-  const [reading, setReading] = useState<string>("adventurer");
+  const [lexileScore, setLexileScore] = useState<number>(500);
   const [selectedBadges, setSelectedBadges] = useState<string[]>([]);
   const [mode, setMode] = useState<string>("thrill");
   const [storyLength, setStoryLength] = useState<string>("medium");
@@ -64,13 +77,18 @@ const ProfileSetup = () => {
   const [interestsError, setInterestsError] = useState<string>("");
   const [topicError, setTopicError] = useState<string>("");
 
+  // Update Lexile score when age changes
+  useEffect(() => {
+    setLexileScore(getDefaultLexileForAge(age));
+  }, [age]);
+
   useEffect(() => {
     // Reset ALL profile fields when starting a new adventure
     const isNewAdventure = searchParams.get('new') === 'true';
     if (isNewAdventure) {
       setName("");
       setAge(8);
-      setReading("adventurer");
+      setLexileScore(500);
       setSelectedBadges([]);
       setMode("thrill");
       setStoryLength("medium");
@@ -158,7 +176,7 @@ const ProfileSetup = () => {
       return;
     }
 
-    const profile = { name: name || undefined, age, reading, selectedBadges, mode, storyLength: storyLength as 'short' | 'medium' | 'epic', topic, interests };
+    const profile = { name: name || undefined, age, lexileScore, selectedBadges, mode, storyLength: storyLength as 'short' | 'medium' | 'epic', topic, interests };
     saveProfileToLocal(profile);
     
     console.log('Profile saved - fresh configuration:', profile);
@@ -270,27 +288,52 @@ const ProfileSetup = () => {
               </div>
             </article>
 
-            {/* Reading Skill */}
+            {/* Lexile Score */}
             <article className="glass-panel rounded-xl p-6">
-              <h2 className="font-heading text-xl md:text-2xl font-bold">Reading Skill</h2>
-              <RadioGroup
-                className="mt-4 grid gap-3"
-                value={reading}
-                onValueChange={setReading}
-              >
-                <div className="flex items-center gap-3 rounded-lg border p-3">
-                  <RadioGroupItem id="apprentice" value="apprentice" />
-                  <Label htmlFor="apprentice">🌱 Apprentice</Label>
+              <h2 className="font-heading text-xl md:text-2xl font-bold">Reading Level (Lexile Score)</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Enter your child's Lexile score (200L-1200L).{" "}
+                <a 
+                  href="https://lexile.com/find-a-book/search-by-title/" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-primary underline"
+                >
+                  Find your Lexile score
+                </a>
+              </p>
+              <div className="mt-4 space-y-4">
+                <div className="flex items-center gap-3">
+                  <Input
+                    type="number"
+                    min={200}
+                    max={1200}
+                    value={lexileScore}
+                    onChange={(e) => {
+                      const val = Number(e.target.value);
+                      if (val >= 200 && val <= 1200) {
+                        setLexileScore(val);
+                      }
+                    }}
+                    className="w-24"
+                  />
+                  <span className="text-muted-foreground font-medium">L</span>
                 </div>
-                <div className="flex items-center gap-3 rounded-lg border p-3">
-                  <RadioGroupItem id="adventurer" value="adventurer" />
-                  <Label htmlFor="adventurer">⚔️ Adventurer</Label>
+                <div className="px-1">
+                  <Slider
+                    value={[lexileScore]}
+                    min={200}
+                    max={1200}
+                    step={50}
+                    onValueChange={(v) => setLexileScore(v[0])}
+                  />
                 </div>
-                <div className="flex items-center gap-3 rounded-lg border p-3">
-                  <RadioGroupItem id="hero" value="hero" />
-                  <Label htmlFor="hero">🏆 Hero</Label>
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>200L (Beginning)</span>
+                  <span>700L (Intermediate)</span>
+                  <span>1200L (Advanced)</span>
                 </div>
-              </RadioGroup>
+              </div>
             </article>
 
             {/* Interest Badges */}
