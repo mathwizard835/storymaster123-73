@@ -786,17 +786,8 @@ const Mission = () => {
 
     setChoiceLoading(true);
 
-    if (profile.mode === 'learning' && learningSession) {
-      const availableChallenge = learningSession.challenges.find(
-        c => !learningSession.completedChallenges.includes(c.id)
-      );
-      
-      if (availableChallenge && Math.random() < 0.3) {
-        setCurrentChallenge(availableChallenge);
-        setChoiceLoading(false);
-        return;
-      }
-    }
+    // Learning mode challenges are now embedded directly in the AI-generated story
+    // rather than using static hardcoded challenges that may be unrelated to the topic
 
     try {
       const choice = scene.choices.find(c => c.id === choiceId);
