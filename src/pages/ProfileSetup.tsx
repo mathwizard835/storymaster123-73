@@ -84,7 +84,7 @@ const ProfileSetup = () => {
 
   useEffect(() => {
     // Reset ALL profile fields when starting a new adventure
-    const isNewAdventure = searchParams.get('new') === 'true';
+    const isNewAdventure = searchParams.get("new") === "true";
     if (isNewAdventure) {
       setName("");
       setAge(8);
@@ -97,7 +97,7 @@ const ProfileSetup = () => {
       setNameError("");
       setInterestsError("");
       setTopicError("");
-      
+
       toast({
         title: "Starting Fresh Adventure! 🎮",
         description: "All settings have been reset. Create your new hero profile!",
@@ -107,9 +107,7 @@ const ProfileSetup = () => {
   }, [navigate, toast, searchParams]);
 
   const toggleBadge = (id: string) => {
-    setSelectedBadges((prev) =>
-      prev.includes(id) ? prev.filter((b) => b !== id) : [...prev, id]
-    );
+    setSelectedBadges((prev) => (prev.includes(id) ? prev.filter((b) => b !== id) : [...prev, id]));
   };
 
   const validateInterests = (value: string) => {
@@ -154,7 +152,7 @@ const ProfileSetup = () => {
       toast({
         title: "Profile Incomplete",
         description: "Please select at least one interest badge or tell us about things you love.",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
@@ -167,7 +165,7 @@ const ProfileSetup = () => {
     if (!nameValid || !interestsValid || !topicValid) {
       // Track violation for manual admin review
       await trackViolation();
-      
+
       toast({
         title: "Content Rejected",
         description: "Please avoid inappropriate content. This violation has been recorded.",
@@ -176,42 +174,51 @@ const ProfileSetup = () => {
       return;
     }
 
-    const profile = { name: name || undefined, age, lexileScore, selectedBadges, mode, storyLength: storyLength as 'short' | 'medium' | 'epic', topic, interests };
+    const profile = {
+      name: name || undefined,
+      age,
+      lexileScore,
+      selectedBadges,
+      mode,
+      storyLength: storyLength as "short" | "medium" | "epic",
+      topic,
+      interests,
+    };
     saveProfileToLocal(profile);
-    
-    console.log('Profile saved - fresh configuration:', profile);
-    
+
+    console.log("Profile saved - fresh configuration:", profile);
+
     // Check URL parameters
-    const forceNew = searchParams.get('new') === 'true';
-    const isTrial = searchParams.get('trial') === 'true';
-    
+    const forceNew = searchParams.get("new") === "true";
+    const isTrial = searchParams.get("trial") === "true";
+
     // CRITICAL FIX: Check if this is a profile update vs new profile creation
     // If forceNew is NOT set, check if user has an active story
     if (!forceNew && !isTrial) {
       try {
-        const { loadCurrentStoryFromDatabase } = await import('@/lib/databaseStory');
+        const { loadCurrentStoryFromDatabase } = await import("@/lib/databaseStory");
         const existingStory = await loadCurrentStoryFromDatabase();
-        
+
         if (existingStory && existingStory.scenes.length > 0) {
           // Profile update - return to existing story WITHOUT ?new=true
-          console.log('📝 Profile updated, returning to existing story');
+          console.log("📝 Profile updated, returning to existing story");
           navigate("/mission");
           return;
         }
       } catch (error) {
-        console.error('Error checking for existing story:', error);
+        console.error("Error checking for existing story:", error);
         // Continue to new story creation if check fails
       }
     }
-    
+
     // Build mission URL with appropriate parameters for NEW stories
-    let missionUrl = '/mission';
+    let missionUrl = "/mission";
     const params = new URLSearchParams();
-    if (forceNew) params.set('new', 'true');
-    if (isTrial) params.set('trial', 'true');
+    if (forceNew) params.set("new", "true");
+    if (isTrial) params.set("trial", "true");
     if (params.toString()) missionUrl += `?${params.toString()}`;
-    
-    console.log('🚀 Navigating to:', missionUrl);
+
+    console.log("🚀 Navigating to:", missionUrl);
     navigate(missionUrl);
   };
 
@@ -231,13 +238,11 @@ const ProfileSetup = () => {
       <main className="min-h-screen w-full bg-background">
         <section className="container py-10 md:py-16">
           <div className="flex justify-end mb-4">
-            <Button variant="outline" onClick={() => navigate('/')}>
+            <Button variant="outline" onClick={() => navigate("/")}>
               Go Back
             </Button>
           </div>
-          <h1 className="font-heading text-3xl md:text-5xl font-extrabold text-center">
-            Create Your Hero Profile
-          </h1>
+          <h1 className="font-heading text-3xl md:text-5xl font-extrabold text-center">Create Your Hero Profile</h1>
           <p className="mt-2 text-center text-muted-foreground">
             Configure your powers and style. You can always change them later.
           </p>
@@ -264,9 +269,7 @@ const ProfileSetup = () => {
                   maxLength={50}
                   className={nameError ? "border-destructive" : ""}
                 />
-                {nameError && (
-                  <p className="mt-2 text-sm text-destructive">{nameError}</p>
-                )}
+                {nameError && <p className="mt-2 text-sm text-destructive">{nameError}</p>}
               </div>
             </article>
 
@@ -293,13 +296,13 @@ const ProfileSetup = () => {
               <h2 className="font-heading text-xl md:text-2xl font-bold">Reading Level (Lexile Score)</h2>
               <p className="mt-1 text-sm text-muted-foreground">
                 Enter your child's Lexile score (200L-1200L).{" "}
-                <a 
-                  href="https://lexile.com/find-a-book/search-by-title/" 
-                  target="_blank" 
+                <a
+                  href="https://hub.lexile.com/find-a-book/"
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="text-primary underline"
                 >
-                  Find your Lexile score
+                  Find your Lexile score - Look for books you like and see their scores
                 </a>
               </p>
               <div className="mt-4 space-y-4">
@@ -348,7 +351,7 @@ const ProfileSetup = () => {
                           onClick={() => toggleBadge(b.id)}
                           className={cn(
                             "justify-start rounded-lg border px-3 py-3 inline-flex items-center transition-colors hover:bg-accent hover:text-foreground",
-                            selectedBadges.includes(b.id) && "bg-primary/10 border-primary"
+                            selectedBadges.includes(b.id) && "bg-primary/10 border-primary",
                           )}
                           aria-label={b.label}
                           type="button"
@@ -369,11 +372,7 @@ const ProfileSetup = () => {
             {/* Story Length */}
             <article className="glass-panel rounded-xl p-6">
               <h2 className="font-heading text-xl md:text-2xl font-bold">Story Length</h2>
-              <RadioGroup
-                className="mt-4 grid gap-3"
-                value={storyLength}
-                onValueChange={setStoryLength}
-              >
+              <RadioGroup className="mt-4 grid gap-3" value={storyLength} onValueChange={setStoryLength}>
                 <div className="flex items-center gap-3 rounded-lg border p-3">
                   <RadioGroupItem id="short" value="short" />
                   <Label htmlFor="short">⚡ Short (3-5 scenes)</Label>
@@ -414,7 +413,9 @@ const ProfileSetup = () => {
             {/* Personal Interests */}
             <article className="glass-panel rounded-xl p-6 md:col-span-2">
               <h2 className="font-heading text-xl md:text-2xl font-bold">Things You Love (optional)</h2>
-              <p className="mt-1 text-sm text-muted-foreground">Tell us about your hobbies, interests, or favorite things you'd like to see in your stories</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Tell us about your hobbies, interests, or favorite things you'd like to see in your stories
+              </p>
               <div className="mt-3">
                 <Textarea
                   placeholder="e.g., soccer, video games, cats, pizza, Marvel superheroes, skateboarding..."
@@ -428,9 +429,7 @@ const ProfileSetup = () => {
                   }}
                   className={`min-h-[80px] ${interestsError ? "border-destructive" : ""}`}
                 />
-                {interestsError && (
-                  <p className="mt-2 text-sm text-destructive">{interestsError}</p>
-                )}
+                {interestsError && <p className="mt-2 text-sm text-destructive">{interestsError}</p>}
               </div>
             </article>
 
@@ -462,9 +461,7 @@ const ProfileSetup = () => {
                     Clear
                   </Button>
                 </div>
-                {topicError && (
-                  <p className="text-sm text-destructive">{topicError}</p>
-                )}
+                {topicError && <p className="text-sm text-destructive">{topicError}</p>}
               </div>
             </article>
           </div>
