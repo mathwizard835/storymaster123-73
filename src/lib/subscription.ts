@@ -161,10 +161,9 @@ export const getStoriesRemaining = async (): Promise<{
   try {
     const deviceId = await getDeviceId();
     
-    // Get first and last day of current month
+    // Get the rolling 30-day period (last 30 days from now)
     const now = new Date();
-    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+    const thirtyDaysAgo = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
     
     // Get current subscription plan
     const { plan } = await getUserSubscription();
@@ -186,13 +185,13 @@ export const getStoriesRemaining = async (): Promise<{
       }
     }
 
-    // Count stories completed THIS MONTH
+    // Count stories completed in the last 30 days (rolling period)
     const { data: monthStories, error: storiesError } = await supabase
       .from('story_completions')
       .select('id')
       .eq('device_id', deviceId)
-      .gte('completed_at', firstDayOfMonth.toISOString())
-      .lte('completed_at', lastDayOfMonth.toISOString());
+      .gte('completed_at', thirtyDaysAgo.toISOString())
+      .lte('completed_at', now.toISOString());
 
     if (storiesError) throw storiesError;
 
@@ -218,7 +217,7 @@ export const getStoriesRemaining = async (): Promise<{
     const totalAllowed = monthlyLimit + bonusStories;
     const canPlay = storiesUsedThisMonth < totalAllowed;
 
-    console.log(`📊 Story limits: ${storiesUsedThisMonth}/${monthlyLimit} used this month (${bonusStories} bonus, canPlay: ${canPlay})`);
+    console.log(`📊 Story limits: ${storiesUsedThisMonth}/${monthlyLimit} used in last 30 days (${bonusStories} bonus, canPlay: ${canPlay})`);
 
     return {
       storiesUsedThisMonth,
