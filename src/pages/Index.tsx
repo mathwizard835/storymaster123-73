@@ -356,19 +356,28 @@ const Index = () => {
                   {user ? "Go to Dashboard" : "Play - Join Your Quest"}
                 </Button>
               )}
-              <Button
-                size="xl"
-                variant="game"
-                onClick={() => {
-                  // Clear any previous trial flags to allow fresh trial
-                  localStorage.removeItem("trial_story_used");
-                  localStorage.removeItem("trial_story_started");
-                  navigate("/profile?trial=true");
-                }}
-                className="text-lg px-8 py-4"
-              >
-                🎮 Try 1 Story Free
-              </Button>
+              {/* Only show "Try 1 Story Free" button if NOT logged in AND trial hasn't been used */}
+              {!user && localStorage.getItem('trial_story_used') !== 'completed' && (
+                <Button
+                  size="xl"
+                  variant="game"
+                  onClick={() => {
+                    // Only allow trial if not already used
+                    const trialUsed = localStorage.getItem('trial_story_used');
+                    if (trialUsed === 'completed') {
+                      // Redirect to auth instead
+                      navigate("/auth");
+                      return;
+                    }
+                    // Mark trial as started (but NOT completed yet)
+                    localStorage.setItem('trial_story_started', 'true');
+                    navigate("/profile?trial=true");
+                  }}
+                  className="text-lg px-8 py-4"
+                >
+                  🎮 Try 1 Story Free
+                </Button>
+              )}
               <Button
                 size="xl"
                 variant="outline"

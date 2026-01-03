@@ -50,17 +50,9 @@ export const StoryLimitWidget = () => {
   };
 
   const getTimeUntilReset = () => {
-    const now = new Date();
-    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-    
-    const diff = nextMonth.getTime() - now.getTime();
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    
-    if (days > 0) {
-      return `${days}d ${hours}h`;
-    }
-    return `${hours}h`;
+    // Rolling 30-day period - stories expire 30 days after they were used
+    // Show approximate time when next story slot becomes available
+    return "Rolling 30-day period";
   };
 
   return (
@@ -106,9 +98,9 @@ export const StoryLimitWidget = () => {
           {!storyData.canPlay && (
             <div className="bg-muted p-3 rounded-lg text-center">
               <Clock className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />
-              <div className="text-sm font-medium">Stories reset on the 1st</div>
+              <div className="text-sm font-medium">Story limit reached</div>
               <div className="text-xs text-muted-foreground mt-1">
-                {getTimeUntilReset()} until reset
+                Stories reset on a rolling 30-day basis
               </div>
             </div>
           )}
