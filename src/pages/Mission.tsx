@@ -393,9 +393,10 @@ const Mission = () => {
         // For explicit trial mode (from "Try 1 Story Free" button), always proceed
         if (!user && isTrialMode) {
           console.log('✅ Explicit trial mode requested - proceeding');
-          // Don't check localStorage at all - Index page already cleared it
-          // Just mark that trial has started
+          // Mark trial as USED immediately when story starts - not when it completes
+          // This prevents users from exiting midway and clicking "Try 1 Story Free" again
           localStorage.setItem('trial_story_started', 'true');
+          localStorage.setItem('trial_story_used', 'completed');
         }
         
         // Check if user wants to start fresh (from URL param)
