@@ -356,22 +356,14 @@ const Index = () => {
                   {user ? "Go to Dashboard" : "Play - Join Your Quest"}
                 </Button>
               )}
-              {/* Only show "Try 1 Story Free" button if NOT logged in AND trial hasn't been used */}
-              {!user && localStorage.getItem('trial_story_used') !== 'completed' && (
+              {/* "Try 1 Story Free" button - requires signup, so redirect to auth with trial flag */}
+              {!user && (
                 <Button
                   size="xl"
                   variant="game"
                   onClick={() => {
-                    // Only allow trial if not already used
-                    const trialUsed = localStorage.getItem('trial_story_used');
-                    if (trialUsed === 'completed') {
-                      // Redirect to auth instead
-                      navigate("/auth");
-                      return;
-                    }
-                    // Mark trial as started (but NOT completed yet)
-                    localStorage.setItem('trial_story_started', 'true');
-                    navigate("/profile?trial=true");
+                    // Redirect to auth page with trial flag - user must sign up first
+                    navigate("/auth?trial=true");
                   }}
                   className="text-lg px-8 py-4"
                 >
