@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,13 +19,38 @@ const Auth = () => {
   const [error, setError] = useState('');
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
+  
+  // Check if user is signing up for trial
+  const isTrialSignup = searchParams.get('trial') === 'true';
 
   useEffect(() => {
     // Check if user is already logged in
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
+        // If logged in and trying to access trial, check if trial already used
+        if (isTrialSignup) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('trial_used')
+            .eq('id', session.user.id)
+            .single();
+          
+          if (profile?.trial_used) {
+            toast({
+              title: "Trial already used",
+              description: "You've already used your free trial story. Subscribe to continue!",
+              variant: "destructive",
+            });
+            navigate('/subscription');
+            return;
+          }
+          // User is logged in and hasn't used trial - proceed to profile setup
+          navigate('/profile?trial=true');
+          return;
+        }
         navigate('/dashboard');
       }
     };
@@ -43,16 +68,20 @@ const Auth = () => {
           description: "Redirecting to your dashboard...",
         });
         
-        // Redirect to dashboard after successful verification
+        // Redirect based on whether this was a trial signup
         setTimeout(() => {
-          navigate('/dashboard');
+          if (isTrialSignup) {
+            navigate('/profile?trial=true');
+          } else {
+            navigate('/dashboard');
+          }
         }, 1500);
       }
     };
     
     checkUser();
     handleAuthCallback();
-  }, [navigate, toast]);
+  }, [navigate, toast, isTrialSignup]);
 
   const handleResendVerification = async () => {
     if (!email) {
@@ -102,7 +131,10 @@ const Auth = () => {
         return;
       }
 
-      const redirectUrl = `${window.location.origin}/auth`;
+      // Preserve trial flag in redirect URL
+      const redirectUrl = isTrialSignup 
+        ? `${window.location.origin}/auth?trial=true`
+        : `${window.location.origin}/auth`;
       
       const { data, error } = await supabase.auth.signUp({
         email: validationResult.data.email,
@@ -141,9 +173,10 @@ const Auth = () => {
           // User was automatically signed in (email confirmation disabled)
           toast({
             title: "Account created successfully!",
-            description: "You can now start your adventure.",
+            description: isTrialSignup ? "Let's start your free trial story!" : "You can now start your adventure.",
           });
-          navigate('/dashboard');
+          // Redirect to trial flow or dashboard
+          navigate(isTrialSignup ? '/profile?trial=true' : '/dashboard');
         }
       }
     } catch (err: any) {
@@ -168,7 +201,7 @@ const Auth = () => {
         return;
       }
 
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: validationResult.data.email,
         password: validationResult.data.password,
       });
@@ -180,6 +213,32 @@ const Auth = () => {
           setError(error.message);
         }
       } else {
+        // If this is a trial signup attempt, check if user already used trial
+        if (isTrialSignup && data.user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('trial_used')
+            .eq('id', data.user.id)
+            .single();
+          
+          if (profile?.trial_used) {
+            toast({
+              title: "Trial already used",
+              description: "You've already used your free trial story. Subscribe to continue!",
+              variant: "destructive",
+            });
+            navigate('/subscription');
+            return;
+          }
+          // User hasn't used trial - proceed to trial flow
+          toast({
+            title: "Welcome back!",
+            description: "Let's start your free trial story!",
+          });
+          navigate('/profile?trial=true');
+          return;
+        }
+        
         toast({
           title: "Welcome back!",
           description: "You've successfully signed in.",
@@ -248,10 +307,12 @@ const Auth = () => {
           <CardHeader className="text-center">
             <CardTitle className="text-white flex items-center justify-center gap-2">
               <Stars className="h-5 w-5 text-yellow-400" />
-              Join the Quest
+              {isTrialSignup ? "🎮 Start Your Free Story" : "Join the Quest"}
             </CardTitle>
             <CardDescription className="text-purple-200">
-              Sign in to save your progress and access your story library
+              {isTrialSignup 
+                ? "Create a free account to try one story - no credit card required!"
+                : "Sign in to save your progress and access your story library"}
             </CardDescription>
           </CardHeader>
           <CardContent>

@@ -377,26 +377,32 @@ const Mission = () => {
            (window as any).Capacitor?.getPlatform?.() === 'android' ||
            /Android|iPhone|iPad|iPod/i.test(navigator.userAgent));
         
-        // ONLY check for completed trials if this is NOT an explicit trial request
-        // When user clicks "Try 1 Story Free", we should always allow it
-        if (!user && !isTrialMode && isMobile) {
-          // This block only runs for mobile users who didn't explicitly request trial
-          const trialUsed = localStorage.getItem('trial_story_used');
+        // Trial mode now requires authentication - check database for trial usage
+        if (isTrialMode && user) {
+          // Check if user has already used their trial
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('trial_used')
+            .eq('id', user.id)
+            .single();
           
-          if (trialUsed === 'completed') {
-            console.log('🚫 Mobile user has completed trial, redirecting to home');
-            navigate("/");
+          if (profile?.trial_used) {
+            console.log('🚫 User has already used their trial story');
+            toast({
+              title: "Trial already used",
+              description: "You've already used your free trial story. Subscribe to continue!",
+              variant: "destructive",
+            });
+            navigate('/subscription');
             return;
           }
-        }
-
-        // For explicit trial mode (from "Try 1 Story Free" button), always proceed
-        if (!user && isTrialMode) {
-          console.log('✅ Explicit trial mode requested - proceeding');
-          // Mark trial as USED immediately when story starts - not when it completes
-          // This prevents users from exiting midway and clicking "Try 1 Story Free" again
-          localStorage.setItem('trial_story_started', 'true');
-          localStorage.setItem('trial_story_used', 'completed');
+          
+          // Mark trial as used immediately when story starts
+          console.log('✅ Marking trial as used in database');
+          await supabase
+            .from('profiles')
+            .update({ trial_used: true })
+            .eq('id', user.id);
         }
         
         // Check if user wants to start fresh (from URL param)
@@ -926,32 +932,16 @@ const Mission = () => {
       }
 
       if (parsed.end) {
-        // Check if mobile platform
-        const isMobile = typeof window !== 'undefined' && 
-          ((window as any).Capacitor?.getPlatform?.() === 'ios' || 
-           (window as any).Capacitor?.getPlatform?.() === 'android' ||
-           /Android|iPhone|iPad|iPod/i.test(navigator.userAgent));
-        
-        // Mark trial/mobile story as COMPLETED if not authenticated
-        // IMPORTANT: Set storyReadyToFinish FIRST so user can see the final scene content
-        if (!user && (isTrialMode || isMobile)) {
-          console.log('📝 Marking trial/mobile story as completed');
-          localStorage.setItem('trial_story_used', 'completed');
-          localStorage.setItem('trial_story_started', 'completed');
-          
-          // Set storyReadyToFinish to true so the final scene UI is displayed
-          // User can see the completion screen before being redirected
+        // Trial story completion - user is now logged in, trial was marked at start
+        if (isTrialMode) {
+          console.log('📝 Trial story completed');
           setStoryReadyToFinish(true);
           
-          // Show toast informing user of completion - do NOT auto-redirect
-          // Let user read the final scene and see the completion UI
           toast({
             title: "Story Complete! 🎉",
-            description: "Sign up to continue your adventures and unlock unlimited stories!",
+            description: "Great job! Check out our subscription plans for more adventures!",
             variant: "default",
           });
-          
-          // Don't auto-navigate - let user click "Return Home" button on completion screen
           return;
         }
         
