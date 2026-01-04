@@ -380,11 +380,11 @@ const Mission = () => {
         // Trial mode now requires authentication - check database for trial usage
         if (isTrialMode && user) {
           // Check if user has already used their trial
-          const { data: profile } = await supabase
+          const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('trial_used')
             .eq('id', user.id)
-            .single();
+            .maybeSingle();
           
           if (profile?.trial_used) {
             console.log('🚫 User has already used their trial story');
@@ -398,11 +398,19 @@ const Mission = () => {
           }
           
           // Mark trial as used immediately when story starts
+          // Use upsert to handle case where profile doesn't exist yet
           console.log('✅ Marking trial as used in database');
-          await supabase
+          const { error: updateError } = await supabase
             .from('profiles')
-            .update({ trial_used: true })
-            .eq('id', user.id);
+            .upsert({ 
+              id: user.id, 
+              trial_used: true,
+              email: user.email 
+            }, { onConflict: 'id' });
+          
+          if (updateError) {
+            console.error('Failed to mark trial as used:', updateError);
+          }
         }
         
         // Check if user wants to start fresh (from URL param)
@@ -598,7 +606,8 @@ const Mission = () => {
         const abilityCategories = availableAbilities.map(a => a.category);
         const { parsed, text } = await generateNextScene(profileWithInventory, undefined, false, 1800, 1, newStoryId, true, abilityCategories);
         if (!parsed) {
-          throw new Error("Invalid AI response: " + text.slice(0, 140));
+          const errorPreview = text ? text.slice(0, 140) : "No response received";
+          throw new Error("Invalid AI response: " + errorPreview);
         }
         
         if (parsed.itemsFound && parsed.itemsFound.length > 0) {
@@ -850,7 +859,10 @@ const Mission = () => {
       // Phase 1 & 2: Pass story ID for validation, no forceNewSession, pass abilities
       const abilityCategories = availableAbilities.map(a => a.category);
       const { parsed, text } = await generateNextScene(profileWithInventory, { ...scene, selectedChoiceId: choiceId }, false, 1200, nextSceneCount, savedStory.id, false, abilityCategories);
-      if (!parsed) throw new Error("Invalid AI response: " + text.slice(0, 140));
+      if (!parsed) {
+        const errorPreview = text ? text.slice(0, 140) : "No response received";
+        throw new Error("Invalid AI response: " + errorPreview);
+      }
       
       if (parsed.itemsFound && parsed.itemsFound.length > 0) {
         let newInventory = inventory;
@@ -951,11 +963,25 @@ const Mission = () => {
       
     } catch (error: any) {
       console.error("Error in onChoose:", error);
+      
+      // Determine specific error message
+      let errorDescription = "Failed to continue story. Please try again.";
+      
+      if (error.message?.includes("authentication") || error.message?.includes("Not authenticated")) {
+        errorDescription = "Authentication error. Please try refreshing the page.";
+      } else if (error.message?.includes("Rate limit")) {
+        errorDescription = "Too many requests. Please wait a moment and try again.";
+      } else if (error.message?.includes("Story session corrupted") || error.message?.includes("Story session lost")) {
+        errorDescription = "Your story session was interrupted. Please start a new adventure.";
+      } else if (error.message?.includes("Invalid AI response")) {
+        errorDescription = "The story generator had trouble. Please try again.";
+      } else if (error.message?.includes("Edge Function") || error.message?.includes("service")) {
+        errorDescription = "Story service temporarily unavailable. Please try again in a moment.";
+      }
+      
       toast({
         title: "Story Error",
-        description: error.message?.includes("authentication") || error.message?.includes("Not authenticated") 
-          ? "Authentication error. Please try refreshing the page." 
-          : "Failed to continue story. Please try again.",
+        description: errorDescription,
         variant: "destructive",
         duration: 5000,
       });
