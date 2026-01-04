@@ -361,12 +361,23 @@ export const generateNextScene = async (
 
     if (error) throw error;
     
+    // Handle error responses from edge function
     if (!data?.success && !data?.ok) {
-      throw new Error(data?.error || "Failed to generate scene");
+      const errorMsg = data?.error || "Failed to generate scene";
+      const details = data?.details || data?.preview || "";
+      console.error("Edge function error:", errorMsg, details);
+      throw new Error(errorMsg);
     }
 
     const text: string = data?.resultText ?? data?.text ?? "";
     const parsed: Scene | null = data?.result ?? data?.parsed ?? null;
+    
+    // If we have text but no parsed result, log for debugging
+    if (text && !parsed) {
+      console.error("Failed to parse story response. Text length:", text.length);
+      console.error("Text preview:", text.slice(0, 200));
+    }
+    
     const result = { text, parsed, raw: data };
     
     // Cache the result with story session ID

@@ -32,12 +32,13 @@ const Auth = () => {
       if (session) {
         // If logged in and trying to access trial, check if trial already used
         if (isTrialSignup) {
-          const { data: profile } = await supabase
+          const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('trial_used')
             .eq('id', session.user.id)
-            .single();
+            .maybeSingle();
           
+          // If profile exists and trial was used, redirect to subscription
           if (profile?.trial_used) {
             toast({
               title: "Trial already used",
@@ -47,7 +48,7 @@ const Auth = () => {
             navigate('/subscription');
             return;
           }
-          // User is logged in and hasn't used trial - proceed to profile setup
+          // User is logged in and hasn't used trial (or no profile yet) - proceed to profile setup
           navigate('/profile?trial=true');
           return;
         }
@@ -215,11 +216,11 @@ const Auth = () => {
       } else {
         // If this is a trial signup attempt, check if user already used trial
         if (isTrialSignup && data.user) {
-          const { data: profile } = await supabase
+          const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('trial_used')
             .eq('id', data.user.id)
-            .single();
+            .maybeSingle();
           
           if (profile?.trial_used) {
             toast({
@@ -230,7 +231,7 @@ const Auth = () => {
             navigate('/subscription');
             return;
           }
-          // User hasn't used trial - proceed to trial flow
+          // User hasn't used trial (or no profile yet) - proceed to trial flow
           toast({
             title: "Welcome back!",
             description: "Let's start your free trial story!",
