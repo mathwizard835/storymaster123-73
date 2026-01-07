@@ -236,7 +236,7 @@ const Index = () => {
   return (
     <>
       <Seo
-        title="Screen Time That Makes You Feel Good - StoryMaster Quest"
+        title="Screen Time You Can Feel Good About - StoryMaster Quest"
         description="Interactive stories kids love, packed with learning. A better choice than passive entertainment."
         canonical="/"
         jsonLd={{
@@ -309,7 +309,7 @@ const Index = () => {
                 Screen Time
               </span>
               <br />
-              <span className="text-foreground">That Makes You Feel Good</span>
+              <span className="text-foreground">You Can Feel Good About</span>
             </h1>
             <p className="text-xl md:text-2xl text-muted-foreground mb-8 leading-relaxed">
               <strong className="text-foreground text-2xl">
