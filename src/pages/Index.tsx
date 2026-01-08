@@ -313,13 +313,12 @@ const Index = () => {
             </h1>
             <p className="text-xl md:text-2xl text-muted-foreground mb-8 leading-relaxed">
               <strong className="text-foreground text-2xl">
-                Interactive adventures that{" "}
-                <span className="text-primary">kids love playing</span> and{" "}
-                <span className="text-primary">parents feel good about</span>
+                AI-powered choose-your-own-adventure stories that{" "}
+                <span className="text-primary">make kids want to read</span>
               </strong>
               <br />
-              <span className="text-lg">
-                🎮 Engaging Like Gaming • 📚 Builds Real Skills • 🧠 Screen Time with Purpose
+              <span className="text-lg mt-2 block">
+                Your child becomes the hero. Every choice shapes the story. 2,500+ words of reading per adventure.
               </span>
             </p>
 
@@ -381,14 +380,24 @@ const Index = () => {
             </div>
 
             <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 mb-8 border border-white/20">
-              <p className="text-lg font-semibold text-center mb-3">✨ Screen Time You Can Feel Good About</p>
-              <div className="flex flex-col sm:flex-row justify-center items-center gap-4 text-sm">
-                <span className="flex items-center gap-2 text-center">
-                  <span className="text-lg">🎮</span>
-                  <strong>"Finally, screen time that's as engaging as games but actually helps them grow!"</strong>
-                </span>
+              <p className="text-lg font-semibold text-center mb-4">✨ How It Works</p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+                <div className="flex flex-col items-center text-center gap-2">
+                  <span className="text-2xl">👤</span>
+                  <span><strong>1. Create a Hero</strong></span>
+                  <span className="text-muted-foreground text-xs">Your child picks their character</span>
+                </div>
+                <div className="flex flex-col items-center text-center gap-2">
+                  <span className="text-2xl">🎯</span>
+                  <span><strong>2. Make Choices</strong></span>
+                  <span className="text-muted-foreground text-xs">Decisions shape the adventure</span>
+                </div>
+                <div className="flex flex-col items-center text-center gap-2">
+                  <span className="text-2xl">📖</span>
+                  <span><strong>3. Read & Grow</strong></span>
+                  <span className="text-muted-foreground text-xs">Build real reading skills</span>
+                </div>
               </div>
-              <p className="text-center text-xs text-muted-foreground mt-3">— Parent testimonial</p>
             </div>
 
             <div className="flex justify-center items-center gap-8 text-sm text-muted-foreground flex-wrap">
@@ -419,10 +428,10 @@ const Index = () => {
       <section id="learn-more" className="py-20 px-6 bg-gradient-to-b from-background to-muted/20">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold mb-6">Screen Time That Works for Everyone</h2>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6">Interactive Stories That Build Real Skills</h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              <strong className="text-foreground">As engaging as their favorite games.</strong> StoryMaster delivers the same excitement{" "}
-              <span className="text-primary font-semibold">while building reading skills and creativity.</span>
+              <strong className="text-foreground">Not passive scrolling. Active reading.</strong> Kids read 2,500+ words per story{" "}
+              <span className="text-primary font-semibold">because they want to see what happens next.</span>
             </p>
           </div>
 
@@ -512,9 +521,9 @@ const Index = () => {
               />
             </div>
             <div>
-              <h2 className="text-4xl md:text-5xl font-bold mb-6">Screen Time Parents Feel Good About</h2>
+              <h2 className="text-4xl md:text-5xl font-bold mb-6">Why Parents Love StoryMaster</h2>
               <p className="text-xl text-muted-foreground mb-8">
-                Engaging stories kids choose to play that build real skills.
+                Finally, screen time that's as engaging as Roblox but builds vocabulary, comprehension, and critical thinking.
               </p>
 
               <div className="space-y-6">
@@ -598,9 +607,9 @@ const Index = () => {
         <div className="max-w-6xl mx-auto">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="order-2 md:order-1">
-              <h2 className="text-4xl md:text-5xl font-bold mb-6">As Fun as Gaming</h2>
+              <h2 className="text-4xl md:text-5xl font-bold mb-6">Why Kids Love StoryMaster</h2>
               <p className="text-xl text-muted-foreground mb-8">
-                Every adventure is different. Every choice matters. Entertainment that builds skills.
+                They're the hero. Their choices matter. Every adventure is unique to them.
               </p>
 
               <div className="grid grid-cols-1 tablet:grid-cols-2 gap-6">
@@ -689,9 +698,9 @@ const Index = () => {
       {/* Final CTA Section */}
       <section className="py-20 px-6 bg-gradient-to-b from-primary/5 to-background">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl md:text-5xl font-bold mb-6">Screen Time You Can Both Agree On</h2>
+          <h2 className="text-4xl md:text-5xl font-bold mb-6">Turn Screen Time Into Reading Time</h2>
           <p className="text-xl text-muted-foreground mb-8">
-            <strong className="text-foreground">Give them what they want.</strong> Entertainment they love that builds critical thinking, vocabulary, and creativity.
+            <strong className="text-foreground">They'll beg to play.</strong> You'll love what they're learning.
           </p>
 
           <div className="bg-primary/10 border border-primary/30 rounded-2xl p-8 mb-8 text-center">
