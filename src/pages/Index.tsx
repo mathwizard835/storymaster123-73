@@ -8,7 +8,7 @@ import {
   DialogTitle as NewDialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import heroLanding from "@/assets/hero-landing.jpg";
+import heroParentTrust from "@/assets/hero-parent-trust.jpg";
 import familyReading from "@/assets/family-reading.jpg";
 import storyGenres from "@/assets/story-genres.jpg";
 import heroPortal from "@/assets/hero-portal.jpg";
@@ -279,12 +279,12 @@ const Index = () => {
       {/* Hero Section - The Big Pitch */}
       <section className="relative min-h-screen w-full overflow-hidden">
         <img
-          src={heroLanding}
-          alt="Children engaged with magical interactive stories"
+          src={heroParentTrust}
+          alt="Glowing books floating in warm educational atmosphere"
           className="absolute inset-0 h-full w-full object-cover"
           loading="eager"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-background/30 via-background/50 to-background/70" />
+        <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/60 to-background/80" />
 
         <div className="relative z-10 flex min-h-screen items-center justify-center px-6">
           {/* Floating Premium Button - Top Right */}
