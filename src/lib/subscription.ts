@@ -185,17 +185,36 @@ export const getStoriesRemaining = async (): Promise<{
       }
     }
 
-    // Count stories completed in the last 30 days (rolling period)
-    const { data: monthStories, error: storiesError } = await supabase
-      .from('story_completions')
-      .select('id')
-      .eq('device_id', deviceId)
-      .gte('completed_at', thirtyDaysAgo.toISOString())
-      .lte('completed_at', now.toISOString());
+    // Count stories STARTED in the last 30 days (rolling period)
+    // This prevents users from bypassing limits by starting but not finishing stories
+    let storiesUsedThisMonth = 0;
+    
+    // Try to get user for user_stories table (requires authentication)
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (user) {
+      // Count from user_stories table - all stories started in the period
+      const { data: userStories, error: storiesError } = await supabase
+        .from('user_stories')
+        .select('id')
+        .eq('user_id', user.id)
+        .gte('started_at', thirtyDaysAgo.toISOString())
+        .lte('started_at', now.toISOString());
 
-    if (storiesError) throw storiesError;
+      if (storiesError) throw storiesError;
+      storiesUsedThisMonth = userStories?.length || 0;
+    } else {
+      // Fallback for non-authenticated users: use story_completions with device_id
+      const { data: monthStories, error: storiesError } = await supabase
+        .from('story_completions')
+        .select('id')
+        .eq('device_id', deviceId)
+        .gte('completed_at', thirtyDaysAgo.toISOString())
+        .lte('completed_at', now.toISOString());
 
-    const storiesUsedThisMonth = monthStories?.length || 0;
+      if (storiesError) throw storiesError;
+      storiesUsedThisMonth = monthStories?.length || 0;
+    }
 
     // Get bonus stories from referrals and streaks
     const { data: referralData } = await supabase
@@ -217,7 +236,7 @@ export const getStoriesRemaining = async (): Promise<{
     const totalAllowed = monthlyLimit + bonusStories;
     const canPlay = storiesUsedThisMonth < totalAllowed;
 
-    console.log(`📊 Story limits: ${storiesUsedThisMonth}/${monthlyLimit} used in last 30 days (${bonusStories} bonus, canPlay: ${canPlay})`);
+    console.log(`📊 Story limits: ${storiesUsedThisMonth}/${monthlyLimit} started in last 30 days (${bonusStories} bonus, canPlay: ${canPlay})`);
 
     return {
       storiesUsedThisMonth,
