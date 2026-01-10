@@ -76,7 +76,7 @@ export const StoryLimitWidget = () => {
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
-              <span>Stories Used This Month</span>
+              <span>Stories Started This Month</span>
               <span className="font-medium">
                 {storyData.storiesUsedThisMonth}/{totalAllowed}
               </span>
