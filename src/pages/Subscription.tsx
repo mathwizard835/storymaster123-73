@@ -168,7 +168,7 @@ export default function Subscription() {
       </div>
 
       <div className="max-w-6xl mx-auto px-4 py-12">
-        {/* Story Limit Reached Alert */}
+        {/* Story Limit Reached Alert - Free users */}
         {limitReached && !currentPlan && (
           <Card className="max-w-2xl mx-auto mb-8 border-2 border-amber-500/50 bg-gradient-to-br from-amber-900/20 to-orange-900/20 backdrop-blur-md">
             <CardHeader className="text-center pb-4">
@@ -181,7 +181,7 @@ export default function Subscription() {
                 You've Reached Your Story Limit
               </CardTitle>
               <CardDescription className="text-purple-200 text-base">
-                You've completed all 3 free stories for this month!
+                You've started all 3 free stories for this month!
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -189,17 +189,62 @@ export default function Subscription() {
                 <div className="flex items-start gap-3 text-purple-100">
                   <Sparkles className="h-5 w-5 text-amber-500 flex-shrink-0 mt-1" />
                   <div>
-                    <p className="font-semibold">Your stories will reset on the 1st of next month</p>
-                    <p className="text-sm text-purple-300 mt-1">Or upgrade to Premium now for unlimited stories!</p>
+                    <p className="font-semibold">Your stories reset on a 30-day rolling basis</p>
+                    <p className="text-sm text-purple-300 mt-1">Or upgrade to Premium now for 10 stories per month!</p>
                   </div>
                 </div>
               </div>
+              <Button
+                onClick={() => navigate('/dashboard')}
+                variant="outline"
+                className="w-full border-white/20 text-white hover:bg-white/10"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Dashboard
+              </Button>
             </CardContent>
           </Card>
         )}
 
-        {/* Current Subscription Status - Only show if user has premium */}
-        {currentPlan && (
+        {/* Story Limit Reached Alert - Premium users */}
+        {limitReached && currentPlan && (
+          <Card className="max-w-2xl mx-auto mb-8 border-2 border-amber-500/50 bg-gradient-to-br from-amber-900/20 to-orange-900/20 backdrop-blur-md">
+            <CardHeader className="text-center pb-4">
+              <div className="flex justify-center mb-4">
+                <div className="bg-gradient-to-r from-amber-500 to-orange-500 p-3 rounded-full">
+                  <BookOpen className="h-10 w-10 text-white" />
+                </div>
+              </div>
+              <CardTitle className="text-2xl text-white mb-2">
+                Monthly Story Limit Reached
+              </CardTitle>
+              <CardDescription className="text-purple-200 text-base">
+                You've started all 10 of your premium stories this month!
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="bg-white/5 backdrop-blur-sm rounded-lg p-4 border border-white/10">
+                <div className="flex items-start gap-3 text-purple-100">
+                  <Sparkles className="h-5 w-5 text-amber-500 flex-shrink-0 mt-1" />
+                  <div>
+                    <p className="font-semibold">Your stories reset on a 30-day rolling basis</p>
+                    <p className="text-sm text-purple-300 mt-1">You can continue any paused adventures while you wait!</p>
+                  </div>
+                </div>
+              </div>
+              <Button
+                onClick={() => navigate('/dashboard')}
+                className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Dashboard
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Current Subscription Status - Only show if user has premium and NOT redirected from limit */}
+        {currentPlan && !limitReached && (
           <Card className="max-w-2xl mx-auto mb-12 bg-gradient-to-br from-green-500/20 to-emerald-500/20 backdrop-blur-md border-green-400/30 overflow-hidden">
             <CardHeader className="text-center border-b border-white/10 pb-6">
               <div className="flex justify-center mb-4">
@@ -252,8 +297,8 @@ export default function Subscription() {
           </Card>
         )}
 
-        {/* Upgrade to Premium Plus - Show for Premium users only */}
-        {currentPlan && currentPlan.price_monthly === 4.99 && (
+        {/* Upgrade to Premium Plus - Show for Premium users only (not when limit reached) */}
+        {currentPlan && currentPlan.price_monthly === 4.99 && !limitReached && (
           <Card className="max-w-2xl mx-auto mb-12 bg-gradient-to-br from-purple-500/30 via-pink-500/30 to-yellow-500/20 backdrop-blur-md border-purple-400/40 overflow-hidden relative">
             <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 via-pink-500/10 to-yellow-500/10 animate-pulse" />
             <div className="absolute top-4 right-4 bg-gradient-to-r from-yellow-400 to-amber-500 text-purple-900 px-4 py-2 rounded-full text-sm font-bold flex items-center gap-2 shadow-lg">
