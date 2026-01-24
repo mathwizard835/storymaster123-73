@@ -53,12 +53,14 @@ const modes = [
 // Calculate default Lexile score based on age
 const getDefaultLexileForAge = (age: number): number => {
   const lexileByAge: Record<number, number> = {
+    5: 200,
     6: 300,
     7: 400,
     8: 500,
     9: 600,
     10: 750,
     11: 900,
+    12: 1000,
   };
   return lexileByAge[age] ?? 500;
 };
@@ -298,8 +300,8 @@ const ProfileSetup = () => {
                   <Slider
                     id="age"
                     defaultValue={[age]}
-                    min={6}
-                    max={11}
+                    min={5}
+                    max={12}
                     step={1}
                     onValueChange={(v) => setAge(v[0] ?? 8)}
                   />
