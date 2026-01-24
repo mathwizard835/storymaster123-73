@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, BookOpen, Trophy, User, Crown } from 'lucide-react';
+import { Home, BookOpen, Trophy, Users, Crown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useDevice } from '@/contexts/DeviceContext';
 
@@ -14,7 +14,7 @@ const navItems: NavItem[] = [
   { icon: Home, label: 'Home', path: '/' },
   { icon: BookOpen, label: 'Gallery', path: '/gallery' },
   { icon: Trophy, label: 'Trophies', path: '/achievements' },
-  { icon: User, label: 'Dashboard', path: '/dashboard' },
+  { icon: Users, label: 'Parents', path: '/parent' },
   { icon: Crown, label: 'Premium', path: '/subscription' },
 ];
 
