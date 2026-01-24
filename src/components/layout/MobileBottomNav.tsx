@@ -14,7 +14,7 @@ const navItems: NavItem[] = [
   { icon: Home, label: 'Home', path: '/' },
   { icon: BookOpen, label: 'Gallery', path: '/gallery' },
   { icon: Trophy, label: 'Trophies', path: '/achievements' },
-  { icon: Users, label: 'Parents', path: '/parent' },
+  { icon: Users, label: 'Parents', path: '/parent-dashboard' },
   { icon: Crown, label: 'Premium', path: '/subscription' },
 ];
 
