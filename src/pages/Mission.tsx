@@ -5,8 +5,9 @@ import actionHeroBg from "@/assets/action-hero-bg.jpg";
 import socialChampionBg from "@/assets/social-champion-bg.jpg";
 import creativeGeniusBg from "@/assets/creative-genius-bg.jpg";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Zap, Timer, Star, Heart, Shield, Eye, Wand2, PawPrint, Crosshair, Users, Palette, RefreshCw, Play, BookOpen, Trophy, Target, ArrowLeft, Crown, ArrowUp, Volume2, VolumeX, Sparkles } from "lucide-react";
+import { Zap, Timer, Star, Heart, Shield, Eye, Wand2, PawPrint, Crosshair, Users, Palette, RefreshCw, Play, BookOpen, Trophy, Target, ArrowLeft, Crown, ArrowUp, Volume2, VolumeX, Sparkles, Home } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useDevice } from "@/contexts/DeviceContext";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useEffect, useState, useRef } from "react";
 import { generateNextScene, loadProfile, checkStoryLimit, markStoryCompleted, type Scene, saveCurrentStory, loadCurrentStory, clearCurrentStory, saveCompletedStory, getCompletedStories, type SavedStory, type InventoryItem, saveProfileToLocal, clearSceneCache, recoverStorySession } from "@/lib/story";
@@ -40,6 +41,7 @@ import confetti from "canvas-confetti";
 // import { AbilityToast } from "@/components/AbilityToast";
 // import { AbilityProgressIndicator } from "@/components/AbilityProgressIndicator";
 import { getUserSubscription } from "@/lib/subscription";
+import { cn } from "@/lib/utils";
 
 const Mission = () => {
   const navigate = useNavigate();
@@ -1078,30 +1080,51 @@ const Mission = () => {
 
   if (!scene) return null;
 
+  const { isPhone, isTablet, isNative, safeAreaInsets } = useDevice();
+
   return (
     <div 
       className="min-h-screen bg-cover bg-center bg-no-repeat relative"
-      style={{ backgroundImage: `url(${backgroundImage})` }}
+      style={{ 
+        backgroundImage: `url(${backgroundImage})`,
+        paddingTop: isNative ? safeAreaInsets.top : 0,
+        paddingBottom: isNative ? safeAreaInsets.bottom : 0,
+      }}
     >
       <div className="absolute inset-0 bg-black/40"></div>
       <div className="relative z-10 min-h-screen flex flex-col">
-        {/* Header */}
-        <div className="bg-black/30 backdrop-blur-sm border-b border-white/20 p-4">
-          <div className="max-w-6xl mx-auto flex justify-between items-center">
-            <div className="flex items-center space-x-4">
-              <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-                {getIconForBadge(profile.selectedBadges?.[0] || "mystic", "h-6 w-6")}
-                {scene.sceneTitle}
+        {/* Header - Responsive */}
+        <div className="bg-black/30 backdrop-blur-sm border-b border-white/20 p-2 md:p-4">
+          <div className="max-w-6xl mx-auto flex justify-between items-center gap-2">
+            {/* Left section */}
+            <div className="flex items-center gap-2 md:gap-4 min-w-0 flex-1">
+              {/* Back button for mobile */}
+              {isPhone && (
+                <button
+                  onClick={() => navigate('/dashboard')}
+                  className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors flex-shrink-0"
+                >
+                  <Home className="h-5 w-5 text-white" />
+                </button>
+              )}
+              <h1 className={cn(
+                "font-bold text-white flex items-center gap-1 md:gap-2 truncate",
+                isPhone ? "text-base" : "text-2xl"
+              )}>
+                {getIconForBadge(profile.selectedBadges?.[0] || "mystic", isPhone ? "h-4 w-4" : "h-6 w-6")}
+                <span className="truncate">{scene.sceneTitle}</span>
               </h1>
-              {profile.mode === 'learning' && (
-                <Badge variant="secondary" className="bg-blue-600/80 text-white">
+              {!isPhone && profile.mode === 'learning' && (
+                <Badge variant="secondary" className="bg-blue-600/80 text-white flex-shrink-0">
                   <BookOpen className="h-3 w-3 mr-1" />
                   Learning Quest
                 </Badge>
               )}
             </div>
-            <div className="flex items-center space-x-4">
-              {profile.mode === 'learning' && learningSession && (
+            
+            {/* Right section */}
+            <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
+              {!isPhone && profile.mode === 'learning' && learningSession && (
                 <button
                   onClick={() => setShowLearningProgress(!showLearningProgress)}
                   className="flex items-center gap-2 bg-blue-600/80 hover:bg-blue-700/80 text-white px-3 py-2 rounded-lg transition-colors"
@@ -1110,14 +1133,23 @@ const Mission = () => {
                   Score: {calculateLearningScore(learningSession)}%
                 </button>
               )}
-              <div className="text-white text-sm">Scene {sceneCount}</div>
+              <div className={cn(
+                "text-white font-medium bg-white/10 px-2 py-1 rounded",
+                isPhone ? "text-xs" : "text-sm"
+              )}>
+                Scene {sceneCount}
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Main Content */}
-        <div className="flex-1 p-4 overflow-y-auto">
-          <div className="max-w-6xl mx-auto grid grid-cols-1 tablet-lg:grid-cols-[2fr_1fr] lg:grid-cols-3 gap-6">
+        {/* Main Content - Responsive Grid */}
+        <div className="flex-1 p-2 md:p-4 overflow-y-auto">
+          {/* Phone: Single column, Tablet: 2 columns, Desktop: 3 columns */}
+          <div className={cn(
+            "max-w-6xl mx-auto gap-4 md:gap-6",
+            isPhone ? "flex flex-col" : isTablet ? "grid grid-cols-1 md:grid-cols-[2fr_1fr]" : "grid grid-cols-1 lg:grid-cols-3"
+          )}>
             {/* Story Content */}
             <div className="lg:col-span-2 space-y-6">
               {/* Current Challenge */}
