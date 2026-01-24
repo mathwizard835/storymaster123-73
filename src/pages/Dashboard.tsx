@@ -11,10 +11,11 @@ import { loadCharacter } from "@/lib/character";
 // ABILITIES DISABLED - Uncomment to re-enable
 // import { loadAbilities } from "@/lib/abilities";
 import { loadRecentStoriesFromDatabase, loadCurrentStoryFromDatabase, loadInProgressStoriesFromDatabase, pauseStoryInDatabase, DatabaseStory } from "@/lib/databaseStory";
-import { ArrowLeft, Trophy, BookOpen, Star, Crown, Zap, Plus, TrendingUp, Play, Sparkles, Heart } from "lucide-react";
+import { ArrowLeft, Trophy, BookOpen, Star, Crown, Zap, Plus, TrendingUp, Play, Sparkles, Heart, Home, Settings } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { useDevice } from "@/contexts/DeviceContext";
 import { PremiumThemeSelector } from "@/components/PremiumThemeSelector";
 import { getUserSubscription, getStoriesRemaining } from "@/lib/subscription";
 
@@ -152,6 +153,8 @@ const Dashboard = () => {
   const availableAbilities = abilities.abilities.filter(a => !a.used);
   const usedAbilities = abilities.abilities.filter(a => a.used);
 
+  const { isPhone, isTablet } = useDevice();
+
   return (
     <>
       <Seo
@@ -160,141 +163,219 @@ const Dashboard = () => {
         canonical="/dashboard"
       />
       
-      <main className="min-h-screen bg-background">
-        <div className="container py-8">
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center gap-4">
-              <Button 
-                variant="ghost" 
-                onClick={() => navigate("/")}
-                className="flex items-center gap-2"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                Back to Home
-              </Button>
-              <Button 
-                onClick={() => navigate("/subscription")}
-                className={`flex items-center gap-2 ${
-                  isPremium 
-                    ? "bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 shadow-lg shadow-amber-500/50 hover:shadow-amber-500/70" 
-                    : "bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 shadow-lg shadow-purple-500/50 hover:shadow-purple-500/70"
-                } text-white transition-all duration-300 hover:scale-105 font-semibold`}
-              >
-                <Crown className="h-5 w-5" />
-                {isPremium ? "Premium Member ✨" : "Upgrade to Premium"}
-              </Button>
+      <main className="min-h-screen bg-background pb-24 md:pb-8">
+        <div className="container py-4 md:py-8 px-4 md:px-8">
+          {/* Mobile Header */}
+          {isPhone && (
+            <div className="flex flex-col gap-4 mb-6">
+              <div className="flex items-center justify-between">
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => navigate("/")}
+                  className="p-2"
+                >
+                  <ArrowLeft className="h-5 w-5" />
+                </Button>
+                <div className="flex items-center gap-2">
+                  <h1 className="font-heading text-xl font-extrabold">🎮 Dashboard</h1>
+                  {isPremium && (
+                    <Badge className="bg-gradient-to-r from-amber-500 to-yellow-500 text-white border-0 text-xs px-2 py-0.5">
+                      <Crown className="h-3 w-3 mr-1" />
+                      PRO
+                    </Badge>
+                  )}
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => navigate("/subscription")}
+                  className="p-2"
+                >
+                  <Crown className="h-5 w-5 text-amber-500" />
+                </Button>
+              </div>
+              
+              {/* Mobile Action Buttons */}
+              <div className="grid grid-cols-2 gap-3">
+                <Button 
+                  onClick={() => {
+                    if (inProgressStories.length > 1) {
+                      setShowStoryPickerDialog(true);
+                    } else if (inProgressStories.length === 1) {
+                      navigate(`/mission?resume=${inProgressStories[0].id}`);
+                    } else {
+                      navigate("/mission");
+                    }
+                  }}
+                  variant="hero"
+                  size="mobile"
+                  className="flex items-center justify-center gap-2"
+                >
+                  <Play className="h-5 w-5" />
+                  Continue Quest
+                </Button>
+                <Button 
+                  onClick={async () => {
+                    const { canPlay } = await getStoriesRemaining();
+                    if (!canPlay) {
+                      navigate("/subscription?limitReached=true");
+                    } else if (hasActiveStory) {
+                      setShowNewStoryDialog(true);
+                    } else {
+                      navigate("/profile?new=true");
+                    }
+                  }}
+                  variant="outline"
+                  size="mobile"
+                  className="flex items-center justify-center gap-2"
+                >
+                  <Plus className="h-5 w-5" />
+                  New Story
+                </Button>
+              </div>
             </div>
-            <div className="flex gap-2">
-              <Button 
-                onClick={() => navigate("/parent-dashboard")}
-                variant="outline"
-                className="flex items-center gap-2"
-              >
-                <Heart className="h-4 w-4" />
-                Parent Mode
-              </Button>
-              <Button 
-                onClick={() => {
-                  // If multiple in-progress stories, show picker
-                  if (inProgressStories.length > 1) {
-                    setShowStoryPickerDialog(true);
-                  } else if (inProgressStories.length === 1) {
-                    navigate(`/mission?resume=${inProgressStories[0].id}`);
-                  } else {
-                    navigate("/mission");
-                  }
-                }}
-                variant="hero"
-                className="flex items-center gap-2"
-              >
-                <Play className="h-4 w-4" />
-                Continue Your Quest
-              </Button>
-              <Button 
-                onClick={async () => {
-                  const { getStoriesRemaining } = await import('@/lib/subscription');
-                  const { canPlay } = await getStoriesRemaining();
-                  if (!canPlay) {
-                    navigate("/subscription?limitReached=true");
-                  } else if (hasActiveStory) {
-                    setShowNewStoryDialog(true);
-                  } else {
-                    navigate("/profile?new=true");
-                  }
-                }}
-                variant="outline"
-                className="flex items-center gap-2"
-              >
-                <Plus className="h-4 w-4" />
-                New Adventure
-              </Button>
-            </div>
-          </div>
+          )}
 
-          <div className="mb-8">
-            <div className="flex items-center gap-3 flex-wrap">
-              <h1 className="font-heading text-3xl md:text-4xl font-extrabold">
-                🎮 Adventure Dashboard
-              </h1>
-              {isPremium && (
-                <Badge className="bg-gradient-to-r from-amber-500 to-yellow-500 text-white border-0 shadow-lg shadow-amber-500/30 px-3 py-1 text-sm font-semibold">
-                  <Crown className="h-3.5 w-3.5 mr-1" />
-                  PREMIUM
-                </Badge>
-              )}
-            </div>
-            <p className="text-muted-foreground mt-2">
-              {isPremium ? "Enjoying your premium experience with custom themes!" : "Your stories, achievements, and progress"}
-            </p>
-          </div>
+          {/* Desktop/Tablet Header */}
+          {!isPhone && (
+            <>
+              <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
+                <div className="flex items-center gap-4">
+                  <Button 
+                    variant="ghost" 
+                    onClick={() => navigate("/")}
+                    className="flex items-center gap-2"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                    Back to Home
+                  </Button>
+                  <Button 
+                    onClick={() => navigate("/subscription")}
+                    className={`flex items-center gap-2 ${
+                      isPremium 
+                        ? "bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 shadow-lg shadow-amber-500/50 hover:shadow-amber-500/70" 
+                        : "bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 shadow-lg shadow-purple-500/50 hover:shadow-purple-500/70"
+                    } text-white transition-all duration-300 hover:scale-105 font-semibold`}
+                  >
+                    <Crown className="h-5 w-5" />
+                    {isPremium ? "Premium Member ✨" : "Upgrade to Premium"}
+                  </Button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button 
+                    onClick={() => navigate("/parent-dashboard")}
+                    variant="outline"
+                    className="flex items-center gap-2"
+                  >
+                    <Heart className="h-4 w-4" />
+                    Parent Mode
+                  </Button>
+                  <Button 
+                    onClick={() => {
+                      if (inProgressStories.length > 1) {
+                        setShowStoryPickerDialog(true);
+                      } else if (inProgressStories.length === 1) {
+                        navigate(`/mission?resume=${inProgressStories[0].id}`);
+                      } else {
+                        navigate("/mission");
+                      }
+                    }}
+                    variant="hero"
+                    className="flex items-center gap-2"
+                  >
+                    <Play className="h-4 w-4" />
+                    Continue Your Quest
+                  </Button>
+                  <Button 
+                    onClick={async () => {
+                      const { canPlay } = await getStoriesRemaining();
+                      if (!canPlay) {
+                        navigate("/subscription?limitReached=true");
+                      } else if (hasActiveStory) {
+                        setShowNewStoryDialog(true);
+                      } else {
+                        navigate("/profile?new=true");
+                      }
+                    }}
+                    variant="outline"
+                    className="flex items-center gap-2"
+                  >
+                    <Plus className="h-4 w-4" />
+                    New Adventure
+                  </Button>
+                </div>
+              </div>
+
+              <div className="mb-8">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <h1 className="font-heading text-3xl md:text-4xl font-extrabold">
+                    🎮 Adventure Dashboard
+                  </h1>
+                  {isPremium && (
+                    <Badge className="bg-gradient-to-r from-amber-500 to-yellow-500 text-white border-0 shadow-lg shadow-amber-500/30 px-3 py-1 text-sm font-semibold">
+                      <Crown className="h-3.5 w-3.5 mr-1" />
+                      PREMIUM
+                    </Badge>
+                  )}
+                </div>
+                <p className="text-muted-foreground mt-2">
+                  {isPremium ? "Enjoying your premium experience with custom themes!" : "Your stories, achievements, and progress"}
+                </p>
+              </div>
+            </>
+          )}
 
           {/* Premium Theme Selector */}
-          <div className="mb-8">
+          <div className="mb-6 md:mb-8">
             <PremiumThemeSelector />
           </div>
 
-          {/* Character Stats */}
-          <Card className="glass-panel border-0 mb-8">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+          {/* Character Stats - Responsive Grid */}
+          <Card className="glass-panel border-0 mb-6 md:mb-8">
+            <CardHeader className="pb-2 md:pb-4">
+              <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
                 <Star className="h-5 w-5" />
                 Character Progress
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 tablet:grid-cols-3 lg:grid-cols-5 gap-6">
-                <div>
-                  <div className="text-2xl font-bold flex items-center gap-1">
-                    <Crown className="h-6 w-6 text-amber-500" />
+              {/* Phone: 2-column grid */}
+              {/* Tablet: 3-column grid */}
+              {/* Desktop: 5-column grid */}
+              <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
+                <div className="p-3 bg-muted/30 rounded-lg">
+                  <div className="text-xl md:text-2xl font-bold flex items-center gap-1">
+                    <Crown className="h-5 w-5 md:h-6 md:w-6 text-amber-500" />
                     {character.level}
                   </div>
-                  <div className="text-sm text-muted-foreground">Level</div>
+                  <div className="text-xs md:text-sm text-muted-foreground">Level</div>
                 </div>
-                <div>
-                  <div className="text-2xl font-bold flex items-center gap-1">
-                    <Zap className="h-6 w-6 text-blue-500" />
+                <div className="p-3 bg-muted/30 rounded-lg">
+                  <div className="text-xl md:text-2xl font-bold flex items-center gap-1">
+                    <Zap className="h-5 w-5 md:h-6 md:w-6 text-blue-500" />
                     {character.totalExperienceEarned}
                   </div>
-                  <div className="text-sm text-muted-foreground">Total XP Earned</div>
+                  <div className="text-xs md:text-sm text-muted-foreground">Total XP</div>
                 </div>
-                <div>
-                  <div className="text-2xl font-bold">{progress.totalStories}</div>
-                  <div className="text-sm text-muted-foreground">Stories Completed</div>
+                <div className="p-3 bg-muted/30 rounded-lg">
+                  <div className="text-xl md:text-2xl font-bold">{progress.totalStories}</div>
+                  <div className="text-xs md:text-sm text-muted-foreground">Stories Done</div>
                 </div>
-                <div>
-                  <div className="text-2xl font-bold">{progress.totalChoices}</div>
-                  <div className="text-sm text-muted-foreground">Choices Made</div>
+                <div className="p-3 bg-muted/30 rounded-lg">
+                  <div className="text-xl md:text-2xl font-bold">{progress.totalChoices}</div>
+                  <div className="text-xs md:text-sm text-muted-foreground">Choices Made</div>
                 </div>
-                <div>
-                  <div className="text-2xl font-bold">{completionRate}%</div>
-                  <div className="text-sm text-muted-foreground">Achievement Rate</div>
+                <div className="p-3 bg-muted/30 rounded-lg">
+                  <div className="text-xl md:text-2xl font-bold">{completionRate}%</div>
+                  <div className="text-xs md:text-sm text-muted-foreground">Achievements</div>
                 </div>
-                <div>
-                  <div className="text-2xl font-bold flex items-center gap-1">
-                    <Sparkles className="h-6 w-6 text-purple-500" />
+                <div className="p-3 bg-muted/30 rounded-lg">
+                  <div className="text-xl md:text-2xl font-bold flex items-center gap-1">
+                    <Sparkles className="h-5 w-5 md:h-6 md:w-6 text-purple-500" />
                     {availableAbilities.length}
                   </div>
-                  <div className="text-sm text-muted-foreground">Abilities Ready</div>
+                  <div className="text-xs md:text-sm text-muted-foreground">Abilities</div>
                 </div>
               </div>
               

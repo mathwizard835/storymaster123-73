@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Toggle } from "@/components/ui/toggle";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useDevice } from "@/contexts/DeviceContext";
 import {
   Rocket,
   Sparkles,
@@ -25,6 +26,7 @@ import {
   Eye,
   Compass,
   GraduationCap,
+  ArrowLeft,
 } from "lucide-react";
 import { saveProfileToLocal } from "@/lib/story";
 import { trackViolation } from "@/lib/contentViolations";
@@ -65,6 +67,7 @@ const ProfileSetup = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
+  const { isPhone, isTablet } = useDevice();
   const [name, setName] = useState<string>("");
   const [nameError, setNameError] = useState<string>("");
   const [age, setAge] = useState<number>(8);
@@ -236,18 +239,31 @@ const ProfileSetup = () => {
       />
 
       <main className="min-h-screen w-full bg-background">
-        <section className="container py-10 md:py-16">
-          <div className="flex justify-end mb-4">
-            <Button variant="outline" onClick={() => navigate("/")}>
-              Go Back
-            </Button>
-          </div>
-          <h1 className="font-heading text-3xl md:text-5xl font-extrabold text-center">Create Your Hero Profile</h1>
-          <p className="mt-2 text-center text-muted-foreground">
-            Configure your powers and style. You can always change them later.
-          </p>
+        <section className="container py-6 md:py-16 px-4 md:px-8">
+          {/* Mobile Header */}
+          {isPhone ? (
+            <div className="flex items-center justify-between mb-6">
+              <Button variant="ghost" size="sm" onClick={() => navigate("/")} className="p-2">
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <h1 className="font-heading text-xl font-extrabold">Create Hero</h1>
+              <div className="w-10" /> {/* Spacer for centering */}
+            </div>
+          ) : (
+            <>
+              <div className="flex justify-end mb-4">
+                <Button variant="outline" onClick={() => navigate("/")}>
+                  Go Back
+                </Button>
+              </div>
+              <h1 className="font-heading text-3xl md:text-5xl font-extrabold text-center">Create Your Hero Profile</h1>
+              <p className="mt-2 text-center text-muted-foreground">
+                Configure your powers and style. You can always change them later.
+              </p>
+            </>
+          )}
 
-          <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2">
+          <div className="mt-6 md:mt-8 grid grid-cols-1 gap-4 md:gap-6 md:grid-cols-2">
             {/* Hero Name */}
             <article className="glass-panel rounded-xl p-6 md:col-span-2">
               <h2 className="font-heading text-xl md:text-2xl font-bold flex items-center gap-2">
@@ -340,24 +356,25 @@ const ProfileSetup = () => {
             </article>
 
             {/* Interest Badges */}
-            <article className="glass-panel rounded-xl p-6 md:col-span-2">
-              <h2 className="font-heading text-xl md:text-2xl font-bold">Interest Badges</h2>
+            <article className="glass-panel rounded-xl p-4 md:p-6 md:col-span-2">
+              <h2 className="font-heading text-lg md:text-2xl font-bold">Interest Badges</h2>
               <TooltipProvider>
-                <div className="mt-4 grid grid-cols-2 gap-3 tablet:grid-cols-3 lg:grid-cols-4">
+                {/* Phone: 2 columns, Tablet: 3-4 columns, Desktop: 4 columns */}
+                <div className="mt-3 md:mt-4 grid grid-cols-2 gap-2 md:gap-3 md:grid-cols-3 lg:grid-cols-4">
                   {badges.map((b) => (
                     <Tooltip key={b.id} delayDuration={300}>
                       <TooltipTrigger asChild>
                         <button
                           onClick={() => toggleBadge(b.id)}
                           className={cn(
-                            "justify-start rounded-lg border px-3 py-3 inline-flex items-center transition-colors hover:bg-accent hover:text-foreground",
+                            "justify-start rounded-lg border px-2 py-2 md:px-3 md:py-3 inline-flex items-center transition-colors hover:bg-accent hover:text-foreground min-h-[48px]",
                             selectedBadges.includes(b.id) && "bg-primary/10 border-primary",
                           )}
                           aria-label={b.label}
                           type="button"
                         >
-                          <b.icon className="mr-2 h-5 w-5" />
-                          <span className="text-sm font-semibold">{b.label}</span>
+                          <b.icon className="mr-1.5 md:mr-2 h-4 w-4 md:h-5 md:w-5 flex-shrink-0" />
+                          <span className="text-xs md:text-sm font-semibold truncate">{b.label}</span>
                         </button>
                       </TooltipTrigger>
                       <TooltipContent>
@@ -388,11 +405,11 @@ const ProfileSetup = () => {
               </RadioGroup>
             </article>
             {/* Quest Mode */}
-            <article className="glass-panel rounded-xl p-6 md:col-span-2">
-              <h2 className="font-heading text-xl md:text-2xl font-bold">Quest Mode</h2>
+            <article className="glass-panel rounded-xl p-4 md:p-6 md:col-span-2">
+              <h2 className="font-heading text-lg md:text-2xl font-bold">Quest Mode</h2>
               <ToggleGroup
                 type="single"
-                className="mt-4 grid grid-cols-2 gap-3 tablet:grid-cols-3 lg:grid-cols-5"
+                className="mt-3 md:mt-4 grid grid-cols-2 gap-2 md:gap-3 md:grid-cols-3 lg:grid-cols-5"
                 value={mode}
                 onValueChange={(v) => v && setMode(v)}
               >
@@ -401,10 +418,10 @@ const ProfileSetup = () => {
                     key={m.id}
                     value={m.id}
                     aria-label={m.label}
-                    className="rounded-lg border px-4 py-3 data-[state=on]:bg-primary/10 data-[state=on]:border-primary"
+                    className="rounded-lg border px-2 py-2 md:px-4 md:py-3 data-[state=on]:bg-primary/10 data-[state=on]:border-primary min-h-[48px] text-xs md:text-sm"
                   >
-                    <m.icon className="mr-2 h-5 w-5" />
-                    {m.label}
+                    <m.icon className="mr-1.5 md:mr-2 h-4 w-4 md:h-5 md:w-5" />
+                    <span className="truncate">{m.label}</span>
                   </ToggleGroupItem>
                 ))}
               </ToggleGroup>
