@@ -16,7 +16,7 @@ const corsHeaders = {
 
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
 
-// Strict content blocking for ages 6-11
+// Strict content blocking for ages 5-12
 const BLOCKED_PATTERNS = [
   // Sexual content and innuendo
   /\b(sex|sexual|porn|pornography|xxx|nsfw|nude|naked|explicit|romantic|kiss|dating|boyfriend|girlfriend|lover|seductive|flirt)\b/i,
@@ -70,7 +70,7 @@ function containsInappropriateContent(text: string): boolean {
 function validateProfileData(profile: any): boolean {
   if (!profile || typeof profile !== 'object') return true; // Optional field
   
-  if (profile.age && (typeof profile.age !== 'number' || profile.age < 6 || profile.age > 11)) {
+  if (profile.age && (typeof profile.age !== 'number' || profile.age < 5 || profile.age > 12)) {
     return false;
   }
   
