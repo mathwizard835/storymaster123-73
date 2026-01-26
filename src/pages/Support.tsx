@@ -130,6 +130,21 @@ const Support = () => {
                 </a>
               </CardContent>
             </Card>
+
+            <Card className="bg-gradient-to-r from-primary/5 to-accent/5 border-primary/20">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <span className="text-xl">💡</span>
+                  Our Story
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground text-sm">
+                  StoryMaster Quest was created by a 13-year-old who wanted to build something that makes reading as exciting as gaming. 
+                  Because kids deserve screen time that actually helps them grow.
+                </p>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
