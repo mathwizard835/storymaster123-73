@@ -60,7 +60,10 @@ Monitor reading progress, achievement milestones, and learning development throu
 - Safe, ad-free environment
 - COPPA compliant
 
-Perfect for ages 6-12, StoryMaster Quest is the screen time substitute that parents love and kids are actually hooked on!
+🎮 CREATED BY A KID, FOR KIDS
+StoryMaster Quest was built by a 13-year-old developer who believes kids deserve better screen time. Not another app designed by adults guessing what kids want—but one created by someone who truly understands!
+
+Perfect for ages 5-12, StoryMaster Quest is the screen time substitute that parents love and kids are actually hooked on!
 
 ---
 

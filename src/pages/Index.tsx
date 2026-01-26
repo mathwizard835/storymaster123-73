@@ -804,6 +804,9 @@ const Index = () => {
           </p>
 
           <footer className="mt-12 pt-6 border-t border-border/50">
+            <p className="text-sm text-muted-foreground mb-4 italic">
+              Built with ❤️ by a 13-year-old who believes kids deserve better screen time
+            </p>
             <div className="flex flex-wrap justify-center gap-6 text-sm text-muted-foreground">
               <a href="/privacy" className="hover:text-foreground transition-colors">
                 Privacy Policy
