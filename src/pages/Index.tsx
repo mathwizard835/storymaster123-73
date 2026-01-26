@@ -306,10 +306,10 @@ const Index = () => {
             )}
             <h1 className="font-heading text-5xl md:text-7xl font-extrabold tracking-tight drop-shadow-2xl mb-6">
               <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                Screen Time
+                StoryMaster
               </span>
               <br />
-              <span className="text-foreground">You Can Feel Good About</span>
+              <span className="text-foreground">Screen Time You Can Feel Good About</span>
             </h1>
             <p className="text-xl md:text-2xl text-muted-foreground mb-8 leading-relaxed">
               <strong className="text-foreground text-2xl">
