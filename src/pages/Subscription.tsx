@@ -4,9 +4,16 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { CheckCircle, X, Volume2, BookOpen, Star, Sparkles, Crown, ArrowLeft, Gamepad2 } from "lucide-react";
+import { CheckCircle, X, Volume2, BookOpen, Star, Sparkles, Crown, ArrowLeft, Gamepad2, ExternalLink } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { upgradeSubscription, cancelSubscription, getUserSubscription, type SubscriptionPlan } from "@/lib/subscription";
+import { 
+  isNativePlatform, 
+  openStripeCheckoutInBrowser, 
+  addBrowserCloseListener,
+  pollForSubscriptionUpdate,
+  refreshSubscriptionStatus 
+} from "@/lib/nativePayments";
 
 import { supabase } from "@/integrations/supabase/client";
 import { getDeviceId } from "@/lib/story";
@@ -98,18 +105,70 @@ export default function Subscription() {
     }
   };
 
+  // Set up listener for when user returns from Safari checkout
+  useEffect(() => {
+    if (!isNativePlatform()) return;
+
+    const cleanup = addBrowserCloseListener(async () => {
+      // User returned from Safari, check for subscription update
+      toast({
+        title: "Checking payment status...",
+        description: "Please wait while we confirm your subscription",
+      });
+
+      const hasSubscription = await pollForSubscriptionUpdate(10, 2000, (status) => {
+        if (status) {
+          toast({
+            title: "🎉 Subscription Activated!",
+            description: "Welcome to StoryMaster Premium!",
+          });
+          loadCurrentPlan();
+        }
+      });
+
+      if (!hasSubscription) {
+        toast({
+          title: "Payment status pending",
+          description: "If you completed payment, your subscription will activate shortly.",
+        });
+      }
+    });
+
+    return cleanup;
+  }, []);
+
   const handleSubscribe = async () => {
     setLoading(true);
+    const planType = readToMeEnabled ? 'premium_plus' : 'premium';
 
+    // Native platform (iOS/Android) - Open Safari/Chrome for Stripe checkout
+    if (isNativePlatform()) {
+      toast({
+        title: "Opening secure checkout...",
+        description: "You'll be redirected to complete payment securely",
+      });
+
+      const result = await openStripeCheckoutInBrowser(planType);
+      
+      if (!result.success) {
+        toast({
+          title: "Error",
+          description: result.error || "Failed to open checkout. Please try again.",
+          variant: "destructive",
+        });
+      }
+      
+      setLoading(false);
+      return;
+    }
+
+    // Web platform - use Stripe in new tab
     toast({
       title: "Redirecting to checkout...",
       description: "Opening secure payment window",
     });
 
     try {
-
-      // Web platform - use Stripe
-      const planType = readToMeEnabled ? 'premium_plus' : 'premium';
       const deviceId = await getDeviceId();
 
       // Call edge function to create Stripe checkout session
@@ -348,13 +407,34 @@ export default function Subscription() {
                 onClick={async () => {
                   setLoading(true);
                   
+                  // Native platform (iOS/Android) - Open Safari/Chrome for Stripe checkout
+                  if (isNativePlatform()) {
+                    toast({
+                      title: "Opening secure checkout...",
+                      description: "You'll be redirected to complete payment securely",
+                    });
+
+                    const result = await openStripeCheckoutInBrowser('premium_plus');
+                    
+                    if (!result.success) {
+                      toast({
+                        title: "Error",
+                        description: result.error || "Failed to open checkout. Please try again.",
+                        variant: "destructive",
+                      });
+                    }
+                    
+                    setLoading(false);
+                    return;
+                  }
+
+                  // Web platform
                   toast({
                     title: "Redirecting to checkout...",
                     description: "Opening secure payment window",
                   });
 
                   try {
-
                     const deviceId = await getDeviceId();
                     const { data, error } = await supabase.functions.invoke('create-checkout-session', {
                       body: { planType: 'premium_plus', deviceId },
@@ -398,9 +478,18 @@ export default function Subscription() {
               >
                 {loading ? "Processing..." : (
                   <span className="flex items-center gap-2">
-                    <Crown className="h-5 w-5" />
-                    Upgrade to Premium Plus Now
-                    <Sparkles className="h-5 w-5" />
+                    {isNativePlatform() ? (
+                      <>
+                        <ExternalLink className="h-5 w-5" />
+                        Continue to secure checkout
+                      </>
+                    ) : (
+                      <>
+                        <Crown className="h-5 w-5" />
+                        Upgrade to Premium Plus Now
+                        <Sparkles className="h-5 w-5" />
+                      </>
+                    )}
                   </span>
                 )}
               </Button>
@@ -565,8 +654,23 @@ export default function Subscription() {
                 size="lg"
                 className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold text-lg py-6"
               >
-                {loading ? "Processing..." : "Start Your Adventure"}
+                {loading ? "Processing..." : (
+                  isNativePlatform() ? (
+                    <span className="flex items-center gap-2">
+                      <ExternalLink className="h-5 w-5" />
+                      Continue to secure checkout on our website
+                    </span>
+                  ) : (
+                    "Start Your Adventure"
+                  )
+                )}
               </Button>
+
+              {isNativePlatform() && (
+                <p className="text-center text-purple-300 text-xs">
+                  You'll be redirected to our secure payment page in Safari
+                </p>
+              )}
 
               <p className="text-center text-purple-300 text-sm">Cancel anytime. No long-term commitment required.</p>
             </div>

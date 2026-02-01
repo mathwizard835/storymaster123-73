@@ -48,8 +48,15 @@ serve(async (req) => {
       throw new Error(`Invalid plan type: ${planType}`);
     }
 
-    // Get the origin from request
-    const origin = req.headers.get('origin') || 'https://2809bfa0-b669-424e-9eb0-6511e3cb6327.lovableproject.com';
+    // Get the origin from request - for native apps, use the published URL
+    const requestOrigin = req.headers.get('origin');
+    // Use published URL for native platforms or fallback to request origin
+    const origin = requestOrigin || 'https://storymaster123-73.lovable.app';
+    
+    // For native apps, use the published website URL for success/cancel
+    // This ensures users land on the web page after payment
+    const successUrl = `${origin}/subscription/success?session_id={CHECKOUT_SESSION_ID}`;
+    const cancelUrl = `${origin}/subscription?cancelled=true`;
 
     // Create checkout session
     const session = await stripe.checkout.sessions.create({
@@ -61,8 +68,8 @@ serve(async (req) => {
         },
       ],
       mode: 'subscription',
-      success_url: `${origin}/subscription/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/subscription?cancelled=true`,
+      success_url: successUrl,
+      cancel_url: cancelUrl,
       metadata: {
         device_id: deviceId,
         plan_type: planType,
