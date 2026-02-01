@@ -10,6 +10,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, BookOpen, Stars } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { signInSchema, signUpSchema, type SignInFormData, type SignUpFormData } from '@/lib/validationSchemas';
+import { checkIfBanned } from '@/lib/banCheck';
 import heroPortal from '@/assets/hero-portal.jpg';
 
 const Auth = () => {
@@ -166,6 +167,14 @@ const Auth = () => {
         return;
       }
 
+      // Check if email is banned BEFORE attempting signup
+      const { isBanned, reason } = await checkIfBanned(validationResult.data.email);
+      if (isBanned) {
+        setError(reason || 'This account has been suspended and cannot be used.');
+        setLoading(false);
+        return;
+      }
+
       // Preserve trial flag in redirect URL
       const redirectUrl = isTrialSignup 
         ? `${window.location.origin}/auth?trial=true`
@@ -232,6 +241,14 @@ const Auth = () => {
       if (!validationResult.success) {
         const errors = validationResult.error.issues.map(err => err.message).join('. ');
         setError(errors);
+        setLoading(false);
+        return;
+      }
+
+      // Check if email is banned BEFORE attempting signin
+      const { isBanned, reason } = await checkIfBanned(validationResult.data.email);
+      if (isBanned) {
+        setError(reason || 'This account has been suspended.');
         setLoading(false);
         return;
       }
