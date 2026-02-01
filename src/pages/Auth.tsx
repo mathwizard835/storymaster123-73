@@ -18,12 +18,29 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [resetCooldown, setResetCooldown] = useState(0);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
   
   // Check if user is signing up for trial
   const isTrialSignup = searchParams.get('trial') === 'true';
+
+  // Cooldown timer effect
+  useEffect(() => {
+    if (resendCooldown > 0) {
+      const timer = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [resendCooldown]);
+
+  useEffect(() => {
+    if (resetCooldown > 0) {
+      const timer = setTimeout(() => setResetCooldown(resetCooldown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [resetCooldown]);
 
   useEffect(() => {
     // Check if user is already logged in
@@ -89,10 +106,18 @@ const Auth = () => {
       setError('Please enter your email address first');
       return;
     }
+
+    if (resendCooldown > 0) {
+      setError(`Please wait ${resendCooldown} seconds before resending`);
+      return;
+    }
     
     setLoading(true);
+    setError('');
     try {
-      const redirectUrl = `${window.location.origin}/auth`;
+      const redirectUrl = isTrialSignup 
+        ? `${window.location.origin}/auth?trial=true`
+        : `${window.location.origin}/auth`;
       
       const { error } = await supabase.auth.resend({
         type: 'signup',
@@ -103,15 +128,24 @@ const Auth = () => {
       });
       
       if (error) {
-        setError(error.message);
+        if (error.message.includes('rate limit') || error.message.includes('60 seconds')) {
+          setError('Email already sent. Please wait 60 seconds before requesting again.');
+          setResendCooldown(60);
+        } else if (error.message.includes('already confirmed')) {
+          setError('This email is already verified. Please sign in instead.');
+        } else {
+          setError(error.message);
+        }
       } else {
+        setResendCooldown(60); // Start 60 second cooldown
         toast({
-          title: "Email resent!",
-          description: "Please check your email (including spam folder) for the verification link.",
+          title: "Verification email sent!",
+          description: "Check your inbox and spam folder. Email may take 1-2 minutes to arrive.",
+          duration: 8000,
         });
       }
     } catch (err: any) {
-      setError('Failed to resend email');
+      setError('Failed to resend email. Please try again later.');
     } finally {
       setLoading(false);
     }
@@ -265,6 +299,12 @@ const Auth = () => {
         return;
       }
 
+      if (resetCooldown > 0) {
+        setError(`Please wait ${resetCooldown} seconds before requesting again`);
+        setLoading(false);
+        return;
+      }
+
       const redirectUrl = `${window.location.origin}/reset-password`;
       
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -272,17 +312,23 @@ const Auth = () => {
       });
 
       if (error) {
-        setError(error.message);
+        if (error.message.includes('rate limit') || error.message.includes('60 seconds')) {
+          setError('Reset email already sent. Please wait 60 seconds before requesting again.');
+          setResetCooldown(60);
+        } else {
+          setError(error.message);
+        }
       } else {
+        setResetCooldown(60); // Start 60 second cooldown
         toast({
-          title: "Check your email!",
-          description: "We sent you a password reset link. Check your spam folder if you don't see it.",
+          title: "Reset email sent!",
+          description: "Check your inbox and spam folder. Email may take 1-2 minutes to arrive.",
           duration: 8000,
         });
         setShowForgotPassword(false);
       }
     } catch (err: any) {
-      setError('Failed to send reset email');
+      setError('Failed to send reset email. Please try again later.');
     } finally {
       setLoading(false);
     }

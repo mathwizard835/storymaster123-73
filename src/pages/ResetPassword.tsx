@@ -23,15 +23,36 @@ const ResetPassword = () => {
     // Check if user came from reset password email link
     const hashParams = new URLSearchParams(window.location.hash.substring(1));
     const accessToken = hashParams.get('access_token');
+    const type = hashParams.get('type');
     
-    if (!accessToken) {
-      toast({
-        title: "Invalid link",
-        description: "This password reset link is invalid or has expired.",
-        variant: "destructive",
-      });
-      navigate('/auth');
+    // Handle the recovery token - Supabase will auto-login user with the token
+    if (accessToken && type === 'recovery') {
+      // User has valid recovery token, they can reset password
+      console.log('Valid password recovery token detected');
+      return;
     }
+    
+    // Also check URL params (some Supabase versions use query params)
+    const urlParams = new URLSearchParams(window.location.search);
+    const queryToken = urlParams.get('token');
+    const queryType = urlParams.get('type');
+    
+    if (queryToken && queryType === 'recovery') {
+      console.log('Valid password recovery token in query params');
+      return;
+    }
+    
+    // Check if user is already authenticated (came from a valid link)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session && !accessToken) {
+        toast({
+          title: "Invalid or expired link",
+          description: "Please request a new password reset link.",
+          variant: "destructive",
+        });
+        navigate('/auth');
+      }
+    });
   }, [navigate, toast]);
 
   const handleResetPassword = async (e: React.FormEvent) => {
