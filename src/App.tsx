@@ -38,12 +38,8 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
-  // Trial mode now requires authentication - redirect to auth if not logged in
   if (!user) {
-    const searchParams = new URLSearchParams(window.location.search);
-    const isTrialMode = searchParams.get('trial') === 'true';
-    // Preserve trial flag when redirecting to auth
-    return <Navigate to={isTrialMode ? "/auth?trial=true" : "/auth"} replace />;
+    return <Navigate to="/auth" replace />;
   }
 
   return <>{children}</>;
