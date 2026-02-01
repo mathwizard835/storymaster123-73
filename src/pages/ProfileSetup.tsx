@@ -195,11 +195,10 @@ const ProfileSetup = () => {
 
     // Check URL parameters
     const forceNew = searchParams.get("new") === "true";
-    const isTrial = searchParams.get("trial") === "true";
 
     // CRITICAL FIX: Check if this is a profile update vs new profile creation
     // If forceNew is NOT set, check if user has an active story
-    if (!forceNew && !isTrial) {
+    if (!forceNew) {
       try {
         const { loadCurrentStoryFromDatabase } = await import("@/lib/databaseStory");
         const existingStory = await loadCurrentStoryFromDatabase();
@@ -218,10 +217,9 @@ const ProfileSetup = () => {
 
     // Build mission URL with appropriate parameters for NEW stories
     let missionUrl = "/mission";
-    const params = new URLSearchParams();
-    if (forceNew) params.set("new", "true");
-    if (isTrial) params.set("trial", "true");
-    if (params.toString()) missionUrl += `?${params.toString()}`;
+    if (forceNew) {
+      missionUrl += "?new=true";
+    }
 
     console.log("🚀 Navigating to:", missionUrl);
     navigate(missionUrl);

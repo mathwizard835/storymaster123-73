@@ -355,20 +355,6 @@ const Index = () => {
                   {user ? "Go to Dashboard" : "Play - Join Your Quest"}
                 </Button>
               )}
-              {/* "Try 1 Story Free" button - requires signup, so redirect to auth with trial flag */}
-              {!user && (
-                <Button
-                  size="xl"
-                  variant="game"
-                  onClick={() => {
-                    // Redirect to auth page with trial flag - user must sign up first
-                    navigate("/auth?trial=true");
-                  }}
-                  className="text-lg px-8 py-4"
-                >
-                  🎮 Try 1 Story Free
-                </Button>
-              )}
               <Button
                 size="xl"
                 variant="outline"

@@ -47,7 +47,6 @@ const Mission = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
-  const isTrialMode = searchParams.get('trial') === 'true';
   const [profile, setProfile] = useState(null);
   const [userPlan, setUserPlan] = useState<any>(null);
   const [scene, setScene] = useState<Scene | null>(null);
@@ -357,7 +356,7 @@ const Mission = () => {
       
       try {
         // ENFORCE STORY LIMITS BEFORE STARTING NEW STORY
-        if (user && !isTrialMode && !searchParams.get('resume')) {
+        if (user && !searchParams.get('resume')) {
           const { getStoriesRemaining } = await import('@/lib/subscription');
           const { canPlay, storiesUsedThisMonth, monthlyLimit } = await getStoriesRemaining();
           
@@ -379,49 +378,13 @@ const Mission = () => {
            (window as any).Capacitor?.getPlatform?.() === 'android' ||
            /Android|iPhone|iPad|iPod/i.test(navigator.userAgent));
         
-        // Trial mode now requires authentication - check database for trial usage
-        if (isTrialMode && user) {
-          // Check if user has already used their trial
-          const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('trial_used')
-            .eq('id', user.id)
-            .maybeSingle();
-          
-          if (profile?.trial_used) {
-            console.log('🚫 User has already used their trial story');
-            toast({
-              title: "Trial already used",
-              description: "You've already used your free trial story. Subscribe to continue!",
-              variant: "destructive",
-            });
-            navigate('/subscription');
-            return;
-          }
-          
-          // Mark trial as used immediately when story starts
-          // Use upsert to handle case where profile doesn't exist yet
-          console.log('✅ Marking trial as used in database');
-          const { error: updateError } = await supabase
-            .from('profiles')
-            .upsert({ 
-              id: user.id, 
-              trial_used: true,
-              email: user.email 
-            }, { onConflict: 'id' });
-          
-          if (updateError) {
-            console.error('Failed to mark trial as used:', updateError);
-          }
-        }
-        
         // Check if user wants to start fresh (from URL param)
         const forceNew = searchParams.get('new') === 'true';
         const resumeStoryId = searchParams.get('resume');
         
         // CRITICAL FIX: Check for resume FIRST before profile check
         // In new tabs, localStorage may not have the profile, but the database story does
-        if (!isTrialMode && !forceNew && resumeStoryId) {
+        if (!forceNew && resumeStoryId) {
           console.log(`🎯 [Resume Priority] Loading specific story: ${resumeStoryId}`);
           const existingStory = await loadStoryByIdFromDatabase(resumeStoryId);
           
@@ -486,7 +449,7 @@ const Mission = () => {
         setProfile(savedProfile);
         
         // SAFEGUARD: Double-check user intent when forceNew is true
-        if (forceNew && !isTrialMode) {
+        if (forceNew) {
           const existingStoryCheck = await loadCurrentStoryFromDatabase();
           if (existingStoryCheck && existingStoryCheck.scenes.length > 1) {
             console.warn('⚠️ forceNew=true with active story progress detected');
@@ -500,8 +463,8 @@ const Mission = () => {
           }
         }
         
-        // Skip loading existing story for trial mode or if forcing new story
-        if (!isTrialMode && !forceNew) {
+        // Skip loading existing story if forcing new story
+        if (!forceNew) {
           // Load the most recent active story (no resume param at this point)
           const existingStory = await loadCurrentStoryFromDatabase();
           
@@ -559,10 +522,8 @@ const Mission = () => {
         // This prevents duplicate active story errors from the unique constraint
         console.log('🧹 Preparing to create new story - clearing all existing active stories');
         try {
-          if (!isTrialMode) {
-            const clearedCount = await clearAllActiveStoriesForUser();
-            console.log(`✅ Cleared ${clearedCount} active stories`);
-          }
+          const clearedCount = await clearAllActiveStoriesForUser();
+          console.log(`✅ Cleared ${clearedCount} active stories`);
           await clearCurrentStory();
           clearInventory();
           clearSceneCache();
@@ -579,8 +540,8 @@ const Mission = () => {
           // Continue anyway - better to try creating new story
         }
 
-        // Check story limit (skip for trial mode)
-        if (!isTrialMode) {
+        // Check story limit
+        {
           const limitCheck = await checkStoryLimit();
           if (!limitCheck.canPlay) {
             setStoryLimitReached(true);
@@ -649,12 +610,10 @@ const Mission = () => {
         setInitialStoryId(newStoryId); // Phase 5: Track initial story ID
         
         // Phase 6: Save to database and verify
-        if (!isTrialMode) {
-          const savedData = await saveStoryToDatabase(newStory);
-          if (savedData && savedData.id !== newStoryId) {
-            console.error('❌ Story ID mismatch after save!');
-            throw new Error('Story save verification failed');
-          }
+        const savedData = await saveStoryToDatabase(newStory);
+        if (savedData && savedData.id !== newStoryId) {
+          console.error('❌ Story ID mismatch after save!');
+          throw new Error('Story save verification failed');
         }
         
       } catch (e: any) {
@@ -672,7 +631,7 @@ const Mission = () => {
     if (!initComplete && abilitiesLoaded) {
       init();
     }
-  }, [isTrialMode, user, navigate, searchParams, initComplete, abilitiesLoaded]);
+  }, [user, navigate, searchParams, initComplete, abilitiesLoaded]);
 
   // Show scroll to top button when story updates
   useEffect(() => {
@@ -937,28 +896,13 @@ const Mission = () => {
       setSavedStory(updatedStory);
       
       // Phase 6: Save to database and verify
-      if (!isTrialMode) {
-        const savedData = await saveStoryToDatabase(updatedStory);
-        if (savedData && savedData.id !== savedStory.id) {
-          console.error('❌ Story ID changed during save!');
-          throw new Error('Story integrity compromised');
-        }
+      const savedData = await saveStoryToDatabase(updatedStory);
+      if (savedData && savedData.id !== savedStory.id) {
+        console.error('❌ Story ID changed during save!');
+        throw new Error('Story integrity compromised');
       }
 
       if (parsed.end) {
-        // Trial story completion - user is now logged in, trial was marked at start
-        if (isTrialMode) {
-          console.log('📝 Trial story completed');
-          setStoryReadyToFinish(true);
-          
-          toast({
-            title: "Story Complete! 🎉",
-            description: "Great job! Check out our subscription plans for more adventures!",
-            variant: "default",
-          });
-          return;
-        }
-        
         // Don't auto-complete, just mark that the story is ready to finish
         setStoryReadyToFinish(true);
       }
@@ -1012,9 +956,7 @@ const Mission = () => {
     };
     setSavedStory(updatedStory);
     
-    if (!isTrialMode) {
-      saveStoryToDatabase(updatedStory);
-    }
+    saveStoryToDatabase(updatedStory);
     
     toast({
       title: "Went back to previous scene",
@@ -1383,30 +1325,11 @@ const Mission = () => {
                       Adventure Complete!
                     </h3>
                     
-                    {/* Trial/unauthenticated user completion */}
-                    {(!user && isTrialMode) ? (
-                      <>
-                        <p className="text-white/90">
-                          🎉 Congratulations! You've completed your free trial story. 
-                          Sign up to save your progress, unlock achievements, and continue your adventures!
-                        </p>
-                        <Button 
-                          size="xl"
-                          variant="hero"
-                          onClick={() => navigate("/")}
-                          className="w-full max-w-xs mx-auto text-lg font-bold"
-                        >
-                          <Crown className="h-5 w-5 mr-2" />
-                          Return Home & Sign Up
-                        </Button>
-                      </>
-                    ) : (
-                      <>
-                        <p className="text-white/90">
-                          🎉 Congratulations! You've reached the end of your epic journey. 
-                          {!savedStory?.quizTaken && " Take the comprehension challenge for Bonus Points, or "}
-                          Ready to see your achievements and save this adventure to your gallery?
-                        </p>
+                    <p className="text-white/90">
+                      🎉 Congratulations! You've reached the end of your epic journey. 
+                      {!savedStory?.quizTaken && " Take the comprehension challenge for Bonus Points, or "}
+                      Ready to see your achievements and save this adventure to your gallery?
+                    </p>
                         
                         {/* Quiz Button */}
                         {!savedStory?.quizTaken && (
@@ -1614,8 +1537,6 @@ const Mission = () => {
                           <Crown className="h-5 w-5 mr-2" />
                           Finish Adventure
                         </Button>
-                      </>
-                    )}
                   </div>
                 </div>
               )}
@@ -1666,9 +1587,7 @@ const Mission = () => {
                       setSavedStory(updatedStory);
                       
                       // Save to database to persist the change
-                      if (!isTrialMode) {
-                        await saveStoryToDatabase(updatedStory);
-                      }
+                      await saveStoryToDatabase(updatedStory);
                     }
                     
                     toast({
@@ -1755,6 +1674,7 @@ const Mission = () => {
                 </button>
           </div>
         </div>
+      </div>
       </div>
       
       {/* New Story Confirmation Dialog */}
@@ -1851,7 +1771,6 @@ const Mission = () => {
           }}
         />
       )}
-    </div>
       </div>
     </div>
   );
