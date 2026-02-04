@@ -339,7 +339,7 @@ const Auth = () => {
                   onClick={() => setShowForgotPassword(false)}
                   className="text-purple-200 hover:text-white mb-2"
                 >
-                  ← Back to Sign In
+                  ← Back to Log In
                 </Button>
                 
                 <div className="text-center mb-4">
@@ -378,22 +378,22 @@ const Auth = () => {
                 </form>
               </div>
             ) : (
-            <Tabs defaultValue="signin" className="w-full">
+            <Tabs defaultValue="signup" className="w-full">
               <TabsList className="grid w-full grid-cols-2 bg-black/30">
-                <TabsTrigger value="signin" className="text-white data-[state=active]:bg-purple-600">
-                  Sign In
-                </TabsTrigger>
                 <TabsTrigger value="signup" className="text-white data-[state=active]:bg-purple-600">
                   Sign Up
                 </TabsTrigger>
+                <TabsTrigger value="login" className="text-white data-[state=active]:bg-purple-600">
+                  Log In
+                </TabsTrigger>
               </TabsList>
               
-              <TabsContent value="signin" className="space-y-4 mt-6">
+              <TabsContent value="login" className="space-y-4 mt-6">
                 <form onSubmit={handleSignIn} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="signin-email" className="text-white">Email</Label>
+                    <Label htmlFor="login-email" className="text-white">Email</Label>
                     <Input
-                      id="signin-email"
+                      id="login-email"
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
@@ -403,9 +403,9 @@ const Auth = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="signin-password" className="text-white">Password</Label>
+                    <Label htmlFor="login-password" className="text-white">Password</Label>
                     <Input
-                      id="signin-password"
+                      id="login-password"
                       type="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
@@ -427,7 +427,7 @@ const Auth = () => {
                     disabled={loading}
                   >
                     {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Sign In
+                    Log In
                   </Button>
                   
                   <div className="text-center">
