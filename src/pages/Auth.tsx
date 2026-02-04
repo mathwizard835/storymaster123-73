@@ -50,12 +50,26 @@ const Auth = () => {
       }
     };
     
-    // Handle email verification callbacks
+    // Handle email verification and invite callbacks
     const handleAuthCallback = async () => {
       // Check URL hash for auth tokens
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
       const type = hashParams.get('type');
       const accessToken = hashParams.get('access_token');
+      
+      // Handle invite callback - redirect to password setup
+      if (type === 'invite' && accessToken) {
+        toast({
+          title: "Welcome!",
+          description: "Please set your password to complete your account setup.",
+        });
+        
+        // Redirect to reset-password page with invite flag
+        setTimeout(() => {
+          navigate('/reset-password?type=invite');
+        }, 500);
+        return;
+      }
       
       if (type === 'signup' && accessToken) {
         toast({
