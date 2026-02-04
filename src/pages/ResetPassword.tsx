@@ -16,14 +16,32 @@ const ResetPassword = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isInviteFlow, setIsInviteFlow] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
+    // Check URL params for invite flow
+    const urlParams = new URLSearchParams(window.location.search);
+    const queryType = urlParams.get('type');
+    
+    if (queryType === 'invite') {
+      setIsInviteFlow(true);
+      console.log('User arrived from invitation link');
+      return;
+    }
+    
     // Check if user came from reset password email link
     const hashParams = new URLSearchParams(window.location.hash.substring(1));
     const accessToken = hashParams.get('access_token');
     const type = hashParams.get('type');
+    
+    // Handle invite in hash (direct from Supabase email)
+    if (accessToken && type === 'invite') {
+      setIsInviteFlow(true);
+      console.log('Valid invitation token detected');
+      return;
+    }
     
     // Handle the recovery token - Supabase will auto-login user with the token
     if (accessToken && type === 'recovery') {
@@ -32,10 +50,8 @@ const ResetPassword = () => {
       return;
     }
     
-    // Also check URL params (some Supabase versions use query params)
-    const urlParams = new URLSearchParams(window.location.search);
+    // Also check URL params for recovery (some Supabase versions use query params)
     const queryToken = urlParams.get('token');
-    const queryType = urlParams.get('type');
     
     if (queryToken && queryType === 'recovery') {
       console.log('Valid password recovery token in query params');
@@ -117,10 +133,12 @@ const ResetPassword = () => {
           <CardHeader className="text-center">
             <CardTitle className="text-white flex items-center justify-center gap-2">
               <KeyRound className="h-5 w-5 text-purple-400" />
-              Set New Password
+              {isInviteFlow ? 'Set Your Password' : 'Set New Password'}
             </CardTitle>
             <CardDescription className="text-purple-200">
-              Choose a strong password for your account
+              {isInviteFlow 
+                ? 'Create a password to complete your account setup' 
+                : 'Choose a strong password for your account'}
             </CardDescription>
           </CardHeader>
           <CardContent>
