@@ -43,14 +43,14 @@ export default function SubscriptionSuccess() {
             setSubscriptionActive(true);
             setIsVerifying(false);
             toast({
-              title: "🎉 Welcome to Premium!",
-              description: "Your subscription is now active. Enjoy unlimited stories!",
+              title: "🎉 Welcome to Adventure Pass!",
+              description: "Your subscription is now active. Enjoy 10 stories per month!",
             });
           } else {
             setIsVerifying(false);
             toast({
               title: "Subscription Activated",
-              description: "Your premium access is ready! Reload the page if needed.",
+              description: "Your Adventure Pass is ready! Reload the page if needed.",
             });
           }
         } else {
@@ -83,7 +83,7 @@ export default function SubscriptionSuccess() {
               Payment Successful!
             </CardTitle>
             <CardDescription className="text-base">
-              Your premium subscription is now active
+              Your Adventure Pass subscription is now active
             </CardDescription>
           </div>
         </CardHeader>
@@ -100,7 +100,7 @@ export default function SubscriptionSuccess() {
               </li>
               <li className="flex items-start gap-2">
                 <CheckCircle className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-                <span>Unlock all story modes and premium features</span>
+                <span>Unlock all story modes and Adventure Pass features</span>
               </li>
               <li className="flex items-start gap-2">
                 <CheckCircle className="w-5 h-5 text-primary shrink-0 mt-0.5" />

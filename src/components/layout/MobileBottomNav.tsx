@@ -15,7 +15,7 @@ const navItems: NavItem[] = [
   { icon: BookOpen, label: 'Gallery', path: '/gallery' },
   { icon: Trophy, label: 'Trophies', path: '/achievements' },
   { icon: Users, label: 'Parents', path: '/parent-dashboard' },
-  { icon: Crown, label: 'Premium', path: '/subscription' },
+  { icon: Crown, label: 'Pass', path: '/subscription' },
 ];
 
 export function MobileBottomNav() {
