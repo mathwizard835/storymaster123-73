@@ -138,7 +138,7 @@ export default function Subscription() {
         if (status) {
           toast({
             title: "🎉 Subscription Activated!",
-            description: "Welcome to StoryMaster Premium!",
+            description: "Welcome to StoryMaster Adventure Pass!",
           });
           loadCurrentPlan();
         }
@@ -267,7 +267,7 @@ export default function Subscription() {
                   <Sparkles className="h-5 w-5 text-amber-500 flex-shrink-0 mt-1" />
                   <div>
                     <p className="font-semibold">Your stories reset on a 30-day rolling basis</p>
-                    <p className="text-sm text-purple-300 mt-1">Or upgrade to Premium now for 10 stories per month!</p>
+                    <p className="text-sm text-purple-300 mt-1">Or upgrade to the Adventure Pass now for 10 stories per month!</p>
                   </div>
                 </div>
               </div>
@@ -329,7 +329,7 @@ export default function Subscription() {
                   <Crown className="h-12 w-12 text-white" />
                 </div>
               </div>
-              <CardTitle className="text-3xl text-white mb-2">Active Premium Subscription</CardTitle>
+              <CardTitle className="text-3xl text-white mb-2">Active Adventure Pass</CardTitle>
               <CardDescription className="text-green-200 text-lg">{currentPlan.name}</CardDescription>
             </CardHeader>
 
@@ -354,7 +354,7 @@ export default function Subscription() {
                 )}
                 <div className="flex items-start gap-3">
                   <CheckCircle className="h-5 w-5 text-green-400 shrink-0 mt-0.5" />
-                  <span className="text-white">All premium features unlocked</span>
+                  <span className="text-white">All Adventure Pass features unlocked</span>
                 </div>
               </div>
 
@@ -396,7 +396,7 @@ export default function Subscription() {
               </div>
               <CardTitle className="text-3xl text-white mb-2 flex items-center justify-center gap-2">
                 <Sparkles className="h-6 w-6 text-yellow-400" />
-                Upgrade to Premium Plus
+                Upgrade to Adventure Pass Plus
                 <Sparkles className="h-6 w-6 text-yellow-400" />
               </CardTitle>
               <CardDescription className="text-purple-200 text-lg">
@@ -509,7 +509,7 @@ export default function Subscription() {
                     ) : (
                       <>
                         <Crown className="h-5 w-5" />
-                        Upgrade to Premium Plus Now
+                        Upgrade to Adventure Pass Plus Now
                         <Sparkles className="h-5 w-5" />
                       </>
                     )}
@@ -606,7 +606,7 @@ export default function Subscription() {
                 <BookOpen className="h-12 w-12 text-white" />
               </div>
             </div>
-            <CardTitle className="text-3xl text-white mb-2">StoryMaster Premium</CardTitle>
+            <CardTitle className="text-3xl text-white mb-2">StoryMaster Adventure Pass</CardTitle>
             <CardDescription className="text-purple-200 text-lg">Unlimited interactive storytelling</CardDescription>
           </CardHeader>
 
@@ -693,7 +693,7 @@ export default function Subscription() {
                 )}
               </Button>
 
-              {/* Apple In-App Purchase Option - iOS Only */}
+              {/* Apple In-App Purchase Option - iOS Only (smaller, secondary option) */}
               {isIOSPlatform() && (
                 <Button
                   onClick={() => {
@@ -703,11 +703,11 @@ export default function Subscription() {
                     });
                   }}
                   disabled={loading}
-                  variant="outline"
-                  size="lg"
-                  className="w-full border-white/30 text-white hover:bg-white/10 py-6"
+                  variant="ghost"
+                  size="sm"
+                  className="w-full text-purple-300 hover:text-white hover:bg-white/10 text-sm"
                 >
-                  <Apple className="h-5 w-5 mr-2" />
+                  <Apple className="h-4 w-4 mr-1" />
                   Pay with Apple (In-App Purchase)
                 </Button>
               )}
@@ -727,15 +727,8 @@ export default function Subscription() {
         </Card>
         )}
 
-        {/* Story Pack Purchase for Non-Subscribed Users */}
-        {!currentPlan && (
-          <div className="max-w-2xl mx-auto mt-8">
-            <div className="text-center mb-4">
-              <p className="text-purple-200">Or, just buy story packs without a subscription:</p>
-            </div>
-            <StoryPackPurchase />
-          </div>
-        )}
+        {/* Story Pack Purchase - Only for Adventure Pass subscribers */}
+        {/* Removed from non-subscriber view - story packs are a subscriber-only benefit */}
 
         {/* Premium Guarantees */}
         <div className="max-w-4xl mx-auto mt-12 grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
