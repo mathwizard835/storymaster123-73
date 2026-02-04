@@ -4,11 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { CheckCircle, X, Volume2, BookOpen, Star, Sparkles, Crown, ArrowLeft, Gamepad2, ExternalLink } from "lucide-react";
+import { CheckCircle, X, Volume2, BookOpen, Star, Sparkles, Crown, ArrowLeft, Gamepad2, ExternalLink, Apple, CreditCard } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { upgradeSubscription, cancelSubscription, getUserSubscription, type SubscriptionPlan } from "@/lib/subscription";
 import { 
   isNativePlatform, 
+  isIOSPlatform,
   openStripeCheckoutInBrowser, 
   addBrowserCloseListener,
   pollForSubscriptionUpdate,
@@ -17,6 +18,7 @@ import {
 
 import { supabase } from "@/integrations/supabase/client";
 import { getDeviceId } from "@/lib/story";
+import { StoryPackPurchase } from "@/components/StoryPackPurchase";
 
 export default function Subscription() {
   const navigate = useNavigate();
@@ -27,6 +29,9 @@ export default function Subscription() {
   const [currentPlan, setCurrentPlan] = useState<SubscriptionPlan | null>(null);
   const limitReached = searchParams.get('limitReached') === 'true';
   const cancelled = searchParams.get('cancelled') === 'true';
+  const packSuccess = searchParams.get('pack_success') === 'true';
+  const packCancelled = searchParams.get('pack_cancelled') === 'true';
+  const storiesPurchased = searchParams.get('stories');
 
   useEffect(() => {
     loadCurrentPlan();
@@ -40,7 +45,20 @@ export default function Subscription() {
         variant: "destructive",
       });
     }
-  }, [cancelled, toast]);
+    if (packSuccess && storiesPurchased) {
+      toast({
+        title: "🎉 Story Pack Purchased!",
+        description: `${storiesPurchased} bonus stories have been added to your account.`,
+      });
+    }
+    if (packCancelled) {
+      toast({
+        title: "Purchase Cancelled",
+        description: "Your story pack purchase was cancelled.",
+        variant: "destructive",
+      });
+    }
+  }, [cancelled, packSuccess, packCancelled, storiesPurchased, toast]);
 
   const loadCurrentPlan = async () => {
     const { plan } = await getUserSubscription();
@@ -304,7 +322,7 @@ export default function Subscription() {
 
         {/* Current Subscription Status - Only show if user has premium and NOT redirected from limit */}
         {currentPlan && !limitReached && (
-          <Card className="max-w-2xl mx-auto mb-12 bg-gradient-to-br from-green-500/20 to-emerald-500/20 backdrop-blur-md border-green-400/30 overflow-hidden">
+          <Card className="max-w-2xl mx-auto mb-8 bg-gradient-to-br from-green-500/20 to-emerald-500/20 backdrop-blur-md border-green-400/30 overflow-hidden">
             <CardHeader className="text-center border-b border-white/10 pb-6">
               <div className="flex justify-center mb-4">
                 <div className="bg-gradient-to-r from-green-500 to-emerald-500 p-4 rounded-full">
@@ -354,6 +372,11 @@ export default function Subscription() {
               </p>
             </CardContent>
           </Card>
+        )}
+
+        {/* Story Pack Purchase for Subscribed Users */}
+        {currentPlan && !limitReached && (
+          <StoryPackPurchase className="max-w-2xl mx-auto mb-12" />
         )}
 
         {/* Upgrade to Premium Plus - Show for Premium users only (not when limit reached) */}
@@ -648,6 +671,7 @@ export default function Subscription() {
                 <span className="text-white font-bold">${totalPrice.toFixed(2)}/month</span>
               </div>
 
+              {/* Primary Payment Button */}
               <Button
                 onClick={handleSubscribe}
                 disabled={loading}
@@ -657,18 +681,43 @@ export default function Subscription() {
                 {loading ? "Processing..." : (
                   isNativePlatform() ? (
                     <span className="flex items-center gap-2">
-                      <ExternalLink className="h-5 w-5" />
-                      Continue to secure checkout on our website
+                      <CreditCard className="h-5 w-5" />
+                      Continue to secure checkout
                     </span>
                   ) : (
-                    "Start Your Adventure"
+                    <span className="flex items-center gap-2">
+                      <CreditCard className="h-5 w-5" />
+                      Start Your Adventure
+                    </span>
                   )
                 )}
               </Button>
 
+              {/* Apple In-App Purchase Option - iOS Only */}
+              {isIOSPlatform() && (
+                <Button
+                  onClick={() => {
+                    toast({
+                      title: "Apple In-App Purchase",
+                      description: "In-App Purchases will be available soon. For now, please use the web checkout option above.",
+                    });
+                  }}
+                  disabled={loading}
+                  variant="outline"
+                  size="lg"
+                  className="w-full border-white/30 text-white hover:bg-white/10 py-6"
+                >
+                  <Apple className="h-5 w-5 mr-2" />
+                  Pay with Apple (In-App Purchase)
+                </Button>
+              )}
+
               {isNativePlatform() && (
                 <p className="text-center text-purple-300 text-xs">
-                  You'll be redirected to our secure payment page in Safari
+                  {isIOSPlatform() 
+                    ? "Web checkout saves you money. Apple charges additional fees for In-App Purchases."
+                    : "You'll be redirected to our secure payment page"
+                  }
                 </p>
               )}
 
@@ -676,6 +725,16 @@ export default function Subscription() {
             </div>
             </CardContent>
         </Card>
+        )}
+
+        {/* Story Pack Purchase for Non-Subscribed Users */}
+        {!currentPlan && (
+          <div className="max-w-2xl mx-auto mt-8">
+            <div className="text-center mb-4">
+              <p className="text-purple-200">Or, just buy story packs without a subscription:</p>
+            </div>
+            <StoryPackPurchase />
+          </div>
         )}
 
         {/* Premium Guarantees */}
