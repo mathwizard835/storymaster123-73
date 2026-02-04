@@ -91,7 +91,7 @@ export default function Subscription() {
   const totalPrice = readToMeEnabled ? basePlan.price + readToMeUpsell.price : basePlan.price;
 
   const handleCancelSubscription = async () => {
-    if (!confirm("Are you sure you want to cancel your subscription? You'll lose access to premium features at the end of your billing period.")) {
+    if (!confirm("Are you sure you want to cancel your subscription? You'll lose access to Adventure Pass features at the end of your billing period.")) {
       return;
     }
 
@@ -296,7 +296,7 @@ export default function Subscription() {
                 Monthly Story Limit Reached
               </CardTitle>
               <CardDescription className="text-purple-200 text-base">
-                You've started all 10 of your premium stories this month!
+                You've started all 10 of your Adventure Pass stories this month!
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -693,33 +693,33 @@ export default function Subscription() {
                 )}
               </Button>
 
-              {/* Apple In-App Purchase Option - iOS Only (smaller, secondary option) */}
-              {isIOSPlatform() && (
-                <Button
-                  onClick={() => {
-                    toast({
-                      title: "Apple In-App Purchase",
-                      description: "In-App Purchases will be available soon. For now, please use the web checkout option above.",
-                    });
-                  }}
-                  disabled={loading}
-                  variant="ghost"
-                  size="sm"
-                  className="w-full text-purple-300 hover:text-white hover:bg-white/10 text-sm"
-                >
-                  <Apple className="h-4 w-4 mr-1" />
-                  Pay with Apple (In-App Purchase)
-                </Button>
-              )}
+              {/* Apple In-App Purchase Option - Visible on all platforms for UI verification */}
+              <Button
+                onClick={() => {
+                  toast({
+                    title: isIOSPlatform() ? "Apple In-App Purchase" : "iOS Only Feature",
+                    description: isIOSPlatform() 
+                      ? "In-App Purchases will be available soon. For now, please use the web checkout option above."
+                      : "Apple In-App Purchases are only available when using the iOS app.",
+                  });
+                }}
+                disabled={loading}
+                variant="ghost"
+                size="sm"
+                className="w-full text-purple-300 hover:text-white hover:bg-white/10 text-sm"
+              >
+                <Apple className="h-4 w-4 mr-1" />
+                Pay with Apple (In-App Purchase)
+              </Button>
 
-              {isNativePlatform() && (
-                <p className="text-center text-purple-300 text-xs">
-                  {isIOSPlatform() 
-                    ? "Web checkout saves you money. Apple charges additional fees for In-App Purchases."
-                    : "You'll be redirected to our secure payment page"
-                  }
-                </p>
-              )}
+              <p className="text-center text-purple-300 text-xs">
+                {isIOSPlatform() 
+                  ? "Web checkout saves you money. Apple charges additional fees for In-App Purchases."
+                  : isNativePlatform()
+                    ? "You'll be redirected to our secure payment page"
+                    : "Apple In-App Purchases available in our iOS app"
+                }
+              </p>
 
               <p className="text-center text-purple-300 text-sm">Cancel anytime. No long-term commitment required.</p>
             </div>

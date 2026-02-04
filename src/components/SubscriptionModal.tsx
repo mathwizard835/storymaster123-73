@@ -98,7 +98,7 @@ export const SubscriptionModal = ({ open, onOpenChange, currentPlan }: Subscript
                 <div className="flex justify-center mb-2">
                   {getPlanIcon(plan.name)}
                 </div>
-                <CardTitle className="text-xl capitalize">{plan.name}</CardTitle>
+                <CardTitle className="text-xl capitalize">{plan.name === 'premium' ? 'Adventure Pass' : plan.name}</CardTitle>
                 <CardDescription>
                   <span className="text-3xl font-bold text-foreground">
                     ${plan.price_monthly}
@@ -112,9 +112,11 @@ export const SubscriptionModal = ({ open, onOpenChange, currentPlan }: Subscript
                   <li className="flex items-center">
                     <CheckCircle className="w-4 h-4 text-green-500 mr-2 flex-shrink-0" />
                     <span className="text-sm">
-                      {plan.features.daily_stories === -1 
-                        ? "Unlimited daily stories" 
-                        : `${plan.features.daily_stories} story per day (≈15 min reading)`}
+                      {plan.name === 'free' 
+                        ? "3 stories per month" 
+                        : plan.name === 'premium' || plan.name === 'premium_plus'
+                        ? "10 stories per month"
+                        : "Unlimited stories"}
                     </span>
                   </li>
                   {plan.name === 'free' && (

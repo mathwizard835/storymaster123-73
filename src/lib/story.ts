@@ -139,7 +139,7 @@ export const checkStoryLimit = async (): Promise<{ canPlay: boolean; completedCo
       if (bonusStories > 0) {
         reason += ` (${bonusStories} bonus stories included)`;
       }
-      reason += " Upgrade to Premium for 10 stories per month or wait until next month!";
+      reason += " Upgrade to Adventure Pass for 10 stories per month or wait until next month!";
       
       return { canPlay: false, completedCount: storiesUsedThisMonth, reason };
     }

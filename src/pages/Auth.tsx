@@ -315,19 +315,20 @@ const Auth = () => {
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-2 mb-4">
             <BookOpen className="h-8 w-8 text-purple-400" />
-            <h1 className="text-3xl font-bold text-white">StoryMaster Quest</h1>
+            <h1 className="text-3xl font-bold text-white">StoryMaster Kids</h1>
           </div>
-          <p className="text-purple-200">Begin your adventure with personalized stories</p>
+          <p className="text-purple-200">Interactive stories that make kids love reading</p>
+          <p className="text-purple-300 text-sm mt-2">AI-powered adventures adapted to your child's reading level</p>
         </div>
 
         <Card className="bg-black/20 backdrop-blur-md border-white/20">
           <CardHeader className="text-center">
             <CardTitle className="text-white flex items-center justify-center gap-2">
               <Stars className="h-5 w-5 text-yellow-400" />
-              Join the Quest
+              Get Started
             </CardTitle>
             <CardDescription className="text-purple-200">
-              Sign in to save your progress and access your story library
+              Create a free account to begin your adventure
             </CardDescription>
           </CardHeader>
           <CardContent>
