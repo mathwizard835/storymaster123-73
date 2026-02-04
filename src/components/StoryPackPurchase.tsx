@@ -167,7 +167,7 @@ export const StoryPackPurchase = ({ variant = 'full', className = '' }: StoryPac
           Buy Story Packs
         </CardTitle>
         <CardDescription className="text-purple-200">
-          Need more stories? Purchase additional story packs anytime
+          Need more stories? Purchase additional story packs as an Adventure Pass member
         </CardDescription>
       </CardHeader>
       
