@@ -13,9 +13,11 @@ import { loadCompletedStoriesFromDatabase } from "@/lib/databaseStory";
 import { getStreakStats } from "@/lib/streaks";
 import { getReadingStats, type ReadingStats } from "@/lib/readingAnalytics";
 import { Seo } from "@/components/Seo";
+import { useDevice } from "@/contexts/DeviceContext";
 
 export default function ParentDashboard() {
   const navigate = useNavigate();
+  const { isPhone } = useDevice();
   const [character, setCharacter] = useState(loadCharacter());
   const [achievements, setAchievements] = useState(loadAchievements());
   // ABILITIES DISABLED - Uncomment to re-enable
@@ -140,13 +142,28 @@ export default function ParentDashboard() {
       />
       
       <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
-        <div className="container max-w-6xl mx-auto p-4 md:p-8 space-y-8">
-          <div className="flex items-center justify-between">
-            <Button variant="ghost" onClick={() => navigate("/dashboard")} className="gap-2">
-              <ArrowLeft className="h-4 w-4" />
-              Back to Adventure
-            </Button>
-          </div>
+        <div className="container max-w-6xl mx-auto p-4 md:p-8 pb-24 md:pb-8 space-y-8">
+          {/* Mobile Header */}
+          {isPhone ? (
+            <div className="flex items-center gap-3">
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={() => navigate("/dashboard")}
+                className="h-10 w-10"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <h1 className="font-heading text-xl font-bold">Parent Dashboard</h1>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between">
+              <Button variant="ghost" onClick={() => navigate("/dashboard")} className="gap-2">
+                <ArrowLeft className="h-4 w-4" />
+                Back to Adventure
+              </Button>
+            </div>
+          )}
 
           <div className="text-center space-y-3">
             <div className="flex items-center justify-center gap-3 mb-2">

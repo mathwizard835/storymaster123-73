@@ -1087,11 +1087,8 @@ const Mission = () => {
 
         {/* Main Content - Responsive Grid */}
         <div className="flex-1 p-2 md:p-4 overflow-y-auto">
-          {/* Phone: Single column, Tablet: 2 columns, Desktop: 3 columns */}
-          <div className={cn(
-            "max-w-6xl mx-auto gap-4 md:gap-6",
-            isPhone ? "flex flex-col" : isTablet ? "grid grid-cols-1 md:grid-cols-[2fr_1fr]" : "grid grid-cols-1 lg:grid-cols-3"
-          )}>
+          {/* Phone: Single column, Tablet: 2 columns (2fr+1fr), Desktop: 3 columns */}
+          <div className="max-w-6xl mx-auto gap-4 md:gap-6 flex flex-col tablet:grid tablet:grid-cols-[2fr_1fr] lg:grid-cols-3">
             {/* Story Content */}
             <div className="lg:col-span-2 space-y-6">
               {/* Current Challenge */}

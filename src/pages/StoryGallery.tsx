@@ -6,11 +6,13 @@ import { Badge } from "@/components/ui/badge";
 import { getCompletedStories, type CompletedStory } from "@/lib/story";
 import { Clock, Star, ArrowLeft, BookOpen } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useDevice } from "@/contexts/DeviceContext";
 
 const StoryGallery = () => {
   const navigate = useNavigate();
   const completedStories = getCompletedStories();
   const { toast } = useToast();
+  const { isPhone } = useDevice();
 
   const formatDate = (dateString: string) => {
     return new Intl.DateTimeFormat('en-US', {
@@ -42,8 +44,24 @@ const StoryGallery = () => {
       />
       
       <main className="min-h-screen bg-background">
-        <div className="container py-8">
-          <div className="flex items-center gap-4 mb-8">
+        <div className="container py-8 pb-24 md:pb-8">
+          {/* Mobile Header */}
+          {isPhone ? (
+            <div className="flex items-center gap-3 mb-6">
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={() => navigate("/")}
+                className="h-10 w-10"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <h1 className="font-heading text-2xl font-extrabold">
+                📚 Story Gallery
+              </h1>
+            </div>
+          ) : (
+            <div className="flex items-center gap-4 mb-8">
             <Button 
               variant="ghost" 
               onClick={() => navigate("/")}
@@ -53,8 +71,10 @@ const StoryGallery = () => {
               Back to Home
             </Button>
           </div>
+          )}
 
-          <div className="mb-8">
+          {!isPhone && (
+            <div className="mb-8">
             <h1 className="font-heading text-3xl md:text-4xl font-extrabold">
               📚 Story Gallery
             </h1>
@@ -62,6 +82,7 @@ const StoryGallery = () => {
               Your completed adventures and achievements
             </p>
           </div>
+          )}
 
           {completedStories.length === 0 ? (
             <div className="text-center py-12">

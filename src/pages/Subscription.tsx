@@ -19,6 +19,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { getDeviceId } from "@/lib/story";
 import { StoryPackPurchase } from "@/components/StoryPackPurchase";
+import { useDevice } from "@/contexts/DeviceContext";
 
 export default function Subscription() {
   const navigate = useNavigate();
@@ -32,6 +33,7 @@ export default function Subscription() {
   const packSuccess = searchParams.get('pack_success') === 'true';
   const packCancelled = searchParams.get('pack_cancelled') === 'true';
   const storiesPurchased = searchParams.get('stories');
+  const { isNative, safeAreaInsets } = useDevice();
 
   useEffect(() => {
     loadCurrentPlan();
@@ -230,7 +232,10 @@ export default function Subscription() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-primary via-purple-900 to-indigo-900">
+    <div 
+      className="min-h-screen bg-gradient-to-b from-primary via-purple-900 to-indigo-900 pb-24 md:pb-8"
+      style={{ paddingBottom: isNative ? Math.max(safeAreaInsets.bottom + 96, 96) : undefined }}
+    >
       {/* Header */}
       <div className="bg-black/20 backdrop-blur-sm border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">

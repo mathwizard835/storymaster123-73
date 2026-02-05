@@ -245,7 +245,7 @@ const Index = () => {
           name: "StoryMaster Quest",
           applicationCategory: "Educational Game",
           genre: ["Interactive Fiction", "Adventure", "Educational"],
-          audience: "Childrem age 5+, Parents",
+           audience: "Children age 5+, Parents",
         }}
       />
 
@@ -277,7 +277,7 @@ const Index = () => {
       </NewStoryDialog>
 
       {/* Hero Section - The Big Pitch */}
-      <section className="relative min-h-screen w-full overflow-hidden">
+       <section className="relative min-h-screen w-full overflow-hidden pb-24 md:pb-8">
         <img
           src={heroParentTrust}
           alt="Glowing books floating in warm educational atmosphere"
