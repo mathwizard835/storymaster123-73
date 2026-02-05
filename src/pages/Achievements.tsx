@@ -8,11 +8,13 @@ import { loadAchievements, ALL_ACHIEVEMENTS, type Achievement } from "@/lib/achi
 import { loadCharacter } from "@/lib/character";
 import { ArrowLeft, Trophy, Star, Lock, Crown, Zap, TrendingUp } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useDevice } from "@/contexts/DeviceContext";
 
 const Achievements = () => {
   const navigate = useNavigate();
   const [progress, setProgress] = useState(loadAchievements());
   const [character, setCharacter] = useState(loadCharacter());
+  const { isPhone } = useDevice();
   
   // Refresh data when component mounts (in case returning from completed story)
   useEffect(() => {
@@ -65,8 +67,25 @@ const Achievements = () => {
       />
       
       <main className="min-h-screen bg-background">
-        <div className="container py-8">
-          <div className="flex items-center gap-4 mb-8">
+        <div className="container py-8 pb-24 md:pb-8">
+          {/* Mobile Header */}
+          {isPhone ? (
+            <div className="flex items-center gap-3 mb-6">
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={() => navigate("/")}
+                className="h-10 w-10"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <div className="flex items-center gap-2">
+                <Trophy className="h-6 w-6 text-amber-500" />
+                <h1 className="font-heading text-2xl font-extrabold">Achievements</h1>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center gap-4 mb-8">
             <Button 
               variant="ghost" 
               onClick={() => navigate("/")}
@@ -76,8 +95,10 @@ const Achievements = () => {
               Back to Home
             </Button>
           </div>
+          )}
 
-          <div className="mb-8">
+          {!isPhone && (
+            <div className="mb-8">
             <h1 className="font-heading text-3xl md:text-4xl font-extrabold flex items-center gap-3">
               <Trophy className="h-8 w-8 text-amber-500" />
               Achievements
@@ -86,6 +107,7 @@ const Achievements = () => {
               Your progress and accomplishments
             </p>
           </div>
+          )}
 
           {/* Character Stats */}
           <Card className="glass-panel border-0 mb-8">
