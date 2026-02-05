@@ -308,7 +308,7 @@ const Index = () => {
               <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
                 StoryMaster Kids
               </span>
-              <span className="block text-2xl sm:text-3xl md:text-5xl mt-2 text-foreground">Screen Time You Can Feel Good About</span>
+            <span className="block text-2xl sm:text-3xl md:text-5xl mt-2 text-foreground">Turning Screen Time into Reading Time</span>
             </h1>
             <p className="text-xl md:text-2xl text-muted-foreground mb-8 leading-relaxed">
               <strong className="text-foreground text-2xl">
@@ -402,6 +402,10 @@ const Index = () => {
               </div>
             </div>
 
+          <p className="mt-6 text-sm text-muted-foreground/80 italic">
+            Created by a 13-year-old who believes kids deserve better screen time ✨
+          </p>
+
             <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
               <ChevronDown className="h-8 w-8 text-muted-foreground" />
             </div>
@@ -417,6 +421,9 @@ const Index = () => {
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
               <strong className="text-foreground">Not passive scrolling. Active reading.</strong> Kids read 2,500+ words per story{" "}
               <span className="text-primary font-semibold">because they want to see what happens next.</span>
+            </p>
+            <p className="mt-4 text-sm text-muted-foreground/70 italic">
+              Built by a 13-year-old for kids who deserve something better than mindless scrolling
             </p>
           </div>
 
@@ -482,7 +489,7 @@ const Index = () => {
             </div>
             <div className="text-center">
               <p className="text-lg font-semibold text-foreground mb-2">
-                StoryMaster turns screen time into reading time
+              StoryMaster Kids: Turning Screen Time into Reading Time
               </p>
               <p className="text-muted-foreground">
                 Interactive stories that make kids <span className="text-primary font-semibold">want</span> to read — 
@@ -683,7 +690,7 @@ const Index = () => {
       {/* Final CTA Section */}
       <section className="py-20 px-6 bg-gradient-to-b from-primary/5 to-background">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl md:text-5xl font-bold mb-6">Turn Screen Time Into Reading Time</h2>
+          <h2 className="text-4xl md:text-5xl font-bold mb-6">Turning Screen Time into Reading Time</h2>
           <p className="text-xl text-muted-foreground mb-8">
             <strong className="text-foreground">They'll beg to play.</strong> You'll love what they're learning.
           </p>
@@ -790,7 +797,7 @@ const Index = () => {
 
           <footer className="mt-12 pt-6 border-t border-border/50">
             <p className="text-sm text-muted-foreground mb-4 italic">
-              Built with ❤️ by a 13-year-old who believes kids deserve better screen time
+              Built with ❤️ by a 13-year-old who's turning screen time into reading time
             </p>
             <div className="flex flex-wrap justify-center gap-6 text-sm text-muted-foreground">
               <a href="/privacy" className="hover:text-foreground transition-colors">
