@@ -431,11 +431,11 @@ const ProfileSetup = () => {
             <article className="glass-panel rounded-xl p-6 md:col-span-2">
               <h2 className="font-heading text-xl md:text-2xl font-bold">Things You Love (optional)</h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                Create cities, be a superhero, explore space, become a dragon trainer — your story, your rules! Tell us what you love.
+                Tell us about your hobbies, interests, or favorite things you'd like to see in your stories
               </p>
               <div className="mt-3">
                 <Textarea
-                  placeholder="e.g., building cities, being a wizard, dinosaurs, Minecraft, becoming an astronaut, soccer, cats..."
+                  placeholder="e.g., soccer, video games, cats, pizza, Marvel superheroes, skateboarding..."
                   value={interests}
                   onChange={(e) => {
                     setInterests(e.target.value);
