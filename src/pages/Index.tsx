@@ -71,19 +71,18 @@ const Index = () => {
     return (
       <>
         <Seo
-          title="StoryMaster Quest – Welcome"
-          description="Welcome to StoryMaster Quest! Create your hero and begin your interactive adventure."
+          title="StoryMaster Kids – Your Adventure Awaits"
+          description="Create your hero and begin your interactive reading adventure with StoryMaster Kids."
           canonical="/"
           jsonLd={{
             "@context": "https://schema.org",
-            "@type": "VideoGame",
-            name: "StoryMaster Quest",
-            applicationCategory: "Game",
-            genre: ["Interactive Fiction", "Adventure"],
+            "@type": "SoftwareApplication",
+            name: "StoryMaster Kids",
+            applicationCategory: "EducationalApplication",
           }}
         />
         <header className="sr-only">
-          <h1>Welcome to StoryMaster Quest! 🎮✨</h1>
+          <h1>Welcome to StoryMaster Kids! 🎮✨</h1>
         </header>
         <main className="relative min-h-screen w-full overflow-hidden">
           <img
@@ -113,7 +112,7 @@ const Index = () => {
                 </div>
               )}
               <h2 className="font-heading text-4xl md:text-6xl font-extrabold tracking-tight drop-shadow-xl text-foreground">
-                Welcome to StoryMaster Quest! 🎮✨
+                Welcome to StoryMaster Kids! 🎮✨
               </h2>
               <p className="mt-4 text-lg md:text-xl text-muted-foreground">
                 Build your hero. Launch your mission. Your choices shape the story.
@@ -236,16 +235,18 @@ const Index = () => {
   return (
     <>
       <Seo
-        title="Screen Time You Can Feel Good About - StoryMaster Quest"
-        description="Interactive stories kids love, packed with learning. A better choice than passive entertainment."
+        title="StoryMaster Kids – Interactive Stories That Build Reading Skills"
+        description="AI-powered choose-your-own-adventure stories that make kids want to read. 2,500+ words per story. Safe, educational, and fun. Try free today."
         canonical="/"
         jsonLd={{
           "@context": "https://schema.org",
-          "@type": "VideoGame",
-          name: "StoryMaster Quest",
-          applicationCategory: "Educational Game",
-          genre: ["Interactive Fiction", "Adventure", "Educational"],
-           audience: "Children age 5+, Parents",
+          "@type": "SoftwareApplication",
+          name: "StoryMaster Kids",
+          applicationCategory: "EducationalApplication",
+          operatingSystem: "iOS, Web",
+          offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+          audience: { "@type": "EducationalAudience", educationalRole: "student", typicalAgeRange: "5-16" },
+          description: "AI-powered interactive stories that turn screen time into reading time. Kids become the hero and make choices that shape each adventure.",
         }}
       />
 
@@ -812,7 +813,7 @@ const Index = () => {
                 Support
               </a>
               <span>•</span>
-              <span>© 2025 StoryMaster Quest</span>
+              <span>© 2025 StoryMaster Kids</span>
             </div>
           </footer>
         </div>
