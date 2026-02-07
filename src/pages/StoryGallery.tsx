@@ -38,7 +38,7 @@ const StoryGallery = () => {
   return (
     <>
       <Seo
-        title="StoryMaster Quest – Story Gallery"
+        title="StoryMaster Kids – Story Gallery"
         description="View your completed adventures and story achievements."
         canonical="/gallery"
       />

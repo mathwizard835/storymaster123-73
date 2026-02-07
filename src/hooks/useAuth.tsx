@@ -38,7 +38,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         import('@/hooks/use-toast').then(({ toast }) => {
           toast({
             title: "Email verified successfully!",
-            description: "Welcome to StoryMaster Quest!",
+            description: "Welcome to StoryMaster Kids!",
           });
         });
         

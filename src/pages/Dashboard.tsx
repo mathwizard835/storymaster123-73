@@ -158,7 +158,7 @@ const Dashboard = () => {
   return (
     <>
       <Seo
-        title="StoryMaster Quest – Dashboard"
+        title="StoryMaster Kids – Dashboard"
         description="View your story progress, achievements, and character stats."
         canonical="/dashboard"
       />
