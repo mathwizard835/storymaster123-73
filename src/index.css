@@ -169,6 +169,13 @@ All colors MUST be HSL.
     @apply border-border;
   }
 
+  html {
+    /* Ensure safe areas are respected on notched devices */
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+  }
+
   body {
     @apply bg-background text-foreground font-body;
   }
