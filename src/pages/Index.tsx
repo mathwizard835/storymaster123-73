@@ -98,10 +98,11 @@ const Index = () => {
             {user && (
               <Button
                 onClick={() => navigate("/subscription")}
-                className="fixed top-8 right-8 h-16 w-16 rounded-full bg-gradient-to-br from-purple-600 via-purple-500 to-pink-500 hover:from-purple-700 hover:via-purple-600 hover:to-pink-600 shadow-2xl shadow-purple-500/50 hover:shadow-purple-500/80 transition-all duration-500 hover:scale-110 border-2 border-white/20 z-50 flex items-center justify-center group animate-pulse hover:animate-none"
+                className="fixed top-4 right-4 sm:top-8 sm:right-8 h-12 w-12 sm:h-14 sm:w-14 md:h-16 md:w-16 rounded-full bg-gradient-to-br from-purple-600 via-purple-500 to-pink-500 hover:from-purple-700 hover:via-purple-600 hover:to-pink-600 shadow-2xl shadow-purple-500/50 hover:shadow-purple-500/80 transition-all duration-500 hover:scale-110 border-2 border-white/20 z-50 flex items-center justify-center group animate-pulse hover:animate-none"
+                style={{ top: `max(env(safe-area-inset-top, 16px), 16px)` }}
                 aria-label="Upgrade to Adventure Pass"
               >
-                <Crown className="h-7 w-7 text-white group-hover:scale-125 transition-transform duration-300" />
+                <Crown className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 text-white group-hover:scale-125 transition-transform duration-300" />
               </Button>
             )}
 
@@ -177,37 +178,37 @@ const Index = () => {
                     size="xl"
                     variant="game"
                     onClick={() => navigate("/gallery")}
-                    className="h-20 text-lg font-bold flex flex-col items-center gap-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+                    className="min-h-[4.5rem] sm:min-h-[5rem] text-base sm:text-lg font-bold flex flex-col items-center gap-1.5 sm:gap-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 py-3"
                     aria-label="View story gallery"
                   >
-                    <BookOpen className="h-8 w-8" />
+                    <BookOpen className="h-6 w-6 sm:h-8 sm:w-8" />
                     <div>
                       <div>Story Gallery</div>
-                      <div className="text-sm opacity-75">({completedStories.length} stories)</div>
+                      <div className="text-xs sm:text-sm opacity-75">({completedStories.length} stories)</div>
                     </div>
                   </Button>
                   <Button
                     onClick={() => navigate("/achievements")}
                     variant="game"
                     size="xl"
-                    className="h-20 text-lg font-bold flex flex-col items-center gap-2 bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-700 hover:to-orange-700"
+                    className="min-h-[4.5rem] sm:min-h-[5rem] text-base sm:text-lg font-bold flex flex-col items-center gap-1.5 sm:gap-2 bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-700 hover:to-orange-700 py-3"
                   >
-                    <Star className="h-8 w-8" />
+                    <Star className="h-6 w-6 sm:h-8 sm:w-8" />
                     <div>
                       <div>🏆 Achievements</div>
-                      <div className="text-sm opacity-75">View progress</div>
+                      <div className="text-xs sm:text-sm opacity-75">View progress</div>
                     </div>
                   </Button>
                   <Button
                     onClick={() => navigate("/profile")}
                     variant="game"
                     size="xl"
-                    className="h-20 text-lg font-bold flex flex-col items-center gap-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+                    className="min-h-[4.5rem] sm:min-h-[5rem] text-base sm:text-lg font-bold flex flex-col items-center gap-1.5 sm:gap-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 py-3"
                   >
-                    <Crown className="h-8 w-8" />
+                    <Crown className="h-6 w-6 sm:h-8 sm:w-8" />
                     <div>
                       <div>Hero Profile</div>
-                      <div className="text-sm opacity-75">Points & stats</div>
+                      <div className="text-xs sm:text-sm opacity-75">Points & stats</div>
                     </div>
                   </Button>
                 </div>
@@ -292,10 +293,11 @@ const Index = () => {
           {user && (
             <Button
               onClick={() => navigate("/subscription")}
-              className="fixed top-8 right-8 h-16 w-16 rounded-full bg-gradient-to-br from-purple-600 via-purple-500 to-pink-500 hover:from-purple-700 hover:via-purple-600 hover:to-pink-600 shadow-2xl shadow-purple-500/50 hover:shadow-purple-500/80 transition-all duration-500 hover:scale-110 border-2 border-white/20 z-50 flex items-center justify-center group animate-pulse hover:animate-none"
+              className="fixed top-4 right-4 sm:top-8 sm:right-8 h-12 w-12 sm:h-14 sm:w-14 md:h-16 md:w-16 rounded-full bg-gradient-to-br from-purple-600 via-purple-500 to-pink-500 hover:from-purple-700 hover:via-purple-600 hover:to-pink-600 shadow-2xl shadow-purple-500/50 hover:shadow-purple-500/80 transition-all duration-500 hover:scale-110 border-2 border-white/20 z-50 flex items-center justify-center group animate-pulse hover:animate-none"
+              style={{ top: `max(env(safe-area-inset-top, 16px), 16px)` }}
               aria-label="Upgrade to Adventure Pass"
             >
-              <Crown className="h-7 w-7 text-white group-hover:scale-125 transition-transform duration-300" />
+              <Crown className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 text-white group-hover:scale-125 transition-transform duration-300" />
             </Button>
           )}
 
@@ -305,19 +307,19 @@ const Index = () => {
                 <SignOutButton />
               </div>
             )}
-            <h1 className="font-heading text-4xl sm:text-5xl md:text-7xl font-extrabold tracking-tight drop-shadow-2xl mb-6">
-              <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                StoryMaster Kids
-              </span>
-            <span className="block text-2xl sm:text-3xl md:text-5xl mt-2 text-foreground">Turning Screen Time into Reading Time</span>
+            <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-extrabold tracking-tight drop-shadow-2xl mb-4 sm:mb-6">
+               <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                 StoryMaster Kids
+               </span>
+             <span className="block text-xl sm:text-2xl md:text-3xl lg:text-5xl mt-2 text-foreground">Turning Screen Time into Reading Time</span>
             </h1>
-            <p className="text-xl md:text-2xl text-muted-foreground mb-8 leading-relaxed">
-              <strong className="text-foreground text-2xl">
+            <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-muted-foreground mb-6 sm:mb-8 leading-relaxed">
+              <strong className="text-foreground text-lg sm:text-xl md:text-2xl">
                 AI-powered choose-your-own-adventure stories that{" "}
                 <span className="text-primary">make kids want to read</span>
               </strong>
               <br />
-              <span className="text-lg mt-2 block">
+              <span className="text-sm sm:text-base md:text-lg mt-2 block">
                 Your child becomes the hero. Every choice shapes the story. 2,500+ words of reading per adventure.
               </span>
             </p>

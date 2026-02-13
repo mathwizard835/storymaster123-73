@@ -118,32 +118,32 @@ const Achievements = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 sm:gap-6">
                 <div>
-                  <div className="text-2xl font-bold flex items-center gap-1">
-                    <Crown className="h-6 w-6 text-amber-500" />
+                  <div className="text-xl sm:text-2xl font-bold flex items-center gap-1">
+                    <Crown className="h-5 w-5 sm:h-6 sm:w-6 text-amber-500" />
                     {character.level}
                   </div>
-                  <div className="text-sm text-muted-foreground">Level</div>
+                  <div className="text-xs sm:text-sm text-muted-foreground">Level</div>
                 </div>
                 <div>
-                  <div className="text-2xl font-bold flex items-center gap-1">
-                    <Zap className="h-6 w-6 text-blue-500" />
+                  <div className="text-xl sm:text-2xl font-bold flex items-center gap-1">
+                    <Zap className="h-5 w-5 sm:h-6 sm:w-6 text-blue-500" />
                     {character.experience}
                   </div>
-                  <div className="text-sm text-muted-foreground">Experience Points</div>
+                  <div className="text-xs sm:text-sm text-muted-foreground">XP</div>
                 </div>
                 <div>
-                  <div className="text-2xl font-bold">{progress.totalStories}</div>
-                  <div className="text-sm text-muted-foreground">Stories Completed</div>
+                  <div className="text-xl sm:text-2xl font-bold">{progress.totalStories}</div>
+                  <div className="text-xs sm:text-sm text-muted-foreground">Stories Done</div>
                 </div>
                 <div>
-                  <div className="text-2xl font-bold">{progress.totalChoices}</div>
-                  <div className="text-sm text-muted-foreground">Choices Made</div>
+                  <div className="text-xl sm:text-2xl font-bold">{progress.totalChoices}</div>
+                  <div className="text-xs sm:text-sm text-muted-foreground">Choices Made</div>
                 </div>
                 <div>
-                  <div className="text-2xl font-bold">{completionRate}%</div>
-                  <div className="text-sm text-muted-foreground">Achievement Rate</div>
+                  <div className="text-xl sm:text-2xl font-bold">{completionRate}%</div>
+                  <div className="text-xs sm:text-sm text-muted-foreground">Achievement Rate</div>
                 </div>
               </div>
               

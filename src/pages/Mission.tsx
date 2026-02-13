@@ -1050,11 +1050,11 @@ const Mission = () => {
                 </button>
               )}
               <h1 className={cn(
-                "font-bold text-white flex items-center gap-1 md:gap-2 truncate",
-                isPhone ? "text-base" : "text-2xl"
+                "font-bold text-white flex items-center gap-1 md:gap-2",
+                isPhone ? "text-sm leading-tight" : "text-2xl"
               )}>
-                {getIconForBadge(profile.selectedBadges?.[0] || "mystic", isPhone ? "h-4 w-4" : "h-6 w-6")}
-                <span className="truncate">{scene.sceneTitle}</span>
+                {getIconForBadge(profile.selectedBadges?.[0] || "mystic", isPhone ? "h-4 w-4 flex-shrink-0" : "h-6 w-6 flex-shrink-0")}
+                <span className={cn(isPhone ? "line-clamp-2" : "truncate")}>{scene.sceneTitle}</span>
               </h1>
               {!isPhone && profile.mode === 'learning' && (
                 <Badge variant="secondary" className="bg-blue-600/80 text-white flex-shrink-0">

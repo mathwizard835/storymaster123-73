@@ -166,14 +166,14 @@ export default function ParentDashboard() {
           )}
 
           <div className="text-center space-y-3">
-            <div className="flex items-center justify-center gap-3 mb-2">
-              <Heart className="h-10 w-10 text-rose-500" />
-              <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-amber-600 to-rose-600 bg-clip-text text-transparent">
+            <div className="flex items-center justify-center gap-2 sm:gap-3 mb-2 flex-wrap">
+              <Heart className="h-6 w-6 sm:h-8 sm:w-8 md:h-10 md:w-10 text-rose-500 flex-shrink-0" />
+              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-amber-600 to-rose-600 bg-clip-text text-transparent">
                 📚 {childName}'s Reading Journey
               </h1>
-              <Heart className="h-10 w-10 text-rose-500" />
+              <Heart className="h-6 w-6 sm:h-8 sm:w-8 md:h-10 md:w-10 text-rose-500 flex-shrink-0" />
             </div>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-sm sm:text-base md:text-lg text-muted-foreground max-w-2xl mx-auto">
               Watch reading become your child's favorite adventure!
             </p>
           </div>
@@ -321,7 +321,7 @@ export default function ParentDashboard() {
           )}
 
           {/* Key Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
             <Card className="border-2 border-amber-200 dark:border-amber-900">
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
