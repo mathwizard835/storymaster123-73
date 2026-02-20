@@ -22,7 +22,7 @@ import {
   calculateLearningScore,
   getNextLearningGoal 
 } from "@/lib/learningSystem";
-import { trackReadingSession } from "@/lib/readingAnalytics";
+import { trackReadingSession, trackSceneReading } from "@/lib/readingAnalytics";
 import { InventoryPanel } from "@/components/InventoryPanel";
 import { LearningProgress, type LearningConcept } from "@/components/LearningProgress";
 import { LearningChallengeComponent, type LearningChallenge } from "@/components/LearningChallenge";
@@ -900,6 +900,15 @@ const Mission = () => {
       if (savedData && savedData.id !== savedStory.id) {
         console.error('❌ Story ID changed during save!');
         throw new Error('Story integrity compromised');
+      }
+
+      // Track per-scene reading for parent dashboard
+      if (user) {
+        trackSceneReading(
+          savedStory.id,
+          allScenes[0]?.sceneTitle || parsed.sceneTitle || "Adventure",
+          parsed
+        ).catch(err => console.error('Scene tracking error:', err));
       }
 
       if (parsed.end) {

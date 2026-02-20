@@ -74,6 +74,47 @@ export const trackReadingSession = async (
   }
 };
 
+// Track reading progress after each individual scene (incremental updates)
+export const trackSceneReading = async (
+  storyId: string,
+  storyTitle: string,
+  scene: any
+): Promise<void> => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    let sceneWords = 0;
+    if (scene.narrative) sceneWords += countWords(scene.narrative);
+    if (scene.choices) {
+      scene.choices.forEach((choice: any) => {
+        sceneWords += countWords(choice.text || '');
+      });
+    }
+
+    if (sceneWords === 0) return;
+
+    const readingTimeSeconds = estimateReadingTime(sceneWords);
+
+    const { error } = await supabase
+      .from('reading_sessions')
+      .insert({
+        user_id: user.id,
+        story_id: `${storyId}_scene`,
+        story_title: storyTitle,
+        words_read: sceneWords,
+        reading_time_seconds: readingTimeSeconds,
+        completed_at: new Date().toISOString()
+      });
+
+    if (error) {
+      console.error('Error tracking scene reading:', error);
+    }
+  } catch (e) {
+    console.error('Failed to track scene reading:', e);
+  }
+};
+
 // Get reading statistics
 export const getReadingStats = async (): Promise<ReadingStats> => {
   try {
