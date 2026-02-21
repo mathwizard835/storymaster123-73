@@ -4,7 +4,6 @@ const config: CapacitorConfig = {
   appId: 'com.ordinaryheroes.storymaster',
   appName: 'StoryMaster',
   webDir: 'dist',
-  bundledWebRuntime: false,
   plugins: {
     SplashScreen: {
       launchShowDuration: 2000,
