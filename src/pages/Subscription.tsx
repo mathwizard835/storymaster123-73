@@ -348,7 +348,7 @@ export default function Subscription() {
                 {(currentPlan.features as any).daily_stories && (
                   <div className="flex items-start gap-3">
                     <CheckCircle className="h-5 w-5 text-green-400 shrink-0 mt-0.5" />
-                    <span className="text-white">{(currentPlan.features as any).daily_stories} stories per day</span>
+                    <span className="text-white">{(currentPlan.features as any).daily_stories > 3 ? '10' : '3'} stories per month</span>
                   </div>
                 )}
                 {(currentPlan.features as any).read_to_me && (

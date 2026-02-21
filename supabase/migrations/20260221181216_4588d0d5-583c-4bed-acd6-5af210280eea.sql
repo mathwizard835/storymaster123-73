@@ -1,0 +1,1 @@
+DELETE FROM subscription_plans WHERE id = '53c21197-fd68-4641-bbfd-ed85be479c6e' AND name = 'free';
