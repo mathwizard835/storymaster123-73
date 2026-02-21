@@ -18,6 +18,20 @@ import { useDevice } from "@/contexts/DeviceContext";
 export default function ParentDashboard() {
   const navigate = useNavigate();
   const { isPhone } = useDevice();
+
+  // Disable premium themes in parent mode
+  useEffect(() => {
+    const savedTheme = document.documentElement.getAttribute("data-theme");
+    if (savedTheme) {
+      document.documentElement.removeAttribute("data-theme");
+    }
+    return () => {
+      const theme = localStorage.getItem("premium-theme");
+      if (theme && theme !== "default") {
+        document.documentElement.setAttribute("data-theme", theme);
+      }
+    };
+  }, []);
   const [character, setCharacter] = useState(loadCharacter());
   const [achievements, setAchievements] = useState(loadAchievements());
   // ABILITIES DISABLED - Uncomment to re-enable
