@@ -96,7 +96,7 @@ export default function SubscriptionSuccess() {
             <ul className="space-y-2 text-muted-foreground">
               <li className="flex items-start gap-2">
                 <CheckCircle className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-                <span>Access unlimited interactive stories every month</span>
+                <span>Access up to 10 interactive stories every month</span>
               </li>
               <li className="flex items-start gap-2">
                 <CheckCircle className="w-5 h-5 text-primary shrink-0 mt-0.5" />
@@ -151,8 +151,8 @@ export default function SubscriptionSuccess() {
 
           <p className="text-sm text-center text-muted-foreground">
             Questions? Contact us at{" "}
-            <a href="mailto:support@storymasterquest.com" className="text-primary hover:underline">
-              support@storymasterquest.com
+            <a href="mailto:support@storymasterkids.com" className="text-primary hover:underline">
+              support@storymasterkids.com
             </a>
           </p>
         </CardContent>

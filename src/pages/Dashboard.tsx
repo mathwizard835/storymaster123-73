@@ -205,7 +205,7 @@ const Dashboard = () => {
                     } else if (inProgressStories.length === 1) {
                       navigate(`/mission?resume=${inProgressStories[0].id}`);
                     } else {
-                      navigate("/mission");
+                      navigate("/profile?new=true");
                     }
                   }}
                   variant="hero"
@@ -213,7 +213,7 @@ const Dashboard = () => {
                   className="flex items-center justify-center gap-2"
                 >
                   <Play className="h-5 w-5" />
-                  Continue Quest
+                  {inProgressStories.length > 0 ? 'Continue Quest' : 'New Adventure'}
                 </Button>
                 <Button 
                   onClick={async () => {
@@ -278,14 +278,14 @@ const Dashboard = () => {
                       } else if (inProgressStories.length === 1) {
                         navigate(`/mission?resume=${inProgressStories[0].id}`);
                       } else {
-                        navigate("/mission");
+                        navigate("/profile?new=true");
                       }
                     }}
                     variant="hero"
                     className="flex items-center gap-2"
                   >
                     <Play className="h-4 w-4" />
-                    Continue Your Quest
+                    {inProgressStories.length > 0 ? 'Continue Your Quest' : 'New Adventure'}
                   </Button>
                   <Button 
                     onClick={async () => {

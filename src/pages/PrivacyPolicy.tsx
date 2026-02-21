@@ -115,7 +115,7 @@ const PrivacyPolicy = () => {
                 If you have questions about this Privacy Policy or wish to exercise your rights:
               </p>
               <ul className="list-disc pl-6 space-y-2 mt-2">
-                <li>Email: support@storymasterquest.com</li>
+                <li>Email: support@storymasterkids.com</li>
                 <li>Visit our <a href="/support" className="text-primary hover:underline">Support page</a></li>
               </ul>
             </section>

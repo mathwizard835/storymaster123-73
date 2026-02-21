@@ -138,6 +138,7 @@ export const cancelSubscription = async (): Promise<boolean> => {
   try {
     const deviceId = await getDeviceId();
     
+    // Cancel by device_id
     const { error } = await supabase
       .from('user_subscriptions')
       .update({ status: 'cancelled' })
@@ -145,6 +146,17 @@ export const cancelSubscription = async (): Promise<boolean> => {
       .eq('status', 'active');
 
     if (error) throw error;
+
+    // Also cancel by user_id as fallback (handles cross-device scenarios)
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      await supabase
+        .from('user_subscriptions')
+        .update({ status: 'cancelled' })
+        .eq('user_id', user.id)
+        .eq('status', 'active');
+    }
+
     return true;
   } catch (e) {
     console.error("Failed to cancel subscription", e);

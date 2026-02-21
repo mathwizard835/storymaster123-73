@@ -990,7 +990,7 @@ const Mission = () => {
           </div>
           <div className="space-y-2">
             <h2 className="text-2xl font-bold text-white">Preparing Your Adventure</h2>
-            <p className="text-purple-200">The StoryMaster is weaving your tale...</p>
+            <p className="text-purple-200">StoryMaster Kids is weaving your tale...</p>
             {profile.mode === 'learning' && (
               <p className="text-blue-200">🎓 Setting up interactive learning experience...</p>
             )}
@@ -1005,7 +1005,7 @@ const Mission = () => {
       <div className="min-h-screen bg-gradient-to-b from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center p-4">
         <div className="bg-white/10 backdrop-blur-md rounded-lg p-8 max-w-md text-center space-y-4">
           <Timer className="h-16 w-16 text-yellow-400 mx-auto" />
-          <h2 className="text-2xl font-bold text-white">Daily Adventure Limit Reached</h2>
+          <h2 className="text-2xl font-bold text-white">Monthly Adventure Limit Reached</h2>
           <button onClick={() => navigate('/')} className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors">
             Return Home
           </button>
@@ -1234,7 +1234,7 @@ const Mission = () => {
                         </TooltipTrigger>
                         {!userPlan?.features?.read_to_me ? (
                           <TooltipContent>
-                            <p>Only Available for Premium</p>
+                            <p>Only Available for Adventure Pass Plus</p>
                           </TooltipContent>
                         ) : hasUsedReadToMe ? (
                           <TooltipContent>
