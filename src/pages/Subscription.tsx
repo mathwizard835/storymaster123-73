@@ -18,7 +18,7 @@ import {
 
 import { supabase } from "@/integrations/supabase/client";
 import { getDeviceId } from "@/lib/story";
-import { StoryPackPurchase } from "@/components/StoryPackPurchase";
+
 import { useDevice } from "@/contexts/DeviceContext";
 
 export default function Subscription() {
@@ -377,10 +377,6 @@ export default function Subscription() {
           </Card>
         )}
 
-        {/* Story Pack Purchase for Subscribed Users */}
-        {currentPlan && !limitReached && (
-          <StoryPackPurchase className="max-w-2xl mx-auto mb-12" />
-        )}
 
         {/* Upgrade to Premium Plus - Show for Premium users only (not when limit reached) */}
         {currentPlan && currentPlan.price_monthly === 6.99 && !limitReached && (
