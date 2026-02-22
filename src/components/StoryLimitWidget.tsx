@@ -78,21 +78,27 @@ export const StoryLimitWidget = () => {
             <div className="flex justify-between text-sm">
               <span>Stories Started This Month</span>
               <span className="font-medium">
-                {storyData.storiesUsedThisMonth}/{totalAllowed}
+                {storyData.monthlyLimit >= 999999
+                  ? `${storyData.storiesUsedThisMonth} (Unlimited)`
+                  : `${storyData.storiesUsedThisMonth}/${totalAllowed}`}
               </span>
             </div>
-            <Progress 
-              value={usagePercent} 
-              className="h-2"
-            />
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>
-                {storyData.bonusStories > 0 && (
-                  <span className="text-primary">+{storyData.bonusStories} bonus</span>
-                )}
-              </span>
-              <span>{remaining} remaining</span>
-            </div>
+            {storyData.monthlyLimit < 999999 && (
+              <>
+                <Progress 
+                  value={usagePercent} 
+                  className="h-2"
+                />
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>
+                    {storyData.bonusStories > 0 && (
+                      <span className="text-primary">+{storyData.bonusStories} bonus</span>
+                    )}
+                  </span>
+                  <span>{remaining} remaining</span>
+                </div>
+              </>
+            )}
           </div>
 
           {!storyData.canPlay && (
@@ -112,13 +118,13 @@ export const StoryLimitWidget = () => {
               variant={storyData.canPlay ? "outline" : "default"}
             >
               <Crown className="w-4 h-4 mr-2" />
-              Upgrade for 10 Stories/Month
+              Upgrade for Unlimited Stories
             </Button>
           )}
 
           {subscription?.plan && subscription.plan.name !== 'free' && (
             <div className="text-center text-sm text-muted-foreground">
-              Enjoying 10 monthly stories with Adventure Pass
+              Enjoying unlimited stories with Adventure Pass
             </div>
           )}
         </CardContent>
