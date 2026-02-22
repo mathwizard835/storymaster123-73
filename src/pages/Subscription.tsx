@@ -68,10 +68,10 @@ export default function Subscription() {
   };
 
   const basePlan = {
-    price: 4.99,
-    stories: 10,
+    price: 6.99,
+    stories: "Unlimited",
     features: [
-      "10 interactive stories per month",
+      "Unlimited interactive stories per month",
       "All story modes (Mystery, Comedy, Thrill, Explore)",
       "Full character customization",
       "Progress tracking & achievements",
@@ -83,7 +83,7 @@ export default function Subscription() {
   const readToMeUpsell = {
     price: 1.0,
     features: [
-      "Professional voice narration for all stories ",
+      "Professional voice narration for all stories",
       "Multiple voice options per story mode",
       "High-quality ElevenLabs voices",
       "Perfect for bedtime reading",
@@ -272,7 +272,7 @@ export default function Subscription() {
                   <Sparkles className="h-5 w-5 text-amber-500 flex-shrink-0 mt-1" />
                   <div>
                     <p className="font-semibold">Your stories reset on a 30-day rolling basis</p>
-                    <p className="text-sm text-purple-300 mt-1">Or upgrade to the Adventure Pass now for 10 stories per month!</p>
+                    <p className="text-sm text-purple-300 mt-1">Or upgrade to the Adventure Pass now for unlimited stories!</p>
                   </div>
                 </div>
               </div>
@@ -301,7 +301,7 @@ export default function Subscription() {
                 Monthly Story Limit Reached
               </CardTitle>
               <CardDescription className="text-purple-200 text-base">
-                You've started all 10 of your Adventure Pass stories this month!
+                You have unlimited stories with your Adventure Pass!
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -345,12 +345,10 @@ export default function Subscription() {
               </div>
 
               <div className="space-y-3 bg-white/5 rounded-lg p-4 border border-white/10">
-                {(currentPlan.features as any).daily_stories && (
-                  <div className="flex items-start gap-3">
-                    <CheckCircle className="h-5 w-5 text-green-400 shrink-0 mt-0.5" />
-                    <span className="text-white">{(currentPlan.features as any).daily_stories > 3 ? '10' : '3'} stories per month</span>
-                  </div>
-                )}
+                <div className="flex items-start gap-3">
+                  <CheckCircle className="h-5 w-5 text-green-400 shrink-0 mt-0.5" />
+                  <span className="text-white">Unlimited stories per month</span>
+                </div>
                 {(currentPlan.features as any).read_to_me && (
                   <div className="flex items-start gap-3">
                     <CheckCircle className="h-5 w-5 text-green-400 shrink-0 mt-0.5" />
@@ -385,7 +383,7 @@ export default function Subscription() {
         )}
 
         {/* Upgrade to Premium Plus - Show for Premium users only (not when limit reached) */}
-        {currentPlan && currentPlan.price_monthly === 4.99 && !limitReached && (
+        {currentPlan && currentPlan.price_monthly === 6.99 && !limitReached && (
           <Card className="max-w-2xl mx-auto mb-12 bg-gradient-to-br from-purple-500/30 via-pink-500/30 to-yellow-500/20 backdrop-blur-md border-purple-400/40 overflow-hidden relative">
             <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 via-pink-500/10 to-yellow-500/10 animate-pulse" />
             <div className="absolute top-4 right-4 bg-gradient-to-r from-yellow-400 to-amber-500 text-purple-900 px-4 py-2 rounded-full text-sm font-bold flex items-center gap-2 shadow-lg">
@@ -412,7 +410,7 @@ export default function Subscription() {
             <CardContent className="p-8 space-y-6 relative">
               <div className="text-center bg-gradient-to-r from-purple-900/40 to-pink-900/40 rounded-xl p-6 border border-purple-400/30">
                 <div className="flex items-baseline justify-center gap-2 mb-2">
-                  <span className="text-5xl font-bold text-white">$5.99</span>
+                  <span className="text-5xl font-bold text-white">$7.99</span>
                   <span className="text-purple-300">/month</span>
                 </div>
                 <div className="text-sm text-yellow-400 font-semibold flex items-center justify-center gap-1">
@@ -595,7 +593,7 @@ export default function Subscription() {
               <CardTitle className="text-white text-lg">StoryMaster</CardTitle>
             </CardHeader>
             <CardContent className="relative">
-              <p className="text-3xl font-bold text-white mb-2">$4.99</p>
+              <p className="text-3xl font-bold text-white mb-2">$6.99</p>
               <p className="text-green-300 text-sm font-semibold">engaging + educational</p>
             </CardContent>
           </Card>

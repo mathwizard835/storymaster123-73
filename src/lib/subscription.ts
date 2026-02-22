@@ -180,19 +180,19 @@ export const getStoriesRemaining = async (): Promise<{
     // Get current subscription plan
     const { plan } = await getUserSubscription();
     
-    // Monthly limits: Free = 3, Premium = 10, Premium Plus = 10
+    // Monthly limits: Free = 3, Premium/Premium Plus = Unlimited (no cap)
     let monthlyLimit = 3; // Default for free users
+    let isUnlimited = false;
     if (plan) {
-      // Normalize plan name for comparison (case-insensitive, handle variations)
       const planName = plan.name?.toLowerCase().trim().replace(/\s+/g, '_');
       if (planName === 'premium' || planName === 'premium_plus' || 
           planName?.includes('premium') || plan.story_limit === null) {
-        monthlyLimit = 10;
+        // Premium users get unlimited stories
+        isUnlimited = true;
+        monthlyLimit = 999999; // Effectively unlimited
       } else if (plan.story_limit && plan.story_limit > 0) {
-        // Use explicit story_limit if set
         monthlyLimit = plan.story_limit;
       } else if (plan.features?.daily_stories) {
-        // Fallback: use daily_stories feature if set
         monthlyLimit = plan.features.daily_stories;
       }
     }
@@ -248,7 +248,7 @@ export const getStoriesRemaining = async (): Promise<{
     const totalAllowed = monthlyLimit + bonusStories;
     const canPlay = storiesUsedThisMonth < totalAllowed;
 
-    console.log(`📊 Story limits: ${storiesUsedThisMonth}/${monthlyLimit} started in last 30 days (${bonusStories} bonus, canPlay: ${canPlay})`);
+    console.log(`📊 Story limits: ${storiesUsedThisMonth}/${isUnlimited ? '∞' : monthlyLimit} started in last 30 days (${bonusStories} bonus, canPlay: ${canPlay})`);
 
     return {
       storiesUsedThisMonth,
