@@ -28,31 +28,21 @@ export const syncProgressFromDatabase = async (): Promise<{
       };
     }
 
-    // Get all completed stories from BOTH user_stories and story_completions
-    // This ensures we count all stories across all devices
-    const [userStoriesResult, completionsResult] = await Promise.all([
-      supabase
-        .from('user_stories')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('status', 'completed')
-        .order('completed_at', { ascending: true }),
-      supabase
-        .from('story_completions')
-        .select('*')
-        .order('completed_at', { ascending: true })
-    ]);
+    // Get completed stories from user_stories (uses user_id-based RLS which works reliably)
+    const userStoriesResult = await supabase
+      .from('user_stories')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('status', 'completed')
+      .order('completed_at', { ascending: true });
+
+    if (userStoriesResult.error) {
+      console.error('Failed to fetch completed stories:', userStoriesResult.error);
+      throw userStoriesResult.error;
+    }
 
     const completedStories = userStoriesResult.data || [];
-    const storyCompletions = completionsResult.data || [];
-    
-    // Use story_completions count as the source of truth for total stories
-    const totalStoriesCompleted = storyCompletions.length;
-
-    if (userStoriesResult.error || completionsResult.error) {
-      console.error('Failed to fetch completed stories:', userStoriesResult.error || completionsResult.error);
-      throw userStoriesResult.error || completionsResult.error;
-    }
+    const totalStoriesCompleted = completedStories.length;
 
     if (totalStoriesCompleted === 0) {
       console.log('No completed stories found in database');
