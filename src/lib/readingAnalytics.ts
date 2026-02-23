@@ -140,7 +140,31 @@ export const getReadingStats = async (): Promise<ReadingStats> => {
 
     if (error) throw error;
 
-    const sessions = allSessions || [];
+    let sessions = allSessions || [];
+
+    // If no reading sessions exist, estimate from completed user_stories
+    if (sessions.length === 0) {
+      const { data: completedStories } = await supabase
+        .from('user_stories')
+        .select('id, scene_count, completed_at, title')
+        .eq('user_id', user.id)
+        .eq('status', 'completed')
+        .order('completed_at', { ascending: false });
+
+      if (completedStories && completedStories.length > 0) {
+        // Estimate ~150 words per scene, ~45 seconds per scene for kids
+        sessions = completedStories.map(story => ({
+          id: story.id,
+          user_id: user.id,
+          story_id: story.id,
+          words_read: (story.scene_count || 5) * 150,
+          reading_time_seconds: (story.scene_count || 5) * 45,
+          completed_at: story.completed_at || new Date().toISOString(),
+          story_title: story.title || 'Adventure',
+          created_at: story.completed_at || new Date().toISOString(),
+        }));
+      }
+    }
 
     // Calculate totals
     const totalWords = sessions.reduce((sum, s) => sum + (s.words_read || 0), 0);
