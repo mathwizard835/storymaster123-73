@@ -112,26 +112,41 @@ export type Database = {
       }
       profiles: {
         Row: {
+          child_age: number | null
           created_at: string
           display_name: string | null
           email: string | null
           id: string
+          parent_email: string | null
+          parental_consent_at: string | null
+          parental_consent_given: boolean | null
+          parental_consent_method: string | null
           trial_used: boolean | null
           updated_at: string
         }
         Insert: {
+          child_age?: number | null
           created_at?: string
           display_name?: string | null
           email?: string | null
           id: string
+          parent_email?: string | null
+          parental_consent_at?: string | null
+          parental_consent_given?: boolean | null
+          parental_consent_method?: string | null
           trial_used?: boolean | null
           updated_at?: string
         }
         Update: {
+          child_age?: number | null
           created_at?: string
           display_name?: string | null
           email?: string | null
           id?: string
+          parent_email?: string | null
+          parental_consent_at?: string | null
+          parental_consent_given?: boolean | null
+          parental_consent_method?: string | null
           trial_used?: boolean | null
           updated_at?: string
         }
