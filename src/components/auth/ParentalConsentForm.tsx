@@ -12,9 +12,10 @@ interface ParentalConsentFormProps {
   onConsent: (parentEmail: string) => void;
   onBack: () => void;
   loading: boolean;
+  externalError?: string;
 }
 
-const ParentalConsentForm = ({ childAge, onConsent, onBack, loading }: ParentalConsentFormProps) => {
+const ParentalConsentForm = ({ childAge, onConsent, onBack, loading, externalError }: ParentalConsentFormProps) => {
   const [parentEmail, setParentEmail] = useState('');
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
@@ -114,9 +115,9 @@ const ParentalConsentForm = ({ childAge, onConsent, onBack, loading }: ParentalC
           </div>
         </div>
 
-        {error && (
+        {(error || externalError) && (
           <Alert className="bg-red-900/50 border-red-500/50 text-red-200">
-            <AlertDescription>{error}</AlertDescription>
+            <AlertDescription>{error || externalError}</AlertDescription>
           </Alert>
         )}
 

@@ -344,6 +344,7 @@ const Auth = () => {
           onConsent={handleParentalConsent}
           onBack={() => setSignupStep('age-gate')}
           loading={loading}
+          externalError={error}
         />
       );
     }
