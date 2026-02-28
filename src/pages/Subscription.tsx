@@ -4,16 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { CheckCircle, X, Volume2, BookOpen, Star, Sparkles, Crown, ArrowLeft, Gamepad2, ExternalLink, Apple, CreditCard } from "lucide-react";
+import { CheckCircle, X, Volume2, BookOpen, Star, Sparkles, Crown, ArrowLeft, Gamepad2, Apple, CreditCard } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { upgradeSubscription, cancelSubscription, getUserSubscription, type SubscriptionPlan } from "@/lib/subscription";
 import { 
   isNativePlatform, 
   isIOSPlatform,
-  openStripeCheckoutInBrowser, 
   addBrowserCloseListener,
   pollForSubscriptionUpdate,
-  refreshSubscriptionStatus 
 } from "@/lib/nativePayments";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -161,28 +159,7 @@ export default function Subscription() {
     setLoading(true);
     const planType = readToMeEnabled ? 'premium_plus' : 'premium';
 
-    // Native platform (iOS/Android) - Open Safari/Chrome for Stripe checkout
-    if (isNativePlatform()) {
-      toast({
-        title: "Opening secure checkout...",
-        description: "You'll be redirected to complete payment securely",
-      });
-
-      const result = await openStripeCheckoutInBrowser(planType);
-      
-      if (!result.success) {
-        toast({
-          title: "Error",
-          description: result.error || "Failed to open checkout. Please try again.",
-          variant: "destructive",
-        });
-      }
-      
-      setLoading(false);
-      return;
-    }
-
-    // Web platform - use Stripe in new tab
+    // Web platform only - use Stripe checkout
     toast({
       title: "Redirecting to checkout...",
       description: "Opening secure payment window",
@@ -425,96 +402,84 @@ export default function Subscription() {
                 ))}
               </div>
 
-              <Button
-                onClick={async () => {
-                  setLoading(true);
-                  
-                  // Native platform (iOS/Android) - Open Safari/Chrome for Stripe checkout
-                  if (isNativePlatform()) {
+              {isNativePlatform() ? (
+                <Button
+                  onClick={() => {
                     toast({
-                      title: "Opening secure checkout...",
-                      description: "You'll be redirected to complete payment securely",
+                      title: "Coming Soon!",
+                      description: "Apple In-App Purchase upgrades will be available very soon. Stay tuned!",
+                    });
+                  }}
+                  disabled={loading}
+                  size="xl"
+                  className="w-full bg-black hover:bg-gray-900 text-white font-bold text-xl py-8 rounded-xl shadow-2xl border border-white/20 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+                >
+                  <span className="flex items-center gap-3">
+                    <Apple className="h-7 w-7" />
+                    Upgrade with Apple
+                  </span>
+                </Button>
+              ) : (
+                <Button
+                  onClick={async () => {
+                    setLoading(true);
+                    
+                    toast({
+                      title: "Redirecting to checkout...",
+                      description: "Opening secure payment window",
                     });
 
-                    const result = await openStripeCheckoutInBrowser('premium_plus');
-                    
-                    if (!result.success) {
+                    try {
+                      const deviceId = await getDeviceId();
+                      const { data, error } = await supabase.functions.invoke('create-checkout-session', {
+                        body: { planType: 'premium_plus', deviceId },
+                      });
+
+                      if (error) throw error;
+
+                      if (data?.url) {
+                        const checkoutWindow = window.open(data.url, '_blank');
+                        
+                        if (!checkoutWindow) {
+                          toast({
+                            title: "Popup Blocked",
+                            description: "Please allow popups for this site and try again.",
+                            variant: "destructive",
+                          });
+                        } else {
+                          toast({
+                            title: "Checkout opened",
+                            description: "Complete your purchase in the new window",
+                          });
+                        }
+                        
+                        setLoading(false);
+                      } else {
+                        throw new Error('No checkout URL returned');
+                      }
+                    } catch (error) {
+                      console.error('Upgrade error:', error);
                       toast({
                         title: "Error",
-                        description: result.error || "Failed to open checkout. Please try again.",
+                        description: "Failed to process upgrade. Please try again.",
                         variant: "destructive",
                       });
-                    }
-                    
-                    setLoading(false);
-                    return;
-                  }
-
-                  // Web platform
-                  toast({
-                    title: "Redirecting to checkout...",
-                    description: "Opening secure payment window",
-                  });
-
-                  try {
-                    const deviceId = await getDeviceId();
-                    const { data, error } = await supabase.functions.invoke('create-checkout-session', {
-                      body: { planType: 'premium_plus', deviceId },
-                    });
-
-                    if (error) throw error;
-
-                    if (data?.url) {
-                      const checkoutWindow = window.open(data.url, '_blank');
-                      
-                      if (!checkoutWindow) {
-                        toast({
-                          title: "Popup Blocked",
-                          description: "Please allow popups for this site and try again.",
-                          variant: "destructive",
-                        });
-                      } else {
-                        toast({
-                          title: "Checkout opened",
-                          description: "Complete your purchase in the new window",
-                        });
-                      }
-                      
                       setLoading(false);
-                    } else {
-                      throw new Error('No checkout URL returned');
                     }
-                  } catch (error) {
-                    console.error('Upgrade error:', error);
-                    toast({
-                      title: "Error",
-                      description: "Failed to process upgrade. Please try again.",
-                      variant: "destructive",
-                    });
-                    setLoading(false);
-                  }
-                }}
-                disabled={loading}
-                size="lg"
-                className="w-full bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 hover:from-purple-700 hover:via-pink-700 hover:to-purple-700 text-white font-bold text-lg py-6 shadow-lg hover:shadow-xl transition-all duration-300"
-              >
-                {loading ? "Processing..." : (
-                  <span className="flex items-center gap-2">
-                    {isNativePlatform() ? (
-                      <>
-                        <ExternalLink className="h-5 w-5" />
-                        Continue to secure checkout
-                      </>
-                    ) : (
-                      <>
-                        <Crown className="h-5 w-5" />
-                        Upgrade to Adventure Pass Plus Now
-                        <Sparkles className="h-5 w-5" />
-                      </>
-                    )}
-                  </span>
-                )}
-              </Button>
+                  }}
+                  disabled={loading}
+                  size="lg"
+                  className="w-full bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 hover:from-purple-700 hover:via-pink-700 hover:to-purple-700 text-white font-bold text-lg py-6 shadow-lg hover:shadow-xl transition-all duration-300"
+                >
+                  {loading ? "Processing..." : (
+                    <span className="flex items-center gap-2">
+                      <Crown className="h-5 w-5" />
+                      Upgrade to Adventure Pass Plus Now
+                      <Sparkles className="h-5 w-5" />
+                    </span>
+                  )}
+                </Button>
+              )}
 
               <p className="text-center text-purple-300 text-sm">
                 Perfect for kids who love listening to stories! 🎧
@@ -670,55 +635,49 @@ export default function Subscription() {
                 <span className="text-white font-bold">${totalPrice.toFixed(2)}/month</span>
               </div>
 
-              {/* Primary Payment Button */}
-              <Button
-                onClick={handleSubscribe}
-                disabled={loading}
-                size="lg"
-                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold text-lg py-6"
-              >
-                {loading ? "Processing..." : (
-                  isNativePlatform() ? (
-                    <span className="flex items-center gap-2">
-                      <CreditCard className="h-5 w-5" />
-                      Continue to secure checkout
+              {/* Payment Button - Apple IAP on native, Stripe on web */}
+              {isNativePlatform() ? (
+                <>
+                  <Button
+                    onClick={() => {
+                      toast({
+                        title: "Coming Soon!",
+                        description: "Apple In-App Purchases will be available very soon. Stay tuned!",
+                      });
+                    }}
+                    disabled={loading}
+                    size="xl"
+                    className="w-full bg-black hover:bg-gray-900 text-white font-bold text-xl py-8 rounded-xl shadow-2xl border border-white/20 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+                  >
+                    <span className="flex items-center gap-3">
+                      <Apple className="h-7 w-7" />
+                      Subscribe with Apple
                     </span>
-                  ) : (
-                    <span className="flex items-center gap-2">
-                      <CreditCard className="h-5 w-5" />
-                      Start Your Adventure
-                    </span>
-                  )
-                )}
-              </Button>
-
-              {/* Apple In-App Purchase Option - Visible on all platforms for UI verification */}
-              <Button
-                onClick={() => {
-                  toast({
-                    title: isIOSPlatform() ? "Apple In-App Purchase" : "iOS Only Feature",
-                    description: isIOSPlatform() 
-                      ? "In-App Purchases will be available soon. For now, please use the web checkout option above."
-                      : "Apple In-App Purchases are only available when using the iOS app.",
-                  });
-                }}
-                disabled={loading}
-                variant="ghost"
-                size="sm"
-                className="w-full text-purple-300 hover:text-white hover:bg-white/10 text-sm"
-              >
-                <Apple className="h-4 w-4 mr-1" />
-                Pay with Apple (In-App Purchase)
-              </Button>
-
-              <p className="text-center text-purple-300 text-xs">
-                {isIOSPlatform() 
-                  ? "Web checkout saves you money. Apple charges additional fees for In-App Purchases."
-                  : isNativePlatform()
-                    ? "You'll be redirected to our secure payment page"
-                    : "Apple In-App Purchases available in our iOS app"
-                }
-              </p>
+                  </Button>
+                  <p className="text-center text-purple-300 text-xs">
+                    Secure payment through the App Store
+                  </p>
+                </>
+              ) : (
+                <>
+                  <Button
+                    onClick={handleSubscribe}
+                    disabled={loading}
+                    size="xl"
+                    className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold text-xl py-8 rounded-xl shadow-2xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+                  >
+                    {loading ? "Processing..." : (
+                      <span className="flex items-center gap-3">
+                        <CreditCard className="h-6 w-6" />
+                        Start Your Adventure
+                      </span>
+                    )}
+                  </Button>
+                  <p className="text-center text-purple-300 text-xs">
+                    Secure checkout powered by Stripe
+                  </p>
+                </>
+              )}
 
               <p className="text-center text-purple-300 text-sm">Cancel anytime. No long-term commitment required.</p>
             </div>
