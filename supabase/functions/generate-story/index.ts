@@ -402,7 +402,7 @@ Return ONLY valid JSON (no markdown, no explanations):
             "content-type": "application/json",
           },
           body: JSON.stringify({
-            model: "claude-sonnet-4-20250514",
+            model: "claude-sonnet-4-20250514", // Quiz always uses Sonnet for quality
             max_tokens: 2000,
             messages: [
               { role: "user", content: quizPrompt }
@@ -457,6 +457,29 @@ Return ONLY valid JSON (no markdown, no explanations):
     const ipAddress = req.headers.get('x-forwarded-for')?.split(',')[0] || 
                       req.headers.get('x-real-ip') || 
                       'unknown';
+    
+    // Determine model based on total stories started by this device/user
+    let selectedModel = "claude-sonnet-4-20250514";
+    try {
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
+      
+      // Count total stories started (from story_completions table)
+      const { count, error: countError } = await supabaseAdmin
+        .from('story_completions')
+        .select('*', { count: 'exact', head: true })
+        .eq('device_id', deviceId);
+      
+      if (!countError && count !== null && count >= 20) {
+        selectedModel = "claude-haiku-4-20250414";
+        console.log(`📊 Device ${deviceId} has ${count} stories - using Haiku 4.5`);
+      } else {
+        console.log(`📊 Device ${deviceId} has ${count ?? 0} stories - using Sonnet`);
+      }
+    } catch (modelErr) {
+      console.warn("Failed to check story count for model selection, defaulting to Sonnet:", modelErr);
+    }
     
     // Apply rate limiting with IP-based backup
     if (!rateLimit(deviceId, ipAddress)) {
@@ -592,7 +615,7 @@ ${profile.mode === 'learning' ? '- Embed educational content naturally into the 
         "content-type": "application/json",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-20250514", // Using high-performance model
+        model: selectedModel,
         max_tokens,
         system: SYSTEM_PROMPT,
         messages: [
