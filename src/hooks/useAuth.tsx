@@ -51,7 +51,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         clearTimeout(authTimeout);
         
         // Handle email verification events
@@ -63,6 +63,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           console.log('Token refreshed successfully');
         }
         
+        // Identify user with RevenueCat on sign in
+        if (event === 'SIGNED_IN' && session?.user) {
+          import('@/lib/iapService').then(({ identifyUser }) => {
+            identifyUser(session.user.id);
+          });
+        }
+        
         // Handle sign out - clear state
         if (event === 'SIGNED_OUT') {
           console.log('Session ended, clearing state');
@@ -70,6 +77,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(null);
           // Clear any stale tokens
           localStorage.removeItem('supabase.auth.token');
+          // Logout from RevenueCat
+          import('@/lib/iapService').then(({ logOutRevenueCat }) => {
+            logOutRevenueCat();
+          });
         }
         
         setSession(session);

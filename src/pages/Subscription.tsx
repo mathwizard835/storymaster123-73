@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { CheckCircle, X, Volume2, BookOpen, Star, Sparkles, Crown, ArrowLeft, Gamepad2, Apple, CreditCard } from "lucide-react";
+import { CheckCircle, X, Volume2, BookOpen, Star, Sparkles, Crown, ArrowLeft, Gamepad2, Apple, CreditCard, RotateCcw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { upgradeSubscription, cancelSubscription, getUserSubscription, type SubscriptionPlan } from "@/lib/subscription";
 import { 
@@ -13,6 +13,7 @@ import {
   addBrowserCloseListener,
   pollForSubscriptionUpdate,
 } from "@/lib/nativePayments";
+import { purchasePackage, restorePurchases, getOfferings, type IAPPackage } from "@/lib/iapService";
 
 import { supabase } from "@/integrations/supabase/client";
 import { getDeviceId } from "@/lib/story";
