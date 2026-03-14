@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect } from "react";
+import { initializeRevenueCat, identifyUser, logOutRevenueCat } from "@/lib/iapService";
 import { DeviceProvider } from "@/contexts/DeviceContext";
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 import Index from "./pages/Index";
@@ -68,12 +69,15 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 const App = () => {
-  // Load saved theme on app mount
+  // Load saved theme and initialize RevenueCat on app mount
   useEffect(() => {
     const savedTheme = localStorage.getItem("premium-theme");
     if (savedTheme && savedTheme !== "default") {
       document.documentElement.setAttribute("data-theme", savedTheme);
     }
+
+    // Initialize RevenueCat for native IAP
+    initializeRevenueCat();
   }, []);
 
   return (

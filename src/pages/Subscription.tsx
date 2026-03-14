@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { CheckCircle, X, Volume2, BookOpen, Star, Sparkles, Crown, ArrowLeft, Gamepad2, Apple, CreditCard } from "lucide-react";
+import { CheckCircle, X, Volume2, BookOpen, Star, Sparkles, Crown, ArrowLeft, Gamepad2, Apple, CreditCard, RotateCcw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { upgradeSubscription, cancelSubscription, getUserSubscription, type SubscriptionPlan } from "@/lib/subscription";
 import { 
@@ -13,6 +13,7 @@ import {
   addBrowserCloseListener,
   pollForSubscriptionUpdate,
 } from "@/lib/nativePayments";
+import { purchasePackage, restorePurchases, getOfferings, type IAPPackage } from "@/lib/iapService";
 
 import { supabase } from "@/integrations/supabase/client";
 import { getDeviceId } from "@/lib/story";
@@ -404,11 +405,23 @@ export default function Subscription() {
 
               {isNativePlatform() ? (
                 <Button
-                  onClick={() => {
-                    toast({
-                      title: "Coming Soon!",
-                      description: "Apple In-App Purchase upgrades will be available very soon. Stay tuned!",
-                    });
+                  onClick={async () => {
+                    setLoading(true);
+                    const result = await purchasePackage('premium_plus');
+                    if (result.success) {
+                      toast({
+                        title: "🎉 Upgrade Successful!",
+                        description: "Welcome to Adventure Pass Plus!",
+                      });
+                      await loadCurrentPlan();
+                    } else if (result.error !== 'cancelled') {
+                      toast({
+                        title: "Upgrade Failed",
+                        description: result.error || "Please try again.",
+                        variant: "destructive",
+                      });
+                    }
+                    setLoading(false);
                   }}
                   disabled={loading}
                   size="xl"
@@ -416,7 +429,7 @@ export default function Subscription() {
                 >
                   <span className="flex items-center gap-3">
                     <Apple className="h-7 w-7" />
-                    Upgrade with Apple
+                    {loading ? "Processing..." : "Upgrade with Apple"}
                   </span>
                 </Button>
               ) : (
@@ -639,11 +652,24 @@ export default function Subscription() {
               {isNativePlatform() ? (
                 <>
                   <Button
-                    onClick={() => {
-                      toast({
-                        title: "Coming Soon!",
-                        description: "Apple In-App Purchases will be available very soon. Stay tuned!",
-                      });
+                    onClick={async () => {
+                      setLoading(true);
+                      const planType = readToMeEnabled ? 'premium_plus' : 'premium';
+                      const result = await purchasePackage(planType);
+                      if (result.success) {
+                        toast({
+                          title: "🎉 Subscription Activated!",
+                          description: "Welcome to StoryMaster Adventure Pass!",
+                        });
+                        await loadCurrentPlan();
+                      } else if (result.error !== 'cancelled') {
+                        toast({
+                          title: "Purchase Failed",
+                          description: result.error || "Please try again.",
+                          variant: "destructive",
+                        });
+                      }
+                      setLoading(false);
                     }}
                     disabled={loading}
                     size="xl"
@@ -651,8 +677,33 @@ export default function Subscription() {
                   >
                     <span className="flex items-center gap-3">
                       <Apple className="h-7 w-7" />
-                      Subscribe with Apple
+                      {loading ? "Processing..." : "Subscribe with Apple"}
                     </span>
+                  </Button>
+                  <Button
+                    onClick={async () => {
+                      setLoading(true);
+                      const result = await restorePurchases();
+                      if (result.isSubscribed) {
+                        toast({
+                          title: "✅ Purchases Restored!",
+                          description: "Your subscription has been restored.",
+                        });
+                        await loadCurrentPlan();
+                      } else {
+                        toast({
+                          title: "No Purchases Found",
+                          description: "No previous subscriptions were found for this Apple ID.",
+                        });
+                      }
+                      setLoading(false);
+                    }}
+                    disabled={loading}
+                    variant="ghost"
+                    className="w-full text-purple-300 hover:text-white hover:bg-white/10"
+                  >
+                    <RotateCcw className="h-4 w-4 mr-2" />
+                    Restore Purchases
                   </Button>
                   <p className="text-center text-purple-300 text-xs">
                     Secure payment through the App Store
