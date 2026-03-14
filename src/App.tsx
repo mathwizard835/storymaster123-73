@@ -69,12 +69,15 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 const App = () => {
-  // Load saved theme on app mount
+  // Load saved theme and initialize RevenueCat on app mount
   useEffect(() => {
     const savedTheme = localStorage.getItem("premium-theme");
     if (savedTheme && savedTheme !== "default") {
       document.documentElement.setAttribute("data-theme", savedTheme);
     }
+
+    // Initialize RevenueCat for native IAP
+    initializeRevenueCat();
   }, []);
 
   return (
