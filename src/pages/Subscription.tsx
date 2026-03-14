@@ -405,11 +405,23 @@ export default function Subscription() {
 
               {isNativePlatform() ? (
                 <Button
-                  onClick={() => {
-                    toast({
-                      title: "Coming Soon!",
-                      description: "Apple In-App Purchase upgrades will be available very soon. Stay tuned!",
-                    });
+                  onClick={async () => {
+                    setLoading(true);
+                    const result = await purchasePackage('premium_plus');
+                    if (result.success) {
+                      toast({
+                        title: "🎉 Upgrade Successful!",
+                        description: "Welcome to Adventure Pass Plus!",
+                      });
+                      await loadCurrentPlan();
+                    } else if (result.error !== 'cancelled') {
+                      toast({
+                        title: "Upgrade Failed",
+                        description: result.error || "Please try again.",
+                        variant: "destructive",
+                      });
+                    }
+                    setLoading(false);
                   }}
                   disabled={loading}
                   size="xl"
@@ -417,7 +429,7 @@ export default function Subscription() {
                 >
                   <span className="flex items-center gap-3">
                     <Apple className="h-7 w-7" />
-                    Upgrade with Apple
+                    {loading ? "Processing..." : "Upgrade with Apple"}
                   </span>
                 </Button>
               ) : (
