@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect } from "react";
+import { initializeRevenueCat, identifyUser, logOutRevenueCat } from "@/lib/iapService";
 import { DeviceProvider } from "@/contexts/DeviceContext";
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 import Index from "./pages/Index";
