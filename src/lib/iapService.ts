@@ -1,6 +1,4 @@
 import { Capacitor } from '@capacitor/core';
-import { Purchases, LOG_LEVEL, PURCHASES_ERROR_CODE } from '@revenuecat/purchases-capacitor';
-import { supabase } from '@/integrations/supabase/client';
 
 const REVENUECAT_API_KEY = 'appl_CYSaouklfOSVoVtsNzDQALOTXCL';
 
@@ -18,6 +16,15 @@ const ENTITLEMENT_IDS = {
 
 let isInitialized = false;
 
+// Lazy-load RevenueCat only on native platforms
+let _purchasesModule: any = null;
+const getPurchasesModule = async () => {
+  if (!_purchasesModule) {
+    _purchasesModule = await import('@revenuecat/purchases-capacitor');
+  }
+  return _purchasesModule;
+};
+
 /**
  * Initialize RevenueCat SDK — call once on app startup (native only)
  */
@@ -25,6 +32,7 @@ export const initializeRevenueCat = async (): Promise<void> => {
   if (!Capacitor.isNativePlatform() || isInitialized) return;
 
   try {
+    const { Purchases, LOG_LEVEL } = await getPurchasesModule();
     await Purchases.setLogLevel({ level: LOG_LEVEL.DEBUG });
     await Purchases.configure({
       apiKey: REVENUECAT_API_KEY,
@@ -43,6 +51,7 @@ export const identifyUser = async (userId: string): Promise<void> => {
   if (!Capacitor.isNativePlatform() || !isInitialized) return;
 
   try {
+    const { Purchases } = await getPurchasesModule();
     await Purchases.logIn({ appUserID: userId });
     console.log('✅ RevenueCat user identified:', userId);
   } catch (error) {
@@ -57,6 +66,7 @@ export const logOutRevenueCat = async (): Promise<void> => {
   if (!Capacitor.isNativePlatform() || !isInitialized) return;
 
   try {
+    const { Purchases } = await getPurchasesModule();
     await Purchases.logOut();
   } catch (error) {
     console.error('RevenueCat logout error:', error);
@@ -82,6 +92,7 @@ export const getOfferings = async (): Promise<{
   }
 
   try {
+    const { Purchases } = await getPurchasesModule();
     const offerings = await Purchases.getOfferings();
     const current = offerings.current;
 
@@ -130,6 +141,7 @@ export const purchasePackage = async (
   }
 
   try {
+    const { Purchases, PURCHASES_ERROR_CODE } = await getPurchasesModule();
     const offerings = await Purchases.getOfferings();
     const current = offerings.current;
 
@@ -139,7 +151,7 @@ export const purchasePackage = async (
 
     const targetProductId = PRODUCT_IDS[planType];
     const targetPackage = current.availablePackages.find(
-      (pkg) => pkg.product.identifier === targetProductId
+      (pkg: any) => pkg.product.identifier === targetProductId
     );
 
     if (!targetPackage) {
@@ -166,6 +178,7 @@ export const purchasePackage = async (
 
     return { success: false, error: 'Purchase completed but entitlement not active' };
   } catch (error: any) {
+    const { PURCHASES_ERROR_CODE } = await getPurchasesModule();
     if (error?.code === PURCHASES_ERROR_CODE.PURCHASE_CANCELLED_ERROR) {
       return { success: false, error: 'cancelled' };
     }
@@ -190,6 +203,7 @@ export const checkSubscriptionStatus = async (): Promise<{
   }
 
   try {
+    const { Purchases } = await getPurchasesModule();
     const customerInfo = await Purchases.getCustomerInfo();
     const active = customerInfo.customerInfo.entitlements.active;
 
@@ -221,6 +235,7 @@ export const restorePurchases = async (): Promise<{
   }
 
   try {
+    const { Purchases } = await getPurchasesModule();
     const customerInfo = await Purchases.restorePurchases();
     const active = customerInfo.customerInfo.entitlements.active;
     const isSubscribed = Object.keys(active).length > 0;

@@ -21,7 +21,6 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     rollupOptions: {
-      external: ['@revenuecat/purchases-capacitor'],
       output: {
         manualChunks: undefined,
         assetFileNames: 'assets/[name]-[hash][extname]',
