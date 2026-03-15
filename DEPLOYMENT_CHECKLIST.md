@@ -137,7 +137,7 @@
 - Lovable Support: [If applicable]
 
 **Legal:**
-- Privacy inquiries: support@storymasterquest.com
+- Privacy inquiries: ordinaryheroesentertainment@gmail.com
 
 ## 📞 Support Channels
 
