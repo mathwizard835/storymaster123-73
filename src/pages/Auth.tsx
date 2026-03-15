@@ -99,7 +99,7 @@ const Auth = () => {
         } else if (tokenHash && isSupportedOtpType(type)) {
           const { error: verifyError } = await supabase.auth.verifyOtp({
             token_hash: tokenHash,
-            type,
+            type: type as EmailOtpType,
           });
 
           if (verifyError) throw verifyError;
