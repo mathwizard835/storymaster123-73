@@ -173,7 +173,7 @@ const Auth = () => {
     setError('');
 
     try {
-      const redirectUrl = `${window.location.origin}/auth`;
+      const redirectUrl = getAuthRedirectUrl('/auth');
 
       const { data, error: signUpError } = await supabase.auth.signUp({
         email,
