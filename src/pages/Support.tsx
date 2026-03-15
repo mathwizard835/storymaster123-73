@@ -40,7 +40,7 @@ const Support = () => {
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground mb-4">
-                  Email us at: <a href="mailto:support@storymasterkids.com" className="text-primary hover:underline">support@storymasterkids.com</a>
+                  Email us at: <a href="mailto:ordinaryheroesentertainment@gmail.com" className="text-primary hover:underline">ordinaryheroesentertainment@gmail.com</a>
                 </p>
                 <p className="text-sm text-muted-foreground">
                   We typically respond within 24-48 hours during business days.
