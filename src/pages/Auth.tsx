@@ -64,12 +64,13 @@ const Auth = () => {
       const accessToken = hashParams.get('access_token') || queryParams.get('access_token');
       const refreshToken = hashParams.get('refresh_token') || queryParams.get('refresh_token');
       const tokenHash = hashParams.get('token_hash') || queryParams.get('token_hash');
+      const code = queryParams.get('code');
 
       const supportedOtpTypes: EmailOtpType[] = ['signup', 'recovery', 'invite', 'email_change', 'magiclink'];
       const isSupportedOtpType = (value: string | null): value is EmailOtpType =>
         !!value && supportedOtpTypes.includes(value as EmailOtpType);
 
-      if (!(accessToken && refreshToken) && !(tokenHash && isSupportedOtpType(type))) {
+      if (!(accessToken && refreshToken) && !(tokenHash && isSupportedOtpType(type)) && !code) {
         return;
       }
 
@@ -82,6 +83,7 @@ const Auth = () => {
         if (refreshToken) nativeParams.set('refresh_token', refreshToken);
         if (tokenHash) nativeParams.set('token_hash', tokenHash);
         if (type) nativeParams.set('type', type);
+        if (code) nativeParams.set('code', code);
 
         window.location.href = `storymasterquest://auth?${nativeParams.toString()}`;
 
@@ -104,6 +106,9 @@ const Auth = () => {
           });
 
           if (verifyError) throw verifyError;
+        } else if (code) {
+          const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+          if (exchangeError) throw exchangeError;
         }
 
         if (type === 'invite') {
