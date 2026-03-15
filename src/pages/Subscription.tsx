@@ -657,6 +657,8 @@ export default function Subscription() {
                       const planType = readToMeEnabled ? 'premium_plus' : 'premium';
                       const result = await purchasePackage(planType);
                       if (result.success) {
+                        // Activate subscription directly in Supabase
+                        await activateSubscriptionAfterPurchase(planType);
                         toast({
                           title: "🎉 Subscription Activated!",
                           description: "Welcome to StoryMaster Adventure Pass!",
