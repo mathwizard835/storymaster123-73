@@ -98,7 +98,7 @@ const Auth = () => {
     setLoading(true);
     setError('');
     try {
-      const redirectUrl = `${window.location.origin}/auth`;
+      const redirectUrl = getAuthRedirectUrl('/auth');
       const { error } = await supabase.auth.resend({
         type: 'signup',
         email: email,
