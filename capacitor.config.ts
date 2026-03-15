@@ -12,8 +12,12 @@ const config: CapacitorConfig = {
     },
     StatusBar: {
       style: 'dark',
-      backgroundColor: '#1a1a2e'
+      backgroundColor: '#1a1a2e',
+      overlaysWebView: true
     }
+  },
+  ios: {
+    contentInset: 'always'
   },
   server: {
     androidScheme: 'https'

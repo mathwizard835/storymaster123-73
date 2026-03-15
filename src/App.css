@@ -1,1 +1,6 @@
- /* App-level CSS - kept minimal as styles are in index.css */
+/* Safe area top padding — keeps content below notch/Dynamic Island
+   while allowing the background color to extend edge-to-edge */
+#root {
+  padding-top: env(safe-area-inset-top, 0px);
+  min-height: 100dvh;
+}
