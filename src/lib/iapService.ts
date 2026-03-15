@@ -272,19 +272,15 @@ export const activateSubscriptionAfterPurchase = async (
     }
 
     // Insert new active subscription
-    const insertData: Record<string, any> = {
-      device_id: deviceId,
-      plan_id: plan.id,
-      status: 'active',
-      starts_at: new Date().toISOString(),
-    };
-    if (user) {
-      insertData.user_id = user.id;
-    }
-
     const { error } = await supabase
       .from('user_subscriptions')
-      .insert([insertData]);
+      .insert([{
+        device_id: deviceId,
+        plan_id: plan.id,
+        status: 'active' as const,
+        starts_at: new Date().toISOString(),
+        user_id: user?.id || null,
+      }]);
 
     if (error) {
       console.error('Failed to activate subscription in DB:', error);
