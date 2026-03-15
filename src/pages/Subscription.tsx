@@ -13,7 +13,7 @@ import {
   addBrowserCloseListener,
   pollForSubscriptionUpdate,
 } from "@/lib/nativePayments";
-import { purchasePackage, restorePurchases, getOfferings, type IAPPackage } from "@/lib/iapService";
+import { purchasePackage, restorePurchases, getOfferings, activateSubscriptionAfterPurchase, type IAPPackage } from "@/lib/iapService";
 
 import { supabase } from "@/integrations/supabase/client";
 import { getDeviceId } from "@/lib/story";
