@@ -14,6 +14,7 @@ import { checkIfBanned } from '@/lib/banCheck';
 import heroPortal from '@/assets/hero-portal.jpg';
 import AgeGateForm from '@/components/auth/AgeGateForm';
 import ParentalConsentForm from '@/components/auth/ParentalConsentForm';
+import { getAuthRedirectUrl } from '@/lib/authRedirect';
 
 type SignupStep = 'credentials' | 'age-gate' | 'parental-consent';
 
