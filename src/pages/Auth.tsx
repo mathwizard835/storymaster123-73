@@ -59,6 +59,26 @@ const Auth = () => {
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
       const type = hashParams.get('type');
       const accessToken = hashParams.get('access_token');
+      const refreshToken = hashParams.get('refresh_token');
+      
+      // If we have auth tokens, try to open the native app via custom URL scheme.
+      // This handles the case where Supabase redirects here after email verification
+      // and Universal Links didn't intercept (iOS doesn't intercept server-side redirects).
+      if (accessToken && refreshToken) {
+        const nativeUrl = `storymasterquest://auth${window.location.hash}`;
+        
+        // Try opening the native app; if installed, it will handle the tokens.
+        // Use a hidden iframe to avoid navigating away if the scheme isn't registered.
+        const iframe = document.createElement('iframe');
+        iframe.style.display = 'none';
+        iframe.src = nativeUrl;
+        document.body.appendChild(iframe);
+        
+        // Clean up the iframe after a short delay
+        setTimeout(() => {
+          document.body.removeChild(iframe);
+        }, 500);
+      }
       
       if (type === 'invite' && accessToken) {
         toast({
