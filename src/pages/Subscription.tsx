@@ -688,6 +688,8 @@ export default function Subscription() {
                       setLoading(true);
                       const result = await restorePurchases();
                       if (result.isSubscribed) {
+                        // Also activate in Supabase when restoring
+                        await activateSubscriptionAfterPurchase('premium');
                         toast({
                           title: "✅ Purchases Restored!",
                           description: "Your subscription has been restored.",
