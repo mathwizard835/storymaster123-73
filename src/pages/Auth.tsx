@@ -57,51 +57,78 @@ const Auth = () => {
     
     const handleAuthCallback = async () => {
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
-      const type = hashParams.get('type');
-      const accessToken = hashParams.get('access_token');
-      const refreshToken = hashParams.get('refresh_token');
-      
-      // If we have auth tokens, try to open the native app via custom URL scheme.
-      // This handles the case where Supabase redirects here after email verification
-      // and Universal Links didn't intercept (iOS doesn't intercept server-side redirects).
-      if (accessToken && refreshToken) {
-        const nativeUrl = `storymasterquest://auth${window.location.hash}`;
-        
-        // Try opening the native app; if installed, it will handle the tokens.
-        // Use a hidden iframe to avoid navigating away if the scheme isn't registered.
-        const iframe = document.createElement('iframe');
-        iframe.style.display = 'none';
-        iframe.src = nativeUrl;
-        document.body.appendChild(iframe);
-        
-        // Clean up the iframe after a short delay
-        setTimeout(() => {
-          document.body.removeChild(iframe);
-        }, 500);
-      }
-      
-      if (type === 'invite' && accessToken) {
-        toast({
-          title: "Welcome!",
-          description: "Please set your password to complete your account setup.",
-        });
-        setTimeout(() => {
-          navigate('/reset-password?type=invite');
-        }, 500);
+      const queryParams = new URLSearchParams(window.location.search);
+
+      const type = hashParams.get('type') || queryParams.get('type');
+      const accessToken = hashParams.get('access_token') || queryParams.get('access_token');
+      const refreshToken = hashParams.get('refresh_token') || queryParams.get('refresh_token');
+      const tokenHash = hashParams.get('token_hash') || queryParams.get('token_hash');
+
+      const supportedOtpTypes: EmailOtpType[] = ['signup', 'recovery', 'invite', 'email_change', 'magiclink'];
+      const isSupportedOtpType = (value: string | null): value is EmailOtpType =>
+        !!value && supportedOtpTypes.includes(value as EmailOtpType);
+
+      if (!(accessToken && refreshToken) && !(tokenHash && isSupportedOtpType(type))) {
         return;
       }
-      
-      if (type === 'signup' && accessToken) {
+
+      const isIosBrowser = /iPad|iPhone|iPod/.test(window.navigator.userAgent);
+
+      // Try handing off auth callback to native app first (for iOS Safari web fallback case).
+      if (isIosBrowser) {
+        const nativeParams = new URLSearchParams();
+        if (accessToken) nativeParams.set('access_token', accessToken);
+        if (refreshToken) nativeParams.set('refresh_token', refreshToken);
+        if (tokenHash) nativeParams.set('token_hash', tokenHash);
+        if (type) nativeParams.set('type', type);
+
+        window.location.href = `storymasterquest://auth?${nativeParams.toString()}`;
+
+        // Give iOS a moment to switch to native app before running browser fallback.
+        await new Promise((resolve) => setTimeout(resolve, 1200));
+      }
+
+      try {
+        if (accessToken && refreshToken) {
+          const { error: setSessionError } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+
+          if (setSessionError) throw setSessionError;
+        } else if (tokenHash && isSupportedOtpType(type)) {
+          const { error: verifyError } = await supabase.auth.verifyOtp({
+            token_hash: tokenHash,
+            type,
+          });
+
+          if (verifyError) throw verifyError;
+        }
+
+        if (type === 'invite') {
+          toast({
+            title: "Welcome!",
+            description: "Please set your password to complete your account setup.",
+          });
+          navigate('/reset-password?type=invite');
+          return;
+        }
+
+        if (type === 'recovery') {
+          navigate('/reset-password');
+          return;
+        }
+
         toast({
           title: "Email verified!",
           description: "Redirecting to your dashboard...",
         });
-        setTimeout(() => {
-          navigate('/dashboard');
-        }, 1500);
+        navigate('/dashboard');
+      } catch (callbackError) {
+        console.error('[Auth] Failed to process auth callback:', callbackError);
       }
     };
-    
+
     checkUser();
     handleAuthCallback();
   }, [navigate, toast]);
