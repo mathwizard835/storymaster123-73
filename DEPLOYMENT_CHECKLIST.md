@@ -141,7 +141,7 @@
 
 ## 📞 Support Channels
 
-- Email: support@storymasterquest.com
+- Email: ordinaryheroesentertainment@gmail.com
 - Support page: /support
 - Response time: 24-48 hours
 
