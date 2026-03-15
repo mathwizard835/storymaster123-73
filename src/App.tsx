@@ -70,6 +70,14 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+const DeepLinkInitializer = () => {
+  const navigate = useNavigate();
+  useEffect(() => {
+    initDeepLinkHandler(navigate);
+  }, [navigate]);
+  return null;
+};
+
 const App = () => {
   // Load saved theme and initialize RevenueCat on app mount
   useEffect(() => {
@@ -90,6 +98,7 @@ const App = () => {
             <Toaster />
             <Sonner />
             <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+              <DeepLinkInitializer />
               <Routes>
                 <Route path="/auth" element={<PublicRoute><Auth /></PublicRoute>} />
                 <Route path="/reset-password" element={<ResetPassword />} />
