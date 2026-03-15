@@ -2,10 +2,11 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect } from "react";
 import { initializeRevenueCat, identifyUser, logOutRevenueCat } from "@/lib/iapService";
+import { initDeepLinkHandler } from "@/lib/deepLinkHandler";
 import { DeviceProvider } from "@/contexts/DeviceContext";
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 import Index from "./pages/Index";
@@ -68,6 +69,14 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+const DeepLinkInitializer = () => {
+  const navigate = useNavigate();
+  useEffect(() => {
+    initDeepLinkHandler(navigate);
+  }, [navigate]);
+  return null;
+};
+
 const App = () => {
   // Load saved theme and initialize RevenueCat on app mount
   useEffect(() => {
@@ -88,6 +97,7 @@ const App = () => {
             <Toaster />
             <Sonner />
             <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+              <DeepLinkInitializer />
               <Routes>
                 <Route path="/auth" element={<PublicRoute><Auth /></PublicRoute>} />
                 <Route path="/reset-password" element={<ResetPassword />} />

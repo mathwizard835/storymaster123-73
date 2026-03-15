@@ -14,6 +14,7 @@ import { checkIfBanned } from '@/lib/banCheck';
 import heroPortal from '@/assets/hero-portal.jpg';
 import AgeGateForm from '@/components/auth/AgeGateForm';
 import ParentalConsentForm from '@/components/auth/ParentalConsentForm';
+import { getAuthRedirectUrl } from '@/lib/authRedirect';
 
 type SignupStep = 'credentials' | 'age-gate' | 'parental-consent';
 
@@ -97,7 +98,7 @@ const Auth = () => {
     setLoading(true);
     setError('');
     try {
-      const redirectUrl = `${window.location.origin}/auth`;
+      const redirectUrl = getAuthRedirectUrl('/auth');
       const { error } = await supabase.auth.resend({
         type: 'signup',
         email: email,
@@ -172,7 +173,7 @@ const Auth = () => {
     setError('');
 
     try {
-      const redirectUrl = `${window.location.origin}/auth`;
+      const redirectUrl = getAuthRedirectUrl('/auth');
 
       const { data, error: signUpError } = await supabase.auth.signUp({
         email,
@@ -298,7 +299,7 @@ const Auth = () => {
         return;
       }
 
-      const redirectUrl = `${window.location.origin}/reset-password`;
+      const redirectUrl = getAuthRedirectUrl('/reset-password');
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: redirectUrl
       });
