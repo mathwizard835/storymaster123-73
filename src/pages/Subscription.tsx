@@ -409,6 +409,7 @@ export default function Subscription() {
                     setLoading(true);
                     const result = await purchasePackage('premium_plus');
                     if (result.success) {
+                      await activateSubscriptionAfterPurchase('premium_plus');
                       toast({
                         title: "🎉 Upgrade Successful!",
                         description: "Welcome to Adventure Pass Plus!",
