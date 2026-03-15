@@ -117,7 +117,7 @@ Start your adventure today and become the hero of your own story!
 
 **Support URL:** https://storymasterquest.com/support
 
-**Support Email:** support@storymasterquest.com
+**Support Email:** ordinaryheroesentertainment@gmail.com
 
 **Privacy Policy URL:** https://storymasterquest.com/privacy
 

@@ -40,7 +40,7 @@ const Support = () => {
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground mb-4">
-                  Email us at: <a href="mailto:support@storymasterkids.com" className="text-primary hover:underline">support@storymasterkids.com</a>
+                  Email us at: <a href="mailto:ordinaryheroesentertainment@gmail.com" className="text-primary hover:underline">ordinaryheroesentertainment@gmail.com</a>
                 </p>
                 <p className="text-sm text-muted-foreground">
                   We typically respond within 24-48 hours during business days.
@@ -108,7 +108,7 @@ const Support = () => {
                 <div>
                   <h3 className="font-semibold mb-2 text-foreground">Can I delete my account?</h3>
                   <p className="text-muted-foreground text-sm">
-                    Yes. Contact support at support@storymasterkids.com and we'll help you delete your account and all associated data.
+                    Yes. Contact support at ordinaryheroesentertainment@gmail.com and we'll help you delete your account and all associated data.
                   </p>
                 </div>
               </CardContent>
