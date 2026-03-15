@@ -1,5 +1,3 @@
-import { App as CapApp, URLOpenListenerEvent } from '@capacitor/app';
-import { Capacitor } from '@capacitor/core';
 import type { EmailOtpType } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -23,10 +21,20 @@ function navigateAfterAuth(type: string | null, navigate: (path: string) => void
  * When iOS opens the app via a Universal Link (e.g. Supabase auth callback),
  * this extracts auth params from the URL and finalizes the session.
  */
-export function initDeepLinkHandler(navigate: (path: string) => void) {
+export async function initDeepLinkHandler(navigate: (path: string) => void) {
+  let Capacitor: typeof import('@capacitor/core').Capacitor;
+  try {
+    const core = await import('@capacitor/core');
+    Capacitor = core.Capacitor;
+  } catch {
+    return;
+  }
+
   if (!Capacitor.isNativePlatform()) return;
 
-  CapApp.addListener('appUrlOpen', async (event: URLOpenListenerEvent) => {
+  const { App: CapApp } = await import('@capacitor/app');
+
+  CapApp.addListener('appUrlOpen', async (event) => {
     console.log('[DeepLink] App opened with URL:', event.url);
 
     try {
