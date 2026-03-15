@@ -1,7 +1,7 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.ordinaryheroes.storymaster',
+  appId: 'com.ordinaryheroes.storymasterkids',
   appName: 'StoryMaster',
   webDir: 'dist',
   plugins: {
