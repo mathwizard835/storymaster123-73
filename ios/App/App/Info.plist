@@ -45,6 +45,8 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>UIStatusBarStyle</key>
+	<string>UIStatusBarStyleLightContent</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>StoryMaster Quest needs access to your photo library to let you customize your character with photos.</string>
 	<key>NSCameraUsageDescription</key>
