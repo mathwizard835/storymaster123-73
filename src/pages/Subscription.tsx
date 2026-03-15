@@ -13,7 +13,7 @@ import {
   addBrowserCloseListener,
   pollForSubscriptionUpdate,
 } from "@/lib/nativePayments";
-import { purchasePackage, restorePurchases, getOfferings, type IAPPackage } from "@/lib/iapService";
+import { purchasePackage, restorePurchases, getOfferings, activateSubscriptionAfterPurchase, type IAPPackage } from "@/lib/iapService";
 
 import { supabase } from "@/integrations/supabase/client";
 import { getDeviceId } from "@/lib/story";
@@ -409,6 +409,7 @@ export default function Subscription() {
                     setLoading(true);
                     const result = await purchasePackage('premium_plus');
                     if (result.success) {
+                      await activateSubscriptionAfterPurchase('premium_plus');
                       toast({
                         title: "🎉 Upgrade Successful!",
                         description: "Welcome to Adventure Pass Plus!",
@@ -657,6 +658,8 @@ export default function Subscription() {
                       const planType = readToMeEnabled ? 'premium_plus' : 'premium';
                       const result = await purchasePackage(planType);
                       if (result.success) {
+                        // Activate subscription directly in Supabase
+                        await activateSubscriptionAfterPurchase(planType);
                         toast({
                           title: "🎉 Subscription Activated!",
                           description: "Welcome to StoryMaster Adventure Pass!",
@@ -685,6 +688,8 @@ export default function Subscription() {
                       setLoading(true);
                       const result = await restorePurchases();
                       if (result.isSubscribed) {
+                        // Also activate in Supabase when restoring
+                        await activateSubscriptionAfterPurchase('premium');
                         toast({
                           title: "✅ Purchases Restored!",
                           description: "Your subscription has been restored.",

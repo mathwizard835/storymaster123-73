@@ -224,6 +224,78 @@ export const checkSubscriptionStatus = async (): Promise<{
 };
 
 /**
+ * Activate subscription in Supabase after successful IAP purchase.
+ * This is the critical step — don't rely solely on RevenueCat webhooks.
+ */
+export const activateSubscriptionAfterPurchase = async (
+  planType: 'premium' | 'premium_plus'
+): Promise<boolean> => {
+  try {
+    const { supabase } = await import('@/integrations/supabase/client');
+    const { getDeviceId } = await import('@/lib/story');
+
+    const deviceId = await getDeviceId();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    // Get the matching plan from subscription_plans table
+    const planNameMap: Record<string, string> = {
+      premium: 'premium',
+      premium_plus: 'premium_plus',
+    };
+    const planPriceMap: Record<string, number> = {
+      premium: 6.99,
+      premium_plus: 7.99,
+    };
+
+    const { data: plan } = await supabase
+      .from('subscription_plans')
+      .select('id')
+      .eq('price_monthly', planPriceMap[planType])
+      .limit(1)
+      .maybeSingle();
+
+    if (!plan) {
+      console.error('Could not find plan for type:', planType);
+      return false;
+    }
+
+    // Cancel any existing active subscriptions for this user/device
+    const cancelQuery = supabase
+      .from('user_subscriptions')
+      .update({ status: 'cancelled' })
+      .eq('status', 'active');
+
+    if (user) {
+      await cancelQuery.or(`device_id.eq.${deviceId},user_id.eq.${user.id}`);
+    } else {
+      await cancelQuery.eq('device_id', deviceId);
+    }
+
+    // Insert new active subscription
+    const { error } = await supabase
+      .from('user_subscriptions')
+      .insert([{
+        device_id: deviceId,
+        plan_id: plan.id,
+        status: 'active' as const,
+        starts_at: new Date().toISOString(),
+        user_id: user?.id || null,
+      }]);
+
+    if (error) {
+      console.error('Failed to activate subscription in DB:', error);
+      return false;
+    }
+
+    console.log('✅ Subscription activated in Supabase for plan:', planType);
+    return true;
+  } catch (error) {
+    console.error('Error activating subscription:', error);
+    return false;
+  }
+};
+
+/**
  * Restore purchases (required by Apple)
  */
 export const restorePurchases = async (): Promise<{
