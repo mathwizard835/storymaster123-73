@@ -1,0 +1,18 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "TEAM_ID.com.ordinaryheroes.storymaster",
+        "paths": [
+          "/auth",
+          "/auth/*",
+          "/reset-password",
+          "/reset-password/*",
+          "/dashboard",
+          "/dashboard/*"
+        ]
+      }
+    ]
+  }
+}
