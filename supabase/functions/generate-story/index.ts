@@ -488,6 +488,46 @@ Return ONLY valid JSON (no markdown, no explanations):
         { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    // Abuse detection: flag devices with excessive daily usage for admin review
+    try {
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
+
+      const todayStart = new Date();
+      todayStart.setUTCHours(0, 0, 0, 0);
+
+      // Count scenes generated today for this device
+      const { count: todayCount } = await supabaseAdmin
+        .from('story_completions')
+        .select('*', { count: 'exact', head: true })
+        .eq('device_id', deviceId)
+        .gte('completed_at', todayStart.toISOString());
+
+      const DAILY_ABUSE_THRESHOLD = 50;
+
+      if (todayCount !== null && todayCount >= DAILY_ABUSE_THRESHOLD) {
+        // Check if already flagged today to avoid duplicate entries
+        const { count: existingFlags } = await supabaseAdmin
+          .from('content_violations')
+          .select('*', { count: 'exact', head: true })
+          .eq('device_id', deviceId)
+          .eq('violation_type', 'excessive_usage')
+          .gte('created_at', todayStart.toISOString());
+
+        if (!existingFlags || existingFlags === 0) {
+          await supabaseAdmin.from('content_violations').insert({
+            device_id: deviceId,
+            violation_type: 'excessive_usage',
+            content: `Device generated ${todayCount}+ stories in a single day. IP: ${ipAddress}`,
+          });
+          console.warn(`🚨 Abuse flag: device ${deviceId} hit ${todayCount} stories today`);
+        }
+      }
+    } catch (abuseErr) {
+      console.warn("Abuse detection check failed (non-blocking):", abuseErr);
+    }
     
     // Validate profile data
     if (!validateProfileData(body?.profile)) {
