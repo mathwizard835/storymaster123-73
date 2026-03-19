@@ -62,6 +62,9 @@ const Dashboard = () => {
           const stories = await loadRecentStoriesFromDatabase();
           setRecentStories(stories);
           
+          const totalCount = await getTotalStoryCountFromDatabase();
+          setTotalStoryCount(totalCount);
+          
           // Load in-progress stories separately
           const inProgress = await loadInProgressStoriesFromDatabase();
           setInProgressStories(inProgress);
