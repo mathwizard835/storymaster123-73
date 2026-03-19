@@ -40,6 +40,52 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
+  // === JWT AUTHENTICATION ===
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader?.startsWith('Bearer ')) {
+    return new Response(
+      JSON.stringify({ error: 'Authentication required' }),
+      { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+  const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
+  const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+    global: { headers: { Authorization: authHeader } }
+  });
+
+  const token = authHeader.replace('Bearer ', '');
+  const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
+  if (claimsError || !claimsData?.claims) {
+    return new Response(
+      JSON.stringify({ error: 'Invalid or expired token' }),
+      { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
+  const userId = claimsData.claims.sub as string;
+
+  // === SUBSCRIPTION CHECK: Read-to-Me requires Adventure Pass Plus ===
+  const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+  const { data: activeSub } = await supabaseAdmin
+    .from('user_subscriptions')
+    .select('id, plan_id, subscription_plans(name)')
+    .eq('user_id', userId)
+    .eq('status', 'active')
+    .limit(1)
+    .maybeSingle();
+
+  const planName = (activeSub as any)?.subscription_plans?.name?.toLowerCase() || '';
+  if (!planName.includes('premium_plus') && planName !== 'premium plus') {
+    return new Response(
+      JSON.stringify({ error: 'Read-to-Me requires an Adventure Pass Plus subscription.' }),
+      { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
   try {
     const { text, voiceId } = await req.json();
 
