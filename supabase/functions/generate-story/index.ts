@@ -540,8 +540,8 @@ Return ONLY valid JSON (no markdown, no explanations):
         .eq('user_id', userId);
       
       if (!countError && count !== null && count >= 20) {
-        selectedModel = "claude-3-5-haiku-latest";
-        console.log(`📊 User ${userId} has ${count} stories - using Haiku`);
+        selectedModel = "claude-haiku-4-5-20251001";
+        console.log(`📊 User ${userId} has ${count} stories - using Haiku 4.5`);
       } else {
         console.log(`📊 User ${userId} has ${count ?? 0} stories - using Sonnet`);
       }
