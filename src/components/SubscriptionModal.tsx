@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, Star, Crown, Zap } from "lucide-react";
-import { getSubscriptionPlans, upgradeSubscription, type SubscriptionPlan } from "@/lib/subscription";
+import { getSubscriptionPlans, type SubscriptionPlan } from "@/lib/subscription";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 
 interface SubscriptionModalProps {
   open: boolean;
@@ -15,8 +16,8 @@ interface SubscriptionModalProps {
 
 export const SubscriptionModal = ({ open, onOpenChange, currentPlan }: SubscriptionModalProps) => {
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
-  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (open) {
@@ -29,24 +30,10 @@ export const SubscriptionModal = ({ open, onOpenChange, currentPlan }: Subscript
     setPlans(planData);
   };
 
-  const handleUpgrade = async (planId: string) => {
-    setLoading(true);
-    const success = await upgradeSubscription(planId);
-    
-    if (success) {
-      toast({
-        title: "Subscription Updated!",
-        description: "Your subscription has been upgraded successfully.",
-      });
-      onOpenChange(false);
-    } else {
-      toast({
-        title: "Upgrade Failed",
-        description: "Unable to upgrade subscription. Please try again.",
-        variant: "destructive",
-      });
-    }
-    setLoading(false);
+  const handleUpgrade = () => {
+    // Route to the subscription page which handles Stripe checkout / Apple IAP
+    onOpenChange(false);
+    navigate('/subscription');
   };
 
   const getPlanIcon = (planName: string) => {
@@ -178,11 +165,11 @@ export const SubscriptionModal = ({ open, onOpenChange, currentPlan }: Subscript
                 <Button 
                   className="w-full"
                   variant={plan.name === 'premium' ? 'default' : 'outline'}
-                  disabled={loading || currentPlan?.id === plan.id}
-                  onClick={() => handleUpgrade(plan.id)}
+                  disabled={currentPlan?.id === plan.id}
+                  onClick={() => handleUpgrade()}
                 >
                   {currentPlan?.id === plan.id ? 'Current Plan' : 
-                   plan.name === 'free' ? 'Downgrade' : 'Upgrade'}
+                   plan.price_monthly > 0 ? 'Subscribe' : 'Current Plan'}
                 </Button>
               </CardContent>
             </Card>
