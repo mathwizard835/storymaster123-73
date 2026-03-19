@@ -515,7 +515,7 @@ const Dashboard = () => {
               <div className="flex items-center justify-between mb-4">
                 <h2 className="font-heading text-2xl font-bold flex items-center gap-2">
                   <BookOpen className="h-6 w-6 text-blue-500" />
-                  Recent Stories ({recentStories.length + completedStories.length})
+                  Recent Stories ({totalStoryCount || recentStories.length + completedStories.length})
                 </h2>
                 <Button 
                   variant="ghost" 
