@@ -1,69 +1,108 @@
 
 
-## Fraud and Abuse Prevention Plan
+# Integrating Real Apple In-App Purchases
 
-### Vulnerabilities Identified
+## Overview
 
-1. **CRITICAL: `upgradeSubscription()` lets anyone self-activate a paid plan** — It inserts directly into `user_subscriptions` with any `plan_id`, no payment verification. Any user can open the browser console and call this to get unlimited stories for free.
+To add real IAP for your $6.99 (Adventure Pass) and $7.99 (Adventure Pass Plus) subscriptions on iOS, the recommended approach is **RevenueCat** -- a service that wraps Apple's StoreKit and handles receipt validation, subscription status, and webhooks. This avoids you having to build complex server-side receipt verification yourself.
 
-2. **CRITICAL: `generate-story` has `verify_jwt = false`** — Anyone on the internet can call the edge function without authentication, burning Anthropic API credits. The rate limiter is in-memory and resets on cold starts.
+## Architecture
 
-3. **HIGH: Device ID is client-generated and stored in localStorage** — Users can clear storage or use incognito to get a new device ID, resetting their free story count.
+```text
+iOS App (Capacitor)
+  |
+  v
+RevenueCat SDK (@revenuecat/purchases-capacitor)
+  |
+  v
+Apple App Store (StoreKit)
+  |
+  v
+RevenueCat Server (receipt validation)
+  |
+  v
+Supabase Webhook (updates user_subscriptions table)
+```
 
-4. **HIGH: Story limits enforced client-side only** — The edge function does not check subscription status or story limits before calling the Anthropic API. All limit checks happen in the browser and can be bypassed.
+## Steps
 
-5. **MEDIUM: Multi-account abuse** — Users can create multiple accounts with different emails to get 3 free stories each. No IP or fingerprint throttling on sign-up.
+### 1. App Store Connect Setup (Manual -- done by you)
 
-6. **MEDIUM: `SubscriptionModal` calls `upgradeSubscription` directly** — The web upgrade modal bypasses Stripe entirely by inserting a subscription row without payment.
+- Create your app in [App Store Connect](https://appstoreconnect.apple.com)
+- Go to **Subscriptions** and create a Subscription Group (e.g., "Adventure Pass")
+- Add two auto-renewable subscription products:
+  - **Product ID**: `adventure_pass` -- $6.99/month
+  - **Product ID**: `adventure_pass_plus` -- $7.99/month
+- Fill in display names, descriptions, and localization
 
----
+### 2. RevenueCat Setup (Manual -- done by you)
 
-### Fix Plan
+- Create a free account at [revenuecat.com](https://www.revenuecat.com)
+- Create a new project and add your iOS app
+- Paste your App Store Connect **Shared Secret** and **App Store Connect API Key** into RevenueCat
+- In RevenueCat, create:
+  - **Products**: Map `adventure_pass` and `adventure_pass_plus`
+  - **Entitlements**: Create `premium` and `premium_plus` entitlements
+  - **Offerings**: Create a "default" offering with both packages
+- Copy your **RevenueCat Public API Key** (starts with `appl_`)
 
-#### 1. Enable JWT verification on `generate-story`
-- Set `verify_jwt = true` in `supabase/config.toml` for `generate-story` and `text-to-speech`
-- The client already sends the auth token via `supabase.functions.invoke()`, so no client changes needed
+### 3. Install the Capacitor Plugin
 
-#### 2. Server-side story limit enforcement in `generate-story`
-- Before calling Anthropic, query `user_stories` count for the authenticated user (from JWT `sub`) in the last 30 days
-- Query `user_subscriptions` to check if they have an active paid plan
-- If free user and count >= 3, return 403 with "Story limit reached"
-- This makes client-side bypasses irrelevant
+- Add `@revenuecat/purchases-capacitor` as a dependency
+- This gives you a JS/TS API to interact with StoreKit from your Capacitor app
 
-#### 3. Remove `upgradeSubscription()` from client-side code
-- Delete the `upgradeSubscription` function from `src/lib/subscription.ts`
-- Remove its usage from `SubscriptionModal.tsx` (the modal should only link to Stripe checkout or native IAP)
-- Subscriptions should ONLY be activated by:
-  - Stripe webhook (web purchases)
-  - `activateSubscriptionAfterPurchase` after verified RevenueCat purchase (iOS)
-- This closes the biggest fraud vector
+### 4. Create IAP Service (`src/lib/iapService.ts`)
 
-#### 4. Add server-side subscription validation
-- In the `generate-story` edge function, after JWT verification, check the user's subscription status using the service role key
-- Use `user_id` from the JWT for story counting instead of the client-provided `device_id`
-- This prevents device ID manipulation
+A new module that:
+- Initializes RevenueCat SDK with your public API key on app startup
+- Fetches available packages (offerings) to get real prices from Apple
+- Handles the purchase flow (calls `Purchases.purchasePackage()`)
+- Checks subscription status via `Purchases.getCustomerInfo()`
+- Identifies the user with RevenueCat (using Supabase user ID)
 
-#### 5. Rate limit sign-ups by IP (edge case)
-- Add a simple check in the `generate-story` function: if a user has created an account in the last hour AND already hit their free limit, throttle more aggressively
-- This is lower priority since JWT + server-side limits already block most abuse
+### 5. Create Supabase Webhook Edge Function
 
----
+- Create `supabase/functions/revenuecat-webhook/index.ts`
+- RevenueCat sends webhook events (purchase, renewal, cancellation, expiration) to this endpoint
+- The webhook updates the `user_subscriptions` table in your database
+- This keeps your backend in sync with Apple's subscription state
+- Add your RevenueCat webhook secret as a Supabase secret
 
-### Files to Change
+### 6. Update Subscription Page (`src/pages/Subscription.tsx`)
 
-| File | Change |
-|---|---|
-| `supabase/config.toml` | Set `verify_jwt = true` for `generate-story` and `text-to-speech` |
-| `supabase/functions/generate-story/index.ts` | Add server-side story limit check using JWT user ID and subscription status |
-| `src/lib/subscription.ts` | Remove `upgradeSubscription()` function |
-| `src/components/SubscriptionModal.tsx` | Remove direct upgrade call; route to Stripe checkout instead |
-| `supabase/functions/text-to-speech/index.ts` | Add subscription check (Read-to-Me is a paid feature) |
+- On native: fetch real prices from RevenueCat offerings (so Apple-approved prices display correctly for all locales)
+- Replace the "Coming Soon" toast with actual `purchasePackage()` calls
+- After purchase, verify entitlement and update local state
+- Handle purchase errors (cancelled, already owned, etc.)
 
-### What This Prevents
+### 7. Update App Initialization (`src/App.tsx`)
 
-- Free users bypassing story limits via console/API calls
-- Users self-activating paid plans without payment
-- Unauthenticated API abuse burning Anthropic credits
-- Device ID manipulation to reset free story counts
-- Multi-account abuse is mitigated by server-side per-user limits tied to authenticated identity
+- Initialize RevenueCat SDK on app start (only on native platform)
+- Set the user ID when authenticated so purchases are tied to accounts
+
+### 8. Sync with Capacitor
+
+After implementation, you'll need to:
+```bash
+npm run build && npx cap sync ios && npx cap open ios
+```
+
+## Files to Create/Modify
+
+| File | Action | Purpose |
+|------|--------|---------|
+| `src/lib/iapService.ts` | Create | RevenueCat SDK wrapper |
+| `supabase/functions/revenuecat-webhook/index.ts` | Create | Webhook to sync subscription status |
+| `src/pages/Subscription.tsx` | Modify | Wire up real purchase buttons |
+| `src/App.tsx` | Modify | Initialize RevenueCat on startup |
+| `supabase/config.toml` | Modify | Add webhook function config |
+
+## What You Need to Do First (Before I Implement)
+
+1. **Create products in App Store Connect** (the two subscription products above)
+2. **Create a RevenueCat account** and configure it with your App Store Connect credentials
+3. **Get your RevenueCat Public API Key** (the `appl_...` key) -- I'll need this to add to the code
+4. **Set up the RevenueCat webhook URL** -- I'll create the edge function first, then you point RevenueCat's webhook to it
+
+Would you like to proceed? Once you have the RevenueCat API key ready, I can implement all the code changes.
 

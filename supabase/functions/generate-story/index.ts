@@ -328,6 +328,39 @@ serve(async (req) => {
     );
   }
 
+  // === JWT AUTHENTICATION ===
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader?.startsWith('Bearer ')) {
+    return new Response(
+      JSON.stringify({ error: 'Authentication required' }),
+      { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+  const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+  const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+    global: { headers: { Authorization: authHeader } }
+  });
+
+  const token = authHeader.replace('Bearer ', '');
+  const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
+  if (claimsError || !claimsData?.claims) {
+    console.error("JWT verification failed:", claimsError);
+    return new Response(
+      JSON.stringify({ error: 'Invalid or expired token' }),
+      { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  const userId = claimsData.claims.sub as string;
+  console.log(`Authenticated user: ${userId}`);
+
+  // Use service role for server-side queries (bypasses RLS)
+  const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+
   try {
     // Parse and validate request body
     const contentLength = req.headers.get('content-length');
@@ -457,25 +490,60 @@ Return ONLY valid JSON (no markdown, no explanations):
     const ipAddress = req.headers.get('x-forwarded-for')?.split(',')[0] || 
                       req.headers.get('x-real-ip') || 
                       'unknown';
+
+    // === SERVER-SIDE STORY LIMIT ENFORCEMENT ===
+    // Check if this is a new story (no scene context = first scene)
+    const isNewStory = !body?.scene;
+    if (isNewStory) {
+      // Count stories started by this user in the last 30 days
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+      const { count: storyCount, error: countErr } = await supabaseAdmin
+        .from('user_stories')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .gte('started_at', thirtyDaysAgo);
+
+      if (countErr) {
+        console.error("Failed to count user stories:", countErr);
+      }
+
+      const userStoryCount = storyCount ?? 0;
+
+      // Check if user has an active subscription
+      const { data: activeSub } = await supabaseAdmin
+        .from('user_subscriptions')
+        .select('id, status, plan_id')
+        .eq('user_id', userId)
+        .eq('status', 'active')
+        .limit(1)
+        .maybeSingle();
+
+      const FREE_STORY_LIMIT = 3;
+      if (!activeSub && userStoryCount >= FREE_STORY_LIMIT) {
+        console.warn(`Story limit reached for user ${userId}: ${userStoryCount}/${FREE_STORY_LIMIT}`);
+        return new Response(
+          JSON.stringify({ error: "Story limit reached. Upgrade to Adventure Pass for unlimited stories." }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      console.log(`📊 User ${userId}: ${userStoryCount} stories in 30 days, subscription: ${activeSub ? 'active' : 'none'}`);
+    }
     
-    // Determine model based on total stories started by this device/user
+    // Determine model based on total stories started by this user
     let selectedModel = "claude-sonnet-4-20250514";
     try {
-      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-      const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-      const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
-      
-      // Count total stories started (from story_completions table)
+      // Count total stories by user_id (not device_id) for model selection
       const { count, error: countError } = await supabaseAdmin
-        .from('story_completions')
+        .from('user_stories')
         .select('*', { count: 'exact', head: true })
-        .eq('device_id', deviceId);
+        .eq('user_id', userId);
       
       if (!countError && count !== null && count >= 20) {
         selectedModel = "claude-haiku-4-20250414";
-        console.log(`📊 Device ${deviceId} has ${count} stories - using Haiku 4.5`);
+        console.log(`📊 User ${userId} has ${count} stories - using Haiku 4.5`);
       } else {
-        console.log(`📊 Device ${deviceId} has ${count ?? 0} stories - using Sonnet`);
+        console.log(`📊 User ${userId} has ${count ?? 0} stories - using Sonnet`);
       }
     } catch (modelErr) {
       console.warn("Failed to check story count for model selection, defaulting to Sonnet:", modelErr);

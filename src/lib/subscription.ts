@@ -106,33 +106,10 @@ export const getUserSubscription = async (): Promise<{
   }
 };
 
-export const upgradeSubscription = async (planId: string): Promise<boolean> => {
-  try {
-    const deviceId = await getDeviceId();
-    
-    // Cancel existing subscription if any
-    await supabase
-      .from('user_subscriptions')
-      .update({ status: 'cancelled' })
-      .eq('device_id', deviceId)
-      .eq('status', 'active');
-
-    // Create new subscription
-    const { error } = await supabase
-      .from('user_subscriptions')
-      .insert([{
-        device_id: deviceId,
-        plan_id: planId,
-        status: 'active'
-      }]);
-
-    if (error) throw error;
-    return true;
-  } catch (e) {
-    console.error("Failed to upgrade subscription", e);
-    return false;
-  }
-};
+// upgradeSubscription has been removed for security.
+// Subscriptions can ONLY be activated via:
+// - Stripe webhook (web purchases)
+// - RevenueCat/Apple IAP (iOS purchases)
 
 export const cancelSubscription = async (): Promise<boolean> => {
   try {

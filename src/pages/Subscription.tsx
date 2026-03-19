@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { CheckCircle, X, Volume2, BookOpen, Star, Sparkles, Crown, ArrowLeft, Gamepad2, Apple, CreditCard, RotateCcw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { upgradeSubscription, cancelSubscription, getUserSubscription, type SubscriptionPlan } from "@/lib/subscription";
+import { cancelSubscription, getUserSubscription, type SubscriptionPlan } from "@/lib/subscription";
 import { 
   isNativePlatform, 
   isIOSPlatform,
