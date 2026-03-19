@@ -30,6 +30,7 @@ const Dashboard = () => {
   const abilities = { abilities: [], totalAbilitiesEarned: 0, abilitiesUsed: 0 }; // Placeholder
   const completedStories = getCompletedStories();
   const [recentStories, setRecentStories] = useState<DatabaseStory[]>([]);
+  const [totalStoryCount, setTotalStoryCount] = useState(0);
   const [inProgressStories, setInProgressStories] = useState<DatabaseStory[]>([]);
   const [hasActiveStory, setHasActiveStory] = useState(false);
   const [showNewStoryDialog, setShowNewStoryDialog] = useState(false);
