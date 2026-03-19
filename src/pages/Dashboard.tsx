@@ -10,7 +10,7 @@ import { loadAchievements, ALL_ACHIEVEMENTS } from "@/lib/achievements";
 import { loadCharacter } from "@/lib/character";
 // ABILITIES DISABLED - Uncomment to re-enable
 // import { loadAbilities } from "@/lib/abilities";
-import { loadRecentStoriesFromDatabase, loadCurrentStoryFromDatabase, loadInProgressStoriesFromDatabase, pauseStoryInDatabase, DatabaseStory } from "@/lib/databaseStory";
+import { loadRecentStoriesFromDatabase, loadCurrentStoryFromDatabase, loadInProgressStoriesFromDatabase, pauseStoryInDatabase, getTotalStoryCountFromDatabase, DatabaseStory } from "@/lib/databaseStory";
 import { ArrowLeft, Trophy, BookOpen, Star, Crown, Zap, Plus, TrendingUp, Play, Sparkles, Heart, Home, Settings } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -30,6 +30,7 @@ const Dashboard = () => {
   const abilities = { abilities: [], totalAbilitiesEarned: 0, abilitiesUsed: 0 }; // Placeholder
   const completedStories = getCompletedStories();
   const [recentStories, setRecentStories] = useState<DatabaseStory[]>([]);
+  const [totalStoryCount, setTotalStoryCount] = useState(0);
   const [inProgressStories, setInProgressStories] = useState<DatabaseStory[]>([]);
   const [hasActiveStory, setHasActiveStory] = useState(false);
   const [showNewStoryDialog, setShowNewStoryDialog] = useState(false);
@@ -60,6 +61,9 @@ const Dashboard = () => {
           // Load recent stories from database
           const stories = await loadRecentStoriesFromDatabase();
           setRecentStories(stories);
+          
+          const totalCount = await getTotalStoryCountFromDatabase();
+          setTotalStoryCount(totalCount);
           
           // Load in-progress stories separately
           const inProgress = await loadInProgressStoriesFromDatabase();
@@ -511,7 +515,7 @@ const Dashboard = () => {
               <div className="flex items-center justify-between mb-4">
                 <h2 className="font-heading text-2xl font-bold flex items-center gap-2">
                   <BookOpen className="h-6 w-6 text-blue-500" />
-                  Recent Stories ({recentStories.length + completedStories.length})
+                  Recent Stories ({totalStoryCount || recentStories.length + completedStories.length})
                 </h2>
                 <Button 
                   variant="ghost" 

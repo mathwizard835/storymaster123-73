@@ -248,8 +248,26 @@ export const pauseStoryInDatabase = async (storyId: string): Promise<void> => {
   console.log(`⏸️ Story ${storyId} paused`);
 };
 
+// Get total story count from database
+export const getTotalStoryCountFromDatabase = async (): Promise<number> => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return 0;
+
+  const { count, error } = await (supabase as any)
+    .from('user_stories')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', user.id);
+
+  if (error) {
+    console.error('Error getting story count:', error);
+    return 0;
+  }
+
+  return count || 0;
+};
+
 // Load all recent stories (both in-progress and completed) from database
-export const loadRecentStoriesFromDatabase = async (): Promise<DatabaseStory[]> => {
+export const loadRecentStoriesFromDatabase = async (limit: number = 10): Promise<DatabaseStory[]> => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return [];
 
@@ -259,7 +277,7 @@ export const loadRecentStoriesFromDatabase = async (): Promise<DatabaseStory[]> 
     .eq('user_id', user.id)
     .in('status', ['active', 'paused', 'completed'])
     .order('last_played_at', { ascending: false })
-    .limit(10);
+    .limit(limit);
 
   if (error) {
     console.error('Error loading recent stories:', error);
