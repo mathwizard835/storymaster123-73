@@ -319,6 +319,7 @@ export type Database = {
           choices_made: Json | null
           completed_at: string | null
           current_scene_index: number | null
+          device_fingerprint: string | null
           id: string
           last_played_at: string
           profile: Json
@@ -333,6 +334,7 @@ export type Database = {
           choices_made?: Json | null
           completed_at?: string | null
           current_scene_index?: number | null
+          device_fingerprint?: string | null
           id?: string
           last_played_at?: string
           profile: Json
@@ -347,6 +349,7 @@ export type Database = {
           choices_made?: Json | null
           completed_at?: string | null
           current_scene_index?: number | null
+          device_fingerprint?: string | null
           id?: string
           last_played_at?: string
           profile?: Json
