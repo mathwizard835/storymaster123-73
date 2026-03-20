@@ -110,7 +110,7 @@ export const saveStoryToDatabase = async (story: SavedStory, deviceFingerprint?:
     console.log('✅ Successfully paused other active stories');
   }
 
-  const storyData = {
+  const storyData: Record<string, any> = {
     id: story.id,
     user_id: user.id,
     profile: story.profile,
@@ -124,6 +124,11 @@ export const saveStoryToDatabase = async (story: SavedStory, deviceFingerprint?:
     status: story.completed ? 'completed' : 'active',
     title: story.scenes[0]?.sceneTitle || 'Untitled Adventure'
   };
+
+  // Only include fingerprint on initial save (when provided)
+  if (deviceFingerprint) {
+    storyData.device_fingerprint = deviceFingerprint;
+  }
 
   const { data: savedData, error } = await (supabase as any)
     .from('user_stories')
