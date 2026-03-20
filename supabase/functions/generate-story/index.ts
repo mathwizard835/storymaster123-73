@@ -494,6 +494,8 @@ Return ONLY valid JSON (no markdown, no explanations):
     // === SERVER-SIDE STORY LIMIT ENFORCEMENT ===
     // Check if this is a new story (no scene context = first scene)
     const isNewStory = !body?.scene;
+    let deviceFingerprint: string | null = null;
+
     if (isNewStory) {
       // Count stories started by this user in the last 30 days
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
@@ -527,7 +529,46 @@ Return ONLY valid JSON (no markdown, no explanations):
         );
       }
 
-      console.log(`📊 User ${userId}: ${userStoryCount} stories in 30 days, subscription: ${activeSub ? 'active' : 'none'}`);
+      // === DEVICE FINGERPRINT ANTI-ABUSE CHECK ===
+      const userAgent = req.headers.get('user-agent') || 'unknown';
+      const ipPrefix = ipAddress.split('.').slice(0, 3).join('.'); // /24 prefix only
+      const salt = Deno.env.get('DEVICE_FINGERPRINT_SALT') || 'default-salt';
+
+      const fingerprintRaw = `${salt}:${deviceId}:${userAgent}:${ipPrefix}`;
+      const hashBuffer = await crypto.subtle.digest(
+        'SHA-256',
+        new TextEncoder().encode(fingerprintRaw)
+      );
+      deviceFingerprint = Array.from(new Uint8Array(hashBuffer))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+
+      if (!activeSub) {
+        // Count stories across ALL accounts from this device fingerprint
+        const { count: deviceStoryCount, error: deviceCountErr } = await supabaseAdmin
+          .from('user_stories')
+          .select('*', { count: 'exact', head: true })
+          .eq('device_fingerprint', deviceFingerprint)
+          .gte('started_at', thirtyDaysAgo);
+
+        if (deviceCountErr) {
+          console.error("Failed to count device stories:", deviceCountErr);
+        }
+
+        const deviceTotal = deviceStoryCount ?? 0;
+
+        if (deviceTotal >= 6) {
+          console.warn(`🚫 Device abuse blocked: fingerprint ${deviceFingerprint.slice(0, 12)}... has ${deviceTotal} stories across accounts`);
+          return new Response(
+            JSON.stringify({ error: "Story limit reached. Upgrade to Adventure Pass for unlimited stories." }),
+            { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        } else if (deviceTotal >= 3) {
+          console.warn(`⚠️ Device abuse warning: fingerprint ${deviceFingerprint.slice(0, 12)}... has ${deviceTotal} stories across accounts`);
+        }
+      }
+
+      console.log(`📊 User ${userId}: ${userStoryCount} stories in 30 days, subscription: ${activeSub ? 'active' : 'none'}, device fingerprint: ${deviceFingerprint?.slice(0, 12)}...`);
     }
     
     // Determine model based on total stories started by this user
