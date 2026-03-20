@@ -793,7 +793,8 @@ ${profile.mode === 'learning' ? '- Embed educational content naturally into the 
         resultText: text, 
         result: parsed,
         parsed: parsed,
-        text: text
+        text: text,
+        deviceFingerprint: deviceFingerprint
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
