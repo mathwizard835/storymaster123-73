@@ -77,7 +77,7 @@ export const verifyStoryIsActive = async (storyId: string): Promise<boolean> => 
 };
 
 // Phase 6: Improved save with verification - PAUSE OTHER STORIES, THEN SAVE
-export const saveStoryToDatabase = async (story: SavedStory): Promise<DatabaseStory | null> => {
+export const saveStoryToDatabase = async (story: SavedStory, deviceFingerprint?: string): Promise<DatabaseStory | null> => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
 
