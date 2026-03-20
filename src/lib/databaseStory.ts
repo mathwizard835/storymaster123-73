@@ -77,7 +77,7 @@ export const verifyStoryIsActive = async (storyId: string): Promise<boolean> => 
 };
 
 // Phase 6: Improved save with verification - PAUSE OTHER STORIES, THEN SAVE
-export const saveStoryToDatabase = async (story: SavedStory): Promise<DatabaseStory | null> => {
+export const saveStoryToDatabase = async (story: SavedStory, deviceFingerprint?: string): Promise<DatabaseStory | null> => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
 
@@ -110,7 +110,7 @@ export const saveStoryToDatabase = async (story: SavedStory): Promise<DatabaseSt
     console.log('✅ Successfully paused other active stories');
   }
 
-  const storyData = {
+  const storyData: Record<string, any> = {
     id: story.id,
     user_id: user.id,
     profile: story.profile,
@@ -124,6 +124,11 @@ export const saveStoryToDatabase = async (story: SavedStory): Promise<DatabaseSt
     status: story.completed ? 'completed' : 'active',
     title: story.scenes[0]?.sceneTitle || 'Untitled Adventure'
   };
+
+  // Only include fingerprint on initial save (when provided)
+  if (deviceFingerprint) {
+    storyData.device_fingerprint = deviceFingerprint;
+  }
 
   const { data: savedData, error } = await (supabase as any)
     .from('user_stories')

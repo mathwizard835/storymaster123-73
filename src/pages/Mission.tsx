@@ -567,7 +567,7 @@ const Mission = () => {
         
         // Phase 3: Use forceNewSession flag for explicit new story, pass abilities
         const abilityCategories = availableAbilities.map(a => a.category);
-        const { parsed, text } = await generateNextScene(profileWithInventory, undefined, false, 1800, 1, newStoryId, true, abilityCategories);
+        const { parsed, text, deviceFingerprint } = await generateNextScene(profileWithInventory, undefined, false, 1800, 1, newStoryId, true, abilityCategories);
         if (!parsed) {
           const errorPreview = text ? text.slice(0, 140) : "No response received";
           throw new Error("Invalid AI response: " + errorPreview);
@@ -610,7 +610,7 @@ const Mission = () => {
         setInitialStoryId(newStoryId); // Phase 5: Track initial story ID
         
         // Phase 6: Save to database and verify
-        const savedData = await saveStoryToDatabase(newStory);
+        const savedData = await saveStoryToDatabase(newStory, deviceFingerprint);
         if (savedData && savedData.id !== newStoryId) {
           console.error('❌ Story ID mismatch after save!');
           throw new Error('Story save verification failed');

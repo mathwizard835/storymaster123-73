@@ -301,7 +301,7 @@ export const generateNextScene = async (
   storyId?: string,
   forceNewSession: boolean = false,
   availableAbilities: string[] = []
-): Promise<{ text: string; parsed: Scene | null; raw: any }> => {
+): Promise<{ text: string; parsed: Scene | null; raw: any; deviceFingerprint?: string }> => {
   // Phase 4: Defensive logging
   console.log(`🎬 generateNextScene called:`, {
     sceneCount,
@@ -371,6 +371,7 @@ export const generateNextScene = async (
 
     const text: string = data?.resultText ?? data?.text ?? "";
     const parsed: Scene | null = data?.result ?? data?.parsed ?? null;
+    const deviceFingerprintResult: string | undefined = data?.deviceFingerprint ?? undefined;
     
     // If we have text but no parsed result, log for debugging
     if (text && !parsed) {
@@ -378,7 +379,7 @@ export const generateNextScene = async (
       console.error("Text preview:", text.slice(0, 200));
     }
     
-    const result = { text, parsed, raw: data };
+    const result = { text, parsed, raw: data, deviceFingerprint: deviceFingerprintResult };
     
     // Cache the result with story session ID
     sceneCache.set(cacheKey, { 

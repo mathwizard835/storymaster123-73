@@ -1,0 +1,1 @@
+CREATE INDEX IF NOT EXISTS idx_user_stories_device_fingerprint ON user_stories (device_fingerprint, started_at);
