@@ -301,7 +301,7 @@ export const generateNextScene = async (
   storyId?: string,
   forceNewSession: boolean = false,
   availableAbilities: string[] = []
-): Promise<{ text: string; parsed: Scene | null; raw: any }> => {
+): Promise<{ text: string; parsed: Scene | null; raw: any; deviceFingerprint?: string }> => {
   // Phase 4: Defensive logging
   console.log(`🎬 generateNextScene called:`, {
     sceneCount,
