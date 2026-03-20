@@ -1,108 +1,128 @@
 
 
-# Integrating Real Apple In-App Purchases
+# Revised Multi-Account Abuse Prevention Plan
 
-## Overview
+## Problem Recap
 
-To add real IAP for your $6.99 (Adventure Pass) and $7.99 (Adventure Pass Plus) subscriptions on iOS, the recommended approach is **RevenueCat** -- a service that wraps Apple's StoreKit and handles receipt validation, subscription status, and webhooks. This avoids you having to build complex server-side receipt verification yourself.
+Free users get 3 stories per 30 days, enforced server-side by `user_id`. Creating a new account resets the counter. The current `device_id` is a client-side `crypto.randomUUID()` stored in localStorage/Preferences — trivially cleared or spoofed.
 
-## Architecture
+## Critique of Original Plan
+
+| Issue | Risk | Assessment |
+|-------|------|------------|
+| Client-side `device_id` trust | High | UUID in localStorage can be cleared by reinstalling, clearing data, or incognito. Not a reliable anti-abuse signal on its own. |
+| Raw device ID storage | Medium | Storing a persistent device identifier is PII under GDPR/CCPA. Needs hashing. |
+| IP-only fallback | Medium | Shared IPs (schools, libraries — your target audience!) would block legitimate kids. |
+| No DB index on new column | High | `COUNT(*)` on unindexed `device_id` across all `user_stories` rows degrades fast. |
+| Backfill gap | Low | Existing stories have no `device_id`. 30-day rolling window means this self-heals. |
+
+## Revised Approach: Layered Server-Side Fingerprinting
+
+Instead of trusting the client `device_id` alone, combine multiple signals server-side into a hashed fingerprint. No single signal is definitive, but together they're hard to rotate simultaneously.
+
+### Signal Collection (Edge Function)
+
+Already available in the `generate-story` edge function request headers:
 
 ```text
-iOS App (Capacitor)
-  |
-  v
-RevenueCat SDK (@revenuecat/purchases-capacitor)
-  |
-  v
-Apple App Store (StoreKit)
-  |
-  v
-RevenueCat Server (receipt validation)
-  |
-  v
-Supabase Webhook (updates user_subscriptions table)
+IP Address:     x-forwarded-for / x-real-ip  (already extracted)
+Client Device:  x-device-id header           (already sent)
+User-Agent:     user-agent header             (free signal)
 ```
 
-## Steps
+### Server-Side Fingerprint Hash
 
-### 1. App Store Connect Setup (Manual -- done by you)
+In the edge function, compute a **salted SHA-256 hash** combining these signals. This avoids storing raw PII:
 
-- Create your app in [App Store Connect](https://appstoreconnect.apple.com)
-- Go to **Subscriptions** and create a Subscription Group (e.g., "Adventure Pass")
-- Add two auto-renewable subscription products:
-  - **Product ID**: `adventure_pass` -- $6.99/month
-  - **Product ID**: `adventure_pass_plus` -- $7.99/month
-- Fill in display names, descriptions, and localization
-
-### 2. RevenueCat Setup (Manual -- done by you)
-
-- Create a free account at [revenuecat.com](https://www.revenuecat.com)
-- Create a new project and add your iOS app
-- Paste your App Store Connect **Shared Secret** and **App Store Connect API Key** into RevenueCat
-- In RevenueCat, create:
-  - **Products**: Map `adventure_pass` and `adventure_pass_plus`
-  - **Entitlements**: Create `premium` and `premium_plus` entitlements
-  - **Offerings**: Create a "default" offering with both packages
-- Copy your **RevenueCat Public API Key** (starts with `appl_`)
-
-### 3. Install the Capacitor Plugin
-
-- Add `@revenuecat/purchases-capacitor` as a dependency
-- This gives you a JS/TS API to interact with StoreKit from your Capacitor app
-
-### 4. Create IAP Service (`src/lib/iapService.ts`)
-
-A new module that:
-- Initializes RevenueCat SDK with your public API key on app startup
-- Fetches available packages (offerings) to get real prices from Apple
-- Handles the purchase flow (calls `Purchases.purchasePackage()`)
-- Checks subscription status via `Purchases.getCustomerInfo()`
-- Identifies the user with RevenueCat (using Supabase user ID)
-
-### 5. Create Supabase Webhook Edge Function
-
-- Create `supabase/functions/revenuecat-webhook/index.ts`
-- RevenueCat sends webhook events (purchase, renewal, cancellation, expiration) to this endpoint
-- The webhook updates the `user_subscriptions` table in your database
-- This keeps your backend in sync with Apple's subscription state
-- Add your RevenueCat webhook secret as a Supabase secret
-
-### 6. Update Subscription Page (`src/pages/Subscription.tsx`)
-
-- On native: fetch real prices from RevenueCat offerings (so Apple-approved prices display correctly for all locales)
-- Replace the "Coming Soon" toast with actual `purchasePackage()` calls
-- After purchase, verify entitlement and update local state
-- Handle purchase errors (cancelled, already owned, etc.)
-
-### 7. Update App Initialization (`src/App.tsx`)
-
-- Initialize RevenueCat SDK on app start (only on native platform)
-- Set the user ID when authenticated so purchases are tied to accounts
-
-### 8. Sync with Capacitor
-
-After implementation, you'll need to:
-```bash
-npm run build && npx cap sync ios && npx cap open ios
+```typescript
+const fingerprint = await crypto.subtle.digest(
+  "SHA-256",
+  new TextEncoder().encode(
+    `${SALT}:${deviceId}:${userAgent}:${ipPrefix}`
+  )
+);
 ```
 
-## Files to Create/Modify
+- `ipPrefix`: Use only first 3 octets (e.g., `192.168.1`) to reduce shared-IP collisions while still being useful
+- `SALT`: A secret stored in Supabase secrets, preventing rainbow-table reversal
+- This hash is **not PII** — it cannot be reversed to identify a person
 
-| File | Action | Purpose |
-|------|--------|---------|
-| `src/lib/iapService.ts` | Create | RevenueCat SDK wrapper |
-| `supabase/functions/revenuecat-webhook/index.ts` | Create | Webhook to sync subscription status |
-| `src/pages/Subscription.tsx` | Modify | Wire up real purchase buttons |
-| `src/App.tsx` | Modify | Initialize RevenueCat on startup |
-| `supabase/config.toml` | Modify | Add webhook function config |
+### Enforcement Logic: Soft Limits
 
-## What You Need to Do First (Before I Implement)
+Instead of hard-blocking on fingerprint match (which risks false positives in shared environments like schools), use a **tiered approach**:
 
-1. **Create products in App Store Connect** (the two subscription products above)
-2. **Create a RevenueCat account** and configure it with your App Store Connect credentials
-3. **Get your RevenueCat Public API Key** (the `appl_...` key) -- I'll need this to add to the code
-4. **Set up the RevenueCat webhook URL** -- I'll create the edge function first, then you point RevenueCat's webhook to it
+| Fingerprint stories (30d) | Action |
+|---|---|
+| < 3 | Allow freely |
+| 3–5 | Allow, but log a warning for monitoring |
+| 6+ | Block new story generation, show upgrade prompt |
 
-Would you like to proceed? Once you have the RevenueCat API key ready, I can implement all the code changes.
+This gives a buffer for legitimate shared-device families while still capping abuse. The threshold of 6 means an abuser needs to create 3+ accounts AND rotate their device ID AND change their User-Agent — significantly harder than just making a new email.
+
+### Database Changes
+
+**Migration: Add `device_fingerprint` column + index**
+
+```sql
+ALTER TABLE user_stories 
+  ADD COLUMN device_fingerprint text;
+
+CREATE INDEX idx_user_stories_device_fingerprint 
+  ON user_stories (device_fingerprint, started_at);
+```
+
+- Indexed on `(device_fingerprint, started_at)` for the 30-day rolling count query
+- Column is nullable — existing rows simply won't have it (grace period, self-heals in 30 days)
+- No backfill needed
+
+**Add a secret for the fingerprint salt:**
+- `DEVICE_FINGERPRINT_SALT` — a random string stored in Supabase secrets
+
+### Edge Function Changes (`generate-story/index.ts`)
+
+In the `isNewStory` block (around line 497), after the existing user-level check:
+
+1. Compute fingerprint hash from request headers
+2. Query `user_stories` by `device_fingerprint` across ALL users in last 30 days
+3. If count >= 6 and no active subscription → block with 403
+4. If count >= 3 → log warning
+5. Store fingerprint on the new story record (pass it back or save directly)
+
+### Client-Side Change (`databaseStory.ts`)
+
+When saving a story, include the device fingerprint. Two options:
+- **Option A**: Edge function writes the fingerprint directly when it detects a new story (cleaner, no client trust)
+- **Option B**: Client sends device_id in header, edge function computes and stores hash
+
+**Option A is preferred** — the edge function already has all the signals and can insert/update the fingerprint on the `user_stories` row after story generation succeeds.
+
+However, the edge function doesn't create the `user_stories` row — `saveStoryToDatabase` in the client does. So the practical approach is:
+
+- Edge function computes the fingerprint and returns it in the response
+- Client stores it when saving the story to the database
+- Edge function also validates against it on the next request
+
+### Files to Create/Modify
+
+| File | Change |
+|------|--------|
+| **Migration** | Add `device_fingerprint text` column + composite index to `user_stories` |
+| **Supabase secret** | Add `DEVICE_FINGERPRINT_SALT` |
+| `supabase/functions/generate-story/index.ts` | Compute fingerprint, query cross-account count, return fingerprint in response |
+| `src/lib/databaseStory.ts` | Store returned `device_fingerprint` when saving story |
+
+### What This Does NOT Do (And Why)
+
+- **No Redis/Upstash**: The project uses Supabase Edge Functions with no existing Redis setup. Adding Upstash for a single COUNT query is over-engineering — the indexed query will handle thousands of users fine. Revisit if you hit 100K+ daily active users.
+- **No CAPTCHA**: This is a children's app. CAPTCHAs are hostile UX for kids and may violate COPPA consent flows. The soft-limit tier approach achieves the same goal.
+- **No IP hard-blocking**: Too many false positives for the target audience (kids at school, library).
+
+### Privacy Compliance Summary
+
+- Raw device IDs are never stored in the database
+- Only a salted, irreversible SHA-256 hash is persisted
+- The hash cannot identify a person or device without the salt
+- The salt is a server-side secret, never exposed to clients
+- IP addresses are truncated to /24 prefix before hashing
+- No new PII is collected — all signals are already in HTTP headers
 
