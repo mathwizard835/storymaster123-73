@@ -610,7 +610,7 @@ const Mission = () => {
         setInitialStoryId(newStoryId); // Phase 5: Track initial story ID
         
         // Phase 6: Save to database and verify
-        const savedData = await saveStoryToDatabase(newStory);
+        const savedData = await saveStoryToDatabase(newStory, deviceFingerprint);
         if (savedData && savedData.id !== newStoryId) {
           console.error('❌ Story ID mismatch after save!');
           throw new Error('Story save verification failed');
