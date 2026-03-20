@@ -58,6 +58,8 @@ export const syncProgressFromDatabase = async (): Promise<{
 
     // Initialize fresh progress tracking
     let character = { ...DEFAULT_CHARACTER };
+    // Save fresh character to localStorage so gainExperience reads from clean state
+    saveCharacter(character);
     let achievementProgress: AchievementProgress = {
       totalStories: totalStoriesCompleted, // Use actual count from story_completions
       totalChoices: 0,
