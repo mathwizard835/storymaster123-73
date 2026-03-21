@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, X, BookOpen, Star, Sparkles, Crown, ArrowLeft, Gamepad2, Apple, CreditCard, RotateCcw } from "lucide-react";
+import { CheckCircle, X, BookOpen, Star, Sparkles, Crown, ArrowLeft, Gamepad2, Apple, CreditCard, RotateCcw, Volume2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cancelSubscription, getUserSubscription, type SubscriptionPlan } from "@/lib/subscription";
 import { 
@@ -71,7 +71,6 @@ export default function Subscription() {
       "Unlimited interactive stories per month",
       "All story modes (Mystery, Comedy, Thrill, Explore)",
       "Full character customization",
-      "Read-to-Me AI narration included",
       "Progress tracking & achievements",
       "Ability system & Secret Choices",
       "Priority support",
@@ -444,6 +443,24 @@ export default function Subscription() {
                     <span className="text-white">{feature}</span>
                   </div>
                 ))}
+              </div>
+            </div>
+
+            {/* Read-to-Me Highlight */}
+            <div className="relative bg-gradient-to-r from-purple-500/20 via-pink-500/20 to-purple-500/20 rounded-xl p-5 border border-purple-400/30 overflow-hidden">
+              <div className="absolute top-0 right-0 bg-gradient-to-l from-pink-500 to-purple-500 text-white px-3 py-1 text-xs font-bold rounded-bl-lg">
+                INCLUDED FREE
+              </div>
+              <div className="flex items-start gap-4">
+                <div className="bg-gradient-to-br from-purple-500 to-pink-500 p-3 rounded-xl shrink-0">
+                  <Volume2 className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-white font-bold text-lg mb-1">🎧 Read-to-Me AI Narration</h3>
+                  <p className="text-purple-200 text-sm leading-relaxed">
+                    Every story comes alive with expressive AI voices. Perfect for bedtime, car rides, or when your child wants to follow along while listening. No extra cost — it's built right in.
+                  </p>
+                </div>
               </div>
             </div>
 
