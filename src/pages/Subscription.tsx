@@ -24,7 +24,7 @@ export default function Subscription() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
-  const [readToMeEnabled, setReadToMeEnabled] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [currentPlan, setCurrentPlan] = useState<SubscriptionPlan | null>(null);
   const limitReached = searchParams.get('limitReached') === 'true';
