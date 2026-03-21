@@ -217,7 +217,7 @@ export default function Subscription() {
       {/* Header */}
       <div className="bg-black/20 backdrop-blur-sm border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <Button variant="ghost" onClick={() => navigate(-1)} className="text-white hover:bg-white/10">
+          <Button variant="ghost" onClick={() => navigate(-1)} className="text-foreground hover:bg-primary/10">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
