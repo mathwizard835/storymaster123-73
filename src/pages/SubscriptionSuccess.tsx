@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, Sparkles, Loader2 } from "lucide-react";
+import { CheckCircle, Sparkles, Loader2, Volume2, BookOpen, Star, Headphones } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getUserSubscription } from "@/lib/subscription";
 import { supabase } from "@/integrations/supabase/client";
@@ -44,7 +44,7 @@ export default function SubscriptionSuccess() {
             setIsVerifying(false);
             toast({
               title: "🎉 Welcome to Adventure Pass!",
-              description: "Your subscription is now active. Enjoy 10 stories per month!",
+              description: "Your subscription is now active. Enjoy unlimited stories and Read-to-Me!",
             });
           } else {
             setIsVerifying(false);
@@ -83,24 +83,41 @@ export default function SubscriptionSuccess() {
               Payment Successful!
             </CardTitle>
             <CardDescription className="text-base">
-              Your Adventure Pass subscription is now active
+              Your Adventure Pass is now active — $6.99/month
             </CardDescription>
           </div>
         </CardHeader>
 
         <CardContent className="space-y-6">
+          {/* Read-to-Me highlight */}
+          <div className="relative bg-gradient-to-r from-purple-500/20 via-pink-500/20 to-purple-500/20 rounded-xl p-5 border border-purple-400/30">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shrink-0">
+                <Headphones className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h3 className="font-bold text-lg text-foreground">🎧 Read-to-Me AI Narration</h3>
+                <p className="text-sm text-muted-foreground">Every story can now be read aloud with AI-powered voices</p>
+              </div>
+            </div>
+          </div>
+
           <div className="bg-primary/5 rounded-lg p-6 space-y-3">
             <h3 className="font-semibold text-lg flex items-center gap-2">
-              What's Next?
+              Your Adventure Pass includes:
             </h3>
             <ul className="space-y-2 text-muted-foreground">
               <li className="flex items-start gap-2">
-                <CheckCircle className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-                <span>Access up to 10 interactive stories every month</span>
+                <BookOpen className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                <span>Unlimited interactive stories every month</span>
               </li>
               <li className="flex items-start gap-2">
-                <CheckCircle className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-                <span>Unlock all story modes and Adventure Pass features</span>
+                <Volume2 className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                <span>Read-to-Me AI narration on all stories</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Star className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                <span>All story modes and premium features unlocked</span>
               </li>
               <li className="flex items-start gap-2">
                 <CheckCircle className="w-5 h-5 text-primary shrink-0 mt-0.5" />
@@ -108,7 +125,7 @@ export default function SubscriptionSuccess() {
               </li>
               <li className="flex items-start gap-2">
                 <CheckCircle className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-                <span>Enjoy priority support from our team</span>
+                <span>Priority support from our team</span>
               </li>
             </ul>
           </div>
@@ -135,7 +152,7 @@ export default function SubscriptionSuccess() {
                   Activating...
                 </>
               ) : (
-                'Go to Dashboard'
+                'Start Reading!'
               )}
             </Button>
             <Button 
