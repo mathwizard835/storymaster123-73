@@ -212,7 +212,7 @@ export const checkSubscriptionStatus = async (): Promise<{
  * This is the critical step — don't rely solely on RevenueCat webhooks.
  */
 export const activateSubscriptionAfterPurchase = async (
-  planType: 'premium' | 'premium_plus'
+  planType: 'premium'
 ): Promise<boolean> => {
   try {
     const { supabase } = await import('@/integrations/supabase/client');
@@ -222,19 +222,10 @@ export const activateSubscriptionAfterPurchase = async (
     const { data: { user } } = await supabase.auth.getUser();
 
     // Get the matching plan from subscription_plans table
-    const planNameMap: Record<string, string> = {
-      premium: 'premium',
-      premium_plus: 'premium_plus',
-    };
-    const planPriceMap: Record<string, number> = {
-      premium: 6.99,
-      premium_plus: 7.99,
-    };
-
     const { data: plan } = await supabase
       .from('subscription_plans')
       .select('id')
-      .eq('price_monthly', planPriceMap[planType])
+      .eq('price_monthly', 6.99)
       .limit(1)
       .maybeSingle();
 
