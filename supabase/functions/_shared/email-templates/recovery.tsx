@@ -46,12 +46,12 @@ export const RecoveryEmail = ({
 
 export default RecoveryEmail
 
-const main = { backgroundColor: '#ffffff', fontFamily: "'Segoe UI', Arial, sans-serif" }
+const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif' }
 const container = { padding: '20px 25px' }
 const h1 = {
   fontSize: '22px',
   fontWeight: 'bold' as const,
-  color: '#6d28d9',
+  color: '#000000',
   margin: '0 0 20px',
 }
 const text = {
@@ -61,7 +61,7 @@ const text = {
   margin: '0 0 25px',
 }
 const button = {
-  backgroundColor: '#7c3aed',
+  backgroundColor: '#000000',
   color: '#ffffff',
   fontSize: '14px',
   borderRadius: '8px',
