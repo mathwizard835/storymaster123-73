@@ -448,47 +448,11 @@ export default function Subscription() {
               </div>
             </div>
 
-            {/* Read-To-Me Upsell */}
-            <div className="border-t border-white/10 pt-8">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="bg-purple-500/20 p-2 rounded-lg">
-                    <Volume2 className="h-6 w-6 text-purple-300" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-white">Add Read-To-Me</h3>
-                    <p className="text-purple-300 text-sm">
-                      Perfect For Kids who don't like Reading but love Listening
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <span className="text-2xl font-bold text-white">+${readToMeUpsell.price}</span>
-                  <Switch
-                    checked={readToMeEnabled}
-                    onCheckedChange={setReadToMeEnabled}
-                    className="data-[state=checked]:bg-purple-500"
-                  />
-                </div>
-              </div>
-
-              {readToMeEnabled && (
-                <div className="space-y-3 bg-purple-900/20 rounded-lg p-4 border border-purple-500/20">
-                  {readToMeUpsell.features.map((feature, index) => (
-                    <div key={index} className="flex items-start gap-3">
-                      <CheckCircle className="h-5 w-5 text-purple-400 shrink-0 mt-0.5" />
-                      <span className="text-purple-200">{feature}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
             {/* Total & CTA */}
             <div className="border-t border-white/10 pt-8 space-y-4">
               <div className="flex items-center justify-between text-2xl">
                 <span className="text-white font-semibold">Total</span>
-                <span className="text-white font-bold">${totalPrice.toFixed(2)}/month</span>
+                <span className="text-white font-bold">${basePlan.price}/month</span>
               </div>
 
               {/* Payment Button - Apple IAP on native, Stripe on web */}
