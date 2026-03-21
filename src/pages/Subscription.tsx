@@ -147,7 +147,7 @@ export default function Subscription() {
 
   const handleSubscribe = async () => {
     setLoading(true);
-    const planType = readToMeEnabled ? 'premium_plus' : 'premium';
+    const planType = 'premium';
 
     // Web platform only - use Stripe checkout
     toast({
