@@ -3,8 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
-import { CheckCircle, X, Volume2, BookOpen, Star, Sparkles, Crown, ArrowLeft, Gamepad2, Apple, CreditCard, RotateCcw } from "lucide-react";
+import { CheckCircle, X, BookOpen, Star, Sparkles, Crown, ArrowLeft, Gamepad2, Apple, CreditCard, RotateCcw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cancelSubscription, getUserSubscription, type SubscriptionPlan } from "@/lib/subscription";
 import { 
@@ -24,7 +23,6 @@ export default function Subscription() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
-  const [readToMeEnabled, setReadToMeEnabled] = useState(false);
   const [loading, setLoading] = useState(false);
   const [currentPlan, setCurrentPlan] = useState<SubscriptionPlan | null>(null);
   const limitReached = searchParams.get('limitReached') === 'true';
@@ -73,23 +71,12 @@ export default function Subscription() {
       "Unlimited interactive stories per month",
       "All story modes (Mystery, Comedy, Thrill, Explore)",
       "Full character customization",
+      "Read-to-Me AI narration included",
       "Progress tracking & achievements",
       "Ability system & Secret Choices",
       "Priority support",
     ],
   };
-
-  const readToMeUpsell = {
-    price: 1.0,
-    features: [
-      "Professional voice narration for all stories",
-      "Multiple voice options per story mode",
-      "High-quality ElevenLabs voices",
-      "Perfect for bedtime reading",
-    ],
-  };
-
-  const totalPrice = readToMeEnabled ? basePlan.price + readToMeUpsell.price : basePlan.price;
 
   const handleCancelSubscription = async () => {
     if (!confirm("Are you sure you want to cancel your subscription? You'll lose access to Adventure Pass features at the end of your billing period.")) {
@@ -158,7 +145,7 @@ export default function Subscription() {
 
   const handleSubscribe = async () => {
     setLoading(true);
-    const planType = readToMeEnabled ? 'premium_plus' : 'premium';
+    const planType = 'premium';
 
     // Web platform only - use Stripe checkout
     toast({
@@ -327,12 +314,10 @@ export default function Subscription() {
                   <CheckCircle className="h-5 w-5 text-green-400 shrink-0 mt-0.5" />
                   <span className="text-white">Unlimited stories per month</span>
                 </div>
-                {(currentPlan.features as any).read_to_me && (
-                  <div className="flex items-start gap-3">
-                    <CheckCircle className="h-5 w-5 text-green-400 shrink-0 mt-0.5" />
-                    <span className="text-white">Read-to-me feature included</span>
-                  </div>
-                )}
+                <div className="flex items-start gap-3">
+                  <CheckCircle className="h-5 w-5 text-green-400 shrink-0 mt-0.5" />
+                  <span className="text-white">Read-to-Me AI narration included</span>
+                </div>
                 <div className="flex items-start gap-3">
                   <CheckCircle className="h-5 w-5 text-green-400 shrink-0 mt-0.5" />
                   <span className="text-white">All Adventure Pass features unlocked</span>
@@ -356,151 +341,7 @@ export default function Subscription() {
         )}
 
 
-        {/* Upgrade to Premium Plus - Show for Premium users only (not when limit reached) */}
-        {currentPlan && currentPlan.price_monthly === 6.99 && !limitReached && (
-          <Card className="max-w-2xl mx-auto mb-12 bg-gradient-to-br from-purple-500/30 via-pink-500/30 to-yellow-500/20 backdrop-blur-md border-purple-400/40 overflow-hidden relative">
-            <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 via-pink-500/10 to-yellow-500/10 animate-pulse" />
-            <div className="absolute top-4 right-4 bg-gradient-to-r from-yellow-400 to-amber-500 text-purple-900 px-4 py-2 rounded-full text-sm font-bold flex items-center gap-2 shadow-lg">
-              <Sparkles className="h-4 w-4" />
-              UPGRADE AVAILABLE
-            </div>
-            
-            <CardHeader className="text-center border-b border-white/10 pb-6 relative">
-              <div className="flex justify-center mb-4">
-                <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 p-4 rounded-full shadow-lg animate-pulse">
-                  <Volume2 className="h-12 w-12 text-white" />
-                </div>
-              </div>
-              <CardTitle className="text-3xl text-white mb-2 flex items-center justify-center gap-2">
-                <Sparkles className="h-6 w-6 text-yellow-400" />
-                Upgrade to Adventure Pass Plus
-                <Sparkles className="h-6 w-6 text-yellow-400" />
-              </CardTitle>
-              <CardDescription className="text-purple-200 text-lg">
-                Add Read-to-Me for just <span className="font-bold text-white">$1 more per month!</span>
-              </CardDescription>
-            </CardHeader>
 
-            <CardContent className="p-8 space-y-6 relative">
-              <div className="text-center bg-gradient-to-r from-purple-900/40 to-pink-900/40 rounded-xl p-6 border border-purple-400/30">
-                <div className="flex items-baseline justify-center gap-2 mb-2">
-                  <span className="text-5xl font-bold text-white">$7.99</span>
-                  <span className="text-purple-300">/month</span>
-                </div>
-                <div className="text-sm text-yellow-400 font-semibold flex items-center justify-center gap-1">
-                  <Sparkles className="h-4 w-4" />
-                  Just $1 more for premium narration!
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div className="text-lg font-bold text-white text-center mb-3">You'll Get:</div>
-                {readToMeUpsell.features.map((feature, index) => (
-                  <div key={index} className="flex items-start gap-3 bg-white/5 rounded-lg p-3 border border-purple-400/20">
-                    <CheckCircle className="h-5 w-5 text-yellow-400 shrink-0 mt-0.5" />
-                    <span className="text-white">{feature}</span>
-                  </div>
-                ))}
-              </div>
-
-              {isNativePlatform() ? (
-                <Button
-                  onClick={async () => {
-                    setLoading(true);
-                    const result = await purchasePackage('premium_plus');
-                    if (result.success) {
-                      await activateSubscriptionAfterPurchase('premium_plus');
-                      toast({
-                        title: "🎉 Upgrade Successful!",
-                        description: "Welcome to Adventure Pass Plus!",
-                      });
-                      await loadCurrentPlan();
-                    } else if (result.error !== 'cancelled') {
-                      toast({
-                        title: "Upgrade Failed",
-                        description: result.error || "Please try again.",
-                        variant: "destructive",
-                      });
-                    }
-                    setLoading(false);
-                  }}
-                  disabled={loading}
-                  size="xl"
-                  className="w-full bg-black hover:bg-gray-900 text-white font-bold text-xl py-8 rounded-xl shadow-2xl border border-white/20 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
-                >
-                  <span className="flex items-center gap-3">
-                    <Apple className="h-7 w-7" />
-                    {loading ? "Processing..." : "Upgrade with Apple"}
-                  </span>
-                </Button>
-              ) : (
-                <Button
-                  onClick={async () => {
-                    setLoading(true);
-                    
-                    toast({
-                      title: "Redirecting to checkout...",
-                      description: "Opening secure payment window",
-                    });
-
-                    try {
-                      const deviceId = await getDeviceId();
-                      const { data, error } = await supabase.functions.invoke('create-checkout-session', {
-                        body: { planType: 'premium_plus', deviceId },
-                      });
-
-                      if (error) throw error;
-
-                      if (data?.url) {
-                        const checkoutWindow = window.open(data.url, '_blank');
-                        
-                        if (!checkoutWindow) {
-                          toast({
-                            title: "Popup Blocked",
-                            description: "Please allow popups for this site and try again.",
-                            variant: "destructive",
-                          });
-                        } else {
-                          toast({
-                            title: "Checkout opened",
-                            description: "Complete your purchase in the new window",
-                          });
-                        }
-                        
-                        setLoading(false);
-                      } else {
-                        throw new Error('No checkout URL returned');
-                      }
-                    } catch (error) {
-                      console.error('Upgrade error:', error);
-                      toast({
-                        title: "Error",
-                        description: "Failed to process upgrade. Please try again.",
-                        variant: "destructive",
-                      });
-                      setLoading(false);
-                    }
-                  }}
-                  disabled={loading}
-                  size="lg"
-                  className="w-full bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 hover:from-purple-700 hover:via-pink-700 hover:to-purple-700 text-white font-bold text-lg py-6 shadow-lg hover:shadow-xl transition-all duration-300"
-                >
-                  {loading ? "Processing..." : (
-                    <span className="flex items-center gap-2">
-                      <Crown className="h-5 w-5" />
-                      Upgrade to Adventure Pass Plus Now
-                      <Sparkles className="h-5 w-5" />
-                    </span>
-                  )}
-                </Button>
-              )}
-
-              <p className="text-center text-purple-300 text-sm">
-                Perfect for kids who love listening to stories! 🎧
-              </p>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Hero Section - Only show if no premium */}
         {!currentPlan && (
@@ -606,47 +447,11 @@ export default function Subscription() {
               </div>
             </div>
 
-            {/* Read-To-Me Upsell */}
-            <div className="border-t border-white/10 pt-8">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="bg-purple-500/20 p-2 rounded-lg">
-                    <Volume2 className="h-6 w-6 text-purple-300" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-white">Add Read-To-Me</h3>
-                    <p className="text-purple-300 text-sm">
-                      Perfect For Kids who don't like Reading but love Listening
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <span className="text-2xl font-bold text-white">+${readToMeUpsell.price}</span>
-                  <Switch
-                    checked={readToMeEnabled}
-                    onCheckedChange={setReadToMeEnabled}
-                    className="data-[state=checked]:bg-purple-500"
-                  />
-                </div>
-              </div>
-
-              {readToMeEnabled && (
-                <div className="space-y-3 bg-purple-900/20 rounded-lg p-4 border border-purple-500/20">
-                  {readToMeUpsell.features.map((feature, index) => (
-                    <div key={index} className="flex items-start gap-3">
-                      <CheckCircle className="h-5 w-5 text-purple-400 shrink-0 mt-0.5" />
-                      <span className="text-purple-200">{feature}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
             {/* Total & CTA */}
             <div className="border-t border-white/10 pt-8 space-y-4">
               <div className="flex items-center justify-between text-2xl">
                 <span className="text-white font-semibold">Total</span>
-                <span className="text-white font-bold">${totalPrice.toFixed(2)}/month</span>
+                <span className="text-white font-bold">${basePlan.price}/month</span>
               </div>
 
               {/* Payment Button - Apple IAP on native, Stripe on web */}
@@ -655,7 +460,7 @@ export default function Subscription() {
                   <Button
                     onClick={async () => {
                       setLoading(true);
-                      const planType = readToMeEnabled ? 'premium_plus' : 'premium';
+                      const planType = 'premium';
                       const result = await purchasePackage(planType);
                       if (result.success) {
                         // Activate subscription directly in Supabase

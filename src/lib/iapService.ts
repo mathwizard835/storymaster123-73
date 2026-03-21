@@ -5,13 +5,11 @@ const REVENUECAT_API_KEY = 'appl_CYSaouklfOSVoVtsNzDQALOTXCL';
 // Product IDs matching App Store Connect
 const PRODUCT_IDS = {
   premium: 'sm_699_1m',
-  premium_plus: 'sm_7.99_1m',
 } as const;
 
 // Entitlement IDs matching RevenueCat dashboard
 const ENTITLEMENT_IDS = {
   premium: 'premium',
-  premium_plus: 'premium_plus',
 } as const;
 
 let isInitialized = false;
@@ -85,10 +83,9 @@ export interface IAPPackage {
  */
 export const getOfferings = async (): Promise<{
   premium: IAPPackage | null;
-  premiumPlus: IAPPackage | null;
 }> => {
   if (!Capacitor.isNativePlatform() || !isInitialized) {
-    return { premium: null, premiumPlus: null };
+    return { premium: null };
   }
 
   try {
@@ -98,11 +95,10 @@ export const getOfferings = async (): Promise<{
 
     if (!current) {
       console.warn('No current offering found');
-      return { premium: null, premiumPlus: null };
+      return { premium: null };
     }
 
     let premium: IAPPackage | null = null;
-    let premiumPlus: IAPPackage | null = null;
 
     for (const pkg of current.availablePackages) {
       const product = pkg.product;
@@ -113,20 +109,13 @@ export const getOfferings = async (): Promise<{
           priceString: product.priceString,
           price: product.price,
         };
-      } else if (product.identifier === PRODUCT_IDS.premium_plus) {
-        premiumPlus = {
-          identifier: pkg.identifier,
-          productId: product.identifier,
-          priceString: product.priceString,
-          price: product.price,
-        };
       }
     }
 
-    return { premium, premiumPlus };
+    return { premium };
   } catch (error) {
     console.error('Failed to get offerings:', error);
-    return { premium: null, premiumPlus: null };
+    return { premium: null };
   }
 };
 
@@ -134,7 +123,7 @@ export const getOfferings = async (): Promise<{
  * Purchase a package via Apple IAP
  */
 export const purchasePackage = async (
-  planType: 'premium' | 'premium_plus'
+  planType: 'premium'
 ): Promise<{ success: boolean; error?: string }> => {
   if (!Capacitor.isNativePlatform() || !isInitialized) {
     return { success: false, error: 'Not on native platform' };
@@ -169,7 +158,7 @@ export const purchasePackage = async (
       return { success: true };
     }
 
-    // Also check the other entitlement (premium_plus includes premium)
+    // Check if any entitlement is active
     const anyActive = Object.keys(result.customerInfo.entitlements.active).length > 0;
     if (anyActive) {
       console.log('✅ Purchase successful with active entitlements');
@@ -195,11 +184,10 @@ export const purchasePackage = async (
  */
 export const checkSubscriptionStatus = async (): Promise<{
   isSubscribed: boolean;
-  isPremiumPlus: boolean;
   expirationDate?: string;
 }> => {
   if (!Capacitor.isNativePlatform() || !isInitialized) {
-    return { isSubscribed: false, isPremiumPlus: false };
+    return { isSubscribed: false };
   }
 
   try {
@@ -207,19 +195,15 @@ export const checkSubscriptionStatus = async (): Promise<{
     const customerInfo = await Purchases.getCustomerInfo();
     const active = customerInfo.customerInfo.entitlements.active;
 
-    const isPremiumPlus = !!active[ENTITLEMENT_IDS.premium_plus];
     const isPremium = !!active[ENTITLEMENT_IDS.premium];
 
     return {
-      isSubscribed: isPremium || isPremiumPlus,
-      isPremiumPlus,
-      expirationDate: active[ENTITLEMENT_IDS.premium_plus]?.expirationDate
-        || active[ENTITLEMENT_IDS.premium]?.expirationDate
-        || undefined,
+      isSubscribed: isPremium || Object.keys(active).length > 0,
+      expirationDate: active[ENTITLEMENT_IDS.premium]?.expirationDate || undefined,
     };
   } catch (error) {
     console.error('Failed to check subscription status:', error);
-    return { isSubscribed: false, isPremiumPlus: false };
+    return { isSubscribed: false };
   }
 };
 
@@ -228,7 +212,7 @@ export const checkSubscriptionStatus = async (): Promise<{
  * This is the critical step — don't rely solely on RevenueCat webhooks.
  */
 export const activateSubscriptionAfterPurchase = async (
-  planType: 'premium' | 'premium_plus'
+  planType: 'premium'
 ): Promise<boolean> => {
   try {
     const { supabase } = await import('@/integrations/supabase/client');
@@ -238,19 +222,10 @@ export const activateSubscriptionAfterPurchase = async (
     const { data: { user } } = await supabase.auth.getUser();
 
     // Get the matching plan from subscription_plans table
-    const planNameMap: Record<string, string> = {
-      premium: 'premium',
-      premium_plus: 'premium_plus',
-    };
-    const planPriceMap: Record<string, number> = {
-      premium: 6.99,
-      premium_plus: 7.99,
-    };
-
     const { data: plan } = await supabase
       .from('subscription_plans')
       .select('id')
-      .eq('price_monthly', planPriceMap[planType])
+      .eq('price_monthly', 6.99)
       .limit(1)
       .maybeSingle();
 

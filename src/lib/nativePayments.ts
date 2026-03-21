@@ -34,7 +34,7 @@ export const isAndroidPlatform = (): boolean => {
  * This avoids Apple's 15-30% fee while complying with US App Store rules
  */
 export const openStripeCheckoutInBrowser = async (
-  planType: 'premium' | 'premium_plus'
+  planType: 'premium'
 ): Promise<{ success: boolean; error?: string }> => {
   try {
     const deviceId = await getDeviceId();

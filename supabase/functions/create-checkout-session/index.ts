@@ -39,7 +39,6 @@ serve(async (req) => {
     // Define price IDs based on plan type
     const priceIds = {
       premium: Deno.env.get('STRIPE_PREMIUM_PRICE_ID'),
-      premium_plus: Deno.env.get('STRIPE_PREMIUM_PLUS_PRICE_ID'),
     };
 
     const priceId = priceIds[planType as keyof typeof priceIds];
