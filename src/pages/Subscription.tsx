@@ -461,7 +461,7 @@ export default function Subscription() {
                   <Button
                     onClick={async () => {
                       setLoading(true);
-                      const planType = readToMeEnabled ? 'premium_plus' : 'premium';
+                      const planType = 'premium';
                       const result = await purchasePackage(planType);
                       if (result.success) {
                         // Activate subscription directly in Supabase
