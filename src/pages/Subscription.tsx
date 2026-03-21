@@ -316,12 +316,10 @@ export default function Subscription() {
                   <CheckCircle className="h-5 w-5 text-green-400 shrink-0 mt-0.5" />
                   <span className="text-white">Unlimited stories per month</span>
                 </div>
-                {(currentPlan.features as any).read_to_me && (
-                  <div className="flex items-start gap-3">
-                    <CheckCircle className="h-5 w-5 text-green-400 shrink-0 mt-0.5" />
-                    <span className="text-white">Read-to-me feature included</span>
-                  </div>
-                )}
+                <div className="flex items-start gap-3">
+                  <CheckCircle className="h-5 w-5 text-green-400 shrink-0 mt-0.5" />
+                  <span className="text-white">Read-to-Me AI narration included</span>
+                </div>
                 <div className="flex items-start gap-3">
                   <CheckCircle className="h-5 w-5 text-green-400 shrink-0 mt-0.5" />
                   <span className="text-white">All Adventure Pass features unlocked</span>
