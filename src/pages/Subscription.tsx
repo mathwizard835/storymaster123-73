@@ -446,6 +446,24 @@ export default function Subscription() {
               </div>
             </div>
 
+            {/* Read-to-Me Highlight */}
+            <div className="relative bg-gradient-to-r from-purple-500/20 via-pink-500/20 to-purple-500/20 rounded-xl p-5 border border-purple-400/30 overflow-hidden">
+              <div className="absolute top-0 right-0 bg-gradient-to-l from-pink-500 to-purple-500 text-white px-3 py-1 text-xs font-bold rounded-bl-lg">
+                INCLUDED FREE
+              </div>
+              <div className="flex items-start gap-4">
+                <div className="bg-gradient-to-br from-purple-500 to-pink-500 p-3 rounded-xl shrink-0">
+                  <Volume2 className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-white font-bold text-lg mb-1">🎧 Read-to-Me AI Narration</h3>
+                  <p className="text-purple-200 text-sm leading-relaxed">
+                    Every story comes alive with expressive AI voices. Perfect for bedtime, car rides, or when your child wants to follow along while listening. No extra cost — it's built right in.
+                  </p>
+                </div>
+              </div>
+            </div>
+
             {/* Total & CTA */}
             <div className="border-t border-white/10 pt-8 space-y-4">
               <div className="flex items-center justify-between text-2xl">
