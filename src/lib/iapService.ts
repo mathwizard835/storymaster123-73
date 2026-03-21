@@ -123,7 +123,7 @@ export const getOfferings = async (): Promise<{
  * Purchase a package via Apple IAP
  */
 export const purchasePackage = async (
-  planType: 'premium' | 'premium_plus'
+  planType: 'premium'
 ): Promise<{ success: boolean; error?: string }> => {
   if (!Capacitor.isNativePlatform() || !isInitialized) {
     return { success: false, error: 'Not on native platform' };
