@@ -71,7 +71,6 @@ export default function Subscription() {
       "Unlimited interactive stories per month",
       "All story modes (Mystery, Comedy, Thrill, Explore)",
       "Full character customization",
-      "Read-to-Me AI narration included",
       "Progress tracking & achievements",
       "Ability system & Secret Choices",
       "Priority support",
