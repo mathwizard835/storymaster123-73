@@ -5,13 +5,11 @@ const REVENUECAT_API_KEY = 'appl_CYSaouklfOSVoVtsNzDQALOTXCL';
 // Product IDs matching App Store Connect
 const PRODUCT_IDS = {
   premium: 'sm_699_1m',
-  premium_plus: 'sm_7.99_1m',
 } as const;
 
 // Entitlement IDs matching RevenueCat dashboard
 const ENTITLEMENT_IDS = {
   premium: 'premium',
-  premium_plus: 'premium_plus',
 } as const;
 
 let isInitialized = false;
