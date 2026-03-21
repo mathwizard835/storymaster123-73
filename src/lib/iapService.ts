@@ -184,11 +184,10 @@ export const purchasePackage = async (
  */
 export const checkSubscriptionStatus = async (): Promise<{
   isSubscribed: boolean;
-  isPremiumPlus: boolean;
   expirationDate?: string;
 }> => {
   if (!Capacitor.isNativePlatform() || !isInitialized) {
-    return { isSubscribed: false, isPremiumPlus: false };
+    return { isSubscribed: false };
   }
 
   try {
@@ -196,19 +195,15 @@ export const checkSubscriptionStatus = async (): Promise<{
     const customerInfo = await Purchases.getCustomerInfo();
     const active = customerInfo.customerInfo.entitlements.active;
 
-    const isPremiumPlus = !!active[ENTITLEMENT_IDS.premium_plus];
     const isPremium = !!active[ENTITLEMENT_IDS.premium];
 
     return {
-      isSubscribed: isPremium || isPremiumPlus,
-      isPremiumPlus,
-      expirationDate: active[ENTITLEMENT_IDS.premium_plus]?.expirationDate
-        || active[ENTITLEMENT_IDS.premium]?.expirationDate
-        || undefined,
+      isSubscribed: isPremium || Object.keys(active).length > 0,
+      expirationDate: active[ENTITLEMENT_IDS.premium]?.expirationDate || undefined,
     };
   } catch (error) {
     console.error('Failed to check subscription status:', error);
-    return { isSubscribed: false, isPremiumPlus: false };
+    return { isSubscribed: false };
   }
 };
 
