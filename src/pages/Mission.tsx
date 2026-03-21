@@ -1032,7 +1032,6 @@ const Mission = () => {
 
   if (!scene) return null;
 
-  const { isPhone, isTablet, isNative, safeAreaInsets } = useDevice();
 
   return (
     <div 
