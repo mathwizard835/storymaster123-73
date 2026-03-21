@@ -7,9 +7,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 interface AgeGateFormProps {
   onAgeConfirmed: (age: number) => void;
   onBack: () => void;
+  loading?: boolean;
+  externalError?: string;
 }
 
-const AgeGateForm = ({ onAgeConfirmed, onBack }: AgeGateFormProps) => {
+const AgeGateForm = ({ onAgeConfirmed, onBack, loading = false, externalError }: AgeGateFormProps) => {
   const [selectedAge, setSelectedAge] = useState<string>('');
   const [error, setError] = useState('');
 
