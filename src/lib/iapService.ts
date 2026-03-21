@@ -83,10 +83,9 @@ export interface IAPPackage {
  */
 export const getOfferings = async (): Promise<{
   premium: IAPPackage | null;
-  premiumPlus: IAPPackage | null;
 }> => {
   if (!Capacitor.isNativePlatform() || !isInitialized) {
-    return { premium: null, premiumPlus: null };
+    return { premium: null };
   }
 
   try {
@@ -96,11 +95,10 @@ export const getOfferings = async (): Promise<{
 
     if (!current) {
       console.warn('No current offering found');
-      return { premium: null, premiumPlus: null };
+      return { premium: null };
     }
 
     let premium: IAPPackage | null = null;
-    let premiumPlus: IAPPackage | null = null;
 
     for (const pkg of current.availablePackages) {
       const product = pkg.product;
@@ -111,20 +109,13 @@ export const getOfferings = async (): Promise<{
           priceString: product.priceString,
           price: product.price,
         };
-      } else if (product.identifier === PRODUCT_IDS.premium_plus) {
-        premiumPlus = {
-          identifier: pkg.identifier,
-          productId: product.identifier,
-          priceString: product.priceString,
-          price: product.price,
-        };
       }
     }
 
-    return { premium, premiumPlus };
+    return { premium };
   } catch (error) {
     console.error('Failed to get offerings:', error);
-    return { premium: null, premiumPlus: null };
+    return { premium: null };
   }
 };
 
