@@ -47,6 +47,7 @@ const Mission = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
+  const { isPhone, isTablet, isNative, safeAreaInsets } = useDevice();
   const [profile, setProfile] = useState(null);
   const [userPlan, setUserPlan] = useState<any>(null);
   const [scene, setScene] = useState<Scene | null>(null);
@@ -1031,7 +1032,6 @@ const Mission = () => {
 
   if (!scene) return null;
 
-  const { isPhone, isTablet, isNative, safeAreaInsets } = useDevice();
 
   return (
     <div 
