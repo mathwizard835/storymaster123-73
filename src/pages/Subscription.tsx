@@ -73,23 +73,12 @@ export default function Subscription() {
       "Unlimited interactive stories per month",
       "All story modes (Mystery, Comedy, Thrill, Explore)",
       "Full character customization",
+      "Read-to-Me AI narration included",
       "Progress tracking & achievements",
       "Ability system & Secret Choices",
       "Priority support",
     ],
   };
-
-  const readToMeUpsell = {
-    price: 1.0,
-    features: [
-      "Professional voice narration for all stories",
-      "Multiple voice options per story mode",
-      "High-quality ElevenLabs voices",
-      "Perfect for bedtime reading",
-    ],
-  };
-
-  const totalPrice = readToMeEnabled ? basePlan.price + readToMeUpsell.price : basePlan.price;
 
   const handleCancelSubscription = async () => {
     if (!confirm("Are you sure you want to cancel your subscription? You'll lose access to Adventure Pass features at the end of your billing period.")) {
