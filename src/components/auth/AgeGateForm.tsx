@@ -7,9 +7,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 interface AgeGateFormProps {
   onAgeConfirmed: (age: number) => void;
   onBack: () => void;
+  loading?: boolean;
+  externalError?: string;
 }
 
-const AgeGateForm = ({ onAgeConfirmed, onBack }: AgeGateFormProps) => {
+const AgeGateForm = ({ onAgeConfirmed, onBack, loading = false, externalError }: AgeGateFormProps) => {
   const [selectedAge, setSelectedAge] = useState<string>('');
   const [error, setError] = useState('');
 
@@ -60,18 +62,18 @@ const AgeGateForm = ({ onAgeConfirmed, onBack }: AgeGateFormProps) => {
         </Select>
       </div>
 
-      {error && (
+      {(error || externalError) && (
         <Alert className="bg-red-900/50 border-red-500/50 text-red-200">
-          <AlertDescription>{error}</AlertDescription>
+          <AlertDescription>{error || externalError}</AlertDescription>
         </Alert>
       )}
 
       <Button
         onClick={handleContinue}
         className="w-full bg-purple-600 hover:bg-purple-700"
-        disabled={!selectedAge}
+        disabled={!selectedAge || loading}
       >
-        Continue
+        {loading ? 'Creating account...' : 'Continue'}
       </Button>
     </div>
   );

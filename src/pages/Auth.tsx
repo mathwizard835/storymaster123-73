@@ -387,6 +387,8 @@ const Auth = () => {
         <AgeGateForm
           onAgeConfirmed={handleAgeConfirmed}
           onBack={() => setSignupStep('credentials')}
+          loading={loading}
+          externalError={error}
         />
       );
     }
