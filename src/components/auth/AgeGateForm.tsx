@@ -62,18 +62,18 @@ const AgeGateForm = ({ onAgeConfirmed, onBack, loading = false, externalError }:
         </Select>
       </div>
 
-      {error && (
+      {(error || externalError) && (
         <Alert className="bg-red-900/50 border-red-500/50 text-red-200">
-          <AlertDescription>{error}</AlertDescription>
+          <AlertDescription>{error || externalError}</AlertDescription>
         </Alert>
       )}
 
       <Button
         onClick={handleContinue}
         className="w-full bg-purple-600 hover:bg-purple-700"
-        disabled={!selectedAge}
+        disabled={!selectedAge || loading}
       >
-        Continue
+        {loading ? 'Creating account...' : 'Continue'}
       </Button>
     </div>
   );
