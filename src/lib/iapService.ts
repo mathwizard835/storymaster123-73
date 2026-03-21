@@ -158,7 +158,7 @@ export const purchasePackage = async (
       return { success: true };
     }
 
-    // Also check the other entitlement (premium_plus includes premium)
+    // Check if any entitlement is active
     const anyActive = Object.keys(result.customerInfo.entitlements.active).length > 0;
     if (anyActive) {
       console.log('✅ Purchase successful with active entitlements');
