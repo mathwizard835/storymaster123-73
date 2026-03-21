@@ -55,7 +55,6 @@ serve(async (req) => {
     // Map plan type to plan ID
     const planIds = {
       premium: 'c414127f-af31-47f1-b474-d59bf4956e1f',
-      premium_plus: '1f07f062-4123-4e51-9c5d-9541836a8f1c',
     };
 
     const planId = planIds[planType as keyof typeof planIds];
