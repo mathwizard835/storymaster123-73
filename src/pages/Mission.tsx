@@ -125,11 +125,11 @@ const Mission = () => {
     }
   }, [scene]);
 
-  // Check if user has Read-to-Me access (premium_plus only)
+  // Check if user has Read-to-Me access (any Adventure Pass)
   const hasReadToMeAccess = () => {
     if (!userPlan) return false;
     const planName = userPlan.name?.toLowerCase().trim().replace(/\s+/g, '_');
-    return planName === 'premium_plus' || userPlan.features?.read_to_me === true;
+    return planName === 'premium' || planName === 'premium_plus' || planName?.includes('premium') || userPlan.features?.read_to_me === true;
   };
 
   // Text-to-speech handler

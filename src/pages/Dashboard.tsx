@@ -56,7 +56,7 @@ const Dashboard = () => {
           
           // ALWAYS check premium status fresh from database
           const { plan } = await getUserSubscription();
-          setIsPremium(plan?.name === "premium" || plan?.name === "premium_plus");
+          setIsPremium(plan?.name === "premium" || plan?.name?.includes("premium"));
           
           // Load recent stories from database
           const stories = await loadRecentStoriesFromDatabase();
