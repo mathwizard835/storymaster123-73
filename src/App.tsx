@@ -107,7 +107,7 @@ const App = () => {
                 <Route path="/gallery" element={<ProtectedRoute><StoryGallery /></ProtectedRoute>} />
                 <Route path="/achievements" element={<ProtectedRoute><Achievements /></ProtectedRoute>} />
                 <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-                <Route path="/subscription" element={<Subscription />} />
+                <Route path="/subscription" element={<ProtectedRoute><Subscription /></ProtectedRoute>} />
                 <Route path="/subscription/success" element={<SubscriptionSuccess />} />
                 <Route path="/coming-soon" element={<ProtectedRoute><ComingSoon /></ProtectedRoute>} />
                 <Route path="/privacy" element={<PrivacyPolicy />} />
