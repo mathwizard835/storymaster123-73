@@ -731,7 +731,7 @@ const Index = () => {
                 onClick={() => navigate(user ? "/profile?new=true" : "/auth")}
                 className="text-xl px-12 py-6 animate-pulse"
               >
-                {user ? "Start New Adventure" : "Play - Join Your Quest"}
+                {user ? "Start New Adventure" : "Sign Up!"}
               </Button>
             )}
           </div>
