@@ -166,7 +166,7 @@ const Index = () => {
                     }}
                     aria-label="Create my hero"
                   >
-                    {user ? "Start New Adventure" : "Play - Join Your Quest"}
+                    {user ? "Start New Adventure" : "Sign Up!"}
                   </Button>
                 )}
               </div>
