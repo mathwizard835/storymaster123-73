@@ -166,7 +166,7 @@ const Index = () => {
                     }}
                     aria-label="Create my hero"
                   >
-                    {user ? "Start New Adventure" : "Play - Join Your Quest"}
+                    {user ? "Start New Adventure" : "Sign Up!"}
                   </Button>
                 )}
               </div>
@@ -354,7 +354,7 @@ const Index = () => {
                   }}
                   className="text-lg px-8 py-4 animate-pulse"
                 >
-                  {user ? "Go to Dashboard" : "Play - Join Your Quest"}
+                  {user ? "Go to Dashboard" : "Sign Up!"}
                 </Button>
               )}
               <Button
@@ -699,8 +699,8 @@ const Index = () => {
           </p>
 
           <div className="bg-primary/10 border border-primary/30 rounded-2xl p-8 mb-8 text-center">
-            <p className="text-2xl font-bold text-primary mb-2">And the best part: It's completely Free!</p>
-            <p className="text-lg">No credit card required • No strings attached • Instant access</p>
+            <p className="text-2xl font-bold text-primary mb-2">Try 3 Free Stories</p>
+            <p className="text-lg text-muted-foreground">No credit card required • See why kids love it • Upgrade anytime</p>
             <div className="mt-3 inline-flex items-center gap-2 bg-background/50 px-4 py-2 rounded-full text-sm">
               <Rocket className="h-4 w-4 text-primary" />
               <span className="font-semibold">Updated weekly</span> with new features & improvements
@@ -731,7 +731,7 @@ const Index = () => {
                 onClick={() => navigate(user ? "/profile?new=true" : "/auth")}
                 className="text-xl px-12 py-6 animate-pulse"
               >
-                {user ? "Start New Adventure" : "Play - Join Your Quest"}
+                {user ? "Start New Adventure" : "Sign Up!"}
               </Button>
             )}
           </div>
