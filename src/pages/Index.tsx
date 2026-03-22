@@ -354,7 +354,7 @@ const Index = () => {
                   }}
                   className="text-lg px-8 py-4 animate-pulse"
                 >
-                  {user ? "Go to Dashboard" : "Play - Join Your Quest"}
+                  {user ? "Go to Dashboard" : "Sign Up!"}
                 </Button>
               )}
               <Button
