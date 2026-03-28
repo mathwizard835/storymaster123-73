@@ -71,7 +71,7 @@ const PrivacyPolicy = () => {
             <section>
               <h2 className="text-2xl font-semibold mb-3 text-foreground">Children's Privacy</h2>
               <p>
-                StoryMaster is designed for children. We are committed to COPPA (Children's Online 
+                StoryMaster Kids is designed for children. We are committed to COPPA (Children's Online 
                 Privacy Protection Act) compliance. We do not knowingly collect personal information from 
                 children without parental consent. Parents have the right to:
               </p>

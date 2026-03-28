@@ -991,7 +991,7 @@ const Mission = () => {
           </div>
           <div className="space-y-2">
             <h2 className="text-2xl font-bold text-white">Preparing Your Adventure</h2>
-            <p className="text-purple-200">StoryMaster is weaving your tale...</p>
+            <p className="text-purple-200">StoryMaster Kids is weaving your tale...</p>
             {profile.mode === 'learning' && (
               <p className="text-blue-200">🎓 Setting up interactive learning experience...</p>
             )}

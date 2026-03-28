@@ -23,7 +23,7 @@ export const MobileTestPanel: React.FC = () => {
 
   const testShare = async () => {
     try {
-      await shareStory('Test Story', 'This is a test story from StoryMaster!', window.location.href);
+      await shareStory('Test Story', 'This is a test story from StoryMaster Kids!', window.location.href);
       addResult('Share test - Share dialog opened successfully');
     } catch (error) {
       addResult(`Share test - Error: ${error}`);
