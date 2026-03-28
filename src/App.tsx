@@ -2,13 +2,16 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect } from "react";
 import { initializeRevenueCat, identifyUser, logOutRevenueCat } from "@/lib/iapService";
 import { initDeepLinkHandler } from "@/lib/deepLinkHandler";
+import { initPushNotifications } from "@/lib/pushNotifications";
 import { DeviceProvider } from "@/contexts/DeviceContext";
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
+import { AnimatePresence } from "framer-motion";
+import { PageTransition } from "@/components/PageTransition";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import ProfileSetup from "./pages/ProfileSetup";
@@ -77,6 +80,33 @@ const DeepLinkInitializer = () => {
   return null;
 };
 
+const AnimatedRoutes = () => {
+  const location = useLocation();
+  return (
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
+        <Route path="/auth" element={<PublicRoute><PageTransition><Auth /></PageTransition></PublicRoute>} />
+        <Route path="/reset-password" element={<PageTransition><ResetPassword /></PageTransition>} />
+        <Route path="/" element={<Index />} />
+        <Route path="/profile" element={<ProtectedRoute><PageTransition><ProfileSetup /></PageTransition></ProtectedRoute>} />
+        <Route path="/mission" element={<ProtectedRoute><Mission /></ProtectedRoute>} />
+        <Route path="/gallery" element={<ProtectedRoute><PageTransition><StoryGallery /></PageTransition></ProtectedRoute>} />
+        <Route path="/achievements" element={<ProtectedRoute><PageTransition><Achievements /></PageTransition></ProtectedRoute>} />
+        <Route path="/dashboard" element={<ProtectedRoute><PageTransition><Dashboard /></PageTransition></ProtectedRoute>} />
+        <Route path="/subscription" element={<ProtectedRoute><PageTransition><Subscription /></PageTransition></ProtectedRoute>} />
+        <Route path="/subscription/success" element={<PageTransition><SubscriptionSuccess /></PageTransition>} />
+        <Route path="/coming-soon" element={<ProtectedRoute><PageTransition><ComingSoon /></PageTransition></ProtectedRoute>} />
+        <Route path="/privacy" element={<PageTransition><PrivacyPolicy /></PageTransition>} />
+        <Route path="/terms" element={<PageTransition><TermsOfService /></PageTransition>} />
+        <Route path="/support" element={<PageTransition><Support /></PageTransition>} />
+        <Route path="/parent-dashboard" element={<ProtectedRoute><PageTransition><ParentDashboard /></PageTransition></ProtectedRoute>} />
+        {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </AnimatePresence>
+  );
+};
+
 const App = () => {
   // Load saved theme and initialize RevenueCat on app mount
   useEffect(() => {
@@ -87,6 +117,9 @@ const App = () => {
 
     // Initialize RevenueCat for native IAP
     initializeRevenueCat();
+    
+    // Initialize push notifications for native
+    initPushNotifications();
   }, []);
 
   return (
@@ -98,25 +131,7 @@ const App = () => {
             <Sonner />
             <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
               <DeepLinkInitializer />
-              <Routes>
-                <Route path="/auth" element={<PublicRoute><Auth /></PublicRoute>} />
-                <Route path="/reset-password" element={<ResetPassword />} />
-                <Route path="/" element={<Index />} />
-                <Route path="/profile" element={<ProtectedRoute><ProfileSetup /></ProtectedRoute>} />
-                <Route path="/mission" element={<ProtectedRoute><Mission /></ProtectedRoute>} />
-                <Route path="/gallery" element={<ProtectedRoute><StoryGallery /></ProtectedRoute>} />
-                <Route path="/achievements" element={<ProtectedRoute><Achievements /></ProtectedRoute>} />
-                <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-                <Route path="/subscription" element={<ProtectedRoute><Subscription /></ProtectedRoute>} />
-                <Route path="/subscription/success" element={<SubscriptionSuccess />} />
-                <Route path="/coming-soon" element={<ProtectedRoute><ComingSoon /></ProtectedRoute>} />
-                <Route path="/privacy" element={<PrivacyPolicy />} />
-                <Route path="/terms" element={<TermsOfService />} />
-                <Route path="/support" element={<Support />} />
-                <Route path="/parent-dashboard" element={<ProtectedRoute><ParentDashboard /></ProtectedRoute>} />
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
+              <AnimatedRoutes />
               <MobileBottomNav />
             </BrowserRouter>
           </ErrorBoundary>

@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Home, BookOpen, Trophy, Users, Crown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useDevice } from '@/contexts/DeviceContext';
+import { addHapticFeedback } from '@/lib/mobileFeatures';
 
 interface NavItem {
   icon: React.ComponentType<{ className?: string }>;
@@ -43,7 +44,10 @@ export function MobileBottomNav() {
           return (
             <button
               key={item.path}
-              onClick={() => navigate(item.path)}
+              onClick={() => {
+                addHapticFeedback('light');
+                navigate(item.path);
+              }}
               className={cn(
                 "flex flex-col items-center justify-center min-w-[56px] min-h-[48px] rounded-lg transition-colors",
                 isActive 
