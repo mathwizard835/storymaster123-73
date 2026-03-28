@@ -3,12 +3,16 @@
 #root {
   padding-top: env(safe-area-inset-top, 0px);
   min-height: 100dvh;
+}
+
+/* Prevent white flash on native app load */
+.native-app,
+.native-app body,
+.native-app #root {
   background-color: hsl(250, 50%, 12%);
 }
 
-/* Prevent white flash on load */
 html, body {
-  background-color: #1a1a2e;
   margin: 0;
   padding: 0;
 }
