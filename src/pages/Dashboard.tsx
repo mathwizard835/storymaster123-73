@@ -223,6 +223,7 @@ const Dashboard = () => {
                 </Button>
                 <Button 
                   onClick={async () => {
+                    addHapticFeedback('light');
                     const { canPlay } = await getStoriesRemaining();
                     if (!canPlay) {
                       navigate("/subscription?limitReached=true");
