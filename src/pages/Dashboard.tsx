@@ -13,7 +13,7 @@ import { loadCharacter } from "@/lib/character";
 import { loadRecentStoriesFromDatabase, loadCurrentStoryFromDatabase, loadInProgressStoriesFromDatabase, pauseStoryInDatabase, getTotalStoryCountFromDatabase, DatabaseStory } from "@/lib/databaseStory";
 import { ArrowLeft, Trophy, BookOpen, Star, Crown, Zap, Plus, TrendingUp, Play, Sparkles, Heart, Home, Settings } from "lucide-react";
 import { addHapticFeedback } from "@/lib/mobileFeatures";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useDevice } from "@/contexts/DeviceContext";
