@@ -205,6 +205,7 @@ const Dashboard = () => {
               <div className="grid grid-cols-2 gap-3">
                 <Button 
                   onClick={() => {
+                    addHapticFeedback('medium');
                     if (inProgressStories.length > 1) {
                       setShowStoryPickerDialog(true);
                     } else if (inProgressStories.length === 1) {
