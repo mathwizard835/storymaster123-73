@@ -43,7 +43,10 @@ export const InteractiveChoices = ({
         return (
           <div key={choice.id} className="space-y-2">
             <Button
-              onClick={() => onChoose(choice.id)}
+              onClick={() => {
+                addHapticFeedback('medium');
+                onChoose(choice.id);
+              }}
               disabled={loading || !validation.valid}
               variant={getChoiceVariant(choice)}
               size="lg"
