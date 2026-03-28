@@ -985,19 +985,19 @@ const Mission = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-b from-[hsl(250,50%,12%)] via-[hsl(230,50%,10%)] to-[hsl(260,50%,8%)] flex items-center justify-center">
         <div className="text-center space-y-6">
           <div className="relative">
-            <div className="w-20 h-20 border-4 border-purple-300 border-t-transparent rounded-full animate-spin mx-auto"></div>
+            <div className="w-20 h-20 border-4 border-white/20 border-t-white/60 rounded-full animate-spin mx-auto"></div>
             <div className="absolute inset-0 flex items-center justify-center">
-              <Wand2 className="h-8 w-8 text-purple-300 animate-pulse" />
+              <Wand2 className="h-8 w-8 text-white/60 animate-pulse" />
             </div>
           </div>
           <div className="space-y-2">
             <h2 className="text-2xl font-bold text-white">Preparing Your Adventure</h2>
-            <p className="text-purple-200">StoryMaster Kids is weaving your tale...</p>
+            <p className="text-white/50">StoryMaster Kids is weaving your tale...</p>
             {profile.mode === 'learning' && (
-              <p className="text-blue-200">🎓 Setting up interactive learning experience...</p>
+              <p className="text-white/40">🎓 Setting up interactive learning experience...</p>
             )}
           </div>
         </div>
