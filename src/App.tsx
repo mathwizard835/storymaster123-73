@@ -80,7 +80,33 @@ const DeepLinkInitializer = () => {
   return null;
 };
 
-const App = () => {
+const AnimatedRoutes = () => {
+  const location = useLocation();
+  return (
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
+        <Route path="/auth" element={<PublicRoute><PageTransition><Auth /></PageTransition></PublicRoute>} />
+        <Route path="/reset-password" element={<PageTransition><ResetPassword /></PageTransition>} />
+        <Route path="/" element={<Index />} />
+        <Route path="/profile" element={<ProtectedRoute><PageTransition><ProfileSetup /></PageTransition></ProtectedRoute>} />
+        <Route path="/mission" element={<ProtectedRoute><Mission /></ProtectedRoute>} />
+        <Route path="/gallery" element={<ProtectedRoute><PageTransition><StoryGallery /></PageTransition></ProtectedRoute>} />
+        <Route path="/achievements" element={<ProtectedRoute><PageTransition><Achievements /></PageTransition></ProtectedRoute>} />
+        <Route path="/dashboard" element={<ProtectedRoute><PageTransition><Dashboard /></PageTransition></ProtectedRoute>} />
+        <Route path="/subscription" element={<ProtectedRoute><PageTransition><Subscription /></PageTransition></ProtectedRoute>} />
+        <Route path="/subscription/success" element={<PageTransition><SubscriptionSuccess /></PageTransition>} />
+        <Route path="/coming-soon" element={<ProtectedRoute><PageTransition><ComingSoon /></PageTransition></ProtectedRoute>} />
+        <Route path="/privacy" element={<PageTransition><PrivacyPolicy /></PageTransition>} />
+        <Route path="/terms" element={<PageTransition><TermsOfService /></PageTransition>} />
+        <Route path="/support" element={<PageTransition><Support /></PageTransition>} />
+        <Route path="/parent-dashboard" element={<ProtectedRoute><PageTransition><ParentDashboard /></PageTransition></ProtectedRoute>} />
+        {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </AnimatePresence>
+  );
+};
+
   // Load saved theme and initialize RevenueCat on app mount
   useEffect(() => {
     const savedTheme = localStorage.getItem("premium-theme");

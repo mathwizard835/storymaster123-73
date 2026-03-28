@@ -44,7 +44,10 @@ export function MobileBottomNav() {
           return (
             <button
               key={item.path}
-              onClick={() => navigate(item.path)}
+              onClick={() => {
+                addHapticFeedback('light');
+                navigate(item.path);
+              }}
               className={cn(
                 "flex flex-col items-center justify-center min-w-[56px] min-h-[48px] rounded-lg transition-colors",
                 isActive 
