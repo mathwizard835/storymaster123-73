@@ -975,7 +975,11 @@ const Mission = () => {
     });
   };
 
-  if (!profile) return null;
+  if (!profile) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-[hsl(250,50%,12%)] via-[hsl(230,50%,10%)] to-[hsl(260,50%,8%)]" />
+    );
+  }
 
   const backgroundImage = getBackgroundForBadge(profile.selectedBadges);
 
