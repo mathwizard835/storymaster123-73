@@ -8,6 +8,7 @@ import { Clock, Star, ArrowLeft, BookOpen, Play, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useDevice } from "@/contexts/DeviceContext";
 import { useAuth } from "@/hooks/useAuth";
+import { addHapticFeedback } from "@/lib/mobileFeatures";
 import { useState, useEffect } from "react";
 
 const StoryGallery = () => {
