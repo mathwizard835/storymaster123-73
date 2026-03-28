@@ -31,6 +31,7 @@ import Support from "./pages/Support";
 import ParentDashboard from "./pages/ParentDashboard";
 import Subscription from "./pages/Subscription";
 import SubscriptionSuccess from "./pages/SubscriptionSuccess";
+import NativeWelcome from "./pages/NativeWelcome";
 
 const queryClient = new QueryClient();
 const isNative = Capacitor.isNativePlatform();
