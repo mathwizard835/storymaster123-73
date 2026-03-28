@@ -36,13 +36,13 @@ import NativeWelcome from "./pages/NativeWelcome";
 const queryClient = new QueryClient();
 const isNative = Capacitor.isNativePlatform();
 
-// On native, skip landing page and go straight to dashboard or auth
+// On native, show welcome screen if not logged in, dashboard if logged in
 const NativeHomeRedirect = () => {
   const { user, loading } = useAuth();
   
   if (loading) return <NativeLoadingScreen />;
   if (user) return <Navigate to="/dashboard" replace />;
-  return <Navigate to="/auth" replace />;
+  return <NativeWelcome />;
 };
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
