@@ -4,6 +4,7 @@ import { Home, BookOpen, Trophy, Users, Crown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useDevice } from '@/contexts/DeviceContext';
 import { addHapticFeedback } from '@/lib/mobileFeatures';
+import { Capacitor } from '@capacitor/core';
 
 interface NavItem {
   icon: React.ComponentType<{ className?: string }>;
@@ -11,8 +12,10 @@ interface NavItem {
   path: string;
 }
 
+const isNativeApp = Capacitor.isNativePlatform();
+
 const navItems: NavItem[] = [
-  { icon: Home, label: 'Home', path: '/' },
+  { icon: Home, label: 'Home', path: isNativeApp ? '/dashboard' : '/' },
   { icon: BookOpen, label: 'Gallery', path: '/gallery' },
   { icon: Trophy, label: 'Trophies', path: '/achievements' },
   { icon: Users, label: 'Parents', path: '/parent-dashboard' },

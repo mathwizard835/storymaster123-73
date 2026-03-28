@@ -9,10 +9,12 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Toggle } from "@/components/ui/toggle";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useDevice } from "@/contexts/DeviceContext";
+import { Progress } from "@/components/ui/progress";
+import { addHapticFeedback } from "@/lib/mobileFeatures";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Rocket,
   Sparkles,
@@ -27,6 +29,8 @@ import {
   Compass,
   GraduationCap,
   ArrowLeft,
+  ArrowRight,
+  Check,
 } from "lucide-react";
 import { saveProfileToLocal } from "@/lib/story";
 import { trackViolation } from "@/lib/contentViolations";
@@ -50,19 +54,19 @@ const modes = [
   { id: "learning", label: "Learning Quest", icon: GraduationCap },
 ];
 
-// Calculate default Lexile score based on age
 const getDefaultLexileForAge = (age: number): number => {
   const lexileByAge: Record<number, number> = {
-    5: 200,
-    6: 300,
-    7: 400,
-    8: 500,
-    9: 600,
-    10: 750,
-    11: 900,
-    12: 1000,
+    5: 200, 6: 300, 7: 400, 8: 500, 9: 600, 10: 750, 11: 900, 12: 1000,
   };
   return lexileByAge[age] ?? 500;
+};
+
+const TOTAL_STEPS = 6;
+
+const stepVariants = {
+  enter: { opacity: 0, x: 60 },
+  center: { opacity: 1, x: 0, transition: { type: 'spring' as const, stiffness: 300, damping: 30 } },
+  exit: { opacity: 0, x: -60, transition: { duration: 0.2 } },
 };
 
 const ProfileSetup = () => {
@@ -70,159 +74,311 @@ const ProfileSetup = () => {
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const { isPhone, isTablet } = useDevice();
-  const [name, setName] = useState<string>("");
-  const [nameError, setNameError] = useState<string>("");
-  const [age, setAge] = useState<number>(8);
-  const [lexileScore, setLexileScore] = useState<number>(500);
+  const [step, setStep] = useState(1);
+  const [name, setName] = useState("");
+  const [nameError, setNameError] = useState("");
+  const [age, setAge] = useState(8);
+  const [lexileScore, setLexileScore] = useState(500);
   const [selectedBadges, setSelectedBadges] = useState<string[]>([]);
-  const [mode, setMode] = useState<string>("thrill");
-  const [storyLength, setStoryLength] = useState<string>("medium");
-  const [topic, setTopic] = useState<string>("");
-  const [interests, setInterests] = useState<string>("");
-  const [interestsError, setInterestsError] = useState<string>("");
-  const [topicError, setTopicError] = useState<string>("");
+  const [mode, setMode] = useState("thrill");
+  const [storyLength, setStoryLength] = useState("medium");
+  const [topic, setTopic] = useState("");
+  const [interests, setInterests] = useState("");
+  const [interestsError, setInterestsError] = useState("");
+  const [topicError, setTopicError] = useState("");
 
-  // Update Lexile score when age changes
   useEffect(() => {
     setLexileScore(getDefaultLexileForAge(age));
   }, [age]);
 
   useEffect(() => {
-    // Reset ALL profile fields when starting a new adventure
     const isNewAdventure = searchParams.get("new") === "true";
     if (isNewAdventure) {
-      setName("");
-      setAge(8);
-      setLexileScore(500);
-      setSelectedBadges([]);
-      setMode("thrill");
-      setStoryLength("medium");
-      setTopic("");
-      setInterests("");
-      setNameError("");
-      setInterestsError("");
-      setTopicError("");
-
-      toast({
-        title: "Starting Fresh Adventure! 🎮",
-        description: "All settings have been reset. Create your new hero profile!",
-        duration: 4000,
-      });
+      setName(""); setAge(8); setLexileScore(500); setSelectedBadges([]);
+      setMode("thrill"); setStoryLength("medium"); setTopic(""); setInterests("");
+      setNameError(""); setInterestsError(""); setTopicError("");
+      setStep(1);
+      toast({ title: "Starting Fresh Adventure! 🎮", description: "Create your new hero profile!", duration: 4000 });
     }
-  }, [navigate, toast, searchParams]);
+  }, [searchParams, toast]);
 
   const toggleBadge = (id: string) => {
+    addHapticFeedback('light');
     setSelectedBadges((prev) => (prev.includes(id) ? prev.filter((b) => b !== id) : [...prev, id]));
   };
 
-  const validateInterests = (value: string) => {
-    try {
-      safeContentSchema.parse(value);
-      setInterestsError("");
-      return true;
-    } catch (error: any) {
-      const message = error.errors?.[0]?.message || "Invalid content";
-      setInterestsError(message);
-      return false;
+  const validateField = (value: string, setError: (e: string) => void) => {
+    try { safeContentSchema.parse(value); setError(""); return true; }
+    catch (error: any) { setError(error.errors?.[0]?.message || "Invalid content"); return false; }
+  };
+
+  const canAdvance = (): boolean => {
+    switch (step) {
+      case 1: return true; // name is optional
+      case 2: return true; // age always has default
+      case 3: return true; // lexile always has default
+      case 4: return true; // badges optional (validated on final submit)
+      case 5: return true; // mode/length always have defaults
+      case 6: return true; // interests/topic optional
+      default: return true;
     }
   };
 
-  const validateTopic = (value: string) => {
-    try {
-      safeContentSchema.parse(value);
-      setTopicError("");
-      return true;
-    } catch (error: any) {
-      const message = error.errors?.[0]?.message || "Invalid content";
-      setTopicError(message);
-      return false;
-    }
+  const nextStep = () => {
+    addHapticFeedback('light');
+    if (step < TOTAL_STEPS) setStep(step + 1);
   };
 
-  const validateName = (value: string) => {
-    try {
-      safeContentSchema.parse(value);
-      setNameError("");
-      return true;
-    } catch (error: any) {
-      const message = error.errors?.[0]?.message || "Invalid content";
-      setNameError(message);
-      return false;
-    }
+  const prevStep = () => {
+    addHapticFeedback('light');
+    if (step > 1) setStep(step - 1);
   };
 
   const handleStart = async () => {
-    // Check if at least one badge is selected OR interests field has content
+    addHapticFeedback('heavy');
+
     if (selectedBadges.length === 0 && !interests.trim()) {
-      toast({
-        title: "Profile Incomplete",
-        description: "Please select at least one interest badge or tell us about things you love.",
-        variant: "destructive",
-      });
+      toast({ title: "Profile Incomplete", description: "Please select at least one interest badge or tell us about things you love.", variant: "destructive" });
+      setStep(4);
       return;
     }
 
-    // Validate content before proceeding
-    const nameValid = name ? validateName(name) : true;
-    const interestsValid = interests ? validateInterests(interests) : true;
-    const topicValid = topic ? validateTopic(topic) : true;
+    const nameValid = name ? validateField(name, setNameError) : true;
+    const interestsValid = interests ? validateField(interests, setInterestsError) : true;
+    const topicValid = topic ? validateField(topic, setTopicError) : true;
 
     if (!nameValid || !interestsValid || !topicValid) {
-      // Track violation for manual admin review
       await trackViolation();
-
-      toast({
-        title: "Content Rejected",
-        description: "Please avoid inappropriate content. This violation has been recorded.",
-        variant: "destructive",
-      });
+      toast({ title: "Content Rejected", description: "Please avoid inappropriate content.", variant: "destructive" });
       return;
     }
 
     const profile = {
-      name: name || undefined,
-      age,
-      lexileScore,
-      selectedBadges,
-      mode,
-      storyLength: storyLength as "short" | "medium" | "epic",
-      topic,
-      interests,
+      name: name || undefined, age, lexileScore, selectedBadges, mode,
+      storyLength: storyLength as "short" | "medium" | "epic", topic, interests,
     };
     saveProfileToLocal(profile);
 
-    console.log("Profile saved - fresh configuration:", profile);
-
-    // Check URL parameters
     const forceNew = searchParams.get("new") === "true";
-
-    // CRITICAL FIX: Check if this is a profile update vs new profile creation
-    // If forceNew is NOT set, check if user has an active story
     if (!forceNew) {
       try {
         const { loadCurrentStoryFromDatabase } = await import("@/lib/databaseStory");
         const existingStory = await loadCurrentStoryFromDatabase();
-
         if (existingStory && existingStory.scenes.length > 0) {
-          // Profile update - return to existing story WITHOUT ?new=true
-          console.log("📝 Profile updated, returning to existing story");
           navigate("/mission");
           return;
         }
       } catch (error) {
         console.error("Error checking for existing story:", error);
-        // Continue to new story creation if check fails
       }
     }
 
-    // Build mission URL with appropriate parameters for NEW stories
-    let missionUrl = "/mission";
-    if (forceNew) {
-      missionUrl += "?new=true";
-    }
+    navigate(forceNew ? "/mission?new=true" : "/mission");
+  };
 
-    console.log("🚀 Navigating to:", missionUrl);
-    navigate(missionUrl);
+  const progressPercent = (step / TOTAL_STEPS) * 100;
+
+  const renderStep = () => {
+    switch (step) {
+      case 1:
+        return (
+          <div className="space-y-4">
+            <div className="text-center space-y-2">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-2">
+                <Target className="h-8 w-8 text-primary" />
+              </div>
+              <h2 className="font-heading text-2xl md:text-3xl font-extrabold">What's your hero name?</h2>
+              <p className="text-muted-foreground">Give your character a name (optional)</p>
+            </div>
+            <Input
+              placeholder="Enter your hero name..."
+              value={name}
+              onChange={(e) => { setName(e.target.value); setNameError(""); }}
+              onBlur={(e) => { if (e.target.value) validateField(e.target.value, setNameError); }}
+              maxLength={50}
+              className={cn("text-lg py-6 text-center", nameError && "border-destructive")}
+              autoFocus
+            />
+            {nameError && <p className="text-sm text-destructive text-center">{nameError}</p>}
+          </div>
+        );
+
+      case 2:
+        return (
+          <div className="space-y-6">
+            <div className="text-center space-y-2">
+              <h2 className="font-heading text-2xl md:text-3xl font-extrabold">How old are you?</h2>
+              <p className="text-muted-foreground">This helps us create the perfect story for you</p>
+            </div>
+            <div className="text-center">
+              <span className="text-6xl font-heading font-extrabold text-primary">{age}</span>
+              <p className="text-muted-foreground mt-1">years old</p>
+            </div>
+            <div className="px-4">
+              <Slider defaultValue={[age]} min={5} max={12} step={1} onValueChange={(v) => setAge(v[0] ?? 8)} />
+              <div className="flex justify-between text-xs text-muted-foreground mt-2">
+                <span>5</span><span>12</span>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 3:
+        return (
+          <div className="space-y-6">
+            <div className="text-center space-y-2">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-2">
+                <GraduationCap className="h-8 w-8 text-primary" />
+              </div>
+              <h2 className="font-heading text-2xl md:text-3xl font-extrabold">Reading Level</h2>
+              <p className="text-muted-foreground">
+                Set your Lexile score (200L–1200L).{" "}
+                <a href="https://hub.lexile.com/find-a-book/" target="_blank" rel="noopener noreferrer" className="text-primary underline">
+                  Find yours
+                </a>
+              </p>
+            </div>
+            <div className="text-center">
+              <div className="inline-flex items-baseline gap-1">
+                <Input
+                  type="number" min={200} max={1200} value={lexileScore}
+                  onChange={(e) => { const v = Number(e.target.value); if (v >= 200 && v <= 1200) setLexileScore(v); }}
+                  className="w-24 text-center text-2xl font-bold"
+                />
+                <span className="text-muted-foreground font-medium text-lg">L</span>
+              </div>
+            </div>
+            <div className="px-4">
+              <Slider value={[lexileScore]} min={200} max={1200} step={50} onValueChange={(v) => setLexileScore(v[0])} />
+              <div className="flex justify-between text-xs text-muted-foreground mt-2">
+                <span>200L Beginning</span><span>700L Mid</span><span>1200L Advanced</span>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 4:
+        return (
+          <div className="space-y-4">
+            <div className="text-center space-y-2">
+              <h2 className="font-heading text-2xl md:text-3xl font-extrabold">Pick Your Interests</h2>
+              <p className="text-muted-foreground">Choose what excites you most</p>
+            </div>
+            <TooltipProvider>
+              <div className="grid grid-cols-2 gap-3">
+                {badges.map((b) => (
+                  <Tooltip key={b.id} delayDuration={300}>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={() => toggleBadge(b.id)}
+                        className={cn(
+                          "flex items-center gap-2 rounded-xl border-2 px-3 py-4 transition-all hover:bg-accent min-h-[56px]",
+                          selectedBadges.includes(b.id) 
+                            ? "bg-primary/10 border-primary shadow-sm" 
+                            : "border-border"
+                        )}
+                        type="button"
+                      >
+                        <b.icon className="h-5 w-5 flex-shrink-0" />
+                        <span className="text-sm font-semibold">{b.label}</span>
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent><p>{b.description}</p></TooltipContent>
+                  </Tooltip>
+                ))}
+              </div>
+            </TooltipProvider>
+          </div>
+        );
+
+      case 5:
+        return (
+          <div className="space-y-6">
+            <div className="text-center space-y-2">
+              <h2 className="font-heading text-2xl md:text-3xl font-extrabold">Story Settings</h2>
+              <p className="text-muted-foreground">Choose your quest mode and story length</p>
+            </div>
+
+            <div className="space-y-3">
+              <h3 className="font-heading font-bold text-lg">Quest Mode</h3>
+              <ToggleGroup
+                type="single"
+                className="grid grid-cols-2 gap-2"
+                value={mode}
+                onValueChange={(v) => { if (v) { addHapticFeedback('light'); setMode(v); } }}
+              >
+                {modes.map((m) => (
+                  <ToggleGroupItem
+                    key={m.id} value={m.id} aria-label={m.label}
+                    className="rounded-xl border-2 px-3 py-3 data-[state=on]:bg-primary/10 data-[state=on]:border-primary min-h-[48px] text-sm"
+                  >
+                    <m.icon className="mr-2 h-4 w-4" />
+                    {m.label}
+                  </ToggleGroupItem>
+                ))}
+              </ToggleGroup>
+            </div>
+
+            <div className="space-y-3">
+              <h3 className="font-heading font-bold text-lg">Story Length</h3>
+              <RadioGroup className="grid gap-3" value={storyLength} onValueChange={(v) => { addHapticFeedback('light'); setStoryLength(v); }}>
+                <div className="flex items-center gap-3 rounded-xl border-2 p-3">
+                  <RadioGroupItem id="short" value="short" />
+                  <Label htmlFor="short">⚡ Short (3-5 scenes)</Label>
+                </div>
+                <div className="flex items-center gap-3 rounded-xl border-2 p-3">
+                  <RadioGroupItem id="medium" value="medium" />
+                  <Label htmlFor="medium">⚔️ Medium (5-8 scenes)</Label>
+                </div>
+                <div className="flex items-center gap-3 rounded-xl border-2 p-3">
+                  <RadioGroupItem id="epic" value="epic" />
+                  <Label htmlFor="epic">🏆 Epic (8-12 scenes)</Label>
+                </div>
+              </RadioGroup>
+            </div>
+          </div>
+        );
+
+      case 6:
+        return (
+          <div className="space-y-6">
+            <div className="text-center space-y-2">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-2">
+                <Sparkles className="h-8 w-8 text-primary" />
+              </div>
+              <h2 className="font-heading text-2xl md:text-3xl font-extrabold">Anything Else?</h2>
+              <p className="text-muted-foreground">Tell us what you dream about (optional)</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="font-semibold">Things You Love</Label>
+              <Textarea
+                placeholder="e.g., become a superhero, explore underwater cities, time travel..."
+                value={interests}
+                onChange={(e) => { setInterests(e.target.value); setInterestsError(""); }}
+                onBlur={(e) => { if (e.target.value) validateField(e.target.value, setInterestsError); }}
+                className={cn("min-h-[80px]", interestsError && "border-destructive")}
+              />
+              {interestsError && <p className="text-sm text-destructive">{interestsError}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <Label className="font-semibold">Learning Topic</Label>
+              <Input
+                placeholder="e.g., Ancient Rome, Ecosystems"
+                value={topic}
+                onChange={(e) => { setTopic(e.target.value); setTopicError(""); }}
+                onBlur={(e) => { if (e.target.value) validateField(e.target.value, setTopicError); }}
+                className={cn(topicError && "border-destructive")}
+              />
+              {topicError && <p className="text-sm text-destructive">{topicError}</p>}
+            </div>
+          </div>
+        );
+
+      default:
+        return null;
+    }
   };
 
   return (
@@ -231,264 +387,72 @@ const ProfileSetup = () => {
         title="StoryMaster Kids – Create Your Hero"
         description="Set your age, reading skill, badges, and quest mode to begin your StoryMaster Kids adventure."
         canonical="/profile"
-        jsonLd={{
-          "@context": "https://schema.org",
-          "@type": "WebPage",
-          name: "Create Your Hero Profile",
-        }}
+        jsonLd={{ "@context": "https://schema.org", "@type": "WebPage", name: "Create Your Hero Profile" }}
       />
 
-      <main className="min-h-screen w-full bg-background">
-        <section className="container py-6 md:py-16 px-4 md:px-8">
-          {/* Mobile Header */}
-          {isPhone ? (
-            <div className="flex items-center justify-between mb-6">
-              <Button variant="ghost" size="sm" onClick={() => navigate("/")} className="p-2">
+      <main className="min-h-screen w-full bg-background flex flex-col">
+        {/* Header with progress */}
+        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-md border-b border-border px-4 py-3">
+          <div className="container max-w-lg mx-auto">
+            <div className="flex items-center justify-between mb-2">
+              <Button variant="ghost" size="sm" onClick={() => step > 1 ? prevStep() : navigate(-1)} className="p-2">
                 <ArrowLeft className="h-5 w-5" />
               </Button>
-              <h1 className="font-heading text-xl font-extrabold">Create Hero</h1>
-              <div className="w-10" /> {/* Spacer for centering */}
-            </div>
-          ) : (
-            <>
-              <div className="flex justify-end mb-4">
-                <Button variant="outline" onClick={() => navigate("/")}>
-                  Go Back
+              <span className="text-sm text-muted-foreground font-medium">Step {step} of {TOTAL_STEPS}</span>
+              {step < TOTAL_STEPS ? (
+                <Button variant="ghost" size="sm" onClick={() => nextStep()} className="text-primary text-sm">
+                  Skip
                 </Button>
-              </div>
-              <h1 className="font-heading text-3xl md:text-5xl font-extrabold text-center">Create Your Hero Profile</h1>
-              <p className="mt-2 text-center text-muted-foreground">
-                Configure your powers and style. You can always change them later.
-              </p>
-            </>
-          )}
+              ) : (
+                <div className="w-12" />
+              )}
+            </div>
+            <Progress value={progressPercent} className="h-1.5" />
+          </div>
+        </div>
 
-          <div className="mt-6 md:mt-8 grid grid-cols-1 gap-4 md:gap-6 md:grid-cols-2">
-            {/* Hero Name */}
-            <article className="glass-panel rounded-xl p-6 md:col-span-2">
-              <h2 className="font-heading text-xl md:text-2xl font-bold flex items-center gap-2">
-                <Target className="h-6 w-6" />
-                Your Hero Name
-              </h2>
-              <p className="mt-1 text-sm text-muted-foreground">What should we call your hero? (optional)</p>
-              <div className="mt-3">
-                <Input
-                  placeholder="Enter your hero name..."
-                  value={name}
-                  onChange={(e) => {
-                    setName(e.target.value);
-                    setNameError("");
-                  }}
-                  onBlur={(e) => {
-                    if (e.target.value) validateName(e.target.value);
-                  }}
-                  maxLength={50}
-                  className={nameError ? "border-destructive" : ""}
-                />
-                {nameError && <p className="mt-2 text-sm text-destructive">{nameError}</p>}
-              </div>
-            </article>
-
-            {/* Age */}
-            <article className="glass-panel rounded-xl p-6">
-              <h2 className="font-heading text-xl md:text-2xl font-bold">Age</h2>
-              <div className="mt-4">
-                <Label htmlFor="age">Select your age: {age}</Label>
-                <div className="mt-3 px-1">
-                  <Slider
-                    id="age"
-                    defaultValue={[age]}
-                    min={5}
-                    max={12}
-                    step={1}
-                    onValueChange={(v) => setAge(v[0] ?? 8)}
-                  />
-                </div>
-              </div>
-            </article>
-
-            {/* Lexile Score */}
-            <article className="glass-panel rounded-xl p-6">
-              <h2 className="font-heading text-xl md:text-2xl font-bold">Reading Level (Lexile Score)</h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Enter your child's Lexile score (200L-1200L).{" "}
-                <a
-                  href="https://hub.lexile.com/find-a-book/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary underline"
-                >
-                  Find your Lexile score - Look for books you like and see their scores
-                </a>
-              </p>
-              <div className="mt-4 space-y-4">
-                <div className="flex items-center gap-3">
-                  <Input
-                    type="number"
-                    min={200}
-                    max={1200}
-                    value={lexileScore}
-                    onChange={(e) => {
-                      const val = Number(e.target.value);
-                      if (val >= 200 && val <= 1200) {
-                        setLexileScore(val);
-                      }
-                    }}
-                    className="w-24"
-                  />
-                  <span className="text-muted-foreground font-medium">L</span>
-                </div>
-                <div className="px-1">
-                  <Slider
-                    value={[lexileScore]}
-                    min={200}
-                    max={1200}
-                    step={50}
-                    onValueChange={(v) => setLexileScore(v[0])}
-                  />
-                </div>
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>200L (Beginning)</span>
-                  <span>700L (Intermediate)</span>
-                  <span>1200L (Advanced)</span>
-                </div>
-              </div>
-            </article>
-
-            {/* Interest Badges */}
-            <article className="glass-panel rounded-xl p-4 md:p-6 md:col-span-2">
-              <h2 className="font-heading text-lg md:text-2xl font-bold">Interest Badges</h2>
-              <TooltipProvider>
-                {/* Phone: 2 columns, Tablet: 3-4 columns, Desktop: 4 columns */}
-                <div className="mt-3 md:mt-4 grid grid-cols-2 gap-2 md:gap-3 md:grid-cols-3 lg:grid-cols-4">
-                  {badges.map((b) => (
-                    <Tooltip key={b.id} delayDuration={300}>
-                      <TooltipTrigger asChild>
-                        <button
-                          onClick={() => toggleBadge(b.id)}
-                          className={cn(
-                            "justify-start rounded-lg border px-2 py-2 md:px-3 md:py-3 inline-flex items-center transition-colors hover:bg-accent hover:text-foreground min-h-[48px]",
-                            selectedBadges.includes(b.id) && "bg-primary/10 border-primary",
-                          )}
-                          aria-label={b.label}
-                          type="button"
-                        >
-                          <b.icon className="mr-1.5 md:mr-2 h-4 w-4 md:h-5 md:w-5 flex-shrink-0" />
-                          <span className="text-xs md:text-sm font-semibold truncate">{b.label}</span>
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>{b.description}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  ))}
-                </div>
-              </TooltipProvider>
-            </article>
-
-            {/* Story Length */}
-            <article className="glass-panel rounded-xl p-6">
-              <h2 className="font-heading text-xl md:text-2xl font-bold">Story Length</h2>
-              <RadioGroup className="mt-4 grid gap-3" value={storyLength} onValueChange={setStoryLength}>
-                <div className="flex items-center gap-3 rounded-lg border p-3">
-                  <RadioGroupItem id="short" value="short" />
-                  <Label htmlFor="short">⚡ Short (3-5 scenes)</Label>
-                </div>
-                <div className="flex items-center gap-3 rounded-lg border p-3">
-                  <RadioGroupItem id="medium" value="medium" />
-                  <Label htmlFor="medium">⚔️ Medium (5-8 scenes)</Label>
-                </div>
-                <div className="flex items-center gap-3 rounded-lg border p-3">
-                  <RadioGroupItem id="epic" value="epic" />
-                  <Label htmlFor="epic">🏆 Epic (8-12 scenes)</Label>
-                </div>
-              </RadioGroup>
-            </article>
-            {/* Quest Mode */}
-            <article className="glass-panel rounded-xl p-4 md:p-6 md:col-span-2">
-              <h2 className="font-heading text-lg md:text-2xl font-bold">Quest Mode</h2>
-              <ToggleGroup
-                type="single"
-                className="mt-3 md:mt-4 grid grid-cols-2 gap-2 md:gap-3 md:grid-cols-3 lg:grid-cols-5"
-                value={mode}
-                onValueChange={(v) => v && setMode(v)}
+        {/* Step content */}
+        <div className="flex-1 flex flex-col container max-w-lg mx-auto px-4 py-8">
+          <div className="flex-1">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={step}
+                variants={stepVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
               >
-                {modes.map((m) => (
-                  <ToggleGroupItem
-                    key={m.id}
-                    value={m.id}
-                    aria-label={m.label}
-                    className="rounded-lg border px-2 py-2 md:px-4 md:py-3 data-[state=on]:bg-primary/10 data-[state=on]:border-primary min-h-[48px] text-xs md:text-sm"
-                  >
-                    <m.icon className="mr-1.5 md:mr-2 h-4 w-4 md:h-5 md:w-5" />
-                    <span className="truncate">{m.label}</span>
-                  </ToggleGroupItem>
-                ))}
-              </ToggleGroup>
-            </article>
-
-            {/* Personal Interests */}
-            <article className="glass-panel rounded-xl p-6 md:col-span-2">
-              <h2 className="font-heading text-xl md:text-2xl font-bold">Things You Love (optional)</h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Dream big! Build a city, get super powers, train dragons, be anyone anywhere anytime — your imagination is the limit!
-              </p>
-              <div className="mt-3">
-                <Textarea
-                  placeholder="e.g., become a superhero, explore underwater cities, time travel, talk to animals, build your own world..."
-                  value={interests}
-                  onChange={(e) => {
-                    setInterests(e.target.value);
-                    setInterestsError("");
-                  }}
-                  onBlur={(e) => {
-                    if (e.target.value) validateInterests(e.target.value);
-                  }}
-                  className={`min-h-[80px] ${interestsError ? "border-destructive" : ""}`}
-                />
-                {interestsError && <p className="mt-2 text-sm text-destructive">{interestsError}</p>}
-              </div>
-            </article>
-
-            {/* Topic */}
-            <article className="glass-panel rounded-xl p-6 md:col-span-2">
-              <h2 className="font-heading text-xl md:text-2xl font-bold">Learning Topic (optional)</h2>
-              <div className="mt-3 space-y-2">
-                <div className="flex items-center gap-3">
-                  <Input
-                    placeholder="e.g., Ancient Rome, Ecosystems"
-                    value={topic}
-                    onChange={(e) => {
-                      setTopic(e.target.value);
-                      setTopicError("");
-                    }}
-                    onBlur={(e) => {
-                      if (e.target.value) validateTopic(e.target.value);
-                    }}
-                    className={topicError ? "border-destructive" : ""}
-                  />
-                  <Button
-                    variant="game"
-                    onClick={() => {
-                      setTopic("");
-                      setTopicError("");
-                    }}
-                    aria-label="Clear topic"
-                  >
-                    Clear
-                  </Button>
-                </div>
-                {topicError && <p className="text-sm text-destructive">{topicError}</p>}
-              </div>
-            </article>
+                {renderStep()}
+              </motion.div>
+            </AnimatePresence>
           </div>
 
-          <div className="mt-8 flex justify-center">
-            <Button size="xl" variant="hero" onClick={handleStart}>
-              Start My Quest
-            </Button>
+          {/* Bottom action */}
+          <div className="pt-6 pb-4">
+            {step < TOTAL_STEPS ? (
+              <Button
+                size="lg"
+                variant="hero"
+                onClick={nextStep}
+                disabled={!canAdvance()}
+                className="w-full text-lg py-6"
+              >
+                Continue
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            ) : (
+              <Button
+                size="lg"
+                variant="hero"
+                onClick={handleStart}
+                className="w-full text-lg py-6"
+              >
+                <Check className="mr-2 h-5 w-5" />
+                Start My Quest
+              </Button>
+            )}
           </div>
-        </section>
+        </div>
       </main>
     </>
   );
