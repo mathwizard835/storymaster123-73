@@ -104,25 +104,7 @@ const App = () => {
             <Sonner />
             <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
               <DeepLinkInitializer />
-              <Routes>
-                <Route path="/auth" element={<PublicRoute><Auth /></PublicRoute>} />
-                <Route path="/reset-password" element={<ResetPassword />} />
-                <Route path="/" element={<Index />} />
-                <Route path="/profile" element={<ProtectedRoute><ProfileSetup /></ProtectedRoute>} />
-                <Route path="/mission" element={<ProtectedRoute><Mission /></ProtectedRoute>} />
-                <Route path="/gallery" element={<ProtectedRoute><StoryGallery /></ProtectedRoute>} />
-                <Route path="/achievements" element={<ProtectedRoute><Achievements /></ProtectedRoute>} />
-                <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-                <Route path="/subscription" element={<ProtectedRoute><Subscription /></ProtectedRoute>} />
-                <Route path="/subscription/success" element={<SubscriptionSuccess />} />
-                <Route path="/coming-soon" element={<ProtectedRoute><ComingSoon /></ProtectedRoute>} />
-                <Route path="/privacy" element={<PrivacyPolicy />} />
-                <Route path="/terms" element={<TermsOfService />} />
-                <Route path="/support" element={<Support />} />
-                <Route path="/parent-dashboard" element={<ProtectedRoute><ParentDashboard /></ProtectedRoute>} />
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
+              <AnimatedRoutes />
               <MobileBottomNav />
             </BrowserRouter>
           </ErrorBoundary>

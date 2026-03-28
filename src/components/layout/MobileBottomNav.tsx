@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Home, BookOpen, Trophy, Users, Crown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useDevice } from '@/contexts/DeviceContext';
+import { addHapticFeedback } from '@/lib/mobileFeatures';
 
 interface NavItem {
   icon: React.ComponentType<{ className?: string }>;
