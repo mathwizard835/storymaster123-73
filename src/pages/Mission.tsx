@@ -975,25 +975,29 @@ const Mission = () => {
     });
   };
 
-  if (!profile) return null;
+  if (!profile) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-[hsl(250,50%,12%)] via-[hsl(230,50%,10%)] to-[hsl(260,50%,8%)]" />
+    );
+  }
 
   const backgroundImage = getBackgroundForBadge(profile.selectedBadges);
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-b from-[hsl(250,50%,12%)] via-[hsl(230,50%,10%)] to-[hsl(260,50%,8%)] flex items-center justify-center">
         <div className="text-center space-y-6">
           <div className="relative">
-            <div className="w-20 h-20 border-4 border-purple-300 border-t-transparent rounded-full animate-spin mx-auto"></div>
+            <div className="w-20 h-20 border-4 border-white/20 border-t-white/60 rounded-full animate-spin mx-auto"></div>
             <div className="absolute inset-0 flex items-center justify-center">
-              <Wand2 className="h-8 w-8 text-purple-300 animate-pulse" />
+              <Wand2 className="h-8 w-8 text-white/60 animate-pulse" />
             </div>
           </div>
           <div className="space-y-2">
             <h2 className="text-2xl font-bold text-white">Preparing Your Adventure</h2>
-            <p className="text-purple-200">StoryMaster Kids is weaving your tale...</p>
+            <p className="text-white/50">StoryMaster Kids is weaving your tale...</p>
             {profile.mode === 'learning' && (
-              <p className="text-blue-200">🎓 Setting up interactive learning experience...</p>
+              <p className="text-white/40">🎓 Setting up interactive learning experience...</p>
             )}
           </div>
         </div>
@@ -1003,11 +1007,11 @@ const Mission = () => {
 
   if (storyLimitReached) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-b from-[hsl(250,50%,12%)] via-[hsl(230,50%,10%)] to-[hsl(260,50%,8%)] flex items-center justify-center p-4">
         <div className="bg-white/10 backdrop-blur-md rounded-lg p-8 max-w-md text-center space-y-4">
           <Timer className="h-16 w-16 text-yellow-400 mx-auto" />
           <h2 className="text-2xl font-bold text-white">Monthly Adventure Limit Reached</h2>
-          <button onClick={() => navigate('/')} className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors">
+          <button onClick={() => navigate('/')} className="bg-gradient-to-r from-[hsl(265,85%,60%)] to-[hsl(195,85%,55%)] text-white px-6 py-3 rounded-lg font-semibold transition-colors">
             Return Home
           </button>
         </div>
@@ -1017,12 +1021,12 @@ const Mission = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-b from-[hsl(250,50%,12%)] via-[hsl(230,50%,10%)] to-[hsl(260,50%,8%)] flex items-center justify-center p-4">
         <div className="bg-white/10 backdrop-blur-md rounded-lg p-8 max-w-md text-center space-y-4">
           <RefreshCw className="h-16 w-16 text-red-400 mx-auto" />
           <h2 className="text-2xl font-bold text-white">Oops! Something went wrong</h2>
-          <p className="text-purple-200 text-sm">{error}</p>
-          <button onClick={() => navigate('/')} className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors w-full">
+          <p className="text-white/50 text-sm">{error}</p>
+          <button onClick={() => navigate('/')} className="bg-white/10 hover:bg-white/20 text-white px-6 py-3 rounded-lg font-semibold transition-colors w-full">
             Return Home
           </button>
         </div>
