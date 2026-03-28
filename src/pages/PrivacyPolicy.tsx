@@ -9,8 +9,8 @@ const PrivacyPolicy = () => {
   return (
     <>
       <Seo 
-        title="Privacy Policy - StoryMaster"
-        description="Privacy policy for StoryMaster interactive reading app"
+        title="Privacy Policy - StoryMaster Kids"
+        description="Privacy policy for StoryMaster Kids interactive reading app"
         canonical="/privacy"
       />
       <div className="min-h-screen bg-background">
@@ -35,7 +35,7 @@ const PrivacyPolicy = () => {
             <section>
               <h2 className="text-2xl font-semibold mb-3 text-foreground">Introduction</h2>
               <p>
-                StoryMaster ("we," "our," or "us") is committed to protecting your privacy. 
+                StoryMaster Kids ("we," "our," or "us") is committed to protecting your privacy. 
                 This Privacy Policy explains how we collect, use, and safeguard information when you 
                 use our interactive storytelling application designed for children.
               </p>
@@ -71,7 +71,7 @@ const PrivacyPolicy = () => {
             <section>
               <h2 className="text-2xl font-semibold mb-3 text-foreground">Children's Privacy</h2>
               <p>
-                StoryMaster is designed for children. We are committed to COPPA (Children's Online 
+                StoryMaster Kids is designed for children. We are committed to COPPA (Children's Online 
                 Privacy Protection Act) compliance. We do not knowingly collect personal information from 
                 children without parental consent. Parents have the right to:
               </p>

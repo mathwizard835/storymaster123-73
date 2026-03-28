@@ -125,7 +125,7 @@ export default function Subscription() {
         if (status) {
           toast({
             title: "🎉 Subscription Activated!",
-            description: "Welcome to StoryMaster Adventure Pass!",
+            description: "Welcome to StoryMaster Kids Adventure Pass!",
           });
           loadCurrentPlan();
         }
@@ -358,7 +358,7 @@ export default function Subscription() {
             </h1>
 
             <p className="text-xl text-purple-200 max-w-2xl mx-auto">
-              Better than Roblox. More engaging than YouTube. StoryMaster turns mindless screen time into brain-building adventures.
+              Better than Roblox. More engaging than YouTube. StoryMaster Kids turns mindless screen time into brain-building adventures.
             </p>
           </div>
         )}
@@ -405,7 +405,7 @@ export default function Subscription() {
                 <Crown className="h-8 w-8 text-green-400" />
                 <CheckCircle className="h-5 w-5 text-green-400" />
               </div>
-              <CardTitle className="text-white text-lg">StoryMaster</CardTitle>
+              <CardTitle className="text-white text-lg">StoryMaster Kids</CardTitle>
             </CardHeader>
             <CardContent className="relative">
               <p className="text-3xl font-bold text-white mb-2">$6.99</p>
@@ -424,7 +424,7 @@ export default function Subscription() {
                 <BookOpen className="h-12 w-12 text-white" />
               </div>
             </div>
-            <CardTitle className="text-3xl text-white mb-2">StoryMaster Adventure Pass</CardTitle>
+            <CardTitle className="text-3xl text-white mb-2">StoryMaster Kids Adventure Pass</CardTitle>
             <CardDescription className="text-purple-200 text-lg">Unlimited interactive storytelling</CardDescription>
           </CardHeader>
 
@@ -484,7 +484,7 @@ export default function Subscription() {
                         await activateSubscriptionAfterPurchase(planType);
                         toast({
                           title: "🎉 Subscription Activated!",
-                          description: "Welcome to StoryMaster Adventure Pass!",
+                          description: "Welcome to StoryMaster Kids Adventure Pass!",
                         });
                         await loadCurrentPlan();
                       } else if (result.error !== 'cancelled') {
@@ -587,7 +587,7 @@ export default function Subscription() {
 
         {/* FAQ / Trust Builders */}
         <div className="max-w-3xl mx-auto mt-12 space-y-4">
-          <h2 className="text-2xl font-bold text-white text-center mb-6">Why Parents Love StoryMaster</h2>
+          <h2 className="text-2xl font-bold text-white text-center mb-6">Why Parents Love StoryMaster Kids</h2>
 
           <Card className="bg-white/5 backdrop-blur-sm border-white/10">
             <CardHeader>

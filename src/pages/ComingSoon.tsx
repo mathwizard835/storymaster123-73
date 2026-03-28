@@ -7,7 +7,7 @@ const ComingSoon = () => {
   return (
     <>
       <Seo
-        title="StoryMaster – Coming Soon"
+        title="StoryMaster Kids – Coming Soon"
         description="Dynamic outcomes are on the way!"
         canonical="/coming-soon"
         jsonLd={{

@@ -10,8 +10,8 @@ const Support = () => {
   return (
     <>
       <Seo 
-        title="Support & Help - StoryMaster"
-        description="Get help with StoryMaster. Contact support, view FAQs, and find answers to common questions."
+        title="Support & Help - StoryMaster Kids"
+        description="Get help with StoryMaster Kids. Contact support, view FAQs, and find answers to common questions."
         canonical="/support"
       />
       <div className="min-h-screen bg-background">
@@ -94,7 +94,7 @@ const Support = () => {
                 <div>
                   <h3 className="font-semibold mb-2 text-foreground">What ages is this app for?</h3>
                   <p className="text-muted-foreground text-sm">
-                    StoryMaster is designed for children ages 6-12. Our AI adapts stories to your child's age and reading level automatically.
+                    StoryMaster Kids is designed for children ages 6-12. Our AI adapts stories to your child's age and reading level automatically.
                   </p>
                 </div>
 
@@ -140,7 +140,7 @@ const Support = () => {
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground text-sm">
-                  StoryMaster was created by a 13-year-old who wanted to build something that makes reading as exciting as gaming. 
+                  StoryMaster Kids was created by a 13-year-old who wanted to build something that makes reading as exciting as gaming. 
                   Because kids deserve screen time that actually helps them grow.
                 </p>
               </CardContent>
