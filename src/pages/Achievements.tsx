@@ -15,7 +15,8 @@ const Achievements = () => {
   const navigate = useNavigate();
   const [progress, setProgress] = useState(loadAchievements());
   const [character, setCharacter] = useState(loadCharacter());
-  const { isPhone } = useDevice();
+  const { isPhone, isNative } = useDevice();
+  const backPath = isNative ? '/dashboard' : '/';
   
   // Refresh data when component mounts (in case returning from completed story)
   useEffect(() => {
