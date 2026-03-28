@@ -543,7 +543,7 @@ const Auth = () => {
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-2 mb-4">
             <BookOpen className="h-8 w-8 text-purple-400" />
-            <h1 className="text-3xl font-bold text-white">StoryMaster</h1>
+            <h1 className="text-3xl font-bold text-white">StoryMaster Kids</h1>
           </div>
           <p className="text-purple-200">Interactive stories that make kids love reading</p>
           <p className="text-purple-300 text-sm mt-2">AI-powered adventures adapted to your child's reading level</p>

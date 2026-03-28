@@ -10,8 +10,8 @@ const Support = () => {
   return (
     <>
       <Seo 
-        title="Support & Help - StoryMaster"
-        description="Get help with StoryMaster. Contact support, view FAQs, and find answers to common questions."
+        title="Support title="Support & Help - StoryMaster" Help - StoryMaster Kids"
+        description="Get help with StoryMaster Kids. Contact support, view FAQs, and find answers to common questions."
         canonical="/support"
       />
       <div className="min-h-screen bg-background">

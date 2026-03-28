@@ -61,7 +61,7 @@ const Achievements = () => {
   return (
     <>
       <Seo
-        title="StoryMaster – Achievements"
+        title="StoryMaster Kids – Achievements"
         description="View your achievements and character progression."
         canonical="/achievements"
       />

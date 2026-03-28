@@ -71,7 +71,7 @@ const Index = () => {
     return (
       <>
         <Seo
-          title="StoryMaster – Your Adventure Awaits"
+          title="StoryMaster Kids – Your Adventure Awaits"
           description="Create your hero and begin your interactive reading adventure with StoryMaster."
           canonical="/"
           jsonLd={{
@@ -236,7 +236,7 @@ const Index = () => {
   return (
     <>
       <Seo
-        title="StoryMaster – Interactive Stories That Build Reading Skills"
+        title="StoryMaster Kids – Interactive Stories That Build Reading Skills"
         description="AI-powered choose-your-own-adventure stories that make kids want to read. 2,500+ words per story. Safe, educational, and fun. Try free today."
         canonical="/"
         jsonLd={{

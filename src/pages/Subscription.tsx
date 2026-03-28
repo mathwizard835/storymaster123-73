@@ -405,7 +405,7 @@ export default function Subscription() {
                 <Crown className="h-8 w-8 text-green-400" />
                 <CheckCircle className="h-5 w-5 text-green-400" />
               </div>
-              <CardTitle className="text-white text-lg">StoryMaster</CardTitle>
+              <CardTitle className="text-white text-lg">StoryMaster Kids</CardTitle>
             </CardHeader>
             <CardContent className="relative">
               <p className="text-3xl font-bold text-white mb-2">$6.99</p>

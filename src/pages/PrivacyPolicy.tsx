@@ -9,8 +9,8 @@ const PrivacyPolicy = () => {
   return (
     <>
       <Seo 
-        title="Privacy Policy - StoryMaster"
-        description="Privacy policy for StoryMaster interactive reading app"
+        title="Privacy Policy - StoryMaster Kids"
+        description="Privacy policy for StoryMaster Kids interactive reading app"
         canonical="/privacy"
       />
       <div className="min-h-screen bg-background">

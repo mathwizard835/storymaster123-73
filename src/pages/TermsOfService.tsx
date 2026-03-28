@@ -9,8 +9,8 @@ const TermsOfService = () => {
   return (
     <>
       <Seo 
-        title="Terms of Service - StoryMaster"
-        description="Terms of service for StoryMaster interactive reading app"
+        title="Terms of Service - StoryMaster Kids"
+        description="Terms of service for StoryMaster Kids interactive reading app"
         canonical="/terms"
       />
       <div className="min-h-screen bg-background">
