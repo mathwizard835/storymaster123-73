@@ -226,3 +226,44 @@ All colors MUST be HSL.
     max-width: 95%;
   }
 }
+
+/* ─── Native app feel (Capacitor) ─── */
+/* Disable text selection, callouts, and web-like behaviors on native */
+.native-app {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+
+/* Allow text selection only in content areas */
+.native-app .selectable-text {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* Smooth momentum scrolling */
+.native-app main,
+.native-app [data-scroll] {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Active state press effect for tappable elements */
+.native-app button:active,
+.native-app [role="button"]:active,
+.native-app a:active {
+  transform: scale(0.97);
+  transition: transform 0.1s ease;
+}
+
+/* Prevent pull-to-refresh on non-scrollable areas */
+.native-app body {
+  overscroll-behavior-y: contain;
+}
+
+/* Large touch targets */
+.native-app .touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
