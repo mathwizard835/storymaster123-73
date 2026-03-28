@@ -1,26 +1,14 @@
 
 
-## Landing Page Marketing Improvements
+## App Store Rejection Fixes — Completed
 
-Based on the previous analysis, here are the changes to implement:
+### ✅ Issue 1: Renamed "StoryMaster Kids" → "StoryMaster" everywhere
+### ✅ Issue 4: Native functionality improvements
+- Haptic feedback wired into story choices and bottom nav
+- Push notifications service added (@capacitor/push-notifications)
+- iOS-style page transitions with framer-motion AnimatePresence
+- Native IAP (RevenueCat/StoreKit) already working on iOS
 
-### 1. Rename "Play - Join Your Quest" → "Sign Up!" (3 locations)
-- Line 169: Hero section CTA
-- Line 357: Mid-page CTA  
-- Line 734: Final CTA section
-
-### 2. Remove "It's completely Free!" block (lines 701-708)
-Replace with a trial-framing message: **"Try 3 Free Stories"** with copy like "No credit card required • See why kids love it • Upgrade anytime"
-
-### 3. Reframe free tier as trial
-- Update the replacement block to position the free tier as a taste of the product rather than the main value prop
-- Keep the "Updated weekly" badge
-
-### 4. Simplify final CTA copy
-- Tighten the heading and subhead to be more parent-focused and action-oriented
-
-### Technical details
-- All changes are in `src/pages/Index.tsx`
-- 3 string replacements for button text
-- 1 block replacement (lines 701-708) for the free tier messaging
-
+### ⚠️ App Store Connect (manual)
+- Issue 2: Set "Parental Controls" and "Age Assurance" to "None" in Age Rating
+- Issue 3: Create working demo account and update credentials
