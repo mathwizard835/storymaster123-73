@@ -107,6 +107,7 @@ const AnimatedRoutes = () => {
   );
 };
 
+const App = () => {
   // Load saved theme and initialize RevenueCat on app mount
   useEffect(() => {
     const savedTheme = localStorage.getItem("premium-theme");
