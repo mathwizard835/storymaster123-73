@@ -35,7 +35,7 @@ const PrivacyPolicy = () => {
             <section>
               <h2 className="text-2xl font-semibold mb-3 text-foreground">Introduction</h2>
               <p>
-                StoryMaster ("we," "our," or "us") is committed to protecting your privacy. 
+                StoryMaster Kids ("we," "our," or "us") is committed to protecting your privacy. 
                 This Privacy Policy explains how we collect, use, and safeguard information when you 
                 use our interactive storytelling application designed for children.
               </p>

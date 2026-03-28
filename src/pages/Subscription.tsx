@@ -358,7 +358,7 @@ export default function Subscription() {
             </h1>
 
             <p className="text-xl text-purple-200 max-w-2xl mx-auto">
-              Better than Roblox. More engaging than YouTube. StoryMaster turns mindless screen time into brain-building adventures.
+              Better than Roblox. More engaging than YouTube. StoryMaster Kids turns mindless screen time into brain-building adventures.
             </p>
           </div>
         )}

@@ -72,7 +72,7 @@ const Index = () => {
       <>
         <Seo
           title="StoryMaster Kids – Your Adventure Awaits"
-          description="Create your hero and begin your interactive reading adventure with StoryMaster."
+          description="Create your hero and begin your interactive reading adventure with StoryMaster Kids."
           canonical="/"
           jsonLd={{
             "@context": "https://schema.org",

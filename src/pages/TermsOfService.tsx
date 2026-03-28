@@ -35,7 +35,7 @@ const TermsOfService = () => {
             <section>
               <h2 className="text-2xl font-semibold mb-3 text-foreground">Acceptance of Terms</h2>
               <p>
-                By accessing and using StoryMaster ("the App"), you accept and agree to be bound 
+                By accessing and using StoryMaster Kids ("the App"), you accept and agree to be bound 
                 by these Terms of Service. If you do not agree to these terms, please do not use the App.
               </p>
             </section>
