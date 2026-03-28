@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { useDevice } from '@/contexts/DeviceContext';
 import { addHapticFeedback } from '@/lib/mobileFeatures';
 import { Capacitor } from '@capacitor/core';
+import { motion } from 'framer-motion';
 
 interface NavItem {
   icon: React.ComponentType<{ className?: string }>;
@@ -36,12 +37,13 @@ export function MobileBottomNav() {
 
   return (
     <nav 
-      className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-t border-border"
+      className="fixed bottom-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-t border-border/50"
       style={{ paddingBottom: isNative ? Math.max(safeAreaInsets.bottom, 8) : 8 }}
     >
-      <div className="flex items-center justify-around px-2 py-2">
+      <div className="flex items-center justify-around px-1 pt-1.5 pb-1">
         {navItems.map((item) => {
-          const isActive = location.pathname === item.path;
+          const isActive = location.pathname === item.path || 
+            (item.path === '/dashboard' && location.pathname === '/');
           const Icon = item.icon;
           
           return (
@@ -52,16 +54,25 @@ export function MobileBottomNav() {
                 navigate(item.path);
               }}
               className={cn(
-                "flex flex-col items-center justify-center min-w-[56px] min-h-[48px] rounded-lg transition-colors",
+                "relative flex flex-col items-center justify-center min-w-[60px] min-h-[44px] rounded-xl transition-colors",
                 isActive 
                   ? "text-primary" 
-                  : "text-muted-foreground hover:text-foreground"
+                  : "text-muted-foreground active:text-foreground"
               )}
             >
-              <Icon className={cn("h-5 w-5", isActive && "text-primary")} />
+              <div className="relative">
+                <Icon className={cn("h-[22px] w-[22px]", isActive && "text-primary")} />
+                {isActive && (
+                  <motion.div
+                    layoutId="nav-indicator"
+                    className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-5 h-[3px] rounded-full bg-primary"
+                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                  />
+                )}
+              </div>
               <span className={cn(
-                "text-[10px] mt-1 font-medium",
-                isActive && "text-primary"
+                "text-[10px] mt-1.5 font-semibold tracking-tight",
+                isActive ? "text-primary" : "text-muted-foreground"
               )}>
                 {item.label}
               </span>

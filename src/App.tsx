@@ -119,6 +119,11 @@ const App = () => {
       document.documentElement.setAttribute("data-theme", savedTheme);
     }
 
+    // Add native-app class for Capacitor-specific CSS
+    if (isNative) {
+      document.documentElement.classList.add('native-app');
+    }
+
     // Initialize RevenueCat for native IAP
     initializeRevenueCat();
     

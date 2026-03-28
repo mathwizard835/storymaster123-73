@@ -8,27 +8,30 @@ interface PageTransitionProps {
 
 const isNative = Capacitor.isNativePlatform();
 
-// iOS-style slide transitions for native, subtle fade for web
+// iOS-style push transitions for native, subtle fade for web
 const nativeVariants = {
   initial: {
     opacity: 0,
-    x: '30%',
+    x: '25%',
+    scale: 0.98,
   },
   animate: {
     opacity: 1,
     x: 0,
+    scale: 1,
     transition: {
       type: 'spring' as const,
-      stiffness: 300,
-      damping: 30,
+      stiffness: 350,
+      damping: 32,
       mass: 0.8,
     },
   },
   exit: {
     opacity: 0,
-    x: '-20%',
+    x: '-15%',
+    scale: 0.98,
     transition: {
-      duration: 0.2,
+      duration: 0.18,
       ease: [0.4, 0, 1, 1] as [number, number, number, number],
     },
   },
@@ -37,21 +40,21 @@ const nativeVariants = {
 const webVariants = {
   initial: {
     opacity: 0,
-    x: 20,
+    y: 8,
   },
   animate: {
     opacity: 1,
-    x: 0,
+    y: 0,
     transition: {
-      duration: 0.3,
+      duration: 0.25,
       ease: [0.25, 0.1, 0.25, 1] as [number, number, number, number],
     },
   },
   exit: {
     opacity: 0,
-    x: -20,
+    y: -8,
     transition: {
-      duration: 0.2,
+      duration: 0.15,
       ease: [0.25, 0.1, 0.25, 1] as [number, number, number, number],
     },
   },
@@ -64,6 +67,7 @@ export const PageTransition: React.FC<PageTransitionProps> = ({ children }) => {
       initial="initial"
       animate="animate"
       exit="exit"
+      style={{ willChange: 'transform, opacity' }}
     >
       {children}
     </motion.div>

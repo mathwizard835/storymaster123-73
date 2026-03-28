@@ -9,12 +9,14 @@ import { loadCharacter } from "@/lib/character";
 import { ArrowLeft, Trophy, Star, Lock, Crown, Zap, TrendingUp } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useDevice } from "@/contexts/DeviceContext";
+import { addHapticFeedback } from "@/lib/mobileFeatures";
 
 const Achievements = () => {
   const navigate = useNavigate();
   const [progress, setProgress] = useState(loadAchievements());
   const [character, setCharacter] = useState(loadCharacter());
-  const { isPhone } = useDevice();
+  const { isPhone, isNative } = useDevice();
+  const backPath = isNative ? '/dashboard' : '/';
   
   // Refresh data when component mounts (in case returning from completed story)
   useEffect(() => {
@@ -74,7 +76,7 @@ const Achievements = () => {
               <Button 
                 variant="ghost" 
                 size="icon"
-                onClick={() => navigate("/")}
+                onClick={() => { addHapticFeedback('light'); navigate(backPath); }}
                 className="h-10 w-10"
               >
                 <ArrowLeft className="h-5 w-5" />
@@ -88,11 +90,11 @@ const Achievements = () => {
             <div className="flex items-center gap-4 mb-8">
             <Button 
               variant="ghost" 
-              onClick={() => navigate("/")}
+              onClick={() => navigate(backPath)}
               className="flex items-center gap-2"
             >
               <ArrowLeft className="h-4 w-4" />
-              Back to Home
+              Back
             </Button>
           </div>
           )}

@@ -192,8 +192,11 @@ const Dashboard = () => {
       
       <main ref={mainRef} className="min-h-screen bg-background pb-24 md:pb-8 overflow-auto">
         {isRefreshing && (
-          <div className="flex justify-center py-3">
-            <div className="h-5 w-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          <div className="flex justify-center py-4">
+            <div className="flex items-center gap-2 text-muted-foreground text-sm">
+              <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+              Refreshing...
+            </div>
           </div>
         )}
         <div className="container py-4 md:py-8 px-4 md:px-8">
@@ -201,14 +204,18 @@ const Dashboard = () => {
           {isPhone && (
             <div className="flex flex-col gap-4 mb-6">
               <div className="flex items-center justify-between">
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => navigate("/")}
-                  className="p-2"
-                >
-                  <ArrowLeft className="h-5 w-5" />
-                </Button>
+                {!isNative ? (
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => navigate("/")}
+                    className="p-2"
+                  >
+                    <ArrowLeft className="h-5 w-5" />
+                  </Button>
+                ) : (
+                  <div className="w-9" />
+                )}
                 <div className="flex items-center gap-2">
                   <h1 className="font-heading text-xl font-extrabold">🎮 Dashboard</h1>
                   {isPremium && (
@@ -221,7 +228,10 @@ const Dashboard = () => {
                 <Button 
                   variant="ghost" 
                   size="sm"
-                  onClick={() => navigate("/subscription")}
+                  onClick={() => {
+                    addHapticFeedback('light');
+                    navigate("/subscription");
+                  }}
                   className="p-2"
                 >
                   <Crown className="h-5 w-5 text-amber-500" />
@@ -276,14 +286,16 @@ const Dashboard = () => {
             <>
               <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
                 <div className="flex items-center gap-4">
-                  <Button 
-                    variant="ghost" 
-                    onClick={() => navigate("/")}
-                    className="flex items-center gap-2"
-                  >
-                    <ArrowLeft className="h-4 w-4" />
-                    Back to Home
-                  </Button>
+                  {!isNative && (
+                    <Button 
+                      variant="ghost" 
+                      onClick={() => navigate("/")}
+                      className="flex items-center gap-2"
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                      Back to Home
+                    </Button>
+                  )}
                   <Button 
                     onClick={() => navigate("/subscription")}
                     className={`flex items-center gap-2 ${
