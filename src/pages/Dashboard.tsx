@@ -190,7 +190,12 @@ const Dashboard = () => {
         canonical="/dashboard"
       />
       
-      <main className="min-h-screen bg-background pb-24 md:pb-8">
+      <main ref={mainRef} className="min-h-screen bg-background pb-24 md:pb-8 overflow-auto">
+        {isRefreshing && (
+          <div className="flex justify-center py-3">
+            <div className="h-5 w-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          </div>
+        )}
         <div className="container py-4 md:py-8 px-4 md:px-8">
           {/* Mobile Header */}
           {isPhone && (
