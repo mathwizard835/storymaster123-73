@@ -14,7 +14,8 @@ import { useState, useEffect } from "react";
 const StoryGallery = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { isPhone } = useDevice();
+  const { isPhone, isNative } = useDevice();
+  const backPath = isNative ? '/dashboard' : '/';
   const { user } = useAuth();
   const [stories, setStories] = useState<DatabaseStory[]>([]);
   const [loading, setLoading] = useState(true);
