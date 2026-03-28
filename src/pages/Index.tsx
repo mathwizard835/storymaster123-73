@@ -71,18 +71,18 @@ const Index = () => {
     return (
       <>
         <Seo
-          title="StoryMaster Kids – Your Adventure Awaits"
-          description="Create your hero and begin your interactive reading adventure with StoryMaster Kids."
+          title="StoryMaster – Your Adventure Awaits"
+          description="Create your hero and begin your interactive reading adventure with StoryMaster."
           canonical="/"
           jsonLd={{
             "@context": "https://schema.org",
             "@type": "SoftwareApplication",
-            name: "StoryMaster Kids",
+            name: "StoryMaster",
             applicationCategory: "EducationalApplication",
           }}
         />
         <header className="sr-only">
-          <h1>Welcome to StoryMaster Kids! 🎮✨</h1>
+          <h1>Welcome to StoryMaster! 🎮✨</h1>
         </header>
         <main className="relative min-h-screen w-full overflow-hidden">
           <img
@@ -113,7 +113,7 @@ const Index = () => {
                 </div>
               )}
               <h2 className="font-heading text-4xl md:text-6xl font-extrabold tracking-tight drop-shadow-xl text-foreground">
-                Welcome to StoryMaster Kids! 🎮✨
+                Welcome to StoryMaster! 🎮✨
               </h2>
               <p className="mt-4 text-lg md:text-xl text-muted-foreground">
                 Build your hero. Launch your mission. Your choices shape the story.
@@ -236,13 +236,13 @@ const Index = () => {
   return (
     <>
       <Seo
-        title="StoryMaster Kids – Interactive Stories That Build Reading Skills"
+        title="StoryMaster – Interactive Stories That Build Reading Skills"
         description="AI-powered choose-your-own-adventure stories that make kids want to read. 2,500+ words per story. Safe, educational, and fun. Try free today."
         canonical="/"
         jsonLd={{
           "@context": "https://schema.org",
           "@type": "SoftwareApplication",
-          name: "StoryMaster Kids",
+          name: "StoryMaster",
           applicationCategory: "EducationalApplication",
           operatingSystem: "iOS, Web",
           offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
@@ -309,7 +309,7 @@ const Index = () => {
             )}
             <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-extrabold tracking-tight drop-shadow-2xl mb-4 sm:mb-6">
                <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                 StoryMaster Kids
+                 StoryMaster
                </span>
              <span className="block text-xl sm:text-2xl md:text-3xl lg:text-5xl mt-2 text-foreground">Turning Screen Time into Reading Time</span>
             </h1>
@@ -492,7 +492,7 @@ const Index = () => {
             </div>
             <div className="text-center">
               <p className="text-lg font-semibold text-foreground mb-2">
-              StoryMaster Kids: Turning Screen Time into Reading Time
+              StoryMaster: Turning Screen Time into Reading Time
               </p>
               <p className="text-muted-foreground">
                 Interactive stories that make kids <span className="text-primary font-semibold">want</span> to read — 
@@ -815,7 +815,7 @@ const Index = () => {
                 Support
               </a>
               <span>•</span>
-              <span>© 2025 StoryMaster Kids</span>
+              <span>© 2025 StoryMaster</span>
             </div>
           </footer>
         </div>

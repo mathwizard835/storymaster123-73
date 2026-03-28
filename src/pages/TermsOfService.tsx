@@ -9,8 +9,8 @@ const TermsOfService = () => {
   return (
     <>
       <Seo 
-        title="Terms of Service - StoryMaster Kids"
-        description="Terms of service for StoryMaster Kids interactive reading app"
+        title="Terms of Service - StoryMaster"
+        description="Terms of service for StoryMaster interactive reading app"
         canonical="/terms"
       />
       <div className="min-h-screen bg-background">
@@ -35,7 +35,7 @@ const TermsOfService = () => {
             <section>
               <h2 className="text-2xl font-semibold mb-3 text-foreground">Acceptance of Terms</h2>
               <p>
-                By accessing and using StoryMaster Kids ("the App"), you accept and agree to be bound 
+                By accessing and using StoryMaster ("the App"), you accept and agree to be bound 
                 by these Terms of Service. If you do not agree to these terms, please do not use the App.
               </p>
             </section>
@@ -44,7 +44,7 @@ const TermsOfService = () => {
               <h2 className="text-2xl font-semibold mb-3 text-foreground">Use of Service</h2>
               <h3 className="text-xl font-semibold mb-2 text-foreground">Eligibility</h3>
               <p>
-                StoryMaster Kids is designed for children under the supervision of parents or guardians. 
+                StoryMaster is designed for children under the supervision of parents or guardians. 
                 By creating an account, you affirm that you have parental consent if you are under 13 
                 years of age.
               </p>
@@ -64,7 +64,7 @@ const TermsOfService = () => {
               <h2 className="text-2xl font-semibold mb-3 text-foreground">Content and Intellectual Property</h2>
               <h3 className="text-xl font-semibold mb-2 text-foreground">Our Content</h3>
               <p>
-                All stories, characters, artwork, and other content provided by StoryMaster Kids are 
+                All stories, characters, artwork, and other content provided by StoryMaster are 
                 protected by copyright and other intellectual property laws. You may not copy, modify, 
                 distribute, or create derivative works without permission.
               </p>
@@ -79,7 +79,7 @@ const TermsOfService = () => {
             <section>
               <h2 className="text-2xl font-semibold mb-3 text-foreground">Subscriptions and Payments</h2>
               <p>
-                StoryMaster Kids may offer subscription plans for premium features. Subscriptions:
+                StoryMaster may offer subscription plans for premium features. Subscriptions:
               </p>
               <ul className="list-disc pl-6 space-y-2 mt-2">
                 <li>Auto-renew unless canceled before the renewal date</li>
@@ -109,7 +109,7 @@ const TermsOfService = () => {
             <section>
               <h2 className="text-2xl font-semibold mb-3 text-foreground">Limitation of Liability</h2>
               <p>
-                To the maximum extent permitted by law, StoryMaster Kids shall not be liable for any 
+                To the maximum extent permitted by law, StoryMaster shall not be liable for any 
                 damages arising from your use of the App.
               </p>
             </section>
@@ -125,7 +125,7 @@ const TermsOfService = () => {
             <section>
               <h2 className="text-2xl font-semibold mb-3 text-foreground">Governing Law</h2>
               <p>
-                These Terms are governed by the laws of the jurisdiction in which StoryMaster Kids 
+                These Terms are governed by the laws of the jurisdiction in which StoryMaster 
                 operates, without regard to conflict of law provisions.
               </p>
             </section>

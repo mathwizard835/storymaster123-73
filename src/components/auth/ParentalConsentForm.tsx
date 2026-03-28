@@ -59,7 +59,7 @@ const ParentalConsentForm = ({ childAge, onConsent, onBack, loading, externalErr
 
       <Alert className="bg-blue-900/50 border-blue-500/50 text-blue-200">
         <AlertDescription className="text-sm">
-          <strong>For parents:</strong> StoryMaster Kids collects your child's first name, age, and reading preferences to personalize stories. We never share children's data with third parties. You can review or delete your child's data at any time from the Parent Dashboard.
+          <strong>For parents:</strong> StoryMaster collects your child's first name, age, and reading preferences to personalize stories. We never share children's data with third parties. You can review or delete your child's data at any time from the Parent Dashboard.
         </AlertDescription>
       </Alert>
 
@@ -91,7 +91,7 @@ const ParentalConsentForm = ({ childAge, onConsent, onBack, loading, externalErr
               className="mt-1 border-white/40 data-[state=checked]:bg-purple-600"
             />
             <label htmlFor="accept-terms" className="text-sm text-purple-200 cursor-pointer">
-              I am the parent/guardian and I consent to my child (age {childAge}) using StoryMaster Kids under the{' '}
+              I am the parent/guardian and I consent to my child (age {childAge}) using StoryMaster under the{' '}
               <a href="/terms" target="_blank" className="text-purple-400 hover:text-purple-300 underline">
                 Terms of Service
               </a>.

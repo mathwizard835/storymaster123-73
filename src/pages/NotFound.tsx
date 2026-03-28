@@ -17,7 +17,7 @@ const NotFound = () => {
   return (
     <>
       <Seo 
-        title="Page Not Found - StoryMaster Kids"
+        title="Page Not Found - StoryMaster"
         description="The page you're looking for doesn't exist"
         canonical="/404"
       />

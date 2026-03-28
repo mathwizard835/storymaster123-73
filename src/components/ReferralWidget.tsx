@@ -66,7 +66,7 @@ export const ReferralWidget = () => {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'Join me on StoryMaster Kids!',
+          title: 'Join me on StoryMaster!',
           text: 'Create amazing interactive stories together! Use my referral code to get bonus stories.',
           url: shareUrl,
         });

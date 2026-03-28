@@ -228,8 +228,8 @@ const ProfileSetup = () => {
   return (
     <>
       <Seo
-        title="StoryMaster Kids – Create Your Hero"
-        description="Set your age, reading skill, badges, and quest mode to begin your StoryMaster Kids adventure."
+        title="StoryMaster – Create Your Hero"
+        description="Set your age, reading skill, badges, and quest mode to begin your StoryMaster adventure."
         canonical="/profile"
         jsonLd={{
           "@context": "https://schema.org",
