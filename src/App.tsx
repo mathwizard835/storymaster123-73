@@ -90,6 +90,9 @@ const App = () => {
 
     // Initialize RevenueCat for native IAP
     initializeRevenueCat();
+    
+    // Initialize push notifications for native
+    initPushNotifications();
   }, []);
 
   return (
