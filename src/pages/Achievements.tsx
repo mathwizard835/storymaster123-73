@@ -9,6 +9,7 @@ import { loadCharacter } from "@/lib/character";
 import { ArrowLeft, Trophy, Star, Lock, Crown, Zap, TrendingUp } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useDevice } from "@/contexts/DeviceContext";
+import { addHapticFeedback } from "@/lib/mobileFeatures";
 
 const Achievements = () => {
   const navigate = useNavigate();
