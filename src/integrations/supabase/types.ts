@@ -438,6 +438,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_email_banned: { Args: { p_email: string }; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
