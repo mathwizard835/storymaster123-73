@@ -37,61 +37,83 @@ const Dashboard = () => {
   const [showNewStoryDialog, setShowNewStoryDialog] = useState(false);
   const [showStoryPickerDialog, setShowStoryPickerDialog] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const pullStartY = useRef(0);
+  const mainRef = useRef<HTMLDivElement>(null);
+
+  const loadData = useCallback(async () => {
+    if (user) {
+      try {
+        console.log('🔄 Syncing progress from database...');
+        const { syncProgressFromDatabase } = await import('@/lib/syncProgress');
+        
+        try {
+          await syncProgressFromDatabase();
+          console.log('✅ Progress synced successfully');
+        } catch (syncError) {
+          console.error('Failed to sync progress:', syncError);
+        }
+        
+        const { plan } = await getUserSubscription();
+        setIsPremium(plan?.name === "premium" || plan?.name?.includes("premium"));
+        
+        const stories = await loadRecentStoriesFromDatabase();
+        setRecentStories(stories);
+        
+        const totalCount = await getTotalStoryCountFromDatabase();
+        setTotalStoryCount(totalCount);
+        
+        const inProgress = await loadInProgressStoriesFromDatabase();
+        setInProgressStories(inProgress);
+        
+        const activeStory = await loadCurrentStoryFromDatabase();
+        setHasActiveStory(!!activeStory && activeStory.scenes.length > 0);
+      } catch (e) {
+        console.error('Failed to load stories:', e);
+        toast({
+          title: "Error Loading Data",
+          description: "Failed to sync your progress. Please refresh the page.",
+          variant: "destructive",
+        });
+      }
+    }
+    
+    setProgress(loadAchievements());
+    setCharacter(loadCharacter());
+  }, [user, toast]);
   
   // Refresh data when component mounts
   useEffect(() => {
-    const loadData = async () => {
-      if (user) {
-        try {
-          // ALWAYS sync progress from database on login to ensure consistency across devices
-          console.log('🔄 Syncing progress from database...');
-          const { syncProgressFromDatabase } = await import('@/lib/syncProgress');
-          
-          try {
-            await syncProgressFromDatabase();
-            console.log('✅ Progress synced successfully');
-          } catch (syncError) {
-            console.error('Failed to sync progress:', syncError);
-            // Continue even if sync fails
-          }
-          
-          // ALWAYS check premium status fresh from database
-          const { plan } = await getUserSubscription();
-          setIsPremium(plan?.name === "premium" || plan?.name?.includes("premium"));
-          
-          // Load recent stories from database
-          const stories = await loadRecentStoriesFromDatabase();
-          setRecentStories(stories);
-          
-          const totalCount = await getTotalStoryCountFromDatabase();
-          setTotalStoryCount(totalCount);
-          
-          // Load in-progress stories separately
-          const inProgress = await loadInProgressStoriesFromDatabase();
-          setInProgressStories(inProgress);
-          
-          // Check if there's an active story
-          const activeStory = await loadCurrentStoryFromDatabase();
-          setHasActiveStory(!!activeStory && activeStory.scenes.length > 0);
-        } catch (e) {
-          console.error('Failed to load stories:', e);
-          toast({
-            title: "Error Loading Data",
-            description: "Failed to sync your progress. Please refresh the page.",
-            variant: "destructive",
-          });
-        }
-      }
-      
-      // Always load from localStorage (may have been updated by sync)
-      setProgress(loadAchievements());
-      setCharacter(loadCharacter());
-      // ABILITIES DISABLED - Uncomment to re-enable
-      // setAbilities(loadAbilities());
-    };
-    
     loadData();
-  }, [user, toast]);
+  }, [loadData]);
+
+  // Pull-to-refresh for native
+  const { isNative } = useDevice();
+  useEffect(() => {
+    if (!isNative || !mainRef.current) return;
+    const el = mainRef.current;
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (el.scrollTop === 0) pullStartY.current = e.touches[0].clientY;
+    };
+    const onTouchEnd = async (e: TouchEvent) => {
+      const diff = e.changedTouches[0].clientY - pullStartY.current;
+      if (diff > 80 && el.scrollTop === 0) {
+        addHapticFeedback('medium');
+        setIsRefreshing(true);
+        await loadData();
+        setIsRefreshing(false);
+      }
+      pullStartY.current = 0;
+    };
+
+    el.addEventListener('touchstart', onTouchStart, { passive: true });
+    el.addEventListener('touchend', onTouchEnd, { passive: true });
+    return () => {
+      el.removeEventListener('touchstart', onTouchStart);
+      el.removeEventListener('touchend', onTouchEnd);
+    };
+  }, [isNative, loadData]);
 
   const formatDate = (dateString: string) => {
     return new Intl.DateTimeFormat('en-US', {
