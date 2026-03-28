@@ -3,4 +3,12 @@
 #root {
   padding-top: env(safe-area-inset-top, 0px);
   min-height: 100dvh;
+  background-color: hsl(250, 50%, 12%);
+}
+
+/* Prevent white flash on load */
+html, body {
+  background-color: #1a1a2e;
+  margin: 0;
+  padding: 0;
 }
