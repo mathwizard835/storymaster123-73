@@ -309,7 +309,7 @@ const Index = () => {
             )}
             <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-extrabold tracking-tight drop-shadow-2xl mb-4 sm:mb-6">
                <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                 StoryMaster
+                 StoryMaster Kids
                </span>
              <span className="block text-xl sm:text-2xl md:text-3xl lg:text-5xl mt-2 text-foreground">Turning Screen Time into Reading Time</span>
             </h1>
