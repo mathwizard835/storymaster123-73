@@ -18,7 +18,7 @@ const nativeVariants = {
     opacity: 1,
     x: 0,
     transition: {
-      type: 'spring',
+      type: 'spring' as const,
       stiffness: 300,
       damping: 30,
       mass: 0.8,
@@ -29,7 +29,7 @@ const nativeVariants = {
     x: '-20%',
     transition: {
       duration: 0.2,
-      ease: [0.4, 0, 1, 1],
+      ease: [0.4, 0, 1, 1] as [number, number, number, number],
     },
   },
 };

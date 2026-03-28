@@ -12,8 +12,10 @@ interface NavItem {
   path: string;
 }
 
+const isNativeApp = Capacitor.isNativePlatform();
+
 const navItems: NavItem[] = [
-  { icon: Home, label: 'Home', path: '/' },
+  { icon: Home, label: 'Home', path: isNativeApp ? '/dashboard' : '/' },
   { icon: BookOpen, label: 'Gallery', path: '/gallery' },
   { icon: Trophy, label: 'Trophies', path: '/achievements' },
   { icon: Users, label: 'Parents', path: '/parent-dashboard' },
