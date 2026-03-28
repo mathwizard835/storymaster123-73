@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { SceneChoice, InventoryItem } from "@/lib/story";
 import { validateChoice } from "@/lib/interactionHandlers";
 import { AlertCircle, Key, Hand, Zap, Sparkles } from "lucide-react";
+import { addHapticFeedback } from "@/lib/mobileFeatures";
 
 interface InteractiveChoicesProps {
   choices: SceneChoice[];
