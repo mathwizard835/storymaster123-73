@@ -12,6 +12,8 @@ import { DeviceProvider } from "@/contexts/DeviceContext";
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 import { AnimatePresence } from "framer-motion";
 import { PageTransition } from "@/components/PageTransition";
+import { NativeLoadingScreen } from "@/components/NativeLoadingScreen";
+import { Capacitor } from "@capacitor/core";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import ProfileSetup from "./pages/ProfileSetup";
@@ -31,16 +33,22 @@ import Subscription from "./pages/Subscription";
 import SubscriptionSuccess from "./pages/SubscriptionSuccess";
 
 const queryClient = new QueryClient();
+const isNative = Capacitor.isNativePlatform();
+
+// On native, skip landing page and go straight to dashboard or auth
+const NativeHomeRedirect = () => {
+  const { user, loading } = useAuth();
+  
+  if (loading) return <NativeLoadingScreen />;
+  if (user) return <Navigate to="/dashboard" replace />;
+  return <Navigate to="/auth" replace />;
+};
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center">
-        <div className="text-white">Loading...</div>
-      </div>
-    );
+    return <NativeLoadingScreen />;
   }
 
   if (!user) {
@@ -54,11 +62,7 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center">
-        <div className="text-white">Loading...</div>
-      </div>
-    );
+    return <NativeLoadingScreen />;
   }
   
   // Allow email verification callbacks to complete before redirecting
@@ -87,7 +91,7 @@ const AnimatedRoutes = () => {
       <Routes location={location} key={location.pathname}>
         <Route path="/auth" element={<PublicRoute><PageTransition><Auth /></PageTransition></PublicRoute>} />
         <Route path="/reset-password" element={<PageTransition><ResetPassword /></PageTransition>} />
-        <Route path="/" element={<Index />} />
+        <Route path="/" element={isNative ? <NativeHomeRedirect /> : <Index />} />
         <Route path="/profile" element={<ProtectedRoute><PageTransition><ProfileSetup /></PageTransition></ProtectedRoute>} />
         <Route path="/mission" element={<ProtectedRoute><Mission /></ProtectedRoute>} />
         <Route path="/gallery" element={<ProtectedRoute><PageTransition><StoryGallery /></PageTransition></ProtectedRoute>} />

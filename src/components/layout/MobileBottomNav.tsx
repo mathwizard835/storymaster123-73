@@ -4,6 +4,7 @@ import { Home, BookOpen, Trophy, Users, Crown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useDevice } from '@/contexts/DeviceContext';
 import { addHapticFeedback } from '@/lib/mobileFeatures';
+import { Capacitor } from '@capacitor/core';
 
 interface NavItem {
   icon: React.ComponentType<{ className?: string }>;
