@@ -15,10 +15,12 @@ export const checkIfBanned = async (email: string): Promise<{ isBanned: boolean;
       return { isBanned: false };
     }
 
-    if (data?.is_banned) {
+    const result = data as unknown as { is_banned: boolean; reason?: string } | null;
+
+    if (result?.is_banned) {
       return {
         isBanned: true,
-        reason: data.reason || 'Your account has been suspended.',
+        reason: result.reason || 'Your account has been suspended.',
       };
     }
 
