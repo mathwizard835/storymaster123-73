@@ -286,14 +286,16 @@ const Dashboard = () => {
             <>
               <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
                 <div className="flex items-center gap-4">
-                  <Button 
-                    variant="ghost" 
-                    onClick={() => navigate("/")}
-                    className="flex items-center gap-2"
-                  >
-                    <ArrowLeft className="h-4 w-4" />
-                    Back to Home
-                  </Button>
+                  {!isNative && (
+                    <Button 
+                      variant="ghost" 
+                      onClick={() => navigate("/")}
+                      className="flex items-center gap-2"
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                      Back to Home
+                    </Button>
+                  )}
                   <Button 
                     onClick={() => navigate("/subscription")}
                     className={`flex items-center gap-2 ${
