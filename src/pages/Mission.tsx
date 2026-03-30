@@ -1306,7 +1306,7 @@ const Mission = () => {
                           key={choice.id}
                           onClick={() => onChoose(choice.id)}
                           disabled={isDisabled}
-                          className={`p-4 rounded-lg text-left transition-all transform hover:scale-[1.02] relative ${
+                          className={`p-4 rounded-lg text-left transition-all transform hover:scale-[1.02] relative animate-fade-in ${
                             validation.valid && !choiceLoading
                               ? 'bg-white/20 hover:bg-white/30 text-white border-2 border-transparent hover:border-white/30'
                               : 'bg-gray-600/50 text-gray-400 border-2 border-gray-500/50 cursor-not-allowed'
