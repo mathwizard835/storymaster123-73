@@ -1263,7 +1263,11 @@ const Mission = () => {
                 )}
                 <div className="prose prose-invert max-w-none tablet:max-w-prose tablet:mx-auto">
                   {scene.narrative.split('\n\n').map((paragraph, index) => (
-                    <p key={index} className="text-white mb-4 leading-relaxed text-lg">
+                    <p
+                      key={`${sceneCount}-${index}`}
+                      className="text-white mb-4 leading-relaxed text-lg animate-fade-in"
+                      style={{ animationDelay: `${index * 150}ms`, animationFillMode: 'both' }}
+                    >
                       {paragraph}
                     </p>
                   ))}
