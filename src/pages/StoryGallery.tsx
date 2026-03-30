@@ -20,6 +20,7 @@ const StoryGallery = () => {
   const { user } = useAuth();
   const [stories, setStories] = useState<DatabaseStory[]>([]);
   const [loading, setLoading] = useState(true);
+  const [offline, setOffline] = useState(false);
 
   useEffect(() => {
     const loadStories = async () => {
@@ -27,19 +28,37 @@ const StoryGallery = () => {
         setLoading(false);
         return;
       }
-      try {
-        const completed = await loadCompletedStoriesFromDatabase();
-        setStories(completed);
-      } catch (e) {
-        console.error('Failed to load gallery stories:', e);
-        toast({
-          title: "Error",
-          description: "Failed to load your stories. Please try again.",
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
+
+      // Try online first, fall back to offline cache
+      if (isOnline()) {
+        try {
+          const completed = await loadCompletedStoriesFromDatabase();
+          setStories(completed);
+          // Cache for offline use
+          await cacheStoriesOffline(completed);
+        } catch (e) {
+          console.error('Failed to load gallery stories:', e);
+          // Fall back to offline cache
+          const cached = await loadOfflineStories();
+          if (cached.length > 0) {
+            setStories(cached);
+            setOffline(true);
+          } else {
+            toast({
+              title: "Error",
+              description: "Failed to load your stories. Please try again.",
+              variant: "destructive",
+            });
+          }
+        }
+      } else {
+        // Offline mode
+        const cached = await loadOfflineStories();
+        setStories(cached);
+        setOffline(true);
       }
+
+      setLoading(false);
     };
     loadStories();
   }, [user, toast]);
