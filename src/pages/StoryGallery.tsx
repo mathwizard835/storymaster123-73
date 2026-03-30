@@ -10,6 +10,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useDevice } from "@/contexts/DeviceContext";
 import { useAuth } from "@/hooks/useAuth";
 import { addHapticFeedback } from "@/lib/mobileFeatures";
+import { useSwipeBack } from "@/hooks/useSwipeBack";
+import { SwipeBackIndicator } from "@/components/SwipeBackIndicator";
 import { useState, useEffect } from "react";
 
 const StoryGallery = () => {
