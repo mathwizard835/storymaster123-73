@@ -17,8 +17,8 @@ const BLOCKED_PATTERNS = [
   /\b(suicide|self-harm|cutting|hanging)\b/i,
   // Gambling and adult themes
   /\b(gambling|casino|betting|adult|mature|18\+|21\+)\b/i,
-  // Extreme horror (but allow "scary" and mild spooky themes)
-  /\b(terrifying|nightmare|possessed|torture)\b/i,
+  // Extreme horror and creepiness (but allow "scary" and mild spooky themes)
+  /\b(terrifying|nightmare|possessed|torture|creepy|creepiness|stalker|stalking|predator|sinister|demonic|demon|satanic|occult|voodoo|séance|exorcism)\b/i,
 ];
 
 // Content validation function
