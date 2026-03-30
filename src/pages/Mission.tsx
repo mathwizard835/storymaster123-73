@@ -820,8 +820,10 @@ const Mission = () => {
       });
       
       // Phase 1 & 2: Pass story ID for validation, no forceNewSession, pass abilities
+      // Include memory context so AI can reference past decisions
       const abilityCategories = availableAbilities.map(a => a.category);
-      const { parsed, text } = await generateNextScene(profileWithInventory, { ...scene, selectedChoiceId: choiceId }, false, 1200, nextSceneCount, savedStory.id, false, abilityCategories);
+      const sceneWithMemory = { ...scene, selectedChoiceId: choiceId, memory: storyMemory };
+      const { parsed, text } = await generateNextScene(profileWithInventory, sceneWithMemory, false, 1200, nextSceneCount, savedStory.id, false, abilityCategories);
       if (!parsed) {
         const errorPreview = text ? text.slice(0, 140) : "No response received";
         throw new Error("Invalid AI response: " + errorPreview);
