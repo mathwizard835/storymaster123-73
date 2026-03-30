@@ -59,6 +59,7 @@ const Mission = () => {
   const [error, setError] = useState<string | null>(null);
   const [storyLimitReached, setStoryLimitReached] = useState(false);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [storyMemory, setStoryMemory] = useState<{ flags: string[]; pastChoices: string[] }>({ flags: [], pastChoices: [] });
   const [goBacksUsed, setGoBacksUsed] = useState(0);
   const [showScrollTop, setShowScrollTop] = useState(false);
   
