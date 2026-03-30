@@ -39,10 +39,10 @@ const BLOCKED_PATTERNS = [
 ];
 
 function containsInappropriateContent(text: string): boolean {
-  if (!text || typeof text !== 'string') return false;
-  
+  if (!text || typeof text !== "string") return false;
+
   const normalized = text.toLowerCase().trim();
-  
+
   // Check blocked patterns
   for (const pattern of BLOCKED_PATTERNS) {
     if (pattern.test(normalized)) {
@@ -50,71 +50,71 @@ function containsInappropriateContent(text: string): boolean {
       return true;
     }
   }
-  
+
   // Check for URLs
   if (/https?:\/\//i.test(normalized)) {
-    console.error('Blocked content: URL detected');
+    console.error("Blocked content: URL detected");
     return true;
   }
-  
+
   // Check for excessive special characters
   if (/(.)\1{5,}/.test(normalized)) {
-    console.error('Blocked content: excessive repetition');
+    console.error("Blocked content: excessive repetition");
     return true;
   }
-  
+
   return false;
 }
 
 // Input validation functions
 function validateProfileData(profile: any): boolean {
-  if (!profile || typeof profile !== 'object') return true; // Optional field
-  
-  if (profile.age && (typeof profile.age !== 'number' || profile.age < 5 || profile.age > 12)) {
+  if (!profile || typeof profile !== "object") return true; // Optional field
+
+  if (profile.age && (typeof profile.age !== "number" || profile.age < 5 || profile.age > 12)) {
     return false;
   }
-  
+
   // Handle interests as both array and string format
   if (profile.interests) {
     if (Array.isArray(profile.interests) && profile.interests.length > 20) {
       return false;
     }
-    if (typeof profile.interests === 'string' && profile.interests.length > 500) {
+    if (typeof profile.interests === "string" && profile.interests.length > 500) {
       return false;
     }
   }
-  
+
   if (profile.selectedBadges && (!Array.isArray(profile.selectedBadges) || profile.selectedBadges.length > 10)) {
     return false;
   }
-  
+
   // Content filtering for name field
-  if (profile.name && typeof profile.name === 'string') {
+  if (profile.name && typeof profile.name === "string") {
     if (profile.name.length > 50) return false;
     if (containsInappropriateContent(profile.name)) {
-      console.error('Blocked: inappropriate content in name');
+      console.error("Blocked: inappropriate content in name");
       return false;
     }
   }
-  
+
   // Content filtering for interests string field
-  if (profile.interests && typeof profile.interests === 'string') {
+  if (profile.interests && typeof profile.interests === "string") {
     if (profile.interests.length > 500) return false;
     if (containsInappropriateContent(profile.interests)) {
-      console.error('Blocked: inappropriate content in interests');
+      console.error("Blocked: inappropriate content in interests");
       return false;
     }
   }
-  
+
   // Content filtering for topic field
-  if (profile.topic && typeof profile.topic === 'string') {
+  if (profile.topic && typeof profile.topic === "string") {
     if (profile.topic.length > 500) return false;
     if (containsInappropriateContent(profile.topic)) {
-      console.error('Blocked: inappropriate content in topic');
+      console.error("Blocked: inappropriate content in topic");
       return false;
     }
   }
-  
+
   return true;
 }
 
@@ -125,9 +125,9 @@ function validateRequestSize(body: any): boolean {
 
 function rateLimit(deviceId: string, ipAddress: string): boolean {
   const now = Date.now();
-  const deviceKey = deviceId || 'anonymous';
-  const ipKey = ipAddress || 'unknown';
-  
+  const deviceKey = deviceId || "anonymous";
+  const ipKey = ipAddress || "unknown";
+
   // Check device-based rate limit
   const deviceData = requestCounts.get(`device_${deviceKey}`);
   if (deviceData && now <= deviceData.resetTime) {
@@ -139,7 +139,7 @@ function rateLimit(deviceId: string, ipAddress: string): boolean {
   } else {
     requestCounts.set(`device_${deviceKey}`, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
   }
-  
+
   // Check IP-based rate limit (30 requests per minute - allows multiple devices per IP)
   const MAX_REQUESTS_PER_IP = 30;
   const ipData = requestCounts.get(`ip_${ipKey}`);
@@ -152,21 +152,21 @@ function rateLimit(deviceId: string, ipAddress: string): boolean {
   } else {
     requestCounts.set(`ip_${ipKey}`, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
   }
-  
+
   return true;
 }
 
 // Enhanced JSON extraction function to handle markdown-wrapped responses
 function extractJSON(text: string): unknown | null {
   if (!text) return null;
-  
+
   // Try direct parsing first
   try {
     return JSON.parse(text);
   } catch (_) {
     console.log("Direct JSON parse failed, trying extraction methods...");
   }
-  
+
   // Try extracting from markdown code blocks
   const codeBlockMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
   if (codeBlockMatch) {
@@ -177,22 +177,22 @@ function extractJSON(text: string): unknown | null {
       console.log("Code block parsing failed:", e);
     }
   }
-  
+
   // Try finding JSON object boundaries - look for complete objects only
-  const jsonStart = text.indexOf('{');
+  const jsonStart = text.indexOf("{");
   if (jsonStart !== -1) {
     let braceCount = 0;
     let jsonEnd = -1;
-    
+
     for (let i = jsonStart; i < text.length; i++) {
-      if (text[i] === '{') braceCount++;
-      if (text[i] === '}') braceCount--;
+      if (text[i] === "{") braceCount++;
+      if (text[i] === "}") braceCount--;
       if (braceCount === 0) {
         jsonEnd = i;
         break;
       }
     }
-    
+
     if (jsonEnd !== -1) {
       try {
         const jsonStr = text.substring(jsonStart, jsonEnd + 1);
@@ -203,7 +203,7 @@ function extractJSON(text: string): unknown | null {
       }
     }
   }
-  
+
   console.log("All JSON extraction methods failed. Raw response preview:", text.substring(0, 500));
   return null;
 }
@@ -215,7 +215,7 @@ Create fast-paced, cinematic, choose-your-own-adventure stories that are fun, cl
 SAFETY RULES
 - No gore, blood, sexual content, drugs/alcohol/smoking, bullying, discrimination, or horror.
 - Stories must be safe, positive, imaginative, and age-appropriate.
-- Characters may express sass, frustration, or playful attitude, but never cruelty, harm, or bullying.
+- Characters may express sass, frustration, or playful attitude, but NEVER cruelty, harm, or bullying.
 
 QUEST MODE (TONE DRIVER)
 - FUN → silly, playful, chaotic humor ("BONK!", "ZAP!")
@@ -322,8 +322,6 @@ FINAL CHECK BEFORE RESPONDING
 - Feels like a game, not a static story
 - JSON must always be valid, even if narrative is simplified`;
 
-
-
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -331,19 +329,19 @@ serve(async (req) => {
 
   if (!ANTHROPIC_API_KEY) {
     console.error("Missing ANTHROPIC_API_KEY secret");
-    return new Response(
-      JSON.stringify({ error: "Service configuration error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: "Service configuration error" }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
   // === JWT AUTHENTICATION ===
-  const authHeader = req.headers.get('Authorization');
-  if (!authHeader?.startsWith('Bearer ')) {
-    return new Response(
-      JSON.stringify({ error: 'Authentication required' }),
-      { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader?.startsWith("Bearer ")) {
+    return new Response(JSON.stringify({ error: "Authentication required" }), {
+      status: 401,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -351,17 +349,17 @@ serve(async (req) => {
   const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
   const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
-    global: { headers: { Authorization: authHeader } }
+    global: { headers: { Authorization: authHeader } },
   });
 
-  const token = authHeader.replace('Bearer ', '');
+  const token = authHeader.replace("Bearer ", "");
   const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
   if (claimsError || !claimsData?.claims) {
     console.error("JWT verification failed:", claimsError);
-    return new Response(
-      JSON.stringify({ error: 'Invalid or expired token' }),
-      { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: "Invalid or expired token" }), {
+      status: 401,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
   const userId = claimsData.claims.sub as string;
@@ -372,34 +370,36 @@ serve(async (req) => {
 
   try {
     // Parse and validate request body
-    const contentLength = req.headers.get('content-length');
+    const contentLength = req.headers.get("content-length");
     if (contentLength && parseInt(contentLength) > 50000) {
-      return new Response(
-        JSON.stringify({ error: "Request too large" }),
-        { status: 413, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: "Request too large" }), {
+        status: 413,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const body = await req.json();
-    
+
     // Check if this is a quiz generation request
-    if (body?.action === 'generate-quiz') {
+    if (body?.action === "generate-quiz") {
       const scenes = body?.scenes || [];
       const profile = body?.profile || {};
-      
+
       if (!scenes || scenes.length === 0) {
-        return new Response(
-          JSON.stringify({ error: "No story scenes provided for quiz generation" }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return new Response(JSON.stringify({ error: "No story scenes provided for quiz generation" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
-      
+
       // Build story summary from scenes
-      const storySummary = scenes.map((scene: any, idx: number) => 
-        `Scene ${idx + 1}: ${scene.sceneTitle || 'Untitled'}\n${scene.narrative || ''}`
-      ).join('\n\n');
-      
-      const quizPrompt = `Based on this children's story (age ${profile.age || '8-10'}), generate 5 comprehension quiz questions.
+      const storySummary = scenes
+        .map(
+          (scene: any, idx: number) => `Scene ${idx + 1}: ${scene.sceneTitle || "Untitled"}\n${scene.narrative || ""}`,
+        )
+        .join("\n\n");
+
+      const quizPrompt = `Based on this children's story (age ${profile.age || "8-10"}), generate 5 comprehension quiz questions.
 
 STORY:
 ${storySummary}
@@ -446,59 +446,54 @@ Return ONLY valid JSON (no markdown, no explanations):
           body: JSON.stringify({
             model: "claude-sonnet-4-20250514", // Quiz always uses Sonnet for quality
             max_tokens: 2000,
-            messages: [
-              { role: "user", content: quizPrompt }
-            ],
+            messages: [{ role: "user", content: quizPrompt }],
           }),
         });
 
         if (!quizResponse.ok) {
           const errText = await quizResponse.text();
           console.error("Quiz generation error:", quizResponse.status, errText);
-          return new Response(
-            JSON.stringify({ error: "Failed to generate quiz" }),
-            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
+          return new Response(JSON.stringify({ error: "Failed to generate quiz" }), {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
         }
 
         const quizData = await quizResponse.json();
         const quizText = quizData?.content?.[0]?.text ?? "";
         const quizParsed = extractJSON(quizText);
-        
+
         if (!quizParsed || !quizParsed.questions) {
           console.error("Invalid quiz response format");
-          return new Response(
-            JSON.stringify({ error: "Invalid quiz format" }),
-            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
+          return new Response(JSON.stringify({ error: "Invalid quiz format" }), {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
         }
 
-        return new Response(
-          JSON.stringify(quizParsed),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return new Response(JSON.stringify(quizParsed), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       } catch (error) {
         console.error("Quiz generation error:", error);
-        return new Response(
-          JSON.stringify({ error: "Quiz generation failed" }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return new Response(JSON.stringify({ error: "Quiz generation failed" }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
     }
-    
+
     // Validate request structure and content
     if (!validateRequestSize(body)) {
-      return new Response(
-        JSON.stringify({ error: "Request payload too large" }),
-        { status: 413, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: "Request payload too large" }), {
+        status: 413,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
-    
+
     // Extract device ID and IP address for rate limiting
-    const deviceId = req.headers.get('x-device-id') || body?.device_id || 'anonymous';
-    const ipAddress = req.headers.get('x-forwarded-for')?.split(',')[0] || 
-                      req.headers.get('x-real-ip') || 
-                      'unknown';
+    const deviceId = req.headers.get("x-device-id") || body?.device_id || "anonymous";
+    const ipAddress = req.headers.get("x-forwarded-for")?.split(",")[0] || req.headers.get("x-real-ip") || "unknown";
 
     // === SERVER-SIDE STORY LIMIT ENFORCEMENT ===
     // Check if this is a new story (no scene context = first scene)
@@ -509,10 +504,10 @@ Return ONLY valid JSON (no markdown, no explanations):
       // Count stories started by this user in the last 30 days
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
       const { count: storyCount, error: countErr } = await supabaseAdmin
-        .from('user_stories')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', userId)
-        .gte('started_at', thirtyDaysAgo);
+        .from("user_stories")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", userId)
+        .gte("started_at", thirtyDaysAgo);
 
       if (countErr) {
         console.error("Failed to count user stories:", countErr);
@@ -522,10 +517,10 @@ Return ONLY valid JSON (no markdown, no explanations):
 
       // Check if user has an active subscription
       const { data: activeSub } = await supabaseAdmin
-        .from('user_subscriptions')
-        .select('id, status, plan_id')
-        .eq('user_id', userId)
-        .eq('status', 'active')
+        .from("user_subscriptions")
+        .select("id, status, plan_id")
+        .eq("user_id", userId)
+        .eq("status", "active")
         .limit(1)
         .maybeSingle();
 
@@ -534,31 +529,28 @@ Return ONLY valid JSON (no markdown, no explanations):
         console.warn(`Story limit reached for user ${userId}: ${userStoryCount}/${FREE_STORY_LIMIT}`);
         return new Response(
           JSON.stringify({ error: "Story limit reached. Upgrade to Adventure Pass for unlimited stories." }),
-          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
 
       // === DEVICE FINGERPRINT ANTI-ABUSE CHECK ===
-      const userAgent = req.headers.get('user-agent') || 'unknown';
-      const ipPrefix = ipAddress.split('.').slice(0, 3).join('.'); // /24 prefix only
-      const salt = Deno.env.get('DEVICE_FINGERPRINT_SALT') || 'default-salt';
+      const userAgent = req.headers.get("user-agent") || "unknown";
+      const ipPrefix = ipAddress.split(".").slice(0, 3).join("."); // /24 prefix only
+      const salt = Deno.env.get("DEVICE_FINGERPRINT_SALT") || "default-salt";
 
       const fingerprintRaw = `${salt}:${deviceId}:${userAgent}:${ipPrefix}`;
-      const hashBuffer = await crypto.subtle.digest(
-        'SHA-256',
-        new TextEncoder().encode(fingerprintRaw)
-      );
+      const hashBuffer = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(fingerprintRaw));
       deviceFingerprint = Array.from(new Uint8Array(hashBuffer))
-        .map(b => b.toString(16).padStart(2, '0'))
-        .join('');
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join("");
 
       if (!activeSub) {
         // Count stories across ALL accounts from this device fingerprint
         const { count: deviceStoryCount, error: deviceCountErr } = await supabaseAdmin
-          .from('user_stories')
-          .select('*', { count: 'exact', head: true })
-          .eq('device_fingerprint', deviceFingerprint)
-          .gte('started_at', thirtyDaysAgo);
+          .from("user_stories")
+          .select("*", { count: "exact", head: true })
+          .eq("device_fingerprint", deviceFingerprint)
+          .gte("started_at", thirtyDaysAgo);
 
         if (deviceCountErr) {
           console.error("Failed to count device stories:", deviceCountErr);
@@ -567,28 +559,34 @@ Return ONLY valid JSON (no markdown, no explanations):
         const deviceTotal = deviceStoryCount ?? 0;
 
         if (deviceTotal >= 6) {
-          console.warn(`🚫 Device abuse blocked: fingerprint ${deviceFingerprint.slice(0, 12)}... has ${deviceTotal} stories across accounts`);
+          console.warn(
+            `🚫 Device abuse blocked: fingerprint ${deviceFingerprint.slice(0, 12)}... has ${deviceTotal} stories across accounts`,
+          );
           return new Response(
             JSON.stringify({ error: "Story limit reached. Upgrade to Adventure Pass for unlimited stories." }),
-            { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
           );
         } else if (deviceTotal >= 3) {
-          console.warn(`⚠️ Device abuse warning: fingerprint ${deviceFingerprint.slice(0, 12)}... has ${deviceTotal} stories across accounts`);
+          console.warn(
+            `⚠️ Device abuse warning: fingerprint ${deviceFingerprint.slice(0, 12)}... has ${deviceTotal} stories across accounts`,
+          );
         }
       }
 
-      console.log(`📊 User ${userId}: ${userStoryCount} stories in 30 days, subscription: ${activeSub ? 'active' : 'none'}, device fingerprint: ${deviceFingerprint?.slice(0, 12)}...`);
+      console.log(
+        `📊 User ${userId}: ${userStoryCount} stories in 30 days, subscription: ${activeSub ? "active" : "none"}, device fingerprint: ${deviceFingerprint?.slice(0, 12)}...`,
+      );
     }
-    
+
     // Determine model based on total stories started by this user
     let selectedModel = "claude-sonnet-4-20250514";
     try {
       // Count total stories by user_id (not device_id) for model selection
       const { count, error: countError } = await supabaseAdmin
-        .from('user_stories')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', userId);
-      
+        .from("user_stories")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", userId);
+
       if (!countError && count !== null && count >= 20) {
         selectedModel = "claude-haiku-4-5-20251001";
         console.log(`📊 User ${userId} has ${count} stories - using Haiku 4.5`);
@@ -598,21 +596,21 @@ Return ONLY valid JSON (no markdown, no explanations):
     } catch (modelErr) {
       console.warn("Failed to check story count for model selection, defaulting to Sonnet:", modelErr);
     }
-    
+
     // Apply rate limiting with IP-based backup
     if (!rateLimit(deviceId, ipAddress)) {
       return new Response(
         JSON.stringify({ error: "Rate limit exceeded. Please wait before making another request." }),
-        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
-    
+
     // Validate profile data
     if (!validateProfileData(body?.profile)) {
-      return new Response(
-        JSON.stringify({ error: "Invalid profile data" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: "Invalid profile data" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
     const profile = body?.profile ?? {};
     const scene = body?.scene ?? null; // optional current scene context
@@ -627,8 +625,9 @@ Return ONLY valid JSON (no markdown, no explanations):
     const max_tokens = Math.min(Number(body?.max_tokens ?? getOptimalTokens(sceneCount, !scene)), 4000);
 
     const abilities = body?.abilities || [];
-    const abilityContext = abilities.length > 0 ? 
-      `\n\n🔐 PLAYER HAS UNLOCKED ABILITIES:
+    const abilityContext =
+      abilities.length > 0
+        ? `\n\n🔐 PLAYER HAS UNLOCKED ABILITIES:
 ${abilities.join(", ")}
 
 When generating choices, include ONE "Secret Choice" that requires one of these abilities. Secret Choices should:
@@ -636,11 +635,13 @@ When generating choices, include ONE "Secret Choice" that requires one of these 
 - Have requiresAbility set to one of the ability categories the player has
 - Offer a uniquely powerful, creative, or advantageous option
 - Make the player feel rewarded for earning abilities
-- Be clearly more interesting than standard choices` : '';
+- Be clearly more interesting than standard choices`
+        : "";
 
-    const inventoryContext = profile.inventory && profile.inventory.length > 0 ? 
-      `\nCurrent Inventory: ${profile.inventory.map((item: any) => `${item.name} (${item.type})`).join(", ")}` : 
-      "\nInventory: Empty";
+    const inventoryContext =
+      profile.inventory && profile.inventory.length > 0
+        ? `\nCurrent Inventory: ${profile.inventory.map((item: any) => `${item.name} (${item.type})`).join(", ")}`
+        : "\nInventory: Empty";
 
     const profileSummary = `Player Profile:
 - Hero Name: ${profile.name || "the hero"}
@@ -653,54 +654,58 @@ When generating choices, include ONE "Secret Choice" that requires one of these 
     const sceneContext = scene ? `\nContinue from: ${JSON.stringify(scene)}` : "\nCreate a new adventure opening.";
     // Dynamic story progression based on selected length
     const getStoryProgressContext = () => {
-      const storyLength = profile.storyLength || 'medium';
+      const storyLength = profile.storyLength || "medium";
       let endScene, conclusionScene;
-      
+
       switch (storyLength) {
-        case 'short':
+        case "short":
           endScene = 5;
           conclusionScene = 4;
           break;
-        case 'epic':
+        case "epic":
           endScene = 12;
           conclusionScene = 9;
           break;
-        case 'medium':
+        case "medium":
         default:
           endScene = 8;
           conclusionScene = 6;
           break;
       }
-      
-      const progressMessage = sceneCount >= endScene 
-        ? ' END THE STORY NOW with a satisfying conclusion.' 
-        : sceneCount >= conclusionScene 
-        ? ' Build toward the climactic finale - story should end within the next 1-2 scenes.' 
-        : '';
-        
-      return `\nSTORY PROGRESS: This is scene ${sceneCount} of a ${storyLength} story (${storyLength === 'short' ? '4-5' : storyLength === 'epic' ? '10-12' : '6-8'} scenes total).${progressMessage}`;
+
+      const progressMessage =
+        sceneCount >= endScene
+          ? " END THE STORY NOW with a satisfying conclusion."
+          : sceneCount >= conclusionScene
+            ? " Build toward the climactic finale - story should end within the next 1-2 scenes."
+            : "";
+
+      return `\nSTORY PROGRESS: This is scene ${sceneCount} of a ${storyLength} story (${storyLength === "short" ? "4-5" : storyLength === "epic" ? "10-12" : "6-8"} scenes total).${progressMessage}`;
     };
-    
+
     const storyProgressContext = getStoryProgressContext();
 
     // Optimized learning mode instructions (compressed for speed)
-    const learningModeInstructions = profile.mode === 'learning' ? `
-LEARNING: Age ${profile.age} - ${profile.age <= 7 ? 'Basic math/letters via puzzles' : profile.age <= 9 ? 'Math/science/reading challenges' : 'Advanced concepts through gameplay'}. ${profile.topic ? `Focus: ${profile.topic}` : ''}` : '';
+    const learningModeInstructions =
+      profile.mode === "learning"
+        ? `
+LEARNING: Age ${profile.age} - ${profile.age <= 7 ? "Basic math/letters via puzzles" : profile.age <= 9 ? "Math/science/reading challenges" : "Advanced concepts through gameplay"}. ${profile.topic ? `Focus: ${profile.topic}` : ""}`
+        : "";
 
     // Restructured prompt: Profile requirements FIRST and prominent
     const contextSize = scene ? "CONTINUATION" : "NEW STORY";
-    
+
     const userPrompt = `=== CRITICAL PLAYER PROFILE (MUST FOLLOW EXACTLY) ===
 
 ${profileSummary}
 
 ⚠️ MANDATORY REQUIREMENTS:
 - PROTAGONIST NAME: ${profile.name || "the hero"} - Use this as the main character's name throughout the story. Refer to the protagonist by this name in the narrative and choices. Make the player feel like THEY are the hero.
-- AGE ${profile.age ?? "unknown"}: Use ${profile.age && profile.age <= 7 ? 'simple, clear vocabulary for young readers' : profile.age && profile.age <= 10 ? 'age-appropriate vocabulary with moderate complexity' : 'advanced vocabulary and complex themes'}
-- LEXILE SCORE ${profile.lexileScore ?? 500}L: ${(profile.lexileScore ?? 500) <= 400 ? 'Use simple vocabulary (common words), short sentences (5-10 words), single-idea paragraphs, and very clear structure' : (profile.lexileScore ?? 500) <= 650 ? 'Use moderate vocabulary with context clues, varied sentence lengths (8-15 words), and connected ideas' : (profile.lexileScore ?? 500) <= 900 ? 'Use rich vocabulary, compound-complex sentences, multiple story threads, and emotional depth' : 'Use advanced vocabulary, sophisticated structures, layered narratives, and nuanced themes'}
+- AGE ${profile.age ?? "unknown"}: Use ${profile.age && profile.age <= 7 ? "simple, clear vocabulary for young readers" : profile.age && profile.age <= 10 ? "age-appropriate vocabulary with moderate complexity" : "advanced vocabulary and complex themes"}
+- LEXILE SCORE ${profile.lexileScore ?? 500}L: ${(profile.lexileScore ?? 500) <= 400 ? "Use simple vocabulary (common words), short sentences (5-10 words), single-idea paragraphs, and very clear structure" : (profile.lexileScore ?? 500) <= 650 ? "Use moderate vocabulary with context clues, varied sentence lengths (8-15 words), and connected ideas" : (profile.lexileScore ?? 500) <= 900 ? "Use rich vocabulary, compound-complex sentences, multiple story threads, and emotional depth" : "Use advanced vocabulary, sophisticated structures, layered narratives, and nuanced themes"}
 - INTERESTS/BADGES: ${(profile.selectedBadges || []).join(", ") || "general"} - Story MUST incorporate these themes prominently
-- **QUEST MODE "${profile.mode ?? 'unknown'}" - THIS IS YOUR PRIMARY TONE**: ${profile.mode === 'Fun' ? '🎭 COMEDY MODE - Make everything silly, funny, and ridiculous! Use wacky situations, goofy characters, playful language, absurd humor. The story should make kids LAUGH and GIGGLE, NOT feel suspense or danger. Think cartoon comedy!' : profile.mode === 'Thrill' ? '⚡ THRILL MODE - High-stakes, urgent, time-sensitive danger and intense action' : profile.mode === 'Mystery' ? '🔍 MYSTERY MODE - Suspenseful, clue-driven investigation with slow tension' : profile.mode === 'Explore' ? '🗺️ EXPLORE MODE - Imaginative, wonder-filled, open-ended discovery' : 'Adventure-focused'}
-- STORY LENGTH: ${profile.storyLength ?? 'medium'} story${profile.topic ? `\n- TOPIC: ${profile.topic} - weave this into the narrative` : ''}
+- **QUEST MODE "${profile.mode ?? "unknown"}" - THIS IS YOUR PRIMARY TONE**: ${profile.mode === "Fun" ? "🎭 COMEDY MODE - Make everything silly, funny, and ridiculous! Use wacky situations, goofy characters, playful language, absurd humor. The story should make kids LAUGH and GIGGLE, NOT feel suspense or danger. Think cartoon comedy!" : profile.mode === "Thrill" ? "⚡ THRILL MODE - High-stakes, urgent, time-sensitive danger and intense action" : profile.mode === "Mystery" ? "🔍 MYSTERY MODE - Suspenseful, clue-driven investigation with slow tension" : profile.mode === "Explore" ? "🗺️ EXPLORE MODE - Imaginative, wonder-filled, open-ended discovery" : "Adventure-focused"}
+- STORY LENGTH: ${profile.storyLength ?? "medium"} story${profile.topic ? `\n- TOPIC: ${profile.topic} - weave this into the narrative` : ""}
 
 ${sceneContext}
 ${storyProgressContext}
@@ -713,18 +718,20 @@ Return ONLY valid JSON (no markdown, no explanations):
 {"sceneTitle":"...","hud":{"energy":0-100,"time":"...","choicePoints":0-50,"ui":["..."]},"narrative":"...","choices":[{"id":"a","text":"...","type":"standard|item_use|object_interact|secret","createsFlag":"...","requires":[],"requiresItem":"...","consumesItem":true,"requiresAbility":"..."}],"interactiveObjects":[{"id":"...","name":"...","description":"...","actions":["Examine","Search"],"requiresItem":"..."}],"itemsFound":[{"id":"...","name":"...","description":"...","type":"key|tool|consumable|document|weapon|potion","usable":true,"consumable":false}],"memory":{"flags":[],"pastChoices":[]},"end":false}
 
 SCENE REQUIREMENTS:
-- ${scene ? 'Continue the story naturally from previous scene' : `Open with immediate action hook that establishes setting, character, and conflict. Introduce ${profile.name || "the hero"} as the protagonist.`}
+- ${scene ? "Continue the story naturally from previous scene" : `Open with immediate action hook that establishes setting, character, and conflict. Introduce ${profile.name || "the hero"} as the protagonist.`}
 - Use the protagonist's name (${profile.name || "the hero"}) naturally in the narrative and address them directly
 - 3-4 compelling choices that matter, each with a distinct personality tone
 - Narrative: 215 words max, formatted in 3-4 paragraphs with \\n\\n breaks
 - Incorporate interactive objects/items when appropriate
 - Include memory flags for meaningful choices
-${profile.mode === 'learning' ? '- Embed educational content naturally into the story' : ''}
+${profile.mode === "learning" ? "- Embed educational content naturally into the story" : ""}
 - Ensure story reflects ALL profile requirements listed above`;
 
     // Log profile for validation
     console.log(`Story generation request: ${max_tokens} tokens, scene ${sceneCount}`);
-    console.log(`Profile validation - Age: ${profile.age}, Lexile: ${profile.lexileScore}L, Badges: ${(profile.selectedBadges || []).join(", ")}, Mode: ${profile.mode}`);
+    console.log(
+      `Profile validation - Age: ${profile.age}, Lexile: ${profile.lexileScore}L, Badges: ${(profile.selectedBadges || []).join(", ")}, Mode: ${profile.mode}`,
+    );
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -737,82 +744,80 @@ ${profile.mode === 'learning' ? '- Embed educational content naturally into the 
         model: selectedModel,
         max_tokens,
         system: SYSTEM_PROMPT,
-        messages: [
-          { role: "user", content: userPrompt }
-        ],
+        messages: [{ role: "user", content: userPrompt }],
       }),
     });
 
     if (!response.ok) {
       const errText = await response.text();
       console.error("Anthropic API error:", response.status, errText);
-      return new Response(
-        JSON.stringify({ error: "Story generation service error" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: "Story generation service error" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const data = await response.json();
     const text: string = data?.content?.[0]?.text ?? "";
-    
+
     console.log("Story generation completed, length:", text.length);
 
     // Use enhanced JSON extraction
     const parsed = extractJSON(text);
-    
+
     // Profile validation warning (for debugging)
-    if (parsed && typeof parsed === 'object') {
+    if (parsed && typeof parsed === "object") {
       const storyText = JSON.stringify(parsed).toLowerCase();
       const badges = profile.selectedBadges || [];
-      const matchedBadges = badges.filter((badge: string) => 
-        storyText.includes(badge.toLowerCase()) || 
-        storyText.includes(badge.split(' ')[0].toLowerCase())
+      const matchedBadges = badges.filter(
+        (badge: string) =>
+          storyText.includes(badge.toLowerCase()) || storyText.includes(badge.split(" ")[0].toLowerCase()),
       );
-      
+
       if (badges.length > 0 && matchedBadges.length === 0) {
         console.warn(`⚠️ Profile validation warning: Story may not incorporate selected badges: ${badges.join(", ")}`);
       }
-      
+
       if (profile.mode && !storyText.includes(profile.mode.toLowerCase())) {
         console.warn(`⚠️ Profile validation warning: Story may not match quest mode: ${profile.mode}`);
       }
     }
-    
+
     if (!parsed) {
       console.error("Failed to parse JSON from response. Raw text length:", text.length);
       console.error("Response preview:", text.substring(0, 200));
       console.error("Response ending:", text.substring(Math.max(0, text.length - 200)));
-      
+
       // Return error response for better debugging
       return new Response(
-        JSON.stringify({ 
+        JSON.stringify({
           error: "Failed to parse AI response as valid JSON",
           details: `Response was ${text.length} characters but could not be parsed`,
-          preview: text.substring(0, 500)
+          preview: text.substring(0, 500),
         }),
-        { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         success: true,
-        ok: true, 
-        model: data?.model, 
-        usage: data?.usage ?? null, 
-        resultText: text, 
+        ok: true,
+        model: data?.model,
+        usage: data?.usage ?? null,
+        resultText: text,
         result: parsed,
         parsed: parsed,
         text: text,
-        deviceFingerprint: deviceFingerprint
+        deviceFingerprint: deviceFingerprint,
       }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (error) {
     console.error("generate-story error:", error);
-    return new Response(
-      JSON.stringify({ error: String(error) }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: String(error) }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });
