@@ -848,6 +848,15 @@ const Mission = () => {
         });
       }
       
+      // Update story memory from AI response
+      if ((parsed as any).memory) {
+        const mem = (parsed as any).memory;
+        setStoryMemory(prev => ({
+          flags: [...new Set([...prev.flags, ...(mem.flags || [])])].slice(-7),
+          pastChoices: [...prev.pastChoices, ...(mem.pastChoices || [])].slice(-10),
+        }));
+      }
+
       // Create the updated scenes array BEFORE setting state
       const updatedScenes = [...allScenes, parsed];
       const updatedIndex = updatedScenes.length - 1;
