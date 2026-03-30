@@ -86,8 +86,11 @@ const StoryGallery = () => {
     return colors[badge] || 'bg-gray-100 text-gray-800';
   };
 
+  const { swipeProgress } = useSwipeBack();
+
   return (
     <>
+      <SwipeBackIndicator progress={swipeProgress} />
       <Seo
         title="StoryMaster Kids – Story Gallery"
         description="View your completed adventures and story achievements."
