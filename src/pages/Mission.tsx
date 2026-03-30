@@ -1306,6 +1306,7 @@ const Mission = () => {
                           key={choice.id}
                           onClick={() => onChoose(choice.id)}
                           disabled={isDisabled}
+                          style={{ animationDelay: `${(scene.narrative.split('\n\n').length * 150) + (index * 100)}ms`, animationFillMode: 'both' }}
                           className={`p-4 rounded-lg text-left transition-all transform hover:scale-[1.02] relative animate-fade-in ${
                             validation.valid && !choiceLoading
                               ? 'bg-white/20 hover:bg-white/30 text-white border-2 border-transparent hover:border-white/30'
