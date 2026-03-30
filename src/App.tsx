@@ -139,6 +139,16 @@ const App = () => {
     
     // Initialize push notifications for native
     initPushNotifications();
+
+    // Request local notification permission and schedule reminders
+    if (isNative) {
+      requestNotificationPermission().then((granted) => {
+        if (granted) {
+          scheduleStreakReminder();
+          scheduleRetentionNotification();
+        }
+      });
+    }
   }, []);
 
   return (
