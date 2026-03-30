@@ -138,6 +138,13 @@ const StoryGallery = () => {
           </div>
           )}
 
+          {offline && (
+            <div className="flex items-center gap-2 mb-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-200">
+              <WifiOff className="h-4 w-4 flex-shrink-0" />
+              <span className="text-sm">You're offline — showing cached stories</span>
+            </div>
+          )}
+
           {loading ? (
             <div className="text-center py-12">
               <Loader2 className="h-12 w-12 mx-auto text-muted-foreground mb-4 animate-spin" />
