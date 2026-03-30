@@ -59,6 +59,7 @@ const Mission = () => {
   const [error, setError] = useState<string | null>(null);
   const [storyLimitReached, setStoryLimitReached] = useState(false);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [storyMemory, setStoryMemory] = useState<{ flags: string[]; pastChoices: string[] }>({ flags: [], pastChoices: [] });
   const [goBacksUsed, setGoBacksUsed] = useState(0);
   const [showScrollTop, setShowScrollTop] = useState(false);
   
@@ -819,8 +820,10 @@ const Mission = () => {
       });
       
       // Phase 1 & 2: Pass story ID for validation, no forceNewSession, pass abilities
+      // Include memory context so AI can reference past decisions
       const abilityCategories = availableAbilities.map(a => a.category);
-      const { parsed, text } = await generateNextScene(profileWithInventory, { ...scene, selectedChoiceId: choiceId }, false, 1200, nextSceneCount, savedStory.id, false, abilityCategories);
+      const sceneWithMemory = { ...scene, selectedChoiceId: choiceId, memory: storyMemory };
+      const { parsed, text } = await generateNextScene(profileWithInventory, sceneWithMemory, false, 1200, nextSceneCount, savedStory.id, false, abilityCategories);
       if (!parsed) {
         const errorPreview = text ? text.slice(0, 140) : "No response received";
         throw new Error("Invalid AI response: " + errorPreview);
@@ -845,6 +848,15 @@ const Mission = () => {
         });
       }
       
+      // Update story memory from AI response
+      if ((parsed as any).memory) {
+        const mem = (parsed as any).memory;
+        setStoryMemory(prev => ({
+          flags: [...new Set([...prev.flags, ...(mem.flags || [])])].slice(-7),
+          pastChoices: [...prev.pastChoices, ...(mem.pastChoices || [])].slice(-10),
+        }));
+      }
+
       // Create the updated scenes array BEFORE setting state
       const updatedScenes = [...allScenes, parsed];
       const updatedIndex = updatedScenes.length - 1;
@@ -1251,7 +1263,11 @@ const Mission = () => {
                 )}
                 <div className="prose prose-invert max-w-none tablet:max-w-prose tablet:mx-auto">
                   {scene.narrative.split('\n\n').map((paragraph, index) => (
-                    <p key={index} className="text-white mb-4 leading-relaxed text-lg">
+                    <p
+                      key={`${sceneCount}-${index}`}
+                      className="text-white mb-4 leading-relaxed text-lg animate-fade-in"
+                      style={{ animationDelay: `${index * 150}ms`, animationFillMode: 'both' }}
+                    >
                       {paragraph}
                     </p>
                   ))}
@@ -1290,7 +1306,8 @@ const Mission = () => {
                           key={choice.id}
                           onClick={() => onChoose(choice.id)}
                           disabled={isDisabled}
-                          className={`p-4 rounded-lg text-left transition-all transform hover:scale-[1.02] relative ${
+                          style={{ animationDelay: `${(scene.narrative.split('\n\n').length * 150) + (index * 100)}ms`, animationFillMode: 'both' }}
+                          className={`p-4 rounded-lg text-left transition-all transform hover:scale-[1.02] relative animate-fade-in ${
                             validation.valid && !choiceLoading
                               ? 'bg-white/20 hover:bg-white/30 text-white border-2 border-transparent hover:border-white/30'
                               : 'bg-gray-600/50 text-gray-400 border-2 border-gray-500/50 cursor-not-allowed'

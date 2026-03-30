@@ -8,6 +8,7 @@ import { useEffect, lazy, Suspense } from "react";
 import { initializeRevenueCat, identifyUser, logOutRevenueCat } from "@/lib/iapService";
 import { initDeepLinkHandler } from "@/lib/deepLinkHandler";
 import { initPushNotifications } from "@/lib/pushNotifications";
+import { requestNotificationPermission, scheduleStreakReminder, scheduleRetentionNotification } from "@/lib/localNotifications";
 import { DeviceProvider } from "@/contexts/DeviceContext";
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 import { AnimatePresence } from "framer-motion";
@@ -138,6 +139,16 @@ const App = () => {
     
     // Initialize push notifications for native
     initPushNotifications();
+
+    // Request local notification permission and schedule reminders
+    if (isNative) {
+      requestNotificationPermission().then((granted) => {
+        if (granted) {
+          scheduleStreakReminder();
+          scheduleRetentionNotification();
+        }
+      });
+    }
   }, []);
 
   return (

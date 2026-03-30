@@ -4,11 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { loadCompletedStoriesFromDatabase, type DatabaseStory } from "@/lib/databaseStory";
-import { Clock, Star, ArrowLeft, BookOpen, Play, Loader2 } from "lucide-react";
+import { cacheStoriesOffline, loadOfflineStories, isOnline } from "@/lib/offlineStories";
+import { Clock, Star, ArrowLeft, BookOpen, Play, Loader2, WifiOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useDevice } from "@/contexts/DeviceContext";
 import { useAuth } from "@/hooks/useAuth";
 import { addHapticFeedback } from "@/lib/mobileFeatures";
+import { useSwipeBack } from "@/hooks/useSwipeBack";
+import { SwipeBackIndicator } from "@/components/SwipeBackIndicator";
 import { useState, useEffect } from "react";
 
 const StoryGallery = () => {
@@ -19,6 +22,7 @@ const StoryGallery = () => {
   const { user } = useAuth();
   const [stories, setStories] = useState<DatabaseStory[]>([]);
   const [loading, setLoading] = useState(true);
+  const [offline, setOffline] = useState(false);
 
   useEffect(() => {
     const loadStories = async () => {
@@ -26,19 +30,37 @@ const StoryGallery = () => {
         setLoading(false);
         return;
       }
-      try {
-        const completed = await loadCompletedStoriesFromDatabase();
-        setStories(completed);
-      } catch (e) {
-        console.error('Failed to load gallery stories:', e);
-        toast({
-          title: "Error",
-          description: "Failed to load your stories. Please try again.",
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
+
+      // Try online first, fall back to offline cache
+      if (isOnline()) {
+        try {
+          const completed = await loadCompletedStoriesFromDatabase();
+          setStories(completed);
+          // Cache for offline use
+          await cacheStoriesOffline(completed);
+        } catch (e) {
+          console.error('Failed to load gallery stories:', e);
+          // Fall back to offline cache
+          const cached = await loadOfflineStories();
+          if (cached.length > 0) {
+            setStories(cached);
+            setOffline(true);
+          } else {
+            toast({
+              title: "Error",
+              description: "Failed to load your stories. Please try again.",
+              variant: "destructive",
+            });
+          }
+        }
+      } else {
+        // Offline mode
+        const cached = await loadOfflineStories();
+        setStories(cached);
+        setOffline(true);
       }
+
+      setLoading(false);
     };
     loadStories();
   }, [user, toast]);
@@ -64,8 +86,11 @@ const StoryGallery = () => {
     return colors[badge] || 'bg-gray-100 text-gray-800';
   };
 
+  const { swipeProgress } = useSwipeBack();
+
   return (
     <>
+      <SwipeBackIndicator progress={swipeProgress} />
       <Seo
         title="StoryMaster Kids – Story Gallery"
         description="View your completed adventures and story achievements."
@@ -111,6 +136,13 @@ const StoryGallery = () => {
               Your completed adventures and achievements
             </p>
           </div>
+          )}
+
+          {offline && (
+            <div className="flex items-center gap-2 mb-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-200">
+              <WifiOff className="h-4 w-4 flex-shrink-0" />
+              <span className="text-sm">You're offline — showing cached stories</span>
+            </div>
           )}
 
           {loading ? (
