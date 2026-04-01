@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" style="background-color: #1a1a2e;">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
@@ -35,8 +35,13 @@
   <meta name="twitter:image" content="https://storymaster123-73.lovable.app/placeholder.svg">
 </head>
 
-  <body style="margin: 0;">
-    <div id="root"></div>
+  <body style="margin: 0; background-color: #1a1a2e;">
+    <div id="root">
+      <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#1a1a2e;">
+        <div style="width:32px;height:32px;border:3px solid rgba(255,255,255,0.1);border-top-color:rgba(255,255,255,0.5);border-radius:50%;animation:spin .8s linear infinite;"></div>
+      </div>
+    </div>
+    <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
