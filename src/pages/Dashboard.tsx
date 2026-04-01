@@ -11,7 +11,7 @@ import { loadCharacter } from "@/lib/character";
 // ABILITIES DISABLED - Uncomment to re-enable
 // import { loadAbilities } from "@/lib/abilities";
 import { loadRecentStoriesFromDatabase, loadCurrentStoryFromDatabase, loadInProgressStoriesFromDatabase, pauseStoryInDatabase, getTotalStoryCountFromDatabase, DatabaseStory } from "@/lib/databaseStory";
-import { ArrowLeft, Trophy, BookOpen, Star, Crown, Zap, Plus, TrendingUp, Play, Sparkles, Heart, Home, Settings } from "lucide-react";
+import { ArrowLeft, Trophy, BookOpen, Star, Crown, Zap, Plus, TrendingUp, Play, Sparkles, Heart, Home, Settings, Loader2 } from "lucide-react";
 import { addHapticFeedback } from "@/lib/mobileFeatures";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -38,6 +38,7 @@ const Dashboard = () => {
   const [showStoryPickerDialog, setShowStoryPickerDialog] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isCheckingLimit, setIsCheckingLimit] = useState(false);
   const pullStartY = useRef(0);
   const mainRef = useRef<HTMLDivElement>(null);
 
@@ -261,21 +262,34 @@ const Dashboard = () => {
                 <Button 
                   onClick={async () => {
                     addHapticFeedback('light');
-                    const { canPlay } = await getStoriesRemaining();
-                    if (!canPlay) {
-                      navigate("/subscription?limitReached=true");
-                    } else if (hasActiveStory) {
-                      setShowNewStoryDialog(true);
-                    } else {
-                      navigate("/profile?new=true");
+                    setIsCheckingLimit(true);
+                    try {
+                      const { canPlay } = await getStoriesRemaining();
+                      if (!canPlay) {
+                        navigate("/subscription?limitReached=true");
+                      } else if (hasActiveStory) {
+                        setShowNewStoryDialog(true);
+                      } else {
+                        navigate("/profile?new=true");
+                      }
+                    } catch (e) {
+                      console.error('Error checking story limit:', e);
+                      if (hasActiveStory) {
+                        setShowNewStoryDialog(true);
+                      } else {
+                        navigate("/profile?new=true");
+                      }
+                    } finally {
+                      setIsCheckingLimit(false);
                     }
                   }}
                   variant="outline"
                   size="mobile"
                   className="flex items-center justify-center gap-2"
+                  disabled={isCheckingLimit}
                 >
-                  <Plus className="h-5 w-5" />
-                  New Story
+                  {isCheckingLimit ? <Loader2 className="h-5 w-5 animate-spin" /> : <Plus className="h-5 w-5" />}
+                  {isCheckingLimit ? 'Checking...' : 'New Story'}
                 </Button>
               </div>
             </div>
@@ -335,20 +349,33 @@ const Dashboard = () => {
                   </Button>
                   <Button 
                     onClick={async () => {
-                      const { canPlay } = await getStoriesRemaining();
-                      if (!canPlay) {
-                        navigate("/subscription?limitReached=true");
-                      } else if (hasActiveStory) {
-                        setShowNewStoryDialog(true);
-                      } else {
-                        navigate("/profile?new=true");
+                      setIsCheckingLimit(true);
+                      try {
+                        const { canPlay } = await getStoriesRemaining();
+                        if (!canPlay) {
+                          navigate("/subscription?limitReached=true");
+                        } else if (hasActiveStory) {
+                          setShowNewStoryDialog(true);
+                        } else {
+                          navigate("/profile?new=true");
+                        }
+                      } catch (e) {
+                        console.error('Error checking story limit:', e);
+                        if (hasActiveStory) {
+                          setShowNewStoryDialog(true);
+                        } else {
+                          navigate("/profile?new=true");
+                        }
+                      } finally {
+                        setIsCheckingLimit(false);
                       }
                     }}
                     variant="outline"
                     className="flex items-center gap-2"
+                    disabled={isCheckingLimit}
                   >
-                    <Plus className="h-4 w-4" />
-                    New Adventure
+                    {isCheckingLimit ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                    {isCheckingLimit ? 'Checking...' : 'New Adventure'}
                   </Button>
                 </div>
               </div>
