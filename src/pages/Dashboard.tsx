@@ -262,21 +262,34 @@ const Dashboard = () => {
                 <Button 
                   onClick={async () => {
                     addHapticFeedback('light');
-                    const { canPlay } = await getStoriesRemaining();
-                    if (!canPlay) {
-                      navigate("/subscription?limitReached=true");
-                    } else if (hasActiveStory) {
-                      setShowNewStoryDialog(true);
-                    } else {
-                      navigate("/profile?new=true");
+                    setIsCheckingLimit(true);
+                    try {
+                      const { canPlay } = await getStoriesRemaining();
+                      if (!canPlay) {
+                        navigate("/subscription?limitReached=true");
+                      } else if (hasActiveStory) {
+                        setShowNewStoryDialog(true);
+                      } else {
+                        navigate("/profile?new=true");
+                      }
+                    } catch (e) {
+                      console.error('Error checking story limit:', e);
+                      if (hasActiveStory) {
+                        setShowNewStoryDialog(true);
+                      } else {
+                        navigate("/profile?new=true");
+                      }
+                    } finally {
+                      setIsCheckingLimit(false);
                     }
                   }}
                   variant="outline"
                   size="mobile"
                   className="flex items-center justify-center gap-2"
+                  disabled={isCheckingLimit}
                 >
-                  <Plus className="h-5 w-5" />
-                  New Story
+                  {isCheckingLimit ? <Loader2 className="h-5 w-5 animate-spin" /> : <Plus className="h-5 w-5" />}
+                  {isCheckingLimit ? 'Checking...' : 'New Story'}
                 </Button>
               </div>
             </div>
