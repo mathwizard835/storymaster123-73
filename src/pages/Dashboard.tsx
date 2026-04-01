@@ -349,20 +349,33 @@ const Dashboard = () => {
                   </Button>
                   <Button 
                     onClick={async () => {
-                      const { canPlay } = await getStoriesRemaining();
-                      if (!canPlay) {
-                        navigate("/subscription?limitReached=true");
-                      } else if (hasActiveStory) {
-                        setShowNewStoryDialog(true);
-                      } else {
-                        navigate("/profile?new=true");
+                      setIsCheckingLimit(true);
+                      try {
+                        const { canPlay } = await getStoriesRemaining();
+                        if (!canPlay) {
+                          navigate("/subscription?limitReached=true");
+                        } else if (hasActiveStory) {
+                          setShowNewStoryDialog(true);
+                        } else {
+                          navigate("/profile?new=true");
+                        }
+                      } catch (e) {
+                        console.error('Error checking story limit:', e);
+                        if (hasActiveStory) {
+                          setShowNewStoryDialog(true);
+                        } else {
+                          navigate("/profile?new=true");
+                        }
+                      } finally {
+                        setIsCheckingLimit(false);
                       }
                     }}
                     variant="outline"
                     className="flex items-center gap-2"
+                    disabled={isCheckingLimit}
                   >
-                    <Plus className="h-4 w-4" />
-                    New Adventure
+                    {isCheckingLimit ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                    {isCheckingLimit ? 'Checking...' : 'New Adventure'}
                   </Button>
                 </div>
               </div>
