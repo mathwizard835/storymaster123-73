@@ -11,7 +11,7 @@ import { loadCharacter } from "@/lib/character";
 // ABILITIES DISABLED - Uncomment to re-enable
 // import { loadAbilities } from "@/lib/abilities";
 import { loadRecentStoriesFromDatabase, loadCurrentStoryFromDatabase, loadInProgressStoriesFromDatabase, pauseStoryInDatabase, getTotalStoryCountFromDatabase, DatabaseStory } from "@/lib/databaseStory";
-import { ArrowLeft, Trophy, BookOpen, Star, Crown, Zap, Plus, TrendingUp, Play, Sparkles, Heart, Home, Settings } from "lucide-react";
+import { ArrowLeft, Trophy, BookOpen, Star, Crown, Zap, Plus, TrendingUp, Play, Sparkles, Heart, Home, Settings, Loader2 } from "lucide-react";
 import { addHapticFeedback } from "@/lib/mobileFeatures";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
