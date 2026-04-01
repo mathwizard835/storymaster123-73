@@ -38,6 +38,7 @@ const Dashboard = () => {
   const [showStoryPickerDialog, setShowStoryPickerDialog] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isCheckingLimit, setIsCheckingLimit] = useState(false);
   const pullStartY = useRef(0);
   const mainRef = useRef<HTMLDivElement>(null);
 
