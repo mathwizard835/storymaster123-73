@@ -289,7 +289,7 @@ const Dashboard = () => {
                   disabled={isCheckingLimit}
                 >
                   {isCheckingLimit ? <Loader2 className="h-5 w-5 animate-spin" /> : <Plus className="h-5 w-5" />}
-                  {isCheckingLimit ? 'Checking...' : 'New Story'}
+                  {isCheckingLimit ? 'Starting...' : 'New Story'}
                 </Button>
               </div>
             </div>
@@ -375,7 +375,7 @@ const Dashboard = () => {
                     disabled={isCheckingLimit}
                   >
                     {isCheckingLimit ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-                    {isCheckingLimit ? 'Checking...' : 'New Adventure'}
+                    {isCheckingLimit ? 'Starting...' : 'New Adventure'}
                   </Button>
                 </div>
               </div>
