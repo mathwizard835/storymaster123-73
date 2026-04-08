@@ -26,11 +26,6 @@ const StoryGallery = () => {
   const [loading, setLoading] = useState(true);
   const [offline, setOffline] = useState(false);
   const mainRef = useRef<HTMLDivElement>(null);
-  const backPath = isNative ? '/dashboard' : '/';
-  const { user } = useAuth();
-  const [stories, setStories] = useState<DatabaseStory[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [offline, setOffline] = useState(false);
 
   useEffect(() => {
     const loadStories = async () => {
