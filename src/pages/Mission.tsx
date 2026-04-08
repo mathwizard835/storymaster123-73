@@ -36,6 +36,7 @@ import { ComprehensionQuiz } from "@/components/ComprehensionQuiz";
 import { QuizQuestion } from "@/lib/quizSystem";
 import { supabase } from "@/integrations/supabase/client";
 import confetti from "canvas-confetti";
+import { motion } from "framer-motion";
 // ABILITIES DISABLED - Uncomment to re-enable
 // import { loadAbilities, getAvailableAbilities, type Ability, awardAbility, type AbilityCategory } from "@/lib/abilities";
 // import { AbilityToast } from "@/components/AbilityToast";
@@ -1263,13 +1264,15 @@ const Mission = () => {
                 )}
                 <div className="prose prose-invert max-w-none tablet:max-w-prose tablet:mx-auto">
                   {scene.narrative.split('\n\n').map((paragraph, index) => (
-                    <p
+                    <motion.p
                       key={`${sceneCount}-${index}`}
-                      className="text-white mb-4 leading-relaxed text-lg animate-fade-in"
-                      style={{ animationDelay: `${index * 150}ms`, animationFillMode: 'both' }}
+                      className="text-white mb-4 leading-relaxed text-lg"
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.2, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
                     >
                       {paragraph}
-                    </p>
+                    </motion.p>
                   ))}
                 </div>
                 <audio ref={audioRef} className="hidden" />
@@ -1302,12 +1305,14 @@ const Mission = () => {
                       const validation = validateChoice(choice.id, scene, inventory);
                       const isDisabled = !validation.valid || choiceLoading;
                       return (
-                        <button
+                        <motion.button
                           key={choice.id}
                           onClick={() => onChoose(choice.id)}
                           disabled={isDisabled}
-                          style={{ animationDelay: `${(scene.narrative.split('\n\n').length * 150) + (index * 100)}ms`, animationFillMode: 'both' }}
-                          className={`p-4 rounded-lg text-left transition-all transform hover:scale-[1.02] relative animate-fade-in ${
+                          initial={{ opacity: 0, y: 16, scale: 0.97 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          transition={{ delay: (scene.narrative.split('\n\n').length * 0.2) + (index * 0.12), type: 'spring', stiffness: 300, damping: 24 }}
+                          className={`p-4 rounded-lg text-left transition-all transform hover:scale-[1.02] active:scale-[0.97] relative ${
                             validation.valid && !choiceLoading
                               ? 'bg-white/20 hover:bg-white/30 text-white border-2 border-transparent hover:border-white/30'
                               : 'bg-gray-600/50 text-gray-400 border-2 border-gray-500/50 cursor-not-allowed'
@@ -1336,7 +1341,7 @@ const Mission = () => {
                               )}
                             </div>
                           </div>
-                        </button>
+                        </motion.button>
                       );
                     })}
                   </div>

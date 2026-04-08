@@ -4,7 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { useEffect, lazy, Suspense } from "react";
+import { useEffect, lazy, Suspense, useState } from "react";
 import { initializeRevenueCat, identifyUser, logOutRevenueCat } from "@/lib/iapService";
 import { initDeepLinkHandler } from "@/lib/deepLinkHandler";
 import { initPushNotifications } from "@/lib/pushNotifications";
@@ -14,6 +14,7 @@ import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 import { AnimatePresence } from "framer-motion";
 import { PageTransition } from "@/components/PageTransition";
 import { NativeLoadingScreen } from "@/components/NativeLoadingScreen";
+import { NativeOnboarding, hasSeenOnboarding } from "@/components/NativeOnboarding";
 import { Capacitor } from "@capacitor/core";
 import ErrorBoundary from "./components/ErrorBoundary";
 
@@ -41,11 +42,25 @@ const SubscriptionSuccess = lazy(() => import("./pages/SubscriptionSuccess"));
 const queryClient = new QueryClient();
 const isNative = Capacitor.isNativePlatform();
 
-// On native, show welcome screen if not logged in, dashboard if logged in
+// On native, show onboarding → welcome screen if not logged in, dashboard if logged in
 const NativeHomeRedirect = () => {
   const { user, loading } = useAuth();
-  
-  if (loading) return <NativeLoadingScreen />;
+  const [showOnboarding, setShowOnboarding] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (isNative) {
+      hasSeenOnboarding().then(seen => setShowOnboarding(!seen));
+    } else {
+      setShowOnboarding(false);
+    }
+  }, []);
+
+  if (loading || showOnboarding === null) return <NativeLoadingScreen />;
+
+  if (showOnboarding) {
+    return <NativeOnboarding onComplete={() => setShowOnboarding(false)} />;
+  }
+
   if (user) return <Navigate to="/dashboard" replace />;
   return <NativeWelcome />;
 };

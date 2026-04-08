@@ -2,14 +2,24 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Sparkles, BookOpen, Wand2 } from 'lucide-react';
 import { addHapticFeedback } from '@/lib/mobileFeatures';
+import { useAuth } from '@/hooks/useAuth';
+import { NativeLoadingScreen } from '@/components/NativeLoadingScreen';
 
 const NativeWelcome = () => {
   const navigate = useNavigate();
+  const { user, loading } = useAuth();
 
-  const handleGetStarted = () => {
+  const handleSignUp = () => {
     addHapticFeedback('medium');
     navigate('/auth');
   };
+
+  const handleDashboard = () => {
+    addHapticFeedback('medium');
+    navigate('/dashboard');
+  };
+
+  if (loading) return <NativeLoadingScreen />;
 
   return (
     <div className="min-h-[100dvh] flex flex-col items-center justify-between bg-gradient-to-b from-[hsl(250,50%,12%)] via-[hsl(265,55%,15%)] to-[hsl(230,50%,8%)] overflow-hidden relative">
@@ -87,12 +97,29 @@ const NativeWelcome = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.6, duration: 0.5 }}
       >
-        <button
-          onClick={handleGetStarted}
-          className="w-full py-4 rounded-2xl bg-gradient-to-r from-[hsl(265,85%,60%)] to-[hsl(195,85%,55%)] text-white font-bold text-lg shadow-[0_8px_32px_-8px_hsl(265,85%,60%,0.5)] active:scale-[0.97] transition-transform duration-100"
-        >
-          Get Started
-        </button>
+        {user ? (
+          <button
+            onClick={handleDashboard}
+            className="w-full py-4 rounded-2xl bg-gradient-to-r from-[hsl(265,85%,60%)] to-[hsl(195,85%,55%)] text-white font-bold text-lg shadow-[0_8px_32px_-8px_hsl(265,85%,60%,0.5)] active:scale-[0.97] transition-transform duration-100"
+          >
+            Access Dashboard
+          </button>
+        ) : (
+          <>
+            <button
+              onClick={handleSignUp}
+              className="w-full py-4 rounded-2xl bg-gradient-to-r from-[hsl(265,85%,60%)] to-[hsl(195,85%,55%)] text-white font-bold text-lg shadow-[0_8px_32px_-8px_hsl(265,85%,60%,0.5)] active:scale-[0.97] transition-transform duration-100"
+            >
+              Sign Up
+            </button>
+            <button
+              onClick={handleSignUp}
+              className="w-full py-3 mt-3 rounded-2xl bg-white/[0.08] border border-white/[0.12] text-white/80 font-semibold text-base active:scale-[0.97] transition-transform duration-100"
+            >
+              Log In
+            </button>
+          </>
+        )}
         <p className="text-center text-white/30 text-xs mt-4 mb-2">
           3 free stories • No credit card required
         </p>

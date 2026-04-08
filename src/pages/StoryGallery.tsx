@@ -12,7 +12,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { addHapticFeedback } from "@/lib/mobileFeatures";
 import { useSwipeBack } from "@/hooks/useSwipeBack";
 import { SwipeBackIndicator } from "@/components/SwipeBackIndicator";
-import { useState, useEffect } from "react";
+import { NativeNavigationHeader } from "@/components/NativeNavigationHeader";
+import { SkeletonCard } from "@/components/SkeletonCard";
+import { useState, useEffect, useRef } from "react";
 
 const StoryGallery = () => {
   const navigate = useNavigate();
@@ -23,6 +25,7 @@ const StoryGallery = () => {
   const [stories, setStories] = useState<DatabaseStory[]>([]);
   const [loading, setLoading] = useState(true);
   const [offline, setOffline] = useState(false);
+  const mainRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const loadStories = async () => {
@@ -97,10 +100,23 @@ const StoryGallery = () => {
         canonical="/gallery"
       />
       
-      <main className="min-h-screen bg-background">
+      <main ref={mainRef} className="min-h-screen bg-background">
+        {/* Native iOS-style header */}
+        {isPhone && isNative && (
+          <NativeNavigationHeader
+            title="Story Gallery"
+            subtitle={`${stories.length} completed adventures`}
+            scrollRef={mainRef as React.RefObject<HTMLDivElement>}
+            leftAction={
+              <button onClick={() => { addHapticFeedback('light'); navigate(backPath); }} className="p-1">
+                <ArrowLeft className="h-5 w-5 text-primary" />
+              </button>
+            }
+          />
+        )}
         <div className="container py-8 pb-24 md:pb-8">
-          {/* Mobile Header */}
-          {isPhone ? (
+          {/* Mobile Header (web only) */}
+          {isPhone && !isNative ? (
             <div className="flex items-center gap-3 mb-6">
               <Button 
                 variant="ghost" 
@@ -114,7 +130,7 @@ const StoryGallery = () => {
                 📚 Story Gallery ({stories.length})
               </h1>
             </div>
-          ) : (
+          ) : !isPhone ? (
             <div className="flex items-center gap-4 mb-8">
             <Button 
               variant="ghost" 
@@ -125,7 +141,7 @@ const StoryGallery = () => {
               Back
             </Button>
           </div>
-          )}
+          ) : null}
 
           {!isPhone && (
             <div className="mb-8">
@@ -146,9 +162,8 @@ const StoryGallery = () => {
           )}
 
           {loading ? (
-            <div className="text-center py-12">
-              <Loader2 className="h-12 w-12 mx-auto text-muted-foreground mb-4 animate-spin" />
-              <p className="text-muted-foreground">Loading your stories...</p>
+            <div className="grid gap-4 tablet:grid-cols-2 lg:grid-cols-3">
+              {[1, 2, 3, 4].map(i => <SkeletonCard key={i} />)}
             </div>
           ) : stories.length === 0 ? (
             <div className="text-center py-12">
