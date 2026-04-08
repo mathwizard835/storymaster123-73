@@ -36,6 +36,7 @@ import { ComprehensionQuiz } from "@/components/ComprehensionQuiz";
 import { QuizQuestion } from "@/lib/quizSystem";
 import { supabase } from "@/integrations/supabase/client";
 import confetti from "canvas-confetti";
+import { motion } from "framer-motion";
 // ABILITIES DISABLED - Uncomment to re-enable
 // import { loadAbilities, getAvailableAbilities, type Ability, awardAbility, type AbilityCategory } from "@/lib/abilities";
 // import { AbilityToast } from "@/components/AbilityToast";

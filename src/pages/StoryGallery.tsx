@@ -12,7 +12,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { addHapticFeedback } from "@/lib/mobileFeatures";
 import { useSwipeBack } from "@/hooks/useSwipeBack";
 import { SwipeBackIndicator } from "@/components/SwipeBackIndicator";
-import { useState, useEffect } from "react";
+import { NativeNavigationHeader } from "@/components/NativeNavigationHeader";
+import { SkeletonCard } from "@/components/SkeletonCard";
+import { useState, useEffect, useRef } from "react";
 
 const StoryGallery = () => {
   const navigate = useNavigate();
