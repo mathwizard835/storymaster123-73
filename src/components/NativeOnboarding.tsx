@@ -99,7 +99,7 @@ export function NativeOnboarding({ onComplete }: { onComplete: () => void }) {
               animate={{ scale: 1 }}
               transition={{ delay: 0.1, type: 'spring', stiffness: 300, damping: 20 }}
             >
-              <Icon className="w-12 h-12 text-white" strokeWidth={1.5} />
+              <Icon className="w-12 h-12 text-white" />
             </motion.div>
             <div className="space-y-3 max-w-[300px]">
               <h2 className="text-3xl font-extrabold text-white tracking-tight">{slide.title}</h2>
