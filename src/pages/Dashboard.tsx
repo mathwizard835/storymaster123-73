@@ -28,6 +28,7 @@ const Dashboard = () => {
   const { user } = useAuth();
   const [progress, setProgress] = useState(loadAchievements());
   const [character, setCharacter] = useState(loadCharacter());
+  const [isSyncing, setIsSyncing] = useState(true);
   // ABILITIES DISABLED - Uncomment to re-enable
   // const [abilities, setAbilities] = useState(loadAbilities());
   const abilities = { abilities: [], totalAbilitiesEarned: 0, abilitiesUsed: 0 }; // Placeholder
@@ -81,8 +82,10 @@ const Dashboard = () => {
       }
     }
     
+    // Always refresh from localStorage AFTER sync has written to it
     setProgress(loadAchievements());
     setCharacter(loadCharacter());
+    setIsSyncing(false);
   }, [user, toast]);
   
   // Refresh data when component mounts
@@ -428,55 +431,67 @@ const Dashboard = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {/* Phone: 2-column grid */}
-              {/* Tablet: 3-column grid */}
-              {/* Desktop: 5-column grid */}
-              <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
-                <div className="p-3 bg-muted/30 rounded-lg">
-                  <div className="text-xl md:text-2xl font-bold flex items-center gap-1">
-                    <Crown className="h-5 w-5 md:h-6 md:w-6 text-amber-500" />
-                    {character.level}
+              {isSyncing ? (
+                <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
+                  {[...Array(5)].map((_, i) => (
+                    <div key={i} className="p-3 bg-muted/30 rounded-lg animate-pulse">
+                      <div className="h-7 w-16 bg-muted/50 rounded mb-1" />
+                      <div className="h-4 w-20 bg-muted/30 rounded" />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
+                    <div className="p-3 bg-muted/30 rounded-lg">
+                      <div className="text-xl md:text-2xl font-bold flex items-center gap-1">
+                        <Crown className="h-5 w-5 md:h-6 md:w-6 text-amber-500" />
+                        {character.level}
+                      </div>
+                      <div className="text-xs md:text-sm text-muted-foreground">Level</div>
+                    </div>
+                    <div className="p-3 bg-muted/30 rounded-lg">
+                      <div className="text-xl md:text-2xl font-bold flex items-center gap-1">
+                        <BookOpen className="h-5 w-5 md:h-6 md:w-6 text-emerald-500" />
+                        {totalStoryCount || progress.totalStories}
+                      </div>
+                      <div className="text-xs md:text-sm text-muted-foreground">Stories</div>
+                    </div>
+                    <div className="p-3 bg-muted/30 rounded-lg">
+                      <div className="text-xl md:text-2xl font-bold flex items-center gap-1">
+                        <Zap className="h-5 w-5 md:h-6 md:w-6 text-blue-500" />
+                        {progress.totalChoices}
+                      </div>
+                      <div className="text-xs md:text-sm text-muted-foreground">Choices</div>
+                    </div>
+                    <div className="p-3 bg-muted/30 rounded-lg">
+                      <div className="text-xl md:text-2xl font-bold">{completionRate}%</div>
+                      <div className="text-xs md:text-sm text-muted-foreground">Achievements</div>
+                    </div>
+                    <div className="p-3 bg-muted/30 rounded-lg">
+                      <div className="text-xl md:text-2xl font-bold flex items-center gap-1">
+                        <Sparkles className="h-5 w-5 md:h-6 md:w-6 text-purple-500" />
+                        {character.titles[character.titles.length - 1] || 'Novice'}
+                      </div>
+                      <div className="text-xs md:text-sm text-muted-foreground">Title</div>
+                    </div>
                   </div>
-                  <div className="text-xs md:text-sm text-muted-foreground">Level</div>
-                </div>
-                <div className="p-3 bg-muted/30 rounded-lg">
-                  <div className="text-xl md:text-2xl font-bold flex items-center gap-1">
-                    <Zap className="h-5 w-5 md:h-6 md:w-6 text-blue-500" />
-                    {character.totalExperienceEarned}
+                  
+                  <div className="mt-6">
+                    <div className="flex justify-between text-sm mb-2">
+                      <span className="flex items-center gap-1">
+                        <TrendingUp className="h-3.5 w-3.5" />
+                        Level {character.level} → {character.level + 1}
+                      </span>
+                      <span className="text-muted-foreground">{character.experience} / {character.experienceToNext} XP</span>
+                    </div>
+                    <Progress 
+                      value={(character.experience / character.experienceToNext) * 100} 
+                      className="h-3"
+                    />
                   </div>
-                  <div className="text-xs md:text-sm text-muted-foreground">Total XP</div>
-                </div>
-                <div className="p-3 bg-muted/30 rounded-lg">
-                  <div className="text-xl md:text-2xl font-bold">{progress.totalStories}</div>
-                  <div className="text-xs md:text-sm text-muted-foreground">Stories Done</div>
-                </div>
-                <div className="p-3 bg-muted/30 rounded-lg">
-                  <div className="text-xl md:text-2xl font-bold">{progress.totalChoices}</div>
-                  <div className="text-xs md:text-sm text-muted-foreground">Choices Made</div>
-                </div>
-                <div className="p-3 bg-muted/30 rounded-lg">
-                  <div className="text-xl md:text-2xl font-bold">{completionRate}%</div>
-                  <div className="text-xs md:text-sm text-muted-foreground">Achievements</div>
-                </div>
-                <div className="p-3 bg-muted/30 rounded-lg">
-                  <div className="text-xl md:text-2xl font-bold flex items-center gap-1">
-                    <Sparkles className="h-5 w-5 md:h-6 md:w-6 text-purple-500" />
-                    {availableAbilities.length}
-                  </div>
-                  <div className="text-xs md:text-sm text-muted-foreground">Abilities</div>
-                </div>
-              </div>
-              
-              <div className="mt-6">
-                <div className="flex justify-between text-sm mb-2">
-                  <span>Experience Progress to Level {character.level + 1}</span>
-                  <span>{character.experience} / {character.experienceToNext}</span>
-                </div>
-                <Progress 
-                  value={(character.experience / character.experienceToNext) * 100} 
-                  className="h-3"
-                />
-              </div>
+                </>
+              )}
             </CardContent>
           </Card>
 
