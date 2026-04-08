@@ -45,11 +45,16 @@ export const syncProgressFromDatabase = async (): Promise<{
     const totalStoriesCompleted = completedStories.length;
 
     if (totalStoriesCompleted === 0) {
-      console.log('No completed stories found in database');
+      console.log('No completed stories found in database, resetting to defaults');
+      // IMPORTANT: Clear stale localStorage so new users don't see old data
+      const freshCharacter = { ...DEFAULT_CHARACTER };
+      saveCharacter(freshCharacter);
+      const freshAchievements = { totalStories: 0, totalChoices: 0, badgeUsage: {}, modeUsage: {}, achievements: [] };
+      saveAchievements(freshAchievements);
       return {
         syncedStories: 0,
-        achievements: { totalStories: 0, totalChoices: 0, badgeUsage: {}, modeUsage: {}, achievements: [] },
-        character: DEFAULT_CHARACTER,
+        achievements: freshAchievements,
+        character: freshCharacter,
         abilities: { abilities: [], totalAbilitiesEarned: 0, abilitiesUsed: 0 }
       };
     }

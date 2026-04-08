@@ -28,6 +28,7 @@ const Dashboard = () => {
   const { user } = useAuth();
   const [progress, setProgress] = useState(loadAchievements());
   const [character, setCharacter] = useState(loadCharacter());
+  const [isSyncing, setIsSyncing] = useState(true);
   // ABILITIES DISABLED - Uncomment to re-enable
   // const [abilities, setAbilities] = useState(loadAbilities());
   const abilities = { abilities: [], totalAbilitiesEarned: 0, abilitiesUsed: 0 }; // Placeholder
