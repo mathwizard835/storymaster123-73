@@ -82,8 +82,10 @@ const Dashboard = () => {
       }
     }
     
+    // Always refresh from localStorage AFTER sync has written to it
     setProgress(loadAchievements());
     setCharacter(loadCharacter());
+    setIsSyncing(false);
   }, [user, toast]);
   
   // Refresh data when component mounts
