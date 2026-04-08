@@ -194,6 +194,19 @@ const Dashboard = () => {
       />
       
       <main ref={mainRef} className="min-h-screen bg-background pb-24 md:pb-8 overflow-auto">
+        {/* Native iOS-style header */}
+        {isPhone && isNative && (
+          <NativeNavigationHeader
+            title="Dashboard"
+            subtitle={isPremium ? '✨ Adventure Pass Active' : undefined}
+            scrollRef={mainRef as React.RefObject<HTMLDivElement>}
+            rightAction={
+              <button onClick={() => { addHapticFeedback('light'); navigate("/subscription"); }} className="p-1">
+                <Crown className="h-5 w-5 text-amber-500" />
+              </button>
+            }
+          />
+        )}
         {isRefreshing && (
           <div className="flex justify-center py-4">
             <div className="flex items-center gap-2 text-muted-foreground text-sm">
@@ -203,8 +216,8 @@ const Dashboard = () => {
           </div>
         )}
         <div className="container py-4 md:py-8 px-4 md:px-8">
-          {/* Mobile Header */}
-          {isPhone && (
+          {/* Mobile Header (web only) */}
+          {isPhone && !isNative && (
             <div className="flex flex-col gap-4 mb-6">
               <div className="flex items-center justify-between">
                 {!isNative ? (
