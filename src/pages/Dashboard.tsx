@@ -19,6 +19,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useDevice } from "@/contexts/DeviceContext";
 import { PremiumThemeSelector } from "@/components/PremiumThemeSelector";
 import { getUserSubscription, getStoriesRemaining } from "@/lib/subscription";
+import { NativeNavigationHeader } from "@/components/NativeNavigationHeader";
+import { SkeletonDashboard } from "@/components/SkeletonCard";
 
 const Dashboard = () => {
   const navigate = useNavigate();
