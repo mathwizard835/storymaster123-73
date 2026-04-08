@@ -162,9 +162,8 @@ const StoryGallery = () => {
           )}
 
           {loading ? (
-            <div className="text-center py-12">
-              <Loader2 className="h-12 w-12 mx-auto text-muted-foreground mb-4 animate-spin" />
-              <p className="text-muted-foreground">Loading your stories...</p>
+            <div className="grid gap-4 tablet:grid-cols-2 lg:grid-cols-3">
+              {[1, 2, 3, 4].map(i => <SkeletonCard key={i} />)}
             </div>
           ) : stories.length === 0 ? (
             <div className="text-center py-12">
