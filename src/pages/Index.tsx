@@ -504,7 +504,7 @@ const Index = () => {
       </section>
 
       {/* For Parents Section */}
-      <section className="py-20 px-6 bg-gradient-to-r from-background to-muted/30">
+      <section className="py-20 px-6 bg-muted/10">
         <div className="max-w-6xl mx-auto">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div>
@@ -598,7 +598,7 @@ const Index = () => {
       </section>
 
       {/* For Kids/Teens Section */}
-      <section className="py-20 px-6 bg-gradient-to-l from-background to-accent/10">
+      <section className="py-20 px-6 bg-accent/5">
         <div className="max-w-6xl mx-auto">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="order-2 md:order-1">
