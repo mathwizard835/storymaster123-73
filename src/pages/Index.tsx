@@ -91,7 +91,7 @@ const Index = () => {
             className="absolute inset-0 h-full w-full object-cover"
             loading="eager"
           />
-          
+          <div className="absolute inset-0 bg-gradient-to-b from-background/20 to-background/60" />
 
           <section className="relative z-10 flex min-h-screen items-center justify-center px-6">
             {/* Floating Adventure Pass Button - Top Right */}
@@ -286,7 +286,7 @@ const Index = () => {
           className="absolute inset-0 h-full w-full object-cover"
           loading="eager"
         />
-        
+        <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/60 to-background/80" />
 
         <div className="relative z-10 flex min-h-screen items-center justify-center px-6">
           {/* Floating Adventure Pass Button - Top Right */}
