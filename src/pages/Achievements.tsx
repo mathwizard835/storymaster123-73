@@ -110,7 +110,26 @@ const Achievements = () => {
 
           {/* Desktop header */}
           {!isPhone && (
-
+            <div className="mb-8">
+              <div className="flex items-center gap-4 mb-4">
+                <Button 
+                  variant="ghost" 
+                  onClick={() => navigate(backPath)}
+                  className="flex items-center gap-2"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  Back
+                </Button>
+              </div>
+              <h1 className="font-heading text-3xl md:text-4xl font-extrabold flex items-center gap-3">
+                <Trophy className="h-8 w-8 text-amber-500" />
+                Achievements
+              </h1>
+              <p className="text-muted-foreground mt-2">
+                Your progress and accomplishments
+              </p>
+            </div>
+          )}
           {/* Character Stats */}
           <Card className="glass-panel border-0 mb-8">
             <CardHeader>
