@@ -417,7 +417,7 @@ const Index = () => {
       </section>
 
       {/* What Makes Us Special */}
-      <section id="learn-more" className="py-20 px-6 bg-gradient-to-b from-background to-muted/20">
+      <section id="learn-more" className="py-20 px-6 bg-background">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold mb-6">Interactive Stories That Build Real Skills</h2>
@@ -504,7 +504,7 @@ const Index = () => {
       </section>
 
       {/* For Parents Section */}
-      <section className="py-20 px-6 bg-gradient-to-r from-background to-muted/30">
+      <section className="py-20 px-6 bg-background">
         <div className="max-w-6xl mx-auto">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div>
@@ -598,7 +598,7 @@ const Index = () => {
       </section>
 
       {/* For Kids/Teens Section */}
-      <section className="py-20 px-6 bg-gradient-to-l from-background to-accent/10">
+      <section className="py-20 px-6 bg-background">
         <div className="max-w-6xl mx-auto">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="order-2 md:order-1">
@@ -691,7 +691,7 @@ const Index = () => {
       </section>
 
       {/* Final CTA Section */}
-      <section className="py-20 px-6 bg-gradient-to-b from-primary/5 to-background">
+      <section className="py-20 px-6 bg-background">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-4xl md:text-5xl font-bold mb-6">Turning Screen Time into Reading Time</h2>
           <p className="text-xl text-muted-foreground mb-8">
