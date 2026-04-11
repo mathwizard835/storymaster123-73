@@ -14,6 +14,10 @@ import { getStreakStats } from "@/lib/streaks";
 import { getReadingStats, type ReadingStats } from "@/lib/readingAnalytics";
 import { Seo } from "@/components/Seo";
 import { useDevice } from "@/contexts/DeviceContext";
+import { addHapticFeedback } from "@/lib/mobileFeatures";
+import { NativeNavigationHeader } from "@/components/NativeNavigationHeader";
+import { useSwipeBack } from "@/hooks/useSwipeBack";
+import { SwipeBackIndicator } from "@/components/SwipeBackIndicator";
 
 export default function ParentDashboard() {
   const navigate = useNavigate();

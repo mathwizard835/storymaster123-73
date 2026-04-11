@@ -73,10 +73,25 @@ const Achievements = () => {
         canonical="/achievements"
       />
       
-      <main className="min-h-screen bg-background">
-        <div className="container py-8 pb-24 md:pb-8">
-          {/* Mobile Header */}
-          {isPhone ? (
+      <SwipeBackIndicator progress={swipeProgress} />
+
+      <main ref={mainRef} className="min-h-screen bg-background pb-24 md:pb-8 overflow-auto">
+        {/* Native iOS-style header */}
+        {isPhone && isNative && (
+          <NativeNavigationHeader
+            title="Trophies"
+            scrollRef={mainRef as React.RefObject<HTMLDivElement>}
+            leftAction={
+              <button onClick={() => { addHapticFeedback('light'); navigate(backPath); }} className="text-primary text-[15px] font-medium">
+                Back
+              </button>
+            }
+          />
+        )}
+
+        <div className="container py-4 md:py-8 px-4 md:px-8">
+          {/* Mobile Header (web only) */}
+          {isPhone && !isNative && (
             <div className="flex items-center gap-3 mb-6">
               <Button 
                 variant="ghost" 
@@ -91,30 +106,10 @@ const Achievements = () => {
                 <h1 className="font-heading text-2xl font-extrabold">Achievements</h1>
               </div>
             </div>
-          ) : (
-            <div className="flex items-center gap-4 mb-8">
-            <Button 
-              variant="ghost" 
-              onClick={() => navigate(backPath)}
-              className="flex items-center gap-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back
-            </Button>
-          </div>
           )}
 
+          {/* Desktop header */}
           {!isPhone && (
-            <div className="mb-8">
-            <h1 className="font-heading text-3xl md:text-4xl font-extrabold flex items-center gap-3">
-              <Trophy className="h-8 w-8 text-amber-500" />
-              Achievements
-            </h1>
-            <p className="text-muted-foreground mt-2">
-              Your progress and accomplishments
-            </p>
-          </div>
-          )}
 
           {/* Character Stats */}
           <Card className="glass-panel border-0 mb-8">
