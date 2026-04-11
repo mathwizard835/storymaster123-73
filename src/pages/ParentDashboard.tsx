@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,7 +21,9 @@ import { SwipeBackIndicator } from "@/components/SwipeBackIndicator";
 
 export default function ParentDashboard() {
   const navigate = useNavigate();
-  const { isPhone } = useDevice();
+  const { isPhone, isNative } = useDevice();
+  const { swipeProgress } = useSwipeBack();
+  const mainRef = useRef<HTMLDivElement>(null);
 
   // Disable premium themes in parent mode
   useEffect(() => {
