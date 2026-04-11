@@ -161,10 +161,24 @@ export default function ParentDashboard() {
         description="See real reading progress: time spent, words read, streaks, and emotional growth through interactive storytelling"
       />
       
-      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
-        <div className="container max-w-6xl mx-auto p-4 md:p-8 pb-24 md:pb-8 space-y-8">
-          {/* Mobile Header */}
-          {isPhone ? (
+      <SwipeBackIndicator progress={swipeProgress} />
+      <div ref={mainRef} className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 overflow-auto pb-24 md:pb-8">
+        {/* Native iOS-style header */}
+        {isPhone && isNative && (
+          <NativeNavigationHeader
+            title="Parents"
+            scrollRef={mainRef as React.RefObject<HTMLDivElement>}
+            leftAction={
+              <button onClick={() => { addHapticFeedback('light'); navigate("/dashboard"); }} className="text-primary text-[15px] font-medium">
+                Back
+              </button>
+            }
+          />
+        )}
+
+        <div className="container max-w-6xl mx-auto p-4 md:p-8 space-y-8">
+          {/* Mobile Header (web only) */}
+          {isPhone && !isNative && (
             <div className="flex items-center gap-3">
               <Button 
                 variant="ghost" 
@@ -176,7 +190,10 @@ export default function ParentDashboard() {
               </Button>
               <h1 className="font-heading text-xl font-bold">Parent Dashboard</h1>
             </div>
-          ) : (
+          )}
+
+          {/* Desktop header */}
+          {!isPhone && (
             <div className="flex items-center justify-between">
               <Button variant="ghost" onClick={() => navigate("/dashboard")} className="gap-2">
                 <ArrowLeft className="h-4 w-4" />
