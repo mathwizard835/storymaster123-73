@@ -200,12 +200,12 @@ const Dashboard = () => {
         {/* Native iOS-style header */}
         {isPhone && isNative && (
           <NativeNavigationHeader
-            title="Dashboard"
+            title="Home"
             subtitle={isPremium ? '✨ Adventure Pass Active' : undefined}
             scrollRef={mainRef as React.RefObject<HTMLDivElement>}
             rightAction={
-              <button onClick={() => { addHapticFeedback('light'); navigate("/subscription"); }} className="p-1">
-                <Crown className="h-5 w-5 text-amber-500" />
+              <button onClick={() => { addHapticFeedback('light'); navigate("/profile"); }} className="p-1">
+                <Settings className="h-5 w-5 text-muted-foreground" />
               </button>
             }
           />
@@ -219,7 +219,92 @@ const Dashboard = () => {
           </div>
         )}
         <div className="container py-4 md:py-8 px-4 md:px-8">
-          {/* Mobile Header (web only) */}
+          {/* ======= NATIVE MOBILE LAYOUT ======= */}
+          {isPhone && isNative && (
+            <div className="space-y-5">
+              {/* Primary action — big hero card */}
+              <button
+                onClick={() => {
+                  addHapticFeedback('medium');
+                  if (inProgressStories.length > 1) {
+                    setShowStoryPickerDialog(true);
+                  } else if (inProgressStories.length === 1) {
+                    navigate(`/mission?resume=${inProgressStories[0].id}`);
+                  } else {
+                    navigate("/profile?new=true");
+                  }
+                }}
+                className="w-full rounded-2xl bg-gradient-to-br from-primary to-primary/80 p-5 text-left active:scale-[0.97] transition-transform duration-100 shadow-lg shadow-primary/20"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-primary-foreground/70 text-sm font-medium mb-1">
+                      {inProgressStories.length > 0 ? 'Continue your quest' : 'Ready for adventure?'}
+                    </p>
+                    <h2 className="text-primary-foreground text-xl font-bold">
+                      {inProgressStories.length > 0
+                        ? (inProgressStories[0]?.title || 'Your Adventure')
+                        : 'Start New Story'}
+                    </h2>
+                    {inProgressStories.length > 0 && (
+                      <p className="text-primary-foreground/60 text-xs mt-1">
+                        Scene {(inProgressStories[0]?.current_scene_index || 0) + 1} of {inProgressStories[0]?.scene_count || '?'}
+                      </p>
+                    )}
+                  </div>
+                  <div className="h-14 w-14 rounded-xl bg-primary-foreground/20 flex items-center justify-center">
+                    <Play className="h-7 w-7 text-primary-foreground" />
+                  </div>
+                </div>
+              </button>
+
+              {/* Quick actions row */}
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={async () => {
+                    addHapticFeedback('light');
+                    setIsCheckingLimit(true);
+                    try {
+                      const { canPlay } = await getStoriesRemaining();
+                      if (!canPlay) {
+                        navigate("/subscription?limitReached=true");
+                      } else if (hasActiveStory) {
+                        setShowNewStoryDialog(true);
+                      } else {
+                        navigate("/profile?new=true");
+                      }
+                    } catch (e) {
+                      console.error('Error checking story limit:', e);
+                      if (hasActiveStory) setShowNewStoryDialog(true);
+                      else navigate("/profile?new=true");
+                    } finally {
+                      setIsCheckingLimit(false);
+                    }
+                  }}
+                  disabled={isCheckingLimit}
+                  className="rounded-xl bg-muted/50 p-4 text-left active:scale-[0.97] transition-transform duration-100 border border-border/50"
+                >
+                  <div className="h-10 w-10 rounded-lg bg-emerald-500/10 flex items-center justify-center mb-2">
+                    {isCheckingLimit ? <Loader2 className="h-5 w-5 animate-spin text-emerald-500" /> : <Plus className="h-5 w-5 text-emerald-500" />}
+                  </div>
+                  <span className="text-sm font-semibold text-foreground">{isCheckingLimit ? 'Starting...' : 'New Story'}</span>
+                </button>
+
+                <button
+                  onClick={() => { addHapticFeedback('light'); navigate("/gallery"); }}
+                  className="rounded-xl bg-muted/50 p-4 text-left active:scale-[0.97] transition-transform duration-100 border border-border/50"
+                >
+                  <div className="h-10 w-10 rounded-lg bg-blue-500/10 flex items-center justify-center mb-2">
+                    <BookOpen className="h-5 w-5 text-blue-500" />
+                  </div>
+                  <span className="text-sm font-semibold text-foreground">Story Gallery</span>
+                  <span className="text-xs text-muted-foreground block">{totalStoryCount} stories</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ======= WEB MOBILE LAYOUT ======= */}
           {isPhone && !isNative && (
             <div className="flex flex-col gap-4 mb-6">
               <div className="flex items-center justify-between">
