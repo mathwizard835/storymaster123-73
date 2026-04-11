@@ -35,9 +35,17 @@ export function MobileBottomNav() {
   const hiddenPaths = ['/mission', '/profile', '/auth', '/reset-password'];
   if (hiddenPaths.some(path => location.pathname.startsWith(path))) return null;
 
+  // Don't show on native welcome screen (root when not logged in)
+  if (isNative && location.pathname === '/') return null;
+
   return (
     <nav 
-      className="fixed bottom-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-t border-border/50"
+      className={cn(
+        "fixed bottom-0 left-0 right-0 z-50 border-t border-border/50",
+        isNative
+          ? "bg-background/70 backdrop-blur-2xl backdrop-saturate-150"
+          : "bg-background/80 backdrop-blur-xl"
+      )}
       style={{ paddingBottom: isNative ? Math.max(safeAreaInsets.bottom, 8) : 8 }}
     >
       <div className="flex items-center justify-around px-1 pt-1.5 pb-1">
@@ -61,7 +69,10 @@ export function MobileBottomNav() {
               )}
             >
               <div className="relative">
-                <Icon className={cn("h-[22px] w-[22px]", isActive && "text-primary")} />
+                <Icon className={cn(
+                  "h-[22px] w-[22px] transition-transform duration-150",
+                  isActive && "text-primary scale-110"
+                )} />
                 {isActive && (
                   <motion.div
                     layoutId="nav-indicator"
