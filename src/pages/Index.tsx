@@ -405,9 +405,12 @@ const Index = () => {
               </div>
             </div>
 
-          <p className="mt-6 text-sm text-muted-foreground/80 italic">
-            Created by a 13-year-old who believes kids deserve better screen time ✨
-          </p>
+          <div className="mt-8 inline-flex items-center gap-3 bg-primary/10 border border-primary/20 rounded-full px-6 py-3">
+            <span className="text-2xl">✨</span>
+            <p className="text-base md:text-lg font-semibold text-foreground">
+              Created by a 13-year-old who believes kids deserve better screen time
+            </p>
+          </div>
 
             <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
               <ChevronDown className="h-8 w-8 text-muted-foreground" />
