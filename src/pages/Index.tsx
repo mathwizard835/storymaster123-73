@@ -405,9 +405,12 @@ const Index = () => {
               </div>
             </div>
 
-          <p className="mt-6 text-sm text-muted-foreground/80 italic">
-            Created by a 13-year-old who believes kids deserve better screen time ✨
-          </p>
+          <div className="mt-8 inline-flex items-center gap-3 bg-primary/10 border border-primary/20 rounded-full px-6 py-3">
+            <span className="text-2xl">✨</span>
+            <p className="text-base md:text-lg font-semibold text-foreground">
+              Created by a 13-year-old who believes kids deserve better screen time
+            </p>
+          </div>
 
             <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
               <ChevronDown className="h-8 w-8 text-muted-foreground" />
@@ -425,7 +428,7 @@ const Index = () => {
               <strong className="text-foreground">Not passive scrolling. Active reading.</strong> Kids read 2,500+ words per story{" "}
               <span className="text-primary font-semibold">because they want to see what happens next.</span>
             </p>
-            <p className="mt-4 text-sm text-muted-foreground/70 italic">
+            <p className="mt-4 text-base text-muted-foreground italic font-medium">
               Built by a 13-year-old for kids who deserve something better than mindless scrolling
             </p>
           </div>
@@ -799,7 +802,7 @@ const Index = () => {
           </p>
 
           <footer className="mt-12 pt-6 border-t border-border/50">
-            <p className="text-sm text-muted-foreground mb-4 italic">
+            <p className="text-base text-foreground mb-4 font-medium">
               Built with ❤️ by a 13-year-old who's turning screen time into reading time
             </p>
             <div className="flex flex-wrap justify-center gap-6 text-sm text-muted-foreground">
