@@ -247,7 +247,8 @@ const Index = () => {
           operatingSystem: "iOS, Web",
           offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
           audience: { "@type": "EducationalAudience", educationalRole: "student", typicalAgeRange: "5-16" },
-          description: "AI-powered interactive stories that turn screen time into reading time. Kids become the hero and make choices that shape each adventure.",
+          description:
+            "AI-powered interactive stories that turn screen time into reading time. Kids become the hero and make choices that shape each adventure.",
         }}
       />
 
@@ -279,7 +280,7 @@ const Index = () => {
       </NewStoryDialog>
 
       {/* Hero Section - The Big Pitch */}
-       <section className="relative min-h-screen w-full overflow-hidden pb-24 md:pb-8">
+      <section className="relative min-h-screen w-full overflow-hidden pb-24 md:pb-8">
         <img
           src={heroParentTrust}
           alt="Glowing books floating in warm educational atmosphere"
@@ -308,10 +309,12 @@ const Index = () => {
               </div>
             )}
             <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-extrabold tracking-tight drop-shadow-2xl mb-4 sm:mb-6">
-               <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                 StoryMaster Kids
-               </span>
-             <span className="block text-xl sm:text-2xl md:text-3xl lg:text-5xl mt-2 text-foreground">Turning Screen Time into Reading Time</span>
+              <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                StoryMaster Kids
+              </span>
+              <span className="block text-xl sm:text-2xl md:text-3xl lg:text-5xl mt-2 text-foreground">
+                Turning Screen Time into Reading Time
+              </span>
             </h1>
             <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-muted-foreground mb-6 sm:mb-8 leading-relaxed">
               <strong className="text-foreground text-lg sm:text-xl md:text-2xl">
@@ -372,17 +375,23 @@ const Index = () => {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
                 <div className="flex flex-col items-center text-center gap-2">
                   <span className="text-2xl">👤</span>
-                  <span><strong>1. Create a Hero</strong></span>
+                  <span>
+                    <strong>1. Create a Hero</strong>
+                  </span>
                   <span className="text-muted-foreground text-xs">Your child picks their character</span>
                 </div>
                 <div className="flex flex-col items-center text-center gap-2">
                   <span className="text-2xl">🎯</span>
-                  <span><strong>2. Make Choices</strong></span>
+                  <span>
+                    <strong>2. Make Choices</strong>
+                  </span>
                   <span className="text-muted-foreground text-xs">Decisions shape the adventure</span>
                 </div>
                 <div className="flex flex-col items-center text-center gap-2">
                   <span className="text-2xl">📖</span>
-                  <span><strong>3. Read & Grow</strong></span>
+                  <span>
+                    <strong>3. Read & Grow</strong>
+                  </span>
                   <span className="text-muted-foreground text-xs">Build real reading skills</span>
                 </div>
               </div>
@@ -405,12 +414,9 @@ const Index = () => {
               </div>
             </div>
 
-          <div className="mt-8 inline-flex items-center gap-3 bg-primary/10 border border-primary/20 rounded-full px-6 py-3">
-            <span className="text-2xl">✨</span>
-            <p className="text-base md:text-lg font-semibold text-foreground">
+            <p className="mt-6 text-sm text-muted-foreground/80 italic">
               Created by a 13-year-old who believes kids deserve better screen time
             </p>
-          </div>
 
             <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
               <ChevronDown className="h-8 w-8 text-muted-foreground" />
@@ -425,10 +431,10 @@ const Index = () => {
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold mb-6">Interactive Stories That Build Real Skills</h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              <strong className="text-foreground">Not passive scrolling. Active reading.</strong> Kids read 2,500+ words per story{" "}
-              <span className="text-primary font-semibold">because they want to see what happens next.</span>
+              <strong className="text-foreground">Not passive scrolling. Active reading.</strong> Kids read 2,500+ words
+              per story <span className="text-primary font-semibold">because they want to see what happens next.</span>
             </p>
-            <p className="mt-4 text-base text-muted-foreground italic font-medium">
+            <p className="mt-4 text-sm text-muted-foreground/70 italic">
               Built by a 13-year-old for kids who deserve something better than mindless scrolling
             </p>
           </div>
@@ -451,7 +457,8 @@ const Index = () => {
               </div>
               <h3 className="text-2xl font-bold mb-4">🎮 Engaging Entertainment</h3>
               <p className="text-muted-foreground">
-                <strong>As fun as gaming:</strong> All the engagement kids love, while building vocabulary, reading speed, and critical thinking skills.
+                <strong>As fun as gaming:</strong> All the engagement kids love, while building vocabulary, reading
+                speed, and critical thinking skills.
               </p>
             </div>
 
@@ -473,32 +480,26 @@ const Index = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
               <div className="text-center p-4 bg-background/50 rounded-xl">
                 <div className="text-4xl md:text-5xl font-extrabold text-destructive mb-2">54%</div>
-                <p className="text-sm text-muted-foreground">
-                  of U.S. adults read below a 6th-grade level
-                </p>
+                <p className="text-sm text-muted-foreground">of U.S. adults read below a 6th-grade level</p>
                 <p className="text-xs text-muted-foreground/70 mt-1">— National Center for Education Statistics</p>
               </div>
               <div className="text-center p-4 bg-background/50 rounded-xl">
                 <div className="text-4xl md:text-5xl font-extrabold text-warning mb-2">1 in 3</div>
-                <p className="text-sm text-muted-foreground">
-                  4th graders can't read at a basic level
-                </p>
+                <p className="text-sm text-muted-foreground">4th graders can't read at a basic level</p>
                 <p className="text-xs text-muted-foreground/70 mt-1">— Nation's Report Card (NAEP 2022)</p>
               </div>
               <div className="text-center p-4 bg-background/50 rounded-xl">
                 <div className="text-4xl md:text-5xl font-extrabold text-primary mb-2">43M</div>
-                <p className="text-sm text-muted-foreground">
-                  Americans have low literacy skills
-                </p>
+                <p className="text-sm text-muted-foreground">Americans have low literacy skills</p>
                 <p className="text-xs text-muted-foreground/70 mt-1">— U.S. Department of Education</p>
               </div>
             </div>
             <div className="text-center">
               <p className="text-lg font-semibold text-foreground mb-2">
-              StoryMaster Kids: Turning Screen Time into Reading Time
+                StoryMaster Kids: Turning Screen Time into Reading Time
               </p>
               <p className="text-muted-foreground">
-                Interactive stories that make kids <span className="text-primary font-semibold">want</span> to read — 
+                Interactive stories that make kids <span className="text-primary font-semibold">want</span> to read —
                 building vocabulary, comprehension, and a lifelong love of reading.
               </p>
             </div>
@@ -521,7 +522,8 @@ const Index = () => {
             <div>
               <h2 className="text-4xl md:text-5xl font-bold mb-6">Why Parents Love StoryMaster Kids</h2>
               <p className="text-xl text-muted-foreground mb-8">
-                Finally, screen time that's as engaging as Roblox but builds vocabulary, comprehension, and critical thinking.
+                Finally, screen time that's as engaging as Roblox but builds vocabulary, comprehension, and critical
+                thinking.
               </p>
 
               <div className="space-y-6">
@@ -532,7 +534,8 @@ const Index = () => {
                   <div>
                     <h3 className="font-semibold text-lg mb-2">Screen Time with Purpose</h3>
                     <p className="text-muted-foreground">
-                      Just as engaging as their favorite apps, while building vocabulary, critical thinking, and creativity.
+                      Just as engaging as their favorite apps, while building vocabulary, critical thinking, and
+                      creativity.
                     </p>
                   </div>
                 </div>
@@ -583,15 +586,25 @@ const Index = () => {
                 <div className="space-y-2 text-sm">
                   <p className="flex items-start gap-2">
                     <span className="text-primary font-bold">•</span>
-                    <span>Children who read for pleasure perform <strong className="text-primary">better in all subjects</strong> — not just English (OECD PISA Study)</span>
+                    <span>
+                      Children who read for pleasure perform{" "}
+                      <strong className="text-primary">better in all subjects</strong> — not just English (OECD PISA
+                      Study)
+                    </span>
                   </p>
                   <p className="flex items-start gap-2">
                     <span className="text-primary font-bold">•</span>
-                    <span><strong className="text-primary">20 minutes daily</strong> reading exposes kids to 1.8 million words per year (Anderson, Wilson & Fielding)</span>
+                    <span>
+                      <strong className="text-primary">20 minutes daily</strong> reading exposes kids to 1.8 million
+                      words per year (Anderson, Wilson & Fielding)
+                    </span>
                   </p>
                   <p className="flex items-start gap-2">
                     <span className="text-primary font-bold">•</span>
-                    <span>Interactive narratives boost <strong className="text-primary">comprehension by 38%</strong> over passive reading (Journal of Educational Psychology)</span>
+                    <span>
+                      Interactive narratives boost <strong className="text-primary">comprehension by 38%</strong> over
+                      passive reading (Journal of Educational Psychology)
+                    </span>
                   </p>
                 </div>
               </div>
@@ -660,7 +673,7 @@ const Index = () => {
             <h2 className="text-3xl md:text-4xl font-bold mb-4">📖 StoryMaster Kids Makes a Difference</h2>
             <p className="text-lg text-muted-foreground">Research-backed features that build real reading skills</p>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="bg-background p-6 rounded-xl shadow-sm border border-border text-center">
               <div className="text-3xl font-extrabold text-primary mb-2">12</div>
@@ -686,7 +699,8 @@ const Index = () => {
 
           <div className="mt-10 text-center p-6 bg-background/50 rounded-xl border border-border">
             <p className="text-sm text-muted-foreground italic">
-              "Students who engage with interactive fiction show significant improvements in reading motivation and narrative comprehension compared to traditional reading formats."
+              "Students who engage with interactive fiction show significant improvements in reading motivation and
+              narrative comprehension compared to traditional reading formats."
             </p>
             <p className="text-xs text-muted-foreground/70 mt-2">— International Literacy Association, 2023</p>
           </div>
@@ -703,7 +717,9 @@ const Index = () => {
 
           <div className="bg-primary/10 border border-primary/30 rounded-2xl p-8 mb-8 text-center">
             <p className="text-2xl font-bold text-primary mb-2">Try 3 Free Stories</p>
-            <p className="text-lg text-muted-foreground">No credit card required • See why kids love it • Upgrade anytime</p>
+            <p className="text-lg text-muted-foreground">
+              No credit card required • See why kids love it • Upgrade anytime
+            </p>
             <div className="mt-3 inline-flex items-center gap-2 bg-background/50 px-4 py-2 rounded-full text-sm">
               <Rocket className="h-4 w-4 text-primary" />
               <span className="font-semibold">Updated weekly</span> with new features & improvements
@@ -802,7 +818,7 @@ const Index = () => {
           </p>
 
           <footer className="mt-12 pt-6 border-t border-border/50">
-            <p className="text-base text-foreground mb-4 font-medium">
+            <p className="text-sm text-muted-foreground mb-4 italic">
               Built with ❤️ by a 13-year-old who's turning screen time into reading time
             </p>
             <div className="flex flex-wrap justify-center gap-6 text-sm text-muted-foreground">
