@@ -292,6 +292,26 @@ export const loadRecentStoriesFromDatabase = async (limit: number = 10): Promise
   return data || [];
 };
 
+// Load all user stories (active, paused, and completed)
+export const loadAllUserStoriesFromDatabase = async (): Promise<DatabaseStory[]> => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data, error } = await (supabase as any)
+    .from('user_stories')
+    .select('*')
+    .eq('user_id', user.id)
+    .in('status', ['active', 'paused', 'completed'])
+    .order('last_played_at', { ascending: false });
+
+  if (error) {
+    console.error('Error loading all user stories:', error);
+    return [];
+  }
+
+  return data || [];
+};
+
 // Load completed stories from database
 export const loadCompletedStoriesFromDatabase = async (): Promise<DatabaseStory[]> => {
   const { data: { user } } = await supabase.auth.getUser();

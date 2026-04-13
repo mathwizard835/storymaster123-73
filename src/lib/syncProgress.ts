@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { saveAchievements, updateProgress, AchievementProgress } from './achievements';
+import { saveAchievements, AchievementProgress, ALL_ACHIEVEMENTS } from './achievements';
 import { saveCharacter, gainExperience, DEFAULT_CHARACTER, CharacterStats } from './character';
 import { Profile } from './story';
 // ABILITIES DISABLED - Uncomment to re-enable
@@ -123,17 +123,52 @@ export const syncProgressFromDatabase = async (): Promise<{
       // }
     }
 
-    // Now check all achievements at once based on the totals
-    const allNewAchievements = updateProgress(
-      [], // Don't pass badges since we already updated the totals
-      '', // Don't pass mode
-      0   // Don't add more choices
-    );
+    // Save computed totals to localStorage BEFORE checking achievements
+    saveAchievements(achievementProgress);
+
+    // Check for new achievements directly against computed totals (don't re-increment)
+    const newlyUnlocked: typeof achievementProgress.achievements = [];
+    for (const achievement of ALL_ACHIEVEMENTS) {
+      if (achievementProgress.achievements.some(a => a.id === achievement.id)) continue;
+
+      let unlocked = false;
+      switch (achievement.id) {
+        case "first_story": unlocked = achievementProgress.totalStories >= 1; break;
+        case "story_master": unlocked = achievementProgress.totalStories >= 5; break;
+        case "legend": unlocked = achievementProgress.totalStories >= 10; break;
+        case "decisive": unlocked = achievementProgress.totalChoices >= 25; break;
+        case "tactician": unlocked = achievementProgress.totalChoices >= 100; break;
+        case "mystic_master": unlocked = (achievementProgress.badgeUsage["mystic"] || 0) >= 3; break;
+        case "beast_lord": unlocked = (achievementProgress.badgeUsage["beast"] || 0) >= 3; break;
+        case "detective_ace": unlocked = (achievementProgress.badgeUsage["detective"] || 0) >= 3; break;
+        case "action_hero": unlocked = (achievementProgress.badgeUsage["action"] || 0) >= 3; break;
+        case "social_champion": unlocked = (achievementProgress.badgeUsage["social"] || 0) >= 3; break;
+        case "creative_genius": unlocked = (achievementProgress.badgeUsage["creative"] || 0) >= 3; break;
+        case "space_explorer": unlocked = (achievementProgress.badgeUsage["space"] || 0) >= 3; break;
+        case "thrill_seeker": unlocked = (achievementProgress.modeUsage["thrill"] || 0) >= 3; break;
+        case "mystery_solver": unlocked = (achievementProgress.modeUsage["mystery"] || 0) >= 3; break;
+        case "explorer": unlocked = (achievementProgress.modeUsage["explore"] || 0) >= 3; break;
+        case "comedy_master": unlocked = (achievementProgress.modeUsage["comedy"] || 0) >= 3; break;
+        case "versatile": unlocked = Object.keys(achievementProgress.badgeUsage).length >= 7; break;
+        case "adventurous": unlocked = Object.keys(achievementProgress.modeUsage).length >= 4; break;
+      }
+
+      if (unlocked) {
+        const newAchievement = { ...achievement, unlockedAt: new Date().toISOString() };
+        achievementProgress.achievements.push(newAchievement);
+        newlyUnlocked.push(newAchievement);
+      }
+    }
+
+    // Save again with any newly unlocked achievements
+    if (newlyUnlocked.length > 0) {
+      saveAchievements(achievementProgress);
+    }
     
     // ABILITIES DISABLED - Uncomment to re-enable
     // saveAbilities(abilityProgress);
 
-    console.log(`✅ Sync complete: ${totalStoriesCompleted} stories, ${achievementProgress.totalChoices} choices, ${allNewAchievements.length} achievements, ${abilityProgress.totalAbilitiesEarned} abilities unlocked`);
+    console.log(`✅ Sync complete: ${totalStoriesCompleted} stories, ${achievementProgress.totalChoices} choices, ${newlyUnlocked.length} achievements, ${abilityProgress.totalAbilitiesEarned} abilities unlocked`);
     console.log(`📊 Character: Level ${character.level}, ${character.totalExperienceEarned} total XP`);
 
     return {
