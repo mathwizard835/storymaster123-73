@@ -1,49 +1,35 @@
 
 
-## What You Asked About
+## Bug Analysis and Fix Plan
 
-### 1. Offline Story Caching — What It Is (Plain English)
+### Root Causes
 
-Right now, when you open the Story Gallery, it fetches your completed stories from Supabase (the internet). If you have no internet, you see nothing.
+**Bug 1 & 2: Achievements and choices not updating on dashboard**
 
-**Offline caching** means: after stories load successfully, we save a copy on your phone's local storage. Next time you open the gallery with no internet, you still see your stories instead of an error. That's it — it's already implemented in `offlineStories.ts` and wired into `StoryGallery.tsx`.
+In `syncProgressFromDatabase()` (syncProgress.ts), the code manually builds an `achievementProgress` object with correct totals from the database (lines 68-74, 82-100). However, it **never saves this object to localStorage**. It then calls `updateProgress([], '', 0)` which internally calls `loadAchievements()` — reading from localStorage (which is empty/stale), adds +1 to totalStories, and saves *that*. The carefully computed totals are discarded.
 
-It does **not** mean you can generate new stories offline (that still needs AI/internet). It just means previously completed stories are viewable without connectivity.
+The dashboard then calls `loadAchievements()` (line 86 of Dashboard.tsx), which reads the same stale localStorage.
 
----
+**Bug 3: Story Gallery empty after starting stories**
 
-### 2. White Loading Screen Fix
+`loadCompletedStoriesFromDatabase()` filters by `status = 'completed'` only. Stories that are `active` or `paused` never appear in the gallery. This is technically by design, but the gallery page gives no indication that in-progress stories exist elsewhere.
 
-**The problem**: Before React mounts (and before any component renders), the browser shows whatever background color is on `<html>` and `<body>`. Right now `index.html` has `<body style="margin: 0;">` with **no background color** — so it's white. On a Capacitor iOS app, this means a white flash before the dark-themed `NativeLoadingScreen` component appears.
+### Plan
 
-**The fix** (2 changes):
+**1. Fix achievement sync persistence (syncProgress.ts)**
+- After building `achievementProgress` with correct DB-derived totals, call `saveAchievements(achievementProgress)` to persist it to localStorage *before* checking for new achievement unlocks.
+- Replace the `updateProgress([], '', 0)` call with direct achievement-checking logic that doesn't re-increment counters. The function will iterate `ALL_ACHIEVEMENTS`, check unlock conditions against the already-computed totals, add newly unlocked achievements to the progress object, and save again.
 
-#### A. `index.html` — Set body/html background to match the app's dark theme
-Add `background-color: #1a1a2e` (the app's base dark color) to both `<html>` and `<body>` so the moment the webview opens, the background is already dark — no white flash.
+**2. Fix choices metric on dashboard (same fix)**
+- Since `achievementProgress.totalChoices` is correctly computed in the sync loop but never persisted, the fix in step 1 (saving to localStorage) automatically resolves this. The dashboard's `loadAchievements()` call will now read correct choice counts.
 
-```html
-<html lang="en" style="background-color: #1a1a2e;">
-  ...
-  <body style="margin: 0; background-color: #1a1a2e;">
-```
+**3. Show in-progress stories in Story Gallery (StoryGallery.tsx + databaseStory.ts)**
+- Add a new function `loadAllUserStoriesFromDatabase()` that fetches stories with status `active`, `paused`, OR `completed`.
+- Update StoryGallery to load all stories (not just completed) and display in-progress stories with a visual indicator (e.g., "In Progress" badge, different card styling).
+- Group or sort stories so completed ones appear first, with in-progress stories in a separate section above.
 
-#### B. `index.html` — Add an inline loading indicator inside `#root`
-Put a simple CSS-only spinner inside `<div id="root">` so there's visible feedback before React hydrates. React will replace it automatically when it mounts.
-
-```html
-<div id="root">
-  <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#1a1a2e;">
-    <div style="width:32px;height:32px;border:3px solid rgba(255,255,255,0.1);border-top-color:rgba(255,255,255,0.5);border-radius:50%;animation:spin .8s linear infinite;"></div>
-  </div>
-</div>
-<style>@keyframes spin{to{transform:rotate(360deg)}}</style>
-```
-
-This ensures:
-- Native iOS launch screen → dark background with spinner → React app (no white flash at any point)
-- Web users also get a themed pre-render instead of blank white
-
----
-
-**Summary**: 2 edits to `index.html` only. No other files change.
+### Files Modified
+- `src/lib/syncProgress.ts` — save achievementProgress to localStorage, fix achievement checking
+- `src/pages/StoryGallery.tsx` — show in-progress stories alongside completed ones
+- `src/lib/databaseStory.ts` — add function to load all user stories (not just completed)
 
