@@ -22,10 +22,6 @@ const AgeGateForm = ({ onAgeConfirmed, onBack, loading = false, externalError }:
       return;
     }
     const age = parseInt(selectedAge, 10);
-    if (age < 5 || age > 17) {
-      setError('This app is designed for children ages 5–12. A parent can create an account for a younger child.');
-      return;
-    }
     onAgeConfirmed(age);
   };
 

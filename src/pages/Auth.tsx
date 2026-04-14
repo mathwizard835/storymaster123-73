@@ -18,7 +18,7 @@ import ParentalConsentForm from '@/components/auth/ParentalConsentForm';
 import ParentalGateChallenge from '@/components/auth/ParentalGateChallenge';
 import { getAuthRedirectUrl } from '@/lib/authRedirect';
 
-type SignupStep = 'credentials' | 'parental-gate' | 'age-gate' | 'parental-consent';
+type SignupStep = 'credentials' | 'age-gate' | 'parental-gate' | 'parental-consent';
 
 const Auth = () => {
   const [email, setEmail] = useState('');
@@ -200,19 +200,19 @@ const Auth = () => {
       return;
     }
 
-    // Move to parental gate challenge first
-    setSignupStep('parental-gate');
+    // Go to age gate first
+    setSignupStep('age-gate');
   };
 
   // Step 2: Age confirmed
   const handleAgeConfirmed = (age: number) => {
     setChildAge(age);
-    if (age < 13) {
-      // Under 13 → require parental consent (COPPA)
-      setSignupStep('parental-consent');
+    if (age > 12) {
+      // Over 12 → parental gate challenge to verify adult is present
+      setSignupStep('parental-gate');
     } else {
-      // 13+ → create account directly
-      completeSignUp(age, null);
+      // 12 and under → require parental consent (COPPA)
+      setSignupStep('parental-consent');
     }
   };
 
@@ -383,22 +383,22 @@ const Auth = () => {
 
   // Render signup step content
   const renderSignupContent = () => {
-    if (signupStep === 'parental-gate') {
-      return (
-        <ParentalGateChallenge
-          onPassed={() => setSignupStep('age-gate')}
-          onBack={() => setSignupStep('credentials')}
-        />
-      );
-    }
-
     if (signupStep === 'age-gate') {
       return (
         <AgeGateForm
           onAgeConfirmed={handleAgeConfirmed}
-          onBack={() => setSignupStep('parental-gate')}
+          onBack={() => setSignupStep('credentials')}
           loading={loading}
           externalError={error}
+        />
+      );
+    }
+
+    if (signupStep === 'parental-gate') {
+      return (
+        <ParentalGateChallenge
+          onPassed={() => completeSignUp(childAge, null)}
+          onBack={() => setSignupStep('age-gate')}
         />
       );
     }
