@@ -34,7 +34,7 @@ export default function Settings() {
   const { user, signOut } = useAuth();
   const { isPhone, isNative } = useDevice();
   const scrollRef = useRef<HTMLDivElement>(null);
-  const { swipeProgress } = useSwipeBack({ onSwipeBack: () => navigate(-1) });
+  const { swipeProgress } = useSwipeBack();
 
   const [notificationsEnabled, setNotificationsEnabled] = useState(() => {
     return localStorage.getItem("notifications-enabled") !== "false";
