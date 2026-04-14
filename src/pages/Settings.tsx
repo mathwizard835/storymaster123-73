@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
@@ -20,12 +20,10 @@ import {
   Shield,
   LogOut,
   ChevronRight,
-  BookOpen,
   Crown,
   Mail,
   HelpCircle,
   FileText,
-  ExternalLink,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
