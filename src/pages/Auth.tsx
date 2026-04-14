@@ -15,9 +15,10 @@ import { checkIfBanned } from '@/lib/banCheck';
 import heroPortal from '@/assets/hero-portal.jpg';
 import AgeGateForm from '@/components/auth/AgeGateForm';
 import ParentalConsentForm from '@/components/auth/ParentalConsentForm';
+import ParentalGateChallenge from '@/components/auth/ParentalGateChallenge';
 import { getAuthRedirectUrl } from '@/lib/authRedirect';
 
-type SignupStep = 'credentials' | 'age-gate' | 'parental-consent';
+type SignupStep = 'credentials' | 'parental-gate' | 'age-gate' | 'parental-consent';
 
 const Auth = () => {
   const [email, setEmail] = useState('');
@@ -199,8 +200,8 @@ const Auth = () => {
       return;
     }
 
-    // Move to age gate
-    setSignupStep('age-gate');
+    // Move to parental gate challenge first
+    setSignupStep('parental-gate');
   };
 
   // Step 2: Age confirmed
@@ -382,11 +383,20 @@ const Auth = () => {
 
   // Render signup step content
   const renderSignupContent = () => {
+    if (signupStep === 'parental-gate') {
+      return (
+        <ParentalGateChallenge
+          onPassed={() => setSignupStep('age-gate')}
+          onBack={() => setSignupStep('credentials')}
+        />
+      );
+    }
+
     if (signupStep === 'age-gate') {
       return (
         <AgeGateForm
           onAgeConfirmed={handleAgeConfirmed}
-          onBack={() => setSignupStep('credentials')}
+          onBack={() => setSignupStep('parental-gate')}
           loading={loading}
           externalError={error}
         />
