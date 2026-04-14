@@ -200,19 +200,19 @@ const Auth = () => {
       return;
     }
 
-    // Move to parental gate challenge first
-    setSignupStep('parental-gate');
+    // Go to age gate first
+    setSignupStep('age-gate');
   };
 
   // Step 2: Age confirmed
   const handleAgeConfirmed = (age: number) => {
     setChildAge(age);
-    if (age < 13) {
-      // Under 13 → require parental consent (COPPA)
-      setSignupStep('parental-consent');
+    if (age > 12) {
+      // Over 12 → parental gate challenge to verify adult is present
+      setSignupStep('parental-gate');
     } else {
-      // 13+ → create account directly
-      completeSignUp(age, null);
+      // 12 and under → require parental consent (COPPA)
+      setSignupStep('parental-consent');
     }
   };
 
