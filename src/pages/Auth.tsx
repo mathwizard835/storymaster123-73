@@ -383,22 +383,22 @@ const Auth = () => {
 
   // Render signup step content
   const renderSignupContent = () => {
-    if (signupStep === 'parental-gate') {
-      return (
-        <ParentalGateChallenge
-          onPassed={() => setSignupStep('age-gate')}
-          onBack={() => setSignupStep('credentials')}
-        />
-      );
-    }
-
     if (signupStep === 'age-gate') {
       return (
         <AgeGateForm
           onAgeConfirmed={handleAgeConfirmed}
-          onBack={() => setSignupStep('parental-gate')}
+          onBack={() => setSignupStep('credentials')}
           loading={loading}
           externalError={error}
+        />
+      );
+    }
+
+    if (signupStep === 'parental-gate') {
+      return (
+        <ParentalGateChallenge
+          onPassed={() => completeSignUp(childAge, null)}
+          onBack={() => setSignupStep('age-gate')}
         />
       );
     }
