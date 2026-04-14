@@ -18,7 +18,7 @@ import ParentalConsentForm from '@/components/auth/ParentalConsentForm';
 import ParentalGateChallenge from '@/components/auth/ParentalGateChallenge';
 import { getAuthRedirectUrl } from '@/lib/authRedirect';
 
-type SignupStep = 'credentials' | 'parental-gate' | 'age-gate' | 'parental-consent';
+type SignupStep = 'credentials' | 'age-gate' | 'parental-gate' | 'parental-consent';
 
 const Auth = () => {
   const [email, setEmail] = useState('');
