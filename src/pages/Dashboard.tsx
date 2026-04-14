@@ -204,7 +204,7 @@ const Dashboard = () => {
             subtitle={isPremium ? '✨ Adventure Pass Active' : undefined}
             scrollRef={mainRef as React.RefObject<HTMLDivElement>}
             rightAction={
-              <button onClick={() => { addHapticFeedback('light'); navigate("/profile"); }} className="p-1">
+              <button onClick={() => { addHapticFeedback('light'); navigate("/settings"); }} className="p-1">
                 <Settings className="h-5 w-5 text-muted-foreground" />
               </button>
             }
