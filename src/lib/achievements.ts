@@ -86,6 +86,7 @@ export const updateProgress = (
   
   // Update stats
   progress.totalStories += 1;
+  progress.totalStoriesStarted = (progress.totalStoriesStarted || 0) + 1;
   progress.totalChoices += choiceCount;
   
   // Update badge usage
