@@ -866,13 +866,19 @@ const Dashboard = () => {
               {unlockedAchievements.length === 0 ? (
                 <Card className="glass-panel border-0 p-8 text-center">
                   <Trophy className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground mb-4">No achievements yet</p>
-                  <Button 
-                    onClick={() => navigate("/profile")}
-                    variant="outline"
-                  >
-                    Start Your First Adventure
-                  </Button>
+                  <p className="text-muted-foreground mb-4">
+                    {totalStoryCount === 0 && inProgressStories.length === 0
+                      ? "No achievements yet"
+                      : "Complete a story to earn more achievements"}
+                  </p>
+                  {totalStoryCount === 0 && inProgressStories.length === 0 && (
+                    <Button 
+                      onClick={() => navigate("/profile")}
+                      variant="outline"
+                    >
+                      Start Your First Adventure
+                    </Button>
+                  )}
                 </Card>
               ) : (
                 <div className="space-y-3">

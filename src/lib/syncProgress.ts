@@ -22,34 +22,35 @@ export const syncProgressFromDatabase = async (): Promise<{
       console.log('No authenticated user, skipping sync');
       return {
         syncedStories: 0,
-        achievements: { totalStories: 0, totalChoices: 0, badgeUsage: {}, modeUsage: {}, achievements: [] },
+        achievements: { totalStories: 0, totalStoriesStarted: 0, totalChoices: 0, badgeUsage: {}, modeUsage: {}, achievements: [] },
         character: DEFAULT_CHARACTER,
         abilities: { abilities: [], totalAbilitiesEarned: 0, abilitiesUsed: 0 }
       };
     }
 
-    // Get completed stories from user_stories (uses user_id-based RLS which works reliably)
+    // Get ALL stories from user_stories (active, paused, and completed)
     const userStoriesResult = await supabase
       .from('user_stories')
       .select('*')
       .eq('user_id', user.id)
-      .eq('status', 'completed')
-      .order('completed_at', { ascending: true });
+      .in('status', ['active', 'paused', 'completed'])
+      .order('started_at', { ascending: true });
 
     if (userStoriesResult.error) {
-      console.error('Failed to fetch completed stories:', userStoriesResult.error);
+      console.error('Failed to fetch stories:', userStoriesResult.error);
       throw userStoriesResult.error;
     }
 
-    const completedStories = userStoriesResult.data || [];
+    const allStories = userStoriesResult.data || [];
+    const completedStories = allStories.filter(s => s.status === 'completed');
+    const totalStoriesStarted = allStories.length;
     const totalStoriesCompleted = completedStories.length;
 
-    if (totalStoriesCompleted === 0) {
-      console.log('No completed stories found in database, resetting to defaults');
-      // IMPORTANT: Clear stale localStorage so new users don't see old data
+    if (totalStoriesStarted === 0) {
+      console.log('No stories found in database, resetting to defaults');
       const freshCharacter = { ...DEFAULT_CHARACTER };
       saveCharacter(freshCharacter);
-      const freshAchievements = { totalStories: 0, totalChoices: 0, badgeUsage: {}, modeUsage: {}, achievements: [] };
+      const freshAchievements: AchievementProgress = { totalStories: 0, totalStoriesStarted: 0, totalChoices: 0, badgeUsage: {}, modeUsage: {}, achievements: [] };
       saveAchievements(freshAchievements);
       return {
         syncedStories: 0,
@@ -59,14 +60,14 @@ export const syncProgressFromDatabase = async (): Promise<{
       };
     }
 
-    console.log(`🔄 Syncing ${totalStoriesCompleted} completed stories from database (${completedStories.length} detailed)...`);
+    console.log(`🔄 Syncing ${totalStoriesStarted} stories (${totalStoriesCompleted} completed) from database...`);
 
     // Initialize fresh progress tracking
     let character = { ...DEFAULT_CHARACTER };
-    // Save fresh character to localStorage so gainExperience reads from clean state
     saveCharacter(character);
     let achievementProgress: AchievementProgress = {
-      totalStories: totalStoriesCompleted, // Use actual count from story_completions
+      totalStories: totalStoriesCompleted,
+      totalStoriesStarted: totalStoriesStarted,
       totalChoices: 0,
       badgeUsage: {},
       modeUsage: {},
@@ -133,7 +134,7 @@ export const syncProgressFromDatabase = async (): Promise<{
 
       let unlocked = false;
       switch (achievement.id) {
-        case "first_story": unlocked = achievementProgress.totalStories >= 1; break;
+        case "first_story": unlocked = achievementProgress.totalStoriesStarted >= 1; break;
         case "story_master": unlocked = achievementProgress.totalStories >= 5; break;
         case "legend": unlocked = achievementProgress.totalStories >= 10; break;
         case "decisive": unlocked = achievementProgress.totalChoices >= 25; break;
