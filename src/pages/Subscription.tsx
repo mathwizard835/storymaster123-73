@@ -431,9 +431,12 @@ export default function Subscription() {
           <CardContent className="p-8 space-y-8">
             {/* Base Plan Features */}
             <div>
-              <div className="flex items-baseline justify-center mb-6">
-                <span className="text-5xl font-bold text-white">${basePlan.price}</span>
-                <span className="text-purple-300 ml-2">/month</span>
+              <div className="flex flex-col items-center mb-6">
+                <div className="flex items-baseline">
+                  <span className="text-5xl font-bold text-white">${basePlan.price}</span>
+                  <span className="text-purple-300 ml-2">/month</span>
+                </div>
+                <span className="text-purple-300/60 text-xs mt-1">Auto-renews monthly</span>
               </div>
 
               <div className="space-y-3">
