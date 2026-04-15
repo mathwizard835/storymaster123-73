@@ -9,6 +9,7 @@ export type Achievement = {
 
 export type AchievementProgress = {
   totalStories: number;
+  totalStoriesStarted: number;
   totalChoices: number;
   badgeUsage: Record<string, number>;
   modeUsage: Record<string, number>;
@@ -59,6 +60,7 @@ export const loadAchievements = (): AchievementProgress => {
   
   return {
     totalStories: 0,
+    totalStoriesStarted: 0,
     totalChoices: 0,
     badgeUsage: {},
     modeUsage: {},
@@ -102,7 +104,7 @@ export const updateProgress = (
     
     switch (achievement.id) {
       case "first_story":
-        unlocked = progress.totalStories >= 1;
+        unlocked = (progress.totalStoriesStarted || 0) >= 1;
         break;
       case "story_master":
         unlocked = progress.totalStories >= 5;
