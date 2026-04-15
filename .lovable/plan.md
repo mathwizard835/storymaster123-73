@@ -1,35 +1,35 @@
+## Problem Analysis
 
+Two related issues:
 
-## Bug Analysis and Fix Plan
+1. **Dashboard doesn't update after starting a story** — The `syncProgressFromDatabase` function only counts stories with `status = 'completed'`. Since the user has zero completed stories (all are active/paused), it resets localStorage achievements to zeros every time the Dashboard loads. This wipes any local progress.
+2. **"Start Your First Adventure" shows incorrectly** — The Dashboard checks `recentStories.length === 0` for stories and `unlockedAchievements.length === 0` for achievements. The recent stories check should work (loadRecentStoriesFromDatabase includes active/paused), but the achievements section shows "Start Your First Adventure" because sync keeps resetting achievements to empty.
 
-### Root Causes
+**Root cause**: `syncProgressFromDatabase` should also count active/paused stories as progress indicators (at minimum for "stories started"), and the "first_story" achievement should unlock when the user starts (not finishes) their first story. Additionally, the empty-state messages should account for in-progress stories.
 
-**Bug 1 & 2: Achievements and choices not updating on dashboard**
+## Plan
 
-In `syncProgressFromDatabase()` (syncProgress.ts), the code manually builds an `achievementProgress` object with correct totals from the database (lines 68-74, 82-100). However, it **never saves this object to localStorage**. It then calls `updateProgress([], '', 0)` which internally calls `loadAchievements()` — reading from localStorage (which is empty/stale), adds +1 to totalStories, and saves *that*. The carefully computed totals are discarded.
+### 1. Fix syncProgressFromDatabase to include all stories (syncProgress.ts)
 
-The dashboard then calls `loadAchievements()` (line 86 of Dashboard.tsx), which reads the same stale localStorage.
+- Change the query from `status = 'completed'` to include `active`, `paused`, and `completed` stories
+- Only count completed stories toward `totalStories` for achievement thresholds that require completion
+- Add a new `totalStoriesStarted` field to track stories begun (for the "first_story" achievement)
+- When there are active/paused stories but zero completed, do NOT reset localStorage to defaults
 
-**Bug 3: Story Gallery empty after starting stories**
+### 2. Update achievement definitions and checks (achievements.ts)
 
-`loadCompletedStoriesFromDatabase()` filters by `status = 'completed'` only. Stories that are `active` or `paused` never appear in the gallery. This is technically by design, but the gallery page gives no indication that in-progress stories exist elsewhere.
+- Change `first_story` achievement to trigger on starting a story (totalStoriesStarted >= 1) rather than completing one
+- Keep other achievements (story_master, legend) based on completed stories
+- Add `totalStoriesStarted` to the `AchievementProgress` type
 
-### Plan
+### 3. Fix empty-state messaging (Dashboard.tsx)
 
-**1. Fix achievement sync persistence (syncProgress.ts)**
-- After building `achievementProgress` with correct DB-derived totals, call `saveAchievements(achievementProgress)` to persist it to localStorage *before* checking for new achievement unlocks.
-- Replace the `updateProgress([], '', 0)` call with direct achievement-checking logic that doesn't re-increment counters. The function will iterate `ALL_ACHIEVEMENTS`, check unlock conditions against the already-computed totals, add newly unlocked achievements to the progress object, and save again.
-
-**2. Fix choices metric on dashboard (same fix)**
-- Since `achievementProgress.totalChoices` is correctly computed in the sync loop but never persisted, the fix in step 1 (saving to localStorage) automatically resolves this. The dashboard's `loadAchievements()` call will now read correct choice counts.
-
-**3. Show in-progress stories in Story Gallery (StoryGallery.tsx + databaseStory.ts)**
-- Add a new function `loadAllUserStoriesFromDatabase()` that fetches stories with status `active`, `paused`, OR `completed`.
-- Update StoryGallery to load all stories (not just completed) and display in-progress stories with a visual indicator (e.g., "In Progress" badge, different card styling).
-- Group or sort stories so completed ones appear first, with in-progress stories in a separate section above.
+- Change the achievements section empty state condition: show "Start Your First Adventure" only when `totalStoryCount === 0` AND `inProgressStories.length === 0` (truly no stories at all)
+- When there are in-progress stories but no achievements yet, show a different message like "Complete a story to earn achievements"
 
 ### Files Modified
-- `src/lib/syncProgress.ts` — save achievementProgress to localStorage, fix achievement checking
-- `src/pages/StoryGallery.tsx` — show in-progress stories alongside completed ones
-- `src/lib/databaseStory.ts` — add function to load all user stories (not just completed)
 
+- `src/lib/achievements.ts` — Add `totalStoriesStarted` field, update `first_story` check
+- `src/lib/syncProgress.ts` — Query all statuses, populate `totalStoriesStarted`, don't reset when only in-progress stories exist
+- `src/pages/Dashboard.tsx` — Fix empty-state conditions for achievements section
+- `src/pages/Achievements.tsx` — Show `totalStoriesStarted` context if no achievements yet
