@@ -134,7 +134,7 @@ export const syncProgressFromDatabase = async (): Promise<{
 
       let unlocked = false;
       switch (achievement.id) {
-        case "first_story": unlocked = achievementProgress.totalStories >= 1; break;
+        case "first_story": unlocked = achievementProgress.totalStoriesStarted >= 1; break;
         case "story_master": unlocked = achievementProgress.totalStories >= 5; break;
         case "legend": unlocked = achievementProgress.totalStories >= 10; break;
         case "decisive": unlocked = achievementProgress.totalChoices >= 25; break;
