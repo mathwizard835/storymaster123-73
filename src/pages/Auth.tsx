@@ -207,13 +207,8 @@ const Auth = () => {
   // Step 2: Age confirmed
   const handleAgeConfirmed = (age: number) => {
     setChildAge(age);
-    if (age > 12) {
-      // Over 12 → parental gate challenge to verify adult is present
-      setSignupStep('parental-gate');
-    } else {
-      // 12 and under → require parental consent (COPPA)
-      setSignupStep('parental-consent');
-    }
+    // Always require parental gate challenge to verify adult is present
+    setSignupStep('parental-gate');
   };
 
   // Step 3 (if under 13): Parental consent given
@@ -397,7 +392,13 @@ const Auth = () => {
     if (signupStep === 'parental-gate') {
       return (
         <ParentalGateChallenge
-          onPassed={() => completeSignUp(childAge, null)}
+          onPassed={() => {
+            if (childAge <= 12) {
+              setSignupStep('parental-consent');
+            } else {
+              completeSignUp(childAge, null);
+            }
+          }}
           onBack={() => setSignupStep('age-gate')}
         />
       );
