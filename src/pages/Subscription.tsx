@@ -623,6 +623,13 @@ export default function Subscription() {
             </CardContent>
           </Card>
         </div>
+
+        <p className="text-center text-xs text-purple-300/60 mt-8 pb-4">
+          By subscribing, you agree to our{' '}
+          <a href="/terms" className="underline hover:text-purple-200 transition-colors">Terms of Service</a>
+          {' '}and{' '}
+          <a href="/privacy" className="underline hover:text-purple-200 transition-colors">Privacy Policy</a>.
+        </p>
       </div>
     </div>
   );
