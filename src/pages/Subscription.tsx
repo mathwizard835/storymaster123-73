@@ -26,12 +26,28 @@ export default function Subscription() {
   const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [currentPlan, setCurrentPlan] = useState<SubscriptionPlan | null>(null);
+  const [parentalGateOpen, setParentalGateOpen] = useState(false);
+  const [pendingAction, setPendingAction] = useState<null | (() => void | Promise<void>)>(null);
   const limitReached = searchParams.get('limitReached') === 'true';
   const cancelled = searchParams.get('cancelled') === 'true';
   const packSuccess = searchParams.get('pack_success') === 'true';
   const packCancelled = searchParams.get('pack_cancelled') === 'true';
   const storiesPurchased = searchParams.get('stories');
   const { isNative, safeAreaInsets } = useDevice();
+
+  // Open parental gate, then run the action on success
+  const requireParentalGate = (action: () => void | Promise<void>) => {
+    setPendingAction(() => action);
+    setParentalGateOpen(true);
+  };
+
+  const handleParentalGatePassed = () => {
+    if (pendingAction) {
+      const fn = pendingAction;
+      setPendingAction(null);
+      void fn();
+    }
+  };
 
   useEffect(() => {
     loadCurrentPlan();
