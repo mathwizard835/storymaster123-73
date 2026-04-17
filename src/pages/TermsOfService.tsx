@@ -85,7 +85,9 @@ const TermsOfService = () => {
                 <li>Auto-renew unless canceled before the renewal date</li>
                 <li>Are charged to your payment method on file</li>
                 <li>Can be managed through your App Store account settings</li>
-                <li>Refunds are handled according to App Store policies</li>
+                <li>
+                  StoryMaster Kids offers auto-renewing subscriptions. Payment will be charged to your Apple ID account at confirmation of purchase. Subscriptions automatically renew unless canceled at least 24 hours before the end of the current period. Your account will be charged for renewal within 24 hours prior to the end of the current period at the price shown. You can manage or cancel subscriptions in your Apple ID Account Settings after purchase.
+                </li>
               </ul>
             </section>
 
