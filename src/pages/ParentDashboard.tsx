@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,7 @@ import { addHapticFeedback } from "@/lib/mobileFeatures";
 import { NativeNavigationHeader } from "@/components/NativeNavigationHeader";
 import { useSwipeBack } from "@/hooks/useSwipeBack";
 import { SwipeBackIndicator } from "@/components/SwipeBackIndicator";
+import { useProgressSync } from "@/hooks/useProgressSync";
 
 export default function ParentDashboard() {
   const navigate = useNavigate();
@@ -48,22 +49,28 @@ export default function ParentDashboard() {
   const [readingStats, setReadingStats] = useState<ReadingStats | null>(null);
   const [childName, setChildName] = useState<string>("Your child");
 
-  useEffect(() => {
-    const loadData = async () => {
-      const stories = await loadCompletedStoriesFromDatabase();
-      const stats = await getStreakStats();
-      const reading = await getReadingStats();
-      setRecentStories(stories.slice(0, 5));
-      setStreakStats(stats);
-      setReadingStats(reading);
-      
-      // Get child name from most recent story profile
-      if (stories.length > 0 && stories[0].profile?.name) {
-        setChildName(stories[0].profile.name);
-      }
-    };
-    loadData();
+  const loadData = useCallback(async () => {
+    setCharacter(loadCharacter());
+    setAchievements(loadAchievements());
+    const stories = await loadCompletedStoriesFromDatabase();
+    const stats = await getStreakStats();
+    const reading = await getReadingStats();
+    setRecentStories(stories.slice(0, 5));
+    setStreakStats(stats);
+    setReadingStats(reading);
+
+    // Get child name from most recent story profile
+    if (stories.length > 0 && stories[0].profile?.name) {
+      setChildName(stories[0].profile.name);
+    }
   }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // Real-time refresh on progress events / focus / visibility
+  useProgressSync(loadData);
 
   const getAttributeIcon = (attr: string) => {
     switch (attr) {

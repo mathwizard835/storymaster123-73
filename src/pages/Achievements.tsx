@@ -7,12 +7,13 @@ import { Progress } from "@/components/ui/progress";
 import { loadAchievements, ALL_ACHIEVEMENTS, type Achievement } from "@/lib/achievements";
 import { loadCharacter } from "@/lib/character";
 import { ArrowLeft, Trophy, Star, Lock, Crown, Zap, TrendingUp } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useDevice } from "@/contexts/DeviceContext";
 import { addHapticFeedback } from "@/lib/mobileFeatures";
 import { NativeNavigationHeader } from "@/components/NativeNavigationHeader";
 import { useSwipeBack } from "@/hooks/useSwipeBack";
 import { SwipeBackIndicator } from "@/components/SwipeBackIndicator";
+import { useProgressSync } from "@/hooks/useProgressSync";
 
 const Achievements = () => {
   const navigate = useNavigate();
@@ -22,12 +23,18 @@ const Achievements = () => {
   const backPath = isNative ? '/dashboard' : '/';
   const mainRef = useRef<HTMLDivElement>(null);
   const { swipeProgress } = useSwipeBack();
-  
-  // Refresh data when component mounts (in case returning from completed story)
-  useEffect(() => {
+
+  const refreshData = useCallback(() => {
     setProgress(loadAchievements());
     setCharacter(loadCharacter());
   }, []);
+
+  // Initial load + real-time refresh on progress events / focus / visibility
+  useEffect(() => {
+    refreshData();
+  }, [refreshData]);
+
+  useProgressSync(refreshData);
 
   const getRarityColor = (rarity: Achievement['rarity']) => {
     switch (rarity) {

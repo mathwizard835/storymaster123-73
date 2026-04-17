@@ -52,6 +52,8 @@ export const loadCharacter = (): CharacterStats => {
 export const saveCharacter = (character: CharacterStats): void => {
   try {
     localStorage.setItem(CHARACTER_KEY, JSON.stringify(character));
+    // Notify subscribers (Dashboard, Achievements, ParentDashboard) to re-render
+    import("./progressEvents").then(({ emitProgressUpdate }) => emitProgressUpdate()).catch(() => {});
   } catch (e) {
     console.error("Failed to save character", e);
   }
