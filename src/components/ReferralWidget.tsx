@@ -19,6 +19,7 @@ export const ReferralWidget = () => {
   const [referralCode, setReferralCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [gateOpen, setGateOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -120,7 +121,7 @@ export const ReferralWidget = () => {
             </div>
           </div>
           
-          <Button onClick={handleShareReferral} className="w-full" variant="default">
+          <Button onClick={() => setGateOpen(true)} className="w-full" variant="default">
             <Share2 className="w-4 h-4 mr-2" />
             Share Referral Link
           </Button>
@@ -186,6 +187,14 @@ export const ReferralWidget = () => {
           </div>
         </CardContent>
       </Card>
+
+      <ParentalGateDialog
+        open={gateOpen}
+        onOpenChange={setGateOpen}
+        onPassed={handleShareReferral}
+        title="Grown-Up Check"
+        description="Please ask a parent or guardian to verify before sharing outside the app."
+      />
     </div>
   );
 };
