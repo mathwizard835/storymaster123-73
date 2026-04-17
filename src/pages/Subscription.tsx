@@ -495,26 +495,28 @@ export default function Subscription() {
               {isNativePlatform() ? (
                 <>
                   <Button
-                    onClick={async () => {
-                      setLoading(true);
-                      const planType = 'premium';
-                      const result = await purchasePackage(planType);
-                      if (result.success) {
-                        // Activate subscription directly in Supabase
-                        await activateSubscriptionAfterPurchase(planType);
-                        toast({
-                          title: "🎉 Subscription Activated!",
-                          description: "Welcome to StoryMaster Kids Adventure Pass!",
-                        });
-                        await loadCurrentPlan();
-                      } else if (result.error !== 'cancelled') {
-                        toast({
-                          title: "Purchase Failed",
-                          description: result.error || "Please try again.",
-                          variant: "destructive",
-                        });
-                      }
-                      setLoading(false);
+                    onClick={() => {
+                      requireParentalGate(async () => {
+                        setLoading(true);
+                        const planType = 'premium';
+                        const result = await purchasePackage(planType);
+                        if (result.success) {
+                          // Activate subscription directly in Supabase
+                          await activateSubscriptionAfterPurchase(planType);
+                          toast({
+                            title: "🎉 Subscription Activated!",
+                            description: "Welcome to StoryMaster Kids Adventure Pass!",
+                          });
+                          await loadCurrentPlan();
+                        } else if (result.error !== 'cancelled') {
+                          toast({
+                            title: "Purchase Failed",
+                            description: result.error || "Please try again.",
+                            variant: "destructive",
+                          });
+                        }
+                        setLoading(false);
+                      });
                     }}
                     disabled={loading}
                     size="xl"
@@ -526,24 +528,26 @@ export default function Subscription() {
                     </span>
                   </Button>
                   <Button
-                    onClick={async () => {
-                      setLoading(true);
-                      const result = await restorePurchases();
-                      if (result.isSubscribed) {
-                        // Also activate in Supabase when restoring
-                        await activateSubscriptionAfterPurchase('premium');
-                        toast({
-                          title: "✅ Purchases Restored!",
-                          description: "Your subscription has been restored.",
-                        });
-                        await loadCurrentPlan();
-                      } else {
-                        toast({
-                          title: "No Purchases Found",
-                          description: "No previous subscriptions were found for this Apple ID.",
-                        });
-                      }
-                      setLoading(false);
+                    onClick={() => {
+                      requireParentalGate(async () => {
+                        setLoading(true);
+                        const result = await restorePurchases();
+                        if (result.isSubscribed) {
+                          // Also activate in Supabase when restoring
+                          await activateSubscriptionAfterPurchase('premium');
+                          toast({
+                            title: "✅ Purchases Restored!",
+                            description: "Your subscription has been restored.",
+                          });
+                          await loadCurrentPlan();
+                        } else {
+                          toast({
+                            title: "No Purchases Found",
+                            description: "No previous subscriptions were found for this Apple ID.",
+                          });
+                        }
+                        setLoading(false);
+                      });
                     }}
                     disabled={loading}
                     variant="ghost"
@@ -559,7 +563,7 @@ export default function Subscription() {
               ) : (
                 <>
                   <Button
-                    onClick={handleSubscribe}
+                    onClick={() => requireParentalGate(handleSubscribe)}
                     disabled={loading}
                     size="xl"
                     className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold text-xl py-8 rounded-xl shadow-2xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
