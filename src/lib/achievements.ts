@@ -71,6 +71,8 @@ export const loadAchievements = (): AchievementProgress => {
 export const saveAchievements = (progress: AchievementProgress): void => {
   try {
     localStorage.setItem(ACHIEVEMENTS_KEY, JSON.stringify(progress));
+    // Notify subscribers (Dashboard, Achievements, ParentDashboard) to re-render
+    import("./progressEvents").then(({ emitProgressUpdate }) => emitProgressUpdate()).catch(() => {});
   } catch (e) {
     console.error("Failed to save achievements", e);
   }
