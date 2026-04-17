@@ -18,6 +18,8 @@ import { addHapticFeedback } from "@/lib/mobileFeatures";
 import { NativeNavigationHeader } from "@/components/NativeNavigationHeader";
 import { useSwipeBack } from "@/hooks/useSwipeBack";
 import { SwipeBackIndicator } from "@/components/SwipeBackIndicator";
+import { useProgressSync } from "@/hooks/useProgressSync";
+import { useCallback } from "react";
 
 export default function ParentDashboard() {
   const navigate = useNavigate();

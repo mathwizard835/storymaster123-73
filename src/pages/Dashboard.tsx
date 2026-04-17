@@ -21,6 +21,8 @@ import { PremiumThemeSelector } from "@/components/PremiumThemeSelector";
 import { getUserSubscription, getStoriesRemaining } from "@/lib/subscription";
 import { NativeNavigationHeader } from "@/components/NativeNavigationHeader";
 import { SkeletonDashboard } from "@/components/SkeletonCard";
+import { useProgressSync } from "@/hooks/useProgressSync";
+import { supabase } from "@/integrations/supabase/client";
 
 const Dashboard = () => {
   const navigate = useNavigate();
