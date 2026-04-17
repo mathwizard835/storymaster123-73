@@ -655,6 +655,14 @@ export default function Subscription() {
           <a href="/privacy" className="underline hover:text-purple-200 transition-colors">Privacy Policy</a>.
         </p>
       </div>
+
+      <ParentalGateDialog
+        open={parentalGateOpen}
+        onOpenChange={setParentalGateOpen}
+        onPassed={handleParentalGatePassed}
+        title="Grown-Up Approval Required"
+        description="Please ask a parent or guardian to approve this purchase by typing the number below in words."
+      />
     </div>
   );
 }
