@@ -6,6 +6,7 @@ import { CheckCircle, Sparkles, Loader2, Volume2, BookOpen, Star, Headphones } f
 import { useToast } from "@/hooks/use-toast";
 import { getUserSubscription } from "@/lib/subscription";
 import { supabase } from "@/integrations/supabase/client";
+import ParentalGateDialog from "@/components/ParentalGateDialog";
 
 export default function SubscriptionSuccess() {
   const navigate = useNavigate();
@@ -14,6 +15,7 @@ export default function SubscriptionSuccess() {
   const sessionId = searchParams.get('session_id');
   const [isVerifying, setIsVerifying] = useState(true);
   const [subscriptionActive, setSubscriptionActive] = useState(false);
+  const [gateOpen, setGateOpen] = useState(false);
 
   useEffect(() => {
     let hasRun = false;
@@ -168,12 +170,24 @@ export default function SubscriptionSuccess() {
 
           <p className="text-sm text-center text-muted-foreground">
             Questions? Contact us at{" "}
-            <a href="mailto:support@storymasterkids.com" className="text-primary hover:underline">
+            <button
+              type="button"
+              onClick={() => setGateOpen(true)}
+              className="text-primary hover:underline"
+            >
               support@storymasterkids.com
-            </a>
+            </button>
           </p>
         </CardContent>
       </Card>
+
+      <ParentalGateDialog
+        open={gateOpen}
+        onOpenChange={setGateOpen}
+        onPassed={() => { window.location.href = 'mailto:support@storymasterkids.com'; }}
+        title="Grown-Up Check"
+        description="Please ask a parent or guardian to verify before opening your email app."
+      />
     </div>
   );
 }
