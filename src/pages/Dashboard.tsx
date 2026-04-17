@@ -95,6 +95,28 @@ const Dashboard = () => {
     loadData();
   }, [loadData]);
 
+  // Real-time refresh on local progress events / focus / cross-tab storage
+  useProgressSync(loadData);
+
+  // Real-time cross-device sync via Supabase Realtime on user_stories
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase
+      .channel(`user-stories-${user.id}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'user_stories', filter: `user_id=eq.${user.id}` },
+        () => {
+          loadData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, loadData]);
+
   // Pull-to-refresh for native
   const { isNative } = useDevice();
   useEffect(() => {

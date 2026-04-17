@@ -50,22 +50,28 @@ export default function ParentDashboard() {
   const [readingStats, setReadingStats] = useState<ReadingStats | null>(null);
   const [childName, setChildName] = useState<string>("Your child");
 
-  useEffect(() => {
-    const loadData = async () => {
-      const stories = await loadCompletedStoriesFromDatabase();
-      const stats = await getStreakStats();
-      const reading = await getReadingStats();
-      setRecentStories(stories.slice(0, 5));
-      setStreakStats(stats);
-      setReadingStats(reading);
-      
-      // Get child name from most recent story profile
-      if (stories.length > 0 && stories[0].profile?.name) {
-        setChildName(stories[0].profile.name);
-      }
-    };
-    loadData();
+  const loadData = useCallback(async () => {
+    setCharacter(loadCharacter());
+    setAchievements(loadAchievements());
+    const stories = await loadCompletedStoriesFromDatabase();
+    const stats = await getStreakStats();
+    const reading = await getReadingStats();
+    setRecentStories(stories.slice(0, 5));
+    setStreakStats(stats);
+    setReadingStats(reading);
+
+    // Get child name from most recent story profile
+    if (stories.length > 0 && stories[0].profile?.name) {
+      setChildName(stories[0].profile.name);
+    }
   }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // Real-time refresh on progress events / focus / visibility
+  useProgressSync(loadData);
 
   const getAttributeIcon = (attr: string) => {
     switch (attr) {
