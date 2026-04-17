@@ -7,6 +7,7 @@ import { Share2, Gift, Users, Copy, Check } from "lucide-react";
 import { getReferralStats, createReferral, getShareableReferralLink } from "@/lib/referrals";
 import { useToast } from "@/hooks/use-toast";
 import { referralCodeSchema } from "@/lib/validationSchemas";
+import ParentalGateDialog from "@/components/ParentalGateDialog";
 
 export const ReferralWidget = () => {
   const [stats, setStats] = useState({

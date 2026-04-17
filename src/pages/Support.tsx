@@ -1,11 +1,20 @@
+import { useState } from "react";
 import { ArrowLeft, Mail, MessageCircle, Book } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Seo } from "@/components/Seo";
+import ParentalGateDialog from "@/components/ParentalGateDialog";
+
+const SUPPORT_EMAIL = "ordinaryheroesentertainment@gmail.com";
 
 const Support = () => {
   const navigate = useNavigate();
+  const [gateOpen, setGateOpen] = useState(false);
+
+  const openEmail = () => {
+    window.location.href = `mailto:${SUPPORT_EMAIL}`;
+  };
 
   return (
     <>
@@ -40,10 +49,20 @@ const Support = () => {
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground mb-4">
-                  Email us at: <a href="mailto:ordinaryheroesentertainment@gmail.com" className="text-primary hover:underline">ordinaryheroesentertainment@gmail.com</a>
+                  Email us at:{' '}
+                  <button
+                    type="button"
+                    onClick={() => setGateOpen(true)}
+                    className="text-primary hover:underline font-medium"
+                  >
+                    {SUPPORT_EMAIL}
+                  </button>
                 </p>
                 <p className="text-sm text-muted-foreground">
                   We typically respond within 24-48 hours during business days.
+                </p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  A grown-up check is required before opening email — this keeps the app safe for kids.
                 </p>
               </CardContent>
             </Card>
@@ -108,7 +127,7 @@ const Support = () => {
                 <div>
                   <h3 className="font-semibold mb-2 text-foreground">Can I delete my account?</h3>
                   <p className="text-muted-foreground text-sm">
-                    Yes. Contact support at ordinaryheroesentertainment@gmail.com and we'll help you delete your account and all associated data.
+                    Yes. Contact support (button above) and we'll help you delete your account and all associated data.
                   </p>
                 </div>
               </CardContent>
@@ -148,6 +167,14 @@ const Support = () => {
           </div>
         </div>
       </div>
+
+      <ParentalGateDialog
+        open={gateOpen}
+        onOpenChange={setGateOpen}
+        onPassed={openEmail}
+        title="Grown-Up Check"
+        description="Please ask a parent or guardian to verify before opening your email app."
+      />
     </>
   );
 };
