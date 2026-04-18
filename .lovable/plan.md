@@ -1,59 +1,40 @@
 
-## Problem
 
-Achievements and Character data don't update in real-time. They only refresh when:
-- User manually navigates back to Dashboard/Achievements/ParentDashboard pages
-- The page is fully reloaded
+## Problems
 
-When the user makes a choice in a story or finishes a scene, XP/achievements update in localStorage and the database, but the Dashboard/Achievements pages already loaded their state into React state and don't re-fetch.
+### 1. XP per choice
+`gainSceneExperience` already awards `8 + 4 = 12` XP per choice, which matches the request. No change needed unless we want to make it cleaner — I'll consolidate to a single explicit `12`.
 
-## Root Cause
+### 2. Save & Exit wipes mid-story XP
+**Root cause:** `syncProgressFromDatabase` (called by Dashboard on mount) **resets `character` to `DEFAULT_CHARACTER`** and only replays **completed** stories. All in-progress XP earned from per-scene choices in active/paused stories is wiped on every Dashboard load.
 
-Looking at `Dashboard.tsx`, `Achievements.tsx`, and `ParentDashboard.tsx`:
-- They load `loadCharacter()` and `loadAchievements()` once in `useEffect` on mount
-- There's no listener for changes to localStorage or database
-- No Supabase realtime subscription on `user_stories`
-- No window focus/visibility refresh
-- No custom event broadcast when XP/achievements change
+**Fix:** When syncing, also award per-scene XP for the **active and paused** stories' progress (12 XP × scenes viewed in those stories), so saving and exiting mid-story preserves the XP earned from each choice.
 
-Meanwhile, `gainSceneExperience` and `gainExperience` in `character.ts` update localStorage, and `updateProgress` in `achievements.ts` does the same — but nothing tells the dashboard to re-render.
+### 3. System prompt drift after first scene
+**Root cause #1 (CRITICAL):** The userPrompt's mode-specific tone instructions compare `profile.mode === "Fun" | "Thrill" | "Mystery" | "Explore"` (capitalized) — but the actual profile values are lowercase `"thrill" | "comedy" | "mystery" | "explore"`. The mode-specific tone block **never fires**, on any scene. The AI gets only the literal string `"Mode: thrill"` with no enforcement of what that means tonally.
+
+**Root cause #2:** On continuation scenes the prompt structure is the same, but the AI receives the previous scene as `Continue from: {...huge JSON...}` which buries the profile requirements. Need to re-emphasize the profile constraints on every continuation.
 
 ## Plan
 
-### 1. Add a lightweight event bus for progress updates (`src/lib/progressEvents.ts` — new file)
-- Tiny pub/sub: `emitProgressUpdate()` and `onProgressUpdate(cb)` using `window.dispatchEvent` + `CustomEvent('smq:progress-updated')`
-- Also dispatch on `storage` events (cross-tab sync via localStorage)
+### Fix A — `supabase/functions/generate-story/index.ts`
+1. Fix the mode comparison to use lowercase values matching the actual profile (`"comedy" | "thrill" | "mystery" | "explore" | "learning"`), so the tone-enforcement instructions actually run on every scene.
+2. On continuation scenes (`scene` present), prepend a short reinforcement reminder before the `Continue from:` block: "MAINTAIN THE SAME mode/age/lexile/badges/protagonist name as defined above. Do NOT drift in tone or vocabulary."
+3. Move the `=== CRITICAL PLAYER PROFILE ===` block to also appear AFTER the scene context as a final reminder, so the model sees requirements both before and after the previous scene JSON.
 
-### 2. Emit events from progress mutators
-- `src/lib/character.ts`: call `emitProgressUpdate()` inside `saveCharacter()`
-- `src/lib/achievements.ts`: call `emitProgressUpdate()` inside `saveAchievements()`
+### Fix B — `src/lib/syncProgress.ts`
+1. After replaying completed stories' XP, also iterate over **active + paused** stories and award `12 XP × scene_count` for each (matching the per-choice XP awarded live in Mission). This preserves mid-story progress after Save & Exit.
+2. Keep the existing completed-story XP logic untouched.
 
-This means every place that already saves character/achievements (Mission scenes, story completion, sync) will automatically broadcast.
-
-### 3. Add a reusable hook (`src/hooks/useProgressSync.ts` — new file)
-- `useProgressSync(callback)`: subscribes to the custom event + `storage` event + `visibilitychange` (refresh when tab becomes visible again) + window `focus`
-- Handles cleanup automatically
-
-### 4. Wire pages to the hook
-- `src/pages/Dashboard.tsx`: call `useProgressSync(loadData)` so character/achievements/stories refresh whenever progress changes
-- `src/pages/Achievements.tsx`: refactor data loading into a `loadData` callback and call `useProgressSync(loadData)`
-- `src/pages/ParentDashboard.tsx`: same treatment — refresh character/achievements/streaks/reading stats on event
-
-### 5. Add Supabase realtime for cross-device sync (Dashboard only)
-- In Dashboard, subscribe to `user_stories` changes for the current user via `supabase.channel(...).on('postgres_changes', ...)` 
-- On any change, trigger `loadData()` so a story finished on mobile updates the web dashboard within seconds
+### Fix C — `src/lib/character.ts` (clarity only)
+- Update `gainSceneExperience` constants to `const sceneExp = 12; const choiceExp = 0;` (or `8 + 4`, same total) with a comment noting "12 XP per choice as per design", to make intent obvious.
 
 ## Files Modified
-- **NEW** `src/lib/progressEvents.ts` — event bus
-- **NEW** `src/hooks/useProgressSync.ts` — subscription hook
-- `src/lib/character.ts` — emit on save
-- `src/lib/achievements.ts` — emit on save
-- `src/pages/Dashboard.tsx` — wire hook + realtime subscription
-- `src/pages/Achievements.tsx` — wire hook
-- `src/pages/ParentDashboard.tsx` — wire hook
+- `supabase/functions/generate-story/index.ts` — fix mode case mismatch, reinforce profile on continuation scenes
+- `src/lib/syncProgress.ts` — include active/paused stories' scene XP in sync replay
+- `src/lib/character.ts` — clarify 12 XP constant
 
 ## Result
+- Every choice grants exactly 12 XP and the Dashboard reflects that XP even after Save & Exit (because sync no longer wipes it).
+- Every scene (not just scene 1) follows the full profile: mode tone is enforced via the now-correct lowercase comparison, and the profile block is reinforced around the previous-scene context on every continuation call.
 
-- Finishing a scene → XP saves → event fires → Dashboard/Achievements re-render instantly with new level/XP/trophies
-- Earning a trophy mid-story → toast still fires + dashboard reflects it without navigating away and back
-- Cross-tab/cross-device → storage event + Supabase realtime keep all open views in sync
