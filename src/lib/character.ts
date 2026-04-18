@@ -118,7 +118,7 @@ export const gainSceneExperience = (
   const character = loadCharacter();
   const newTitles: string[] = [];
   
-  // Award XP for viewing scene and making choice
+  // 12 XP per choice as per design (8 base scene XP + 4 choice bonus = 12 total)
   const sceneExp = 8;
   const choiceExp = madeChoice ? 4 : 0;
   const totalExp = sceneExp + choiceExp;

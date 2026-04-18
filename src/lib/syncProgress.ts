@@ -108,21 +108,28 @@ export const syncProgressFromDatabase = async (): Promise<{
         profile.storyLength || 'medium'
       );
       character = expResult.character;
-      
-      // ABILITIES DISABLED - Uncomment to re-enable
-      // // Check and award abilities for this story
-      // const newAbilities = checkAndAwardAbilities(
-      //   profile.selectedBadges || [],
-      //   choiceCount,
-      //   true,
-      //   profile
-      // );
-      // 
-      // // Add new abilities to the progress (abilities are saved by checkAndAwardAbilities)
-      // if (newAbilities.length > 0) {
-      //   abilityProgress.totalAbilitiesEarned += newAbilities.length;
-      // }
     }
+
+    // ALSO award per-scene XP for ACTIVE + PAUSED stories so mid-story progress
+    // (12 XP per choice/scene) is preserved after Save & Exit and across devices.
+    const inProgressStories = allStories.filter(s => s.status === 'active' || s.status === 'paused');
+    for (const story of inProgressStories) {
+      const sceneCount = story.scene_count || 0;
+      if (sceneCount <= 0) continue;
+
+      const xpToAward = sceneCount * 12; // matches gainSceneExperience (8 + 4)
+      character.experience += xpToAward;
+      character.totalExperienceEarned += xpToAward;
+
+      // Process level-ups
+      while (character.experience >= character.experienceToNext) {
+        character.experience -= character.experienceToNext;
+        character.level += 1;
+        character.skillPoints += 2;
+        character.experienceToNext = Math.floor(character.experienceToNext * 1.15);
+      }
+    }
+    saveCharacter(character);
 
     // Save computed totals to localStorage BEFORE checking achievements
     saveAchievements(achievementProgress);
