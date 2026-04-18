@@ -19,6 +19,10 @@ const BLOCKED_PATTERNS = [
   /\b(gambling|casino|betting|adult|mature|18\+|21\+)\b/i,
   // Extreme horror and creepiness (but allow "scary" and mild spooky themes)
   /\b(terrifying|nightmare|possessed|torture|creepy|creepiness|stalker|stalking|predator|sinister|demonic|demon|satanic|occult|voodoo|séance|exorcism)\b/i,
+  // Profanity and curse words (including common leetspeak/obfuscations)
+  /\b(fuck|fucking|fucker|fck|f\*ck|f\u002ack|shit|sh\*t|sht|bitch|b\*tch|bastard|asshole|a\$\$hole|arsehole|dick|d\*ck|cock|pussy|cunt|twat|whore|slut|slag|wanker|piss|pissed|crap|damn|goddamn|hell|bollocks|bugger|bloody|prick|jackass|dumbass|motherfucker|mf|wtf|stfu|gtfo|nigger|nigga|n\*gger|faggot|fag|f\*g|retard|retarded|spaz|tranny|kike|chink|spic|gook|wetback|pedophile|pedo|rapist|rape|raping)\b/i,
+  // Common leetspeak variants
+  /\b(f[u\*@][c\*][k\*]|sh[i\*1][t\*]|b[i\*1][t\*]ch|a[s\$]{2}h[o0]le)\b/i,
 ];
 
 // Content validation function
