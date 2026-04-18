@@ -686,8 +686,21 @@ LEARNING: Age ${profile.age} - ${profile.age <= 7 ? "Basic math/letters via puzz
 
     // Restructured prompt: Profile requirements FIRST and prominent
     const contextSize = scene ? "CONTINUATION" : "NEW STORY";
+    const modeLower = (profile.mode ?? "").toString().toLowerCase();
+    const modeToneInstruction =
+      modeLower === "comedy" || modeLower === "fun"
+        ? "🎭 COMEDY MODE - Make everything silly, funny, and ridiculous! Use wacky situations, goofy characters, playful language, absurd humor. The story should make kids LAUGH and GIGGLE, NOT feel suspense or danger. Think cartoon comedy!"
+        : modeLower === "thrill"
+          ? "⚡ THRILL MODE - High-stakes, urgent, time-sensitive danger and intense action. Keep tension HIGH every scene with clear stakes and ticking-clock urgency."
+          : modeLower === "mystery"
+            ? "🔍 MYSTERY MODE - Suspenseful, clue-driven investigation with slow tension. Every scene should reveal a clue or deepen the puzzle."
+            : modeLower === "explore"
+              ? "🗺️ EXPLORE MODE - Imaginative, wonder-filled, open-ended discovery. Emphasize awe, new places, and curious choices."
+              : modeLower === "learning"
+                ? "📚 LEARNING MODE - Embed educational challenges that affect story consequences."
+                : "Adventure-focused";
 
-    const userPrompt = `=== CRITICAL PLAYER PROFILE (MUST FOLLOW EXACTLY) ===
+    const profileBlock = `=== CRITICAL PLAYER PROFILE (MUST FOLLOW EXACTLY) ===
 
 ${profileSummary}
 
@@ -696,14 +709,24 @@ ${profileSummary}
 - AGE ${profile.age ?? "unknown"}: Use ${profile.age && profile.age <= 7 ? "simple, clear vocabulary for young readers" : profile.age && profile.age <= 10 ? "age-appropriate vocabulary with moderate complexity" : "advanced vocabulary and complex themes"}
 - LEXILE SCORE ${profile.lexileScore ?? 500}L: ${(profile.lexileScore ?? 500) <= 400 ? "Use simple vocabulary (common words), short sentences (5-10 words), single-idea paragraphs, and very clear structure" : (profile.lexileScore ?? 500) <= 650 ? "Use moderate vocabulary with context clues, varied sentence lengths (8-15 words), and connected ideas" : (profile.lexileScore ?? 500) <= 900 ? "Use rich vocabulary, compound-complex sentences, multiple story threads, and emotional depth" : "Use advanced vocabulary, sophisticated structures, layered narratives, and nuanced themes"}
 - INTERESTS/BADGES: ${(profile.selectedBadges || []).join(", ") || "general"} - Story MUST incorporate these themes prominently
-- **QUEST MODE "${profile.mode ?? "unknown"}" - THIS IS YOUR PRIMARY TONE**: ${profile.mode === "Fun" ? "🎭 COMEDY MODE - Make everything silly, funny, and ridiculous! Use wacky situations, goofy characters, playful language, absurd humor. The story should make kids LAUGH and GIGGLE, NOT feel suspense or danger. Think cartoon comedy!" : profile.mode === "Thrill" ? "⚡ THRILL MODE - High-stakes, urgent, time-sensitive danger and intense action" : profile.mode === "Mystery" ? "🔍 MYSTERY MODE - Suspenseful, clue-driven investigation with slow tension" : profile.mode === "Explore" ? "🗺️ EXPLORE MODE - Imaginative, wonder-filled, open-ended discovery" : "Adventure-focused"}
-- STORY LENGTH: ${profile.storyLength ?? "medium"} story${profile.topic ? `\n- TOPIC: ${profile.topic} - weave this into the narrative` : ""}
+- **QUEST MODE "${profile.mode ?? "unknown"}" - THIS IS YOUR PRIMARY TONE**: ${modeToneInstruction}
+- STORY LENGTH: ${profile.storyLength ?? "medium"} story${profile.topic ? `\n- TOPIC: ${profile.topic} - weave this into the narrative` : ""}`;
+
+    const continuationReinforcement = scene
+      ? `\n\n🔁 CONTINUATION REMINDER: MAINTAIN THE EXACT SAME mode tone (${profile.mode ?? "unknown"}), age (${profile.age ?? "unknown"}), Lexile (${profile.lexileScore ?? 500}L), badges (${(profile.selectedBadges || []).join(", ") || "general"}), and protagonist name (${profile.name || "the hero"}) as defined above. Do NOT drift in tone, vocabulary, or character voice from previous scenes.`
+      : "";
+
+    const userPrompt = `${profileBlock}
+${continuationReinforcement}
 
 ${sceneContext}
 ${storyProgressContext}
 ${learningModeInstructions}
 ${inventoryContext}
 ${abilityContext}
+
+=== PROFILE REMINDER (RE-CHECK BEFORE WRITING) ===
+${profileBlock}
 
 === RESPONSE FORMAT ===
 Return ONLY valid JSON (no markdown, no explanations):
