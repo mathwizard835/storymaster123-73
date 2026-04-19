@@ -1,40 +1,50 @@
+## Scope
 
+Fix only Issue 1 (confirmation emails not being sent) and add an "Pay with Apple" button below the existing Stripe button on the Subscription page.
 
-## Problems
+## Issue 1 — Confirmation emails
 
-### 1. XP per choice
-`gainSceneExperience` already awards `8 + 4 = 12` XP per choice, which matches the request. No change needed unless we want to make it cleaner — I'll consolidate to a single explicit `12`.
+**Root cause confirmed via DB:** Today's signup `mihirmantri@gmail.com` has `confirmation_sent_at = NULL` and `email_confirmed_at` auto-populated seconds after signup → email autoconfirm is ON at the Supabase project level, so Supabase never even attempts to send a confirmation email.
 
-### 2. Save & Exit wipes mid-story XP
-**Root cause:** `syncProgressFromDatabase` (called by Dashboard on mount) **resets `character` to `DEFAULT_CHARACTER`** and only replays **completed** stories. All in-progress XP earned from per-scene choices in active/paused stories is wiped on every Dashboard load.
+**Fix plan:**
 
-**Fix:** When syncing, also award per-scene XP for the **active and paused** stories' progress (12 XP × scenes viewed in those stories), so saving and exiting mid-story preserves the XP earned from each choice.
+1. Re-enable email confirmation at the Supabase project level (turn autoconfirm OFF). Once off, Supabase will populate `confirmation_sent_at` and route the email through the standard pipeline.
+2. Set up branded auth email infrastructure so the confirmation email is sent from `notify.storymaster.app` with StoryMaster Kids branding (purple/pink gradient, kid-friendly copy) instead of the default unstyled Supabase template.
+3. Scaffold all 6 auth email templates (signup, magic-link, recovery, invite, email-change, reauthentication), apply brand styling (white body, purple primary `#7c3aed`-ish accents matching the app's gradient theme), then deploy `auth-email-hook`.
+4. Update `mem://auth/email-verification-disabled` → replace with a rule stating verification IS required and emails are branded.
+5. Update post-signup toast copy in `src/pages/Auth.tsx` so users always see "Check your email to confirm your account" (the current branch logic already shows this when `data.user && !data.session`, which will now always fire).
 
-### 3. System prompt drift after first scene
-**Root cause #1 (CRITICAL):** The userPrompt's mode-specific tone instructions compare `profile.mode === "Fun" | "Thrill" | "Mystery" | "Explore"` (capitalized) — but the actual profile values are lowercase `"thrill" | "comedy" | "mystery" | "explore"`. The mode-specific tone block **never fires**, on any scene. The AI gets only the literal string `"Mode: thrill"` with no enforcement of what that means tonally.
+## Add "Pay with Apple" button (web Subscription page)
 
-**Root cause #2:** On continuation scenes the prompt structure is the same, but the AI receives the previous scene as `Continue from: {...huge JSON...}` which buries the profile requirements. Need to re-emphasize the profile constraints on every continuation.
+Currently in `src/pages/Subscription.tsx`, the **web** branch (`!isNativePlatform()`) shows only the Stripe "Start Your Adventure" button. Add a secondary "Pay with Apple" button **below** it.
 
-## Plan
+**Behavior:** Since Apple IAP is a native-iOS-only mechanism (RevenueCat SDK), tapping "Pay with Apple" on the web cannot actually open the App Store IAP flow. The realistic options are:
 
-### Fix A — `supabase/functions/generate-story/index.ts`
-1. Fix the mode comparison to use lowercase values matching the actual profile (`"comedy" | "thrill" | "mystery" | "explore" | "learning"`), so the tone-enforcement instructions actually run on every scene.
-2. On continuation scenes (`scene` present), prepend a short reinforcement reminder before the `Continue from:` block: "MAINTAIN THE SAME mode/age/lexile/badges/protagonist name as defined above. Do NOT drift in tone or vocabulary."
-3. Move the `=== CRITICAL PLAYER PROFILE ===` block to also appear AFTER the scene context as a final reminder, so the model sees requirements both before and after the previous scene JSON.
+- (a) Show a toast/dialog explaining Apple Pay requires the iOS app, with a link to the App Store, OR
+- (b) Trigger Stripe Checkout's Apple Pay payment method (Stripe supports Apple Pay as a wallet on Safari/iOS web).
 
-### Fix B — `src/lib/syncProgress.ts`
-1. After replaying completed stories' XP, also iterate over **active + paused** stories and award `12 XP × scene_count` for each (matching the per-choice XP awarded live in Mission). This preserves mid-story progress after Save & Exit.
-2. Keep the existing completed-story XP logic untouched.
+I'll go with **(b)** — it actually works on the web and is the user's stated intent. The existing `create-checkout-session` already configures Stripe Checkout, which automatically surfaces Apple Pay when the browser supports it. The new button calls the same edge function but passes a flag (`paymentMethodPreference: 'apple_pay'`) so the edge function restricts `payment_method_types` to `['card']` with `payment_method_options.card.request_three_d_secure: 'automatic'` and Apple Pay is auto-enabled by Stripe when domain is verified.
 
-### Fix C — `src/lib/character.ts` (clarity only)
-- Update `gainSceneExperience` constants to `const sceneExp = 12; const choiceExp = 0;` (or `8 + 4`, same total) with a comment noting "12 XP per choice as per design", to make intent obvious.
+Simpler approach that requires no edge function change: the new button just invokes the same `handleSubscribe` flow (Stripe auto-shows Apple Pay on supported devices). The button is purely a visual affordance signaling "Apple Pay is supported here" — same parental gate, same flow.
+
+**Implementation:**
+
+- In `src/pages/Subscription.tsx`, inside the web (non-native) branch, directly below the existing "Start Your Adventure" Stripe button, add a second button: black background, Apple logo (SVG inline), text "Pay with Apple", calls the same `requireParentalGate(handleSubscribe)`.
+- No edge function changes.
 
 ## Files Modified
-- `supabase/functions/generate-story/index.ts` — fix mode case mismatch, reinforce profile on continuation scenes
-- `src/lib/syncProgress.ts` — include active/paused stories' scene XP in sync replay
-- `src/lib/character.ts` — clarify 12 XP constant
+
+- **NEW** `supabase/functions/auth-email-hook/index.ts` (auto-scaffolded)
+- **NEW** `supabase/functions/_shared/email-templates/*.tsx` (6 branded templates, scaffolded then styled)
+- `src/pages/Auth.tsx` — adjust post-signup toast copy
+- `src/pages/Subscription.tsx` — add "Pay with Apple" button below Stripe button (web branch only)
+- Supabase Auth config — disable autoconfirm (re-enable email confirmation)
+- `mem://auth/email-verification-disabled` → updated to reflect verification IS now required
 
 ## Result
-- Every choice grants exactly 12 XP and the Dashboard reflects that XP even after Save & Exit (because sync no longer wipes it).
-- Every scene (not just scene 1) follows the full profile: mode tone is enforced via the now-correct lowercase comparison, and the profile block is reinforced around the previous-scene context on every continuation call.
 
+- New signups receive a branded StoryMaster Kids confirmation email from `notify.storymaster.app`; `confirmation_sent_at` populates and `email_confirmed_at` stays NULL until the user clicks the link.
+- Web Subscription page shows a second "Pay with Apple" button below the Stripe CTA, gated by the parental gate, opening the same Stripe Checkout (which surfaces Apple Pay natively on supported browsers).
+- No changes to native iOS payment flow, no changes to Stripe webhook, no changes to RevenueCat.
+
+In addition to All of this: Make Grown Up Check easier and less complex
