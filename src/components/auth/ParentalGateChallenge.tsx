@@ -1,10 +1,10 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ShieldCheck, RefreshCw } from 'lucide-react';
-import { generateChallengeNumber, checkAnswer } from '@/lib/numberToWords';
+import { generateSimpleChallenge, checkSimpleAnswer, type SimpleChallenge } from '@/lib/numberToWords';
 
 interface ParentalGateChallengeProps {
   onPassed: () => void;
@@ -12,40 +12,35 @@ interface ParentalGateChallengeProps {
 }
 
 const ParentalGateChallenge = ({ onPassed, onBack }: ParentalGateChallengeProps) => {
-  const [challengeNumber, setChallengeNumber] = useState(() => generateChallengeNumber());
+  const [challenge, setChallenge] = useState<SimpleChallenge>(() => generateSimpleChallenge());
   const [answer, setAnswer] = useState('');
   const [error, setError] = useState('');
   const [attempts, setAttempts] = useState(0);
-
-  const formattedNumber = useMemo(
-    () => challengeNumber.toLocaleString(),
-    [challengeNumber]
-  );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
     if (!answer.trim()) {
-      setError('Please type the number in words.');
+      setError('Please type your answer.');
       return;
     }
 
-    if (checkAnswer(challengeNumber, answer)) {
+    if (checkSimpleAnswer(challenge, answer)) {
       onPassed();
     } else {
       const newAttempts = attempts + 1;
       setAttempts(newAttempts);
       if (newAttempts >= 3) {
-        setError('Too many incorrect attempts. Please ask a parent or guardian for help.');
+        setError('Too many incorrect attempts. Tap "Try a New Question" to continue.');
       } else {
-        setError('That doesn\'t match. Please try again — remember to write the full number in words.');
+        setError("That's not quite right. Please try again.");
       }
     }
   };
 
-  const handleNewNumber = () => {
-    setChallengeNumber(generateChallengeNumber());
+  const handleNewQuestion = () => {
+    setChallenge(generateSimpleChallenge());
     setAnswer('');
     setError('');
     setAttempts(0);
@@ -65,28 +60,29 @@ const ParentalGateChallenge = ({ onPassed, onBack }: ParentalGateChallengeProps)
         <ShieldCheck className="h-10 w-10 text-amber-400 mx-auto mb-2" />
         <h3 className="text-xl font-semibold text-white">Grown-Up Check</h3>
         <p className="text-purple-200 text-sm mt-2">
-          To make sure a parent or guardian is here, please type this number in words:
+          To make sure a parent or guardian is here, please solve this:
         </p>
       </div>
 
-      <div className="text-center py-4">
-        <span className="text-4xl font-bold text-white tracking-wider font-mono">
-          {formattedNumber}
+      <div className="text-center py-6">
+        <span className="text-5xl font-bold text-white tracking-wider">
+          {challenge.a} + {challenge.b} = ?
         </span>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="number-words" className="text-white">
-            Type this number in words
+          <Label htmlFor="gate-answer" className="text-white">
+            Answer
           </Label>
           <Input
-            id="number-words"
-            type="text"
+            id="gate-answer"
+            type="number"
+            inputMode="numeric"
             value={answer}
             onChange={(e) => setAnswer(e.target.value)}
             className="bg-black/30 border-white/20 text-white placeholder:text-white/60"
-            placeholder='e.g. "one hundred and twenty-three thousand four hundred and fifty-six"'
+            placeholder="Type the answer"
             disabled={attempts >= 3}
             autoComplete="off"
           />
@@ -110,11 +106,11 @@ const ParentalGateChallenge = ({ onPassed, onBack }: ParentalGateChallengeProps)
           <Button
             type="button"
             variant="outline"
-            onClick={handleNewNumber}
+            onClick={handleNewQuestion}
             className="w-full border-white/20 text-white hover:bg-white/10"
           >
             <RefreshCw className="mr-2 h-4 w-4" />
-            Try a New Number
+            Try a New Question
           </Button>
         )}
       </form>
