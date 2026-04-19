@@ -11,6 +11,7 @@ import {
   Html,
   Link,
   Preview,
+  Section,
   Text,
 } from 'npm:@react-email/components@0.0.22'
 
@@ -32,28 +33,31 @@ export const EmailChangeEmail = ({
     <Preview>Confirm your email change for {siteName}</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Heading style={h1}>Confirm your email change</Heading>
-        <Text style={text}>
-          You requested to change your email address for {siteName} from{' '}
-          <Link href={`mailto:${email}`} style={link}>
-            {email}
-          </Link>{' '}
-          to{' '}
-          <Link href={`mailto:${newEmail}`} style={link}>
-            {newEmail}
-          </Link>
-          .
-        </Text>
-        <Text style={text}>
-          Click the button below to confirm this change:
-        </Text>
-        <Button style={button} href={confirmationUrl}>
-          Confirm Email Change
-        </Button>
-        <Text style={footer}>
-          If you didn't request this change, please secure your account
-          immediately.
-        </Text>
+        <Section style={hero}>
+          <Heading style={heroTitle}>📚 {siteName}</Heading>
+          <Text style={heroTagline}>Turning Screen Time into Reading Time</Text>
+        </Section>
+        <Section style={card}>
+          <Heading style={h1}>Confirm your new email ✉️</Heading>
+          <Text style={text}>
+            You requested to change your email for {siteName} from{' '}
+            <strong>{email}</strong> to <strong>{newEmail}</strong>.
+          </Text>
+          <Text style={text}>Click the button below to confirm this change:</Text>
+          <Section style={{ textAlign: 'center', margin: '32px 0' }}>
+            <Button style={button} href={confirmationUrl}>
+              Confirm Email Change
+            </Button>
+          </Section>
+          <Text style={smallText}>
+            Or paste this link into your browser:<br />
+            <Link href={confirmationUrl} style={link}>{confirmationUrl}</Link>
+          </Text>
+          <Text style={footer}>
+            If you didn't request this change, please secure your account immediately.
+          </Text>
+        </Section>
+        <Text style={brandFooter}>© {siteName} • Stories that spark imagination</Text>
       </Container>
     </Body>
   </Html>
@@ -61,27 +65,36 @@ export const EmailChangeEmail = ({
 
 export default EmailChangeEmail
 
-const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif' }
-const container = { padding: '20px 25px' }
-const h1 = {
-  fontSize: '22px',
-  fontWeight: 'bold' as const,
-  color: '#000000',
-  margin: '0 0 20px',
+const main = { backgroundColor: '#ffffff', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif' }
+const container = { padding: '20px 0', maxWidth: '560px', margin: '0 auto' }
+const hero = {
+  background: 'linear-gradient(135deg, #7c3aed 0%, #ec4899 100%)',
+  borderRadius: '12px 12px 0 0',
+  padding: '32px 24px',
+  textAlign: 'center' as const,
 }
-const text = {
-  fontSize: '14px',
-  color: '#55575d',
-  lineHeight: '1.5',
-  margin: '0 0 25px',
+const heroTitle = { fontSize: '28px', fontWeight: 'bold' as const, color: '#ffffff', margin: '0 0 8px' }
+const heroTagline = { fontSize: '14px', color: '#fce7f3', margin: 0 }
+const card = {
+  backgroundColor: '#ffffff',
+  border: '1px solid #e5e7eb',
+  borderTop: 'none',
+  borderRadius: '0 0 12px 12px',
+  padding: '32px 28px',
 }
-const link = { color: 'inherit', textDecoration: 'underline' }
+const h1 = { fontSize: '22px', fontWeight: 'bold' as const, color: '#1f2937', margin: '0 0 16px' }
+const text = { fontSize: '15px', color: '#374151', lineHeight: '1.6', margin: '0 0 16px' }
+const smallText = { fontSize: '12px', color: '#6b7280', lineHeight: '1.5', margin: '0 0 24px', wordBreak: 'break-all' as const }
+const link = { color: '#7c3aed', textDecoration: 'underline' }
 const button = {
-  backgroundColor: '#7c3aed',
+  background: 'linear-gradient(135deg, #7c3aed 0%, #ec4899 100%)',
   color: '#ffffff',
-  fontSize: '14px',
-  borderRadius: '8px',
-  padding: '12px 20px',
+  fontSize: '16px',
+  fontWeight: 'bold' as const,
+  borderRadius: '12px',
+  padding: '14px 28px',
   textDecoration: 'none',
+  display: 'inline-block',
 }
-const footer = { fontSize: '12px', color: '#999999', margin: '30px 0 0' }
+const footer = { fontSize: '13px', color: '#9ca3af', margin: '24px 0 0', borderTop: '1px solid #f3f4f6', paddingTop: '16px' }
+const brandFooter = { fontSize: '12px', color: '#9ca3af', textAlign: 'center' as const, margin: '20px 0 0' }

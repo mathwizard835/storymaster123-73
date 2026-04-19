@@ -264,11 +264,11 @@ const Auth = () => {
 
       if (data?.user && !data.session) {
         toast({
-          title: "Check your email!",
+          title: "Check your email to confirm your account!",
           description: parentEmail
-            ? "We've sent verification emails to both you and your parent/guardian."
-            : "We sent you a verification link. Check your spam folder if you don't see it within a few minutes.",
-          duration: 8000,
+            ? "We've sent confirmation emails to both you and your parent/guardian. Click the link in the email to activate your account. Check your spam folder if it doesn't arrive within a few minutes."
+            : "We sent a confirmation link to your email. Click it to activate your account. Check your spam folder if it doesn't arrive within a few minutes.",
+          duration: 10000,
         });
         setSignupStep('credentials');
       } else if (data?.session) {
