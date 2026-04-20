@@ -141,6 +141,17 @@ const AnimatedRoutes = () => {
 const App = () => {
   // Load saved theme and initialize RevenueCat on app mount
   useEffect(() => {
+    // Lightweight: capture inbound story-share param so we can route into it later
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const refStory = params.get('ref_story');
+      if (refStory) {
+        localStorage.setItem('pending_ref_story', refStory);
+      }
+    } catch (e) {
+      // ignore
+    }
+
     const savedTheme = localStorage.getItem("premium-theme");
     if (savedTheme && savedTheme !== "default") {
       document.documentElement.setAttribute("data-theme", savedTheme);

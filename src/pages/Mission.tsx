@@ -33,6 +33,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { gainSceneExperience, loadCharacter } from "@/lib/character";
 import { ComprehensionQuiz } from "@/components/ComprehensionQuiz";
+import { shareStory, addHapticFeedback } from "@/lib/mobileFeatures";
 import { QuizQuestion } from "@/lib/quizSystem";
 import { supabase } from "@/integrations/supabase/client";
 import confetti from "canvas-confetti";
@@ -70,6 +71,8 @@ const Mission = () => {
   const [showLearningProgress, setShowLearningProgress] = useState(false);
   const [storyReadyToFinish, setStoryReadyToFinish] = useState(false);
   const [showNewStoryDialog, setShowNewStoryDialog] = useState(false);
+  const [showShareDialog, setShowShareDialog] = useState(false);
+  const [shareStoryInfo, setShareStoryInfo] = useState<{ title: string; url: string } | null>(null);
   
   // Quiz state
   const [showQuiz, setShowQuiz] = useState(false);
@@ -1554,7 +1557,11 @@ const Mission = () => {
                                 });
                               }, finalDelay);
 
-                              setTimeout(() => navigate('/'), finalDelay + 3000);
+                              // Open lightweight "send to a friend" prompt instead of auto-navigating
+                              const storyTitle = allScenes[0]?.sceneTitle || scene?.sceneTitle || "my StoryMaster adventure";
+                              const shareUrl = `https://storymaster.app/?ref_story=${savedStory.id}`;
+                              setShareStoryInfo({ title: storyTitle, url: shareUrl });
+                              setTimeout(() => setShowShareDialog(true), Math.min(finalDelay, 1500));
                             } catch (error) {
                               console.error("Error finishing adventure:", error);
                               toast({
@@ -1738,8 +1745,52 @@ const Mission = () => {
           </div>
         </DialogContent>
       </Dialog>
-      
-      {/* Comprehension Quiz Modal */}
+
+      {/* Send to a Friend - lightweight share prompt after finishing a story */}
+      <Dialog
+        open={showShareDialog}
+        onOpenChange={(open) => {
+          setShowShareDialog(open);
+          if (!open) {
+            // Once the dialog closes, return to home
+            navigate('/');
+          }
+        }}
+      >
+        <DialogContent className="max-w-sm text-center">
+          <DialogHeader>
+            <DialogTitle className="text-2xl">That was crazy 😳</DialogTitle>
+            <DialogDescription className="text-base pt-1">
+              Send this to a friend
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-3 mt-4">
+            <Button
+              size="lg"
+              variant="hero"
+              onClick={async () => {
+                if (!shareStoryInfo) return;
+                addHapticFeedback('medium');
+                await shareStory(
+                  `I just finished "${shareStoryInfo.title}" on StoryMaster!`,
+                  `Try it yourself — pick your own adventure 👇`,
+                  shareStoryInfo.url
+                );
+                setShowShareDialog(false);
+              }}
+              className="w-full text-lg font-bold"
+            >
+              Send
+            </Button>
+            <button
+              onClick={() => setShowShareDialog(false)}
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Maybe later
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
       {showQuiz && quizQuestions.length > 0 && (
         <ComprehensionQuiz
           open={showQuiz}
