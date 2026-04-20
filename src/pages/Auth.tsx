@@ -30,6 +30,7 @@ const Auth = () => {
   const [resetCooldown, setResetCooldown] = useState(0);
   const [signupStep, setSignupStep] = useState<SignupStep>('credentials');
   const [childAge, setChildAge] = useState<number>(0);
+  const [appHandoffUrl, setAppHandoffUrl] = useState<string | null>(null);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
@@ -76,9 +77,10 @@ const Auth = () => {
       }
 
       const isIosBrowser = /iPad|iPhone|iPod/.test(window.navigator.userAgent);
+      const isInNativeApp = !!(window as any).Capacitor?.isNativePlatform?.();
 
       // Try handing off auth callback to native app first (for iOS Safari web fallback case).
-      if (isIosBrowser) {
+      if (isIosBrowser && !isInNativeApp) {
         const nativeParams = new URLSearchParams();
         if (accessToken) nativeParams.set('access_token', accessToken);
         if (refreshToken) nativeParams.set('refresh_token', refreshToken);
@@ -86,7 +88,14 @@ const Auth = () => {
         if (type) nativeParams.set('type', type);
         if (code) nativeParams.set('code', code);
 
-        window.location.href = `storymasterquest://auth?${nativeParams.toString()}`;
+        const handoffUrl = `storymasterquest://auth?${nativeParams.toString()}`;
+
+        // Surface a tap-to-open button so the user can manually launch the app
+        // (Safari only honors custom-scheme redirects from a user gesture).
+        setAppHandoffUrl(handoffUrl);
+
+        // Best-effort silent attempt — works on some iOS versions, ignored on others.
+        window.location.href = handoffUrl;
 
         // Give iOS a moment to switch to native app before running browser fallback.
         await new Promise((resolve) => setTimeout(resolve, 1200));
@@ -574,6 +583,22 @@ const Auth = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {appHandoffUrl && (
+              <div className="mb-6 p-4 rounded-lg bg-purple-600/30 border border-purple-400/40 text-center space-y-3">
+                <p className="text-white text-sm font-medium">
+                  ✅ Email confirmed! Open StoryMaster Kids to continue.
+                </p>
+                <a
+                  href={appHandoffUrl}
+                  className="inline-block w-full px-4 py-3 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold hover:opacity-90 transition-opacity"
+                >
+                  Open in App
+                </a>
+                <p className="text-purple-200 text-xs">
+                  Don't have the app? Continue below to use the web version.
+                </p>
+              </div>
+            )}
             {showForgotPassword ? (
               <div className="space-y-4">
                 <Button 
