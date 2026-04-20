@@ -1559,7 +1559,10 @@ const Mission = () => {
 
                               // Open lightweight "send to a friend" prompt instead of auto-navigating
                               const storyTitle = allScenes[0]?.sceneTitle || scene?.sceneTitle || "my StoryMaster adventure";
-                              const shareUrl = `https://storymaster.app/?ref_story=${savedStory.id}`;
+                              const origin = (typeof window !== 'undefined' && window.location.origin.includes('storymaster.app'))
+                                ? 'https://storymaster.app'
+                                : window.location.origin;
+                              const shareUrl = `${origin}/shared/${savedStory.id}`;
                               setShareStoryInfo({ title: storyTitle, url: shareUrl });
                               setTimeout(() => setShowShareDialog(true), Math.min(finalDelay, 1500));
                             } catch (error) {
@@ -1769,11 +1772,20 @@ const Mission = () => {
               size="lg"
               variant="hero"
               onClick={async () => {
-                if (!shareStoryInfo) return;
+                if (!shareStoryInfo || !savedStory?.id) return;
                 addHapticFeedback('medium');
+                // Flip the story to publicly viewable so the recipient sees the same scenes
+                try {
+                  await supabase
+                    .from('user_stories')
+                    .update({ shared_publicly: true })
+                    .eq('id', savedStory.id);
+                } catch (err) {
+                  console.error('Failed to mark story as shared:', err);
+                }
                 await shareStory(
                   `I just finished "${shareStoryInfo.title}" on StoryMaster!`,
-                  `Try it yourself — pick your own adventure 👇`,
+                  `Read it here 👇`,
                   shareStoryInfo.url
                 );
                 setShowShareDialog(false);

@@ -39,6 +39,7 @@ const ParentDashboard = lazy(() => import("./pages/ParentDashboard"));
 const Subscription = lazy(() => import("./pages/Subscription"));
 const SubscriptionSuccess = lazy(() => import("./pages/SubscriptionSuccess"));
 const Settings = lazy(() => import("./pages/Settings"));
+const SharedStory = lazy(() => import("./pages/SharedStory"));
 
 const queryClient = new QueryClient();
 const isNative = Capacitor.isNativePlatform();
@@ -130,6 +131,7 @@ const AnimatedRoutes = () => {
           <Route path="/support" element={<PageTransition><Support /></PageTransition>} />
           <Route path="/parent-dashboard" element={<ProtectedRoute><PageTransition><ParentDashboard /></PageTransition></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><PageTransition><Settings /></PageTransition></ProtectedRoute>} />
+          <Route path="/shared/:storyId" element={<PageTransition><SharedStory /></PageTransition>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
