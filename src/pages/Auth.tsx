@@ -77,9 +77,10 @@ const Auth = () => {
       }
 
       const isIosBrowser = /iPad|iPhone|iPod/.test(window.navigator.userAgent);
+      const isInNativeApp = !!(window as any).Capacitor?.isNativePlatform?.();
 
       // Try handing off auth callback to native app first (for iOS Safari web fallback case).
-      if (isIosBrowser) {
+      if (isIosBrowser && !isInNativeApp) {
         const nativeParams = new URLSearchParams();
         if (accessToken) nativeParams.set('access_token', accessToken);
         if (refreshToken) nativeParams.set('refresh_token', refreshToken);
@@ -87,7 +88,14 @@ const Auth = () => {
         if (type) nativeParams.set('type', type);
         if (code) nativeParams.set('code', code);
 
-        window.location.href = `storymasterquest://auth?${nativeParams.toString()}`;
+        const handoffUrl = `storymasterquest://auth?${nativeParams.toString()}`;
+
+        // Surface a tap-to-open button so the user can manually launch the app
+        // (Safari only honors custom-scheme redirects from a user gesture).
+        setAppHandoffUrl(handoffUrl);
+
+        // Best-effort silent attempt — works on some iOS versions, ignored on others.
+        window.location.href = handoffUrl;
 
         // Give iOS a moment to switch to native app before running browser fallback.
         await new Promise((resolve) => setTimeout(resolve, 1200));
