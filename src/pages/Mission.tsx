@@ -33,6 +33,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { gainSceneExperience, loadCharacter } from "@/lib/character";
 import { ComprehensionQuiz } from "@/components/ComprehensionQuiz";
+import { shareStory, addHapticFeedback } from "@/lib/mobileFeatures";
 import { QuizQuestion } from "@/lib/quizSystem";
 import { supabase } from "@/integrations/supabase/client";
 import confetti from "canvas-confetti";
