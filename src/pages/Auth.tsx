@@ -30,6 +30,7 @@ const Auth = () => {
   const [resetCooldown, setResetCooldown] = useState(0);
   const [signupStep, setSignupStep] = useState<SignupStep>('credentials');
   const [childAge, setChildAge] = useState<number>(0);
+  const [appHandoffUrl, setAppHandoffUrl] = useState<string | null>(null);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
