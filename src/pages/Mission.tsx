@@ -1559,7 +1559,10 @@ const Mission = () => {
 
                               // Open lightweight "send to a friend" prompt instead of auto-navigating
                               const storyTitle = allScenes[0]?.sceneTitle || scene?.sceneTitle || "my StoryMaster adventure";
-                              const shareUrl = `https://storymaster.app/?ref_story=${savedStory.id}`;
+                              const origin = (typeof window !== 'undefined' && window.location.origin.includes('storymaster.app'))
+                                ? 'https://storymaster.app'
+                                : window.location.origin;
+                              const shareUrl = `${origin}/shared/${savedStory.id}`;
                               setShareStoryInfo({ title: storyTitle, url: shareUrl });
                               setTimeout(() => setShowShareDialog(true), Math.min(finalDelay, 1500));
                             } catch (error) {
