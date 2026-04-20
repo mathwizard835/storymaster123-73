@@ -325,6 +325,7 @@ export type Database = {
           profile: Json
           scene_count: number | null
           scenes: Json | null
+          shared_publicly: boolean
           started_at: string
           status: string
           title: string | null
@@ -340,6 +341,7 @@ export type Database = {
           profile: Json
           scene_count?: number | null
           scenes?: Json | null
+          shared_publicly?: boolean
           started_at?: string
           status?: string
           title?: string | null
@@ -355,6 +357,7 @@ export type Database = {
           profile?: Json
           scene_count?: number | null
           scenes?: Json | null
+          shared_publicly?: boolean
           started_at?: string
           status?: string
           title?: string | null
