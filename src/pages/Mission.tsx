@@ -1772,11 +1772,20 @@ const Mission = () => {
               size="lg"
               variant="hero"
               onClick={async () => {
-                if (!shareStoryInfo) return;
+                if (!shareStoryInfo || !savedStory?.id) return;
                 addHapticFeedback('medium');
+                // Flip the story to publicly viewable so the recipient sees the same scenes
+                try {
+                  await supabase
+                    .from('user_stories')
+                    .update({ shared_publicly: true })
+                    .eq('id', savedStory.id);
+                } catch (err) {
+                  console.error('Failed to mark story as shared:', err);
+                }
                 await shareStory(
                   `I just finished "${shareStoryInfo.title}" on StoryMaster!`,
-                  `Try it yourself — pick your own adventure 👇`,
+                  `Read it here 👇`,
                   shareStoryInfo.url
                 );
                 setShowShareDialog(false);
