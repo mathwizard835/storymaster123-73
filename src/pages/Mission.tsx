@@ -1745,8 +1745,52 @@ const Mission = () => {
           </div>
         </DialogContent>
       </Dialog>
-      
-      {/* Comprehension Quiz Modal */}
+
+      {/* Send to a Friend - lightweight share prompt after finishing a story */}
+      <Dialog
+        open={showShareDialog}
+        onOpenChange={(open) => {
+          setShowShareDialog(open);
+          if (!open) {
+            // Once the dialog closes, return to home
+            navigate('/');
+          }
+        }}
+      >
+        <DialogContent className="max-w-sm text-center">
+          <DialogHeader>
+            <DialogTitle className="text-2xl">That was crazy 😳</DialogTitle>
+            <DialogDescription className="text-base pt-1">
+              Send this to a friend
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-3 mt-4">
+            <Button
+              size="lg"
+              variant="hero"
+              onClick={async () => {
+                if (!shareStoryInfo) return;
+                addHapticFeedback('medium');
+                await shareStory(
+                  `I just finished "${shareStoryInfo.title}" on StoryMaster!`,
+                  `Try it yourself — pick your own adventure 👇`,
+                  shareStoryInfo.url
+                );
+                setShowShareDialog(false);
+              }}
+              className="w-full text-lg font-bold"
+            >
+              Send
+            </Button>
+            <button
+              onClick={() => setShowShareDialog(false)}
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Maybe later
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
       {showQuiz && quizQuestions.length > 0 && (
         <ComprehensionQuiz
           open={showQuiz}
