@@ -583,6 +583,22 @@ const Auth = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {appHandoffUrl && (
+              <div className="mb-6 p-4 rounded-lg bg-purple-600/30 border border-purple-400/40 text-center space-y-3">
+                <p className="text-white text-sm font-medium">
+                  ✅ Email confirmed! Open StoryMaster Kids to continue.
+                </p>
+                <a
+                  href={appHandoffUrl}
+                  className="inline-block w-full px-4 py-3 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold hover:opacity-90 transition-opacity"
+                >
+                  Open in App
+                </a>
+                <p className="text-purple-200 text-xs">
+                  Don't have the app? Continue below to use the web version.
+                </p>
+              </div>
+            )}
             {showForgotPassword ? (
               <div className="space-y-4">
                 <Button 
