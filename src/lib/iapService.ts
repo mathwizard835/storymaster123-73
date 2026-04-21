@@ -225,7 +225,7 @@ export const activateSubscriptionAfterPurchase = async (
     const { data: plan } = await supabase
       .from('subscription_plans')
       .select('id')
-      .eq('price_monthly', 6.99)
+      .eq('price_monthly', 4.99)
       .limit(1)
       .maybeSingle();
 

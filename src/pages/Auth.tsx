@@ -17,6 +17,25 @@ import AgeGateForm from '@/components/auth/AgeGateForm';
 import ParentalConsentForm from '@/components/auth/ParentalConsentForm';
 import ParentalGateChallenge from '@/components/auth/ParentalGateChallenge';
 import { getAuthRedirectUrl } from '@/lib/authRedirect';
+import { saveStoryToDatabase } from '@/lib/databaseStory';
+
+// Hydrate any guest story saved before signup into the new account
+const hydrateGuestStory = async (): Promise<boolean> => {
+  try {
+    const raw = localStorage.getItem('guest_pending_story');
+    if (!raw) return false;
+    const payload = JSON.parse(raw);
+    if (payload?.story?.scenes?.length) {
+      await saveStoryToDatabase(payload.story);
+    }
+    localStorage.removeItem('guest_pending_story');
+    return true;
+  } catch (e) {
+    console.warn('[Auth] Could not hydrate guest story:', e);
+    localStorage.removeItem('guest_pending_story');
+    return false;
+  }
+};
 
 type SignupStep = 'credentials' | 'age-gate' | 'parental-gate' | 'parental-consent';
 
@@ -135,11 +154,12 @@ const Auth = () => {
           return;
         }
 
+        const hydrated = await hydrateGuestStory();
         toast({
-          title: "Email verified!",
-          description: "Redirecting to your dashboard...",
+          title: hydrated ? "Welcome — your adventure was saved!" : "Email verified!",
+          description: hydrated ? "Your story is now in your gallery." : "Redirecting to your dashboard...",
         });
-        navigate('/dashboard');
+        navigate(hydrated ? '/gallery' : '/dashboard');
       } catch (callbackError) {
         console.error('[Auth] Failed to process auth callback:', callbackError);
       }
@@ -281,11 +301,12 @@ const Auth = () => {
         });
         setSignupStep('credentials');
       } else if (data?.session) {
+        const hydrated = await hydrateGuestStory();
         toast({
-          title: "Account created successfully!",
-          description: "You can now start your adventure.",
+          title: hydrated ? "Account created — adventure saved!" : "Account created successfully!",
+          description: hydrated ? "Your story is now in your gallery." : "You can now start your adventure.",
         });
-        navigate('/dashboard');
+        navigate(hydrated ? '/gallery' : '/dashboard');
       }
     } catch (err: any) {
       setError('An unexpected error occurred. Please try again.');
@@ -327,11 +348,12 @@ const Auth = () => {
           setError(error.message);
         }
       } else {
+        const hydrated = await hydrateGuestStory();
         toast({
-          title: "Welcome back!",
-          description: "You've successfully signed in.",
+          title: hydrated ? "Welcome — your adventure was saved!" : "Welcome back!",
+          description: hydrated ? "Your story is now in your gallery." : "You've successfully signed in.",
         });
-        navigate('/dashboard');
+        navigate(hydrated ? '/gallery' : '/dashboard');
       }
     } catch (err: any) {
       setError('An unexpected error occurred');

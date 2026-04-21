@@ -49,7 +49,7 @@ export const SubscriptionModal = ({ open, onOpenChange, currentPlan }: Subscript
         <DialogHeader>
           <DialogTitle className="text-2xl">Make Reading Your Child's Favorite Activity</DialogTitle>
           <DialogDescription>
-            Unlimited stories + reading progress tracking parents love. Starting at $6.99/month.
+            Unlimited stories + reading progress tracking parents love. Starting at $4.99/month.
           </DialogDescription>
         </DialogHeader>
 
@@ -64,7 +64,7 @@ export const SubscriptionModal = ({ open, onOpenChange, currentPlan }: Subscript
               <span className="font-medium">Other Apps:</span> $9.99+ without personalization
             </div>
             <div>
-              <span className="font-medium text-primary">StoryMaster Kids:</span> $6.99/mo = unlimited interactive stories
+              <span className="font-medium text-primary">StoryMaster Kids:</span> $4.99/mo = unlimited interactive stories
             </div>
           </div>
         </div>
@@ -162,14 +162,15 @@ export const SubscriptionModal = ({ open, onOpenChange, currentPlan }: Subscript
                   )}
                 </ul>
                 
-                <Button 
-                  className="w-full"
+                <Button
+                  className={`w-full ${plan.name === 'premium' && currentPlan?.id !== plan.id ? 'btn-shine font-bold ring-2 ring-yellow-300/60 shadow-[0_0_24px_hsl(var(--primary)/0.55)]' : ''}`}
                   variant={plan.name === 'premium' ? 'default' : 'outline'}
                   disabled={currentPlan?.id === plan.id}
                   onClick={() => handleUpgrade()}
                 >
-                  {currentPlan?.id === plan.id ? 'Current Plan' : 
-                   plan.price_monthly > 0 ? 'Subscribe' : 'Current Plan'}
+                  {plan.name === 'premium' && currentPlan?.id !== plan.id && <Crown className="h-4 w-4 mr-1" />}
+                  {currentPlan?.id === plan.id ? 'Current Plan' :
+                   plan.price_monthly > 0 ? 'Get Adventure Pass' : 'Current Plan'}
                 </Button>
               </CardContent>
             </Card>

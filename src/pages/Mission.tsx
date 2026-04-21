@@ -1342,6 +1342,48 @@ const Mission = () => {
                       Adventure Complete!
                     </h3>
                     
+                    {!user ? (
+                      <>
+                        <p className="text-white/90">
+                          🎉 Amazing! You finished your first adventure.
+                          <br />
+                          <span className="font-semibold text-yellow-100">Save it to your gallery to keep your hero, replay it any time, and unlock new adventures.</span>
+                        </p>
+                        <Button
+                          size="xl"
+                          onClick={() => {
+                            try {
+                              // Persist this completed story locally so we can hydrate it
+                              // into the user's gallery right after sign-up.
+                              if (savedStory && allScenes.length > 0) {
+                                const guestPayload = {
+                                  story: {
+                                    ...savedStory,
+                                    scenes: allScenes,
+                                    currentSceneIndex: allScenes.length - 1,
+                                  },
+                                  title: allScenes[0]?.sceneTitle || scene?.sceneTitle || "My Adventure",
+                                  sceneCount,
+                                  savedAt: new Date().toISOString(),
+                                };
+                                localStorage.setItem('guest_pending_story', JSON.stringify(guestPayload));
+                              }
+                            } catch (e) {
+                              console.warn('Could not stash guest story for hydration:', e);
+                            }
+                            navigate('/auth?postSignup=hydrate');
+                          }}
+                          className="btn-shine w-full max-w-sm mx-auto text-lg font-extrabold ring-2 ring-yellow-300/70 shadow-[0_0_28px_hsl(var(--primary)/0.65)]"
+                        >
+                          <Crown className="h-5 w-5 mr-2 text-yellow-200" />
+                          Save My Adventure
+                        </Button>
+                        <p className="text-xs text-white/60">
+                          Free account • Takes 30 seconds
+                        </p>
+                      </>
+                    ) : (
+                    <>
                     <p className="text-white/90">
                       🎉 Congratulations! You've reached the end of your epic journey. 
                       {!savedStory?.quizTaken && " Take the comprehension challenge for Bonus Points, or "}
@@ -1561,6 +1603,8 @@ const Mission = () => {
                           <Crown className="h-5 w-5 mr-2" />
                           Finish Adventure
                         </Button>
+                    </>
+                    )}
                   </div>
                 </div>
               )}

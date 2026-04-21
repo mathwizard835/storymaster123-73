@@ -19,7 +19,7 @@ export interface DatabaseStory {
 // Phase 1: Pause ALL active stories for the current user (not complete, so they can resume)
 export const pauseAllActiveStoriesForUser = async (): Promise<number> => {
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not authenticated');
+  if (!user) return 0; // Guest mode: nothing to pause
 
   // Get all active stories
   const { data: activeStories } = await (supabase as any)
@@ -79,7 +79,7 @@ export const verifyStoryIsActive = async (storyId: string): Promise<boolean> => 
 // Phase 6: Improved save with verification - PAUSE OTHER STORIES, THEN SAVE
 export const saveStoryToDatabase = async (story: SavedStory, deviceFingerprint?: string): Promise<DatabaseStory | null> => {
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not authenticated');
+  if (!user) return null; // Guest mode: skip database persistence
 
   // CRITICAL: Pause ALL other active stories FIRST, before attempting to save
   // This prevents unique constraint violations from the database index
@@ -234,7 +234,7 @@ export const loadInProgressStoriesFromDatabase = async (): Promise<DatabaseStory
 // Pause current story (mark as paused instead of completed)
 export const pauseStoryInDatabase = async (storyId: string): Promise<void> => {
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not authenticated');
+  if (!user) return; // Guest mode: nothing to pause
 
   const { error } = await (supabase as any)
     .from('user_stories')
@@ -335,7 +335,7 @@ export const loadCompletedStoriesFromDatabase = async (): Promise<DatabaseStory[
 // Mark story as completed in database
 export const markStoryCompletedInDatabase = async (storyId: string): Promise<void> => {
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not authenticated');
+  if (!user) return; // Guest mode: no DB record exists
 
   const { error } = await (supabase as any)
     .from('user_stories')
