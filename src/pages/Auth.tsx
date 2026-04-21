@@ -148,9 +148,9 @@ const Auth = () => {
 
         toast({
           title: "Email verified!",
-          description: "Redirecting to your dashboard...",
+          description: "Picking up where you left off...",
         });
-        navigate('/dashboard');
+        navigate(postAuthRedirect());
       } catch (callbackError) {
         console.error('[Auth] Failed to process auth callback:', callbackError);
       }
@@ -296,7 +296,7 @@ const Auth = () => {
           title: "Account created successfully!",
           description: "You can now start your adventure.",
         });
-        navigate('/dashboard');
+        navigate(postAuthRedirect());
       }
     } catch (err: any) {
       setError('An unexpected error occurred. Please try again.');
@@ -342,7 +342,7 @@ const Auth = () => {
           title: "Welcome back!",
           description: "You've successfully signed in.",
         });
-        navigate('/dashboard');
+        navigate(postAuthRedirect());
       }
     } catch (err: any) {
       setError('An unexpected error occurred');
