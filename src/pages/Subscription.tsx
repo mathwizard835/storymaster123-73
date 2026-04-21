@@ -575,26 +575,8 @@ export default function Subscription() {
                       </span>
                     )}
                   </Button>
-                  <Button
-                    onClick={() => requireParentalGate(handleSubscribe)}
-                    disabled={loading}
-                    size="xl"
-                    className="w-full bg-black hover:bg-zinc-900 text-white font-bold text-xl py-8 rounded-xl shadow-2xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
-                  >
-                    <span className="flex items-center gap-3">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 384 512"
-                        className="h-6 w-6 fill-white"
-                        aria-hidden="true"
-                      >
-                        <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zM256.4 84.5c19.5-23.3 17.7-44.5 17.1-52.5-22.4 1.3-48.3 15.3-63.6 32.7-16.6 18.7-26.8 41.8-24.4 65.5 23.6 1.8 49.2-10.4 70.9-45.7z" />
-                      </svg>
-                      Pay with Apple
-                    </span>
-                  </Button>
                   <p className="text-center text-purple-300 text-xs">
-                    Secure checkout powered by Stripe • Apple Pay available on supported devices
+                    Secure checkout powered by Stripe • Apple Pay & Google Pay available on supported devices
                   </p>
                 </>
               )}
