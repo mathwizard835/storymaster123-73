@@ -113,33 +113,6 @@ export type Database = {
         }
         Relationships: []
       }
-      guest_analytics: {
-        Row: {
-          created_at: string
-          event: string
-          id: string
-          scene_index: number | null
-          session_id: string
-          story_slug: string | null
-        }
-        Insert: {
-          created_at?: string
-          event: string
-          id?: string
-          scene_index?: number | null
-          session_id: string
-          story_slug?: string | null
-        }
-        Update: {
-          created_at?: string
-          event?: string
-          id?: string
-          scene_index?: number | null
-          session_id?: string
-          story_slug?: string | null
-        }
-        Relationships: []
-      }
       profiles: {
         Row: {
           child_age: number | null

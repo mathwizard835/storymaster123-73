@@ -50,22 +50,11 @@ const Auth = () => {
     }
   }, [resetCooldown]);
 
-  // If user came from a cliffhanger, send them to the lightweight interest
-  // picker (which then forwards into /mission). Otherwise default to dashboard.
-  const postAuthRedirect = (): string => {
-    const from = searchParams.get('from');
-    if (from === 'cliffhanger') return '/post-signup';
-    try {
-      if (localStorage.getItem('smq.pending_starter_story')) return '/post-signup';
-    } catch {}
-    return '/dashboard';
-  };
-
   useEffect(() => {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        navigate(postAuthRedirect());
+        navigate('/dashboard');
       }
     };
     
@@ -148,9 +137,9 @@ const Auth = () => {
 
         toast({
           title: "Email verified!",
-          description: "Picking up where you left off...",
+          description: "Redirecting to your dashboard...",
         });
-        navigate(postAuthRedirect());
+        navigate('/dashboard');
       } catch (callbackError) {
         console.error('[Auth] Failed to process auth callback:', callbackError);
       }
@@ -296,7 +285,7 @@ const Auth = () => {
           title: "Account created successfully!",
           description: "You can now start your adventure.",
         });
-        navigate(postAuthRedirect());
+        navigate('/dashboard');
       }
     } catch (err: any) {
       setError('An unexpected error occurred. Please try again.');
@@ -342,7 +331,7 @@ const Auth = () => {
           title: "Welcome back!",
           description: "You've successfully signed in.",
         });
-        navigate(postAuthRedirect());
+        navigate('/dashboard');
       }
     } catch (err: any) {
       setError('An unexpected error occurred');
