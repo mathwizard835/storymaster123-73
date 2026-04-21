@@ -163,12 +163,13 @@ const Index = () => {
                           navigate("/profile?new=true");
                         }
                       } else {
-                        navigate("/auth");
+                        // Guest: jump straight into personalized story creation
+                        navigate("/profile?new=true");
                       }
                     }}
-                    aria-label="Create my hero"
+                    aria-label="Start my story"
                   >
-                    {user ? "Start New Adventure" : "Sign Up!"}
+                    {user ? "Start New Adventure" : "🚀 Start My Story"}
                   </Button>
                 )}
               </div>
@@ -353,12 +354,13 @@ const Index = () => {
                     if (user) {
                       navigate("/dashboard");
                     } else {
-                      navigate("/auth");
+                      // Guest: start a personalized story immediately
+                      navigate("/profile?new=true");
                     }
                   }}
                   className="text-lg px-8 py-4 animate-pulse"
                 >
-                  {user ? "Go to Dashboard" : "Sign Up!"}
+                  {user ? "Go to Dashboard" : "🚀 Start My Story"}
                 </Button>
               )}
               <Button
