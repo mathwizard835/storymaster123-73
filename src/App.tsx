@@ -4,8 +4,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { useEffect, lazy, Suspense, useState } from "react";
-import { initializeRevenueCat, identifyUser, logOutRevenueCat } from "@/lib/iapService";
+import { useEffect, lazy, Suspense } from "react";
+import { initializeRevenueCat } from "@/lib/iapService";
 import { initDeepLinkHandler } from "@/lib/deepLinkHandler";
 import { initPushNotifications } from "@/lib/pushNotifications";
 import { requestNotificationPermission, scheduleStreakReminder, scheduleRetentionNotification } from "@/lib/localNotifications";
@@ -14,7 +14,6 @@ import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 import { AnimatePresence } from "framer-motion";
 import { PageTransition } from "@/components/PageTransition";
 import { NativeLoadingScreen } from "@/components/NativeLoadingScreen";
-import { NativeOnboarding, hasSeenOnboarding } from "@/components/NativeOnboarding";
 import { Capacitor } from "@capacitor/core";
 import ErrorBoundary from "./components/ErrorBoundary";
 
