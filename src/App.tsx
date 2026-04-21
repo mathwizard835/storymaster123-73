@@ -18,12 +18,14 @@ import { NativeOnboarding, hasSeenOnboarding } from "@/components/NativeOnboardi
 import { Capacitor } from "@capacitor/core";
 import ErrorBoundary from "./components/ErrorBoundary";
 
-// Eager: landing + auth (critical path)
-import Index from "./pages/Index";
+// Eager: guest home + auth (critical path — story-first flow)
+import GuestHome from "./pages/GuestHome";
+import GuestStory from "./pages/GuestStory";
 import Auth from "./pages/Auth";
-import NativeWelcome from "./pages/NativeWelcome";
 
 // Lazy: everything else
+const Index = lazy(() => import("./pages/Index"));
+const PostSignupInterests = lazy(() => import("./pages/PostSignupInterests"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const ProfileSetup = lazy(() => import("./pages/ProfileSetup"));
 const Mission = lazy(() => import("./pages/Mission"));
@@ -44,28 +46,8 @@ const SharedStory = lazy(() => import("./pages/SharedStory"));
 const queryClient = new QueryClient();
 const isNative = Capacitor.isNativePlatform();
 
-// On native, show onboarding → welcome screen if not logged in, dashboard if logged in
-const NativeHomeRedirect = () => {
-  const { user, loading } = useAuth();
-  const [showOnboarding, setShowOnboarding] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    if (isNative) {
-      hasSeenOnboarding().then(seen => setShowOnboarding(!seen));
-    } else {
-      setShowOnboarding(false);
-    }
-  }, []);
-
-  if (loading || showOnboarding === null) return <NativeLoadingScreen />;
-
-  if (showOnboarding) {
-    return <NativeOnboarding onComplete={() => setShowOnboarding(false)} />;
-  }
-
-  if (user) return <Navigate to="/dashboard" replace />;
-  return <NativeWelcome />;
-};
+// Story-first: every visitor (web + native, signed-in or not) lands on GuestHome.
+// The 3 story cards ARE the onboarding. No marketing wall, no welcome screen.
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
@@ -117,7 +99,10 @@ const AnimatedRoutes = () => {
         <Routes location={location} key={location.pathname}>
           <Route path="/auth" element={<PublicRoute><PageTransition><Auth /></PageTransition></PublicRoute>} />
           <Route path="/reset-password" element={<PageTransition><ResetPassword /></PageTransition>} />
-          <Route path="/" element={isNative ? <NativeHomeRedirect /> : <Index />} />
+          <Route path="/" element={<GuestHome />} />
+          <Route path="/story/:slug" element={<GuestStory />} />
+          <Route path="/about" element={<PageTransition><Index /></PageTransition>} />
+          <Route path="/post-signup" element={<ProtectedRoute><PageTransition><PostSignupInterests /></PageTransition></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><PageTransition><ProfileSetup /></PageTransition></ProtectedRoute>} />
           <Route path="/mission" element={<ProtectedRoute><Mission /></ProtectedRoute>} />
           <Route path="/gallery" element={<ProtectedRoute><PageTransition><StoryGallery /></PageTransition></ProtectedRoute>} />
