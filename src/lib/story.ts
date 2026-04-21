@@ -361,7 +361,7 @@ export const generateNextScene = async (
   
   try {
     const { data, error } = await supabase.functions.invoke("generate-story", {
-      body: { profile, scene, megastory, max_tokens: adjustedTokens, scene_count: sceneCount, abilities: availableAbilities },
+      body: { profile, scene, megastory, max_tokens: adjustedTokens, scene_count: sceneCount, abilities: availableAbilities, guest },
     });
 
     if (error) throw error;
