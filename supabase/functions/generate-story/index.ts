@@ -585,23 +585,24 @@ Return ONLY valid JSON (no markdown, no explanations):
       );
     }
 
-    // Determine model based on total stories started by this user
+    // Determine model based on total stories started by this user (skip for guests)
     let selectedModel = "claude-sonnet-4-20250514";
-    try {
-      // Count total stories by user_id (not device_id) for model selection
-      const { count, error: countError } = await supabaseAdmin
-        .from("user_stories")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", userId);
+    if (!isGuest) {
+      try {
+        const { count, error: countError } = await supabaseAdmin
+          .from("user_stories")
+          .select("*", { count: "exact", head: true })
+          .eq("user_id", userId);
 
-      if (!countError && count !== null && count >= 20) {
-        selectedModel = "claude-haiku-4-5-20251001";
-        console.log(`📊 User ${userId} has ${count} stories - using Haiku 4.5`);
-      } else {
-        console.log(`📊 User ${userId} has ${count ?? 0} stories - using Sonnet`);
+        if (!countError && count !== null && count >= 20) {
+          selectedModel = "claude-haiku-4-5-20251001";
+          console.log(`📊 User ${userId} has ${count} stories - using Haiku 4.5`);
+        } else {
+          console.log(`📊 User ${userId} has ${count ?? 0} stories - using Sonnet`);
+        }
+      } catch (modelErr) {
+        console.warn("Failed to check story count for model selection, defaulting to Sonnet:", modelErr);
       }
-    } catch (modelErr) {
-      console.warn("Failed to check story count for model selection, defaulting to Sonnet:", modelErr);
     }
 
     // Apply rate limiting with IP-based backup
