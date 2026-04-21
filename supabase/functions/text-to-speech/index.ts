@@ -68,23 +68,7 @@ serve(async (req) => {
 
   const userId = claimsData.claims.sub as string;
 
-  // === SUBSCRIPTION CHECK: Read-to-Me requires Adventure Pass ===
-  const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
-  const { data: activeSub } = await supabaseAdmin
-    .from('user_subscriptions')
-    .select('id, plan_id, subscription_plans(name)')
-    .eq('user_id', userId)
-    .eq('status', 'active')
-    .limit(1)
-    .maybeSingle();
-
-  const planName = (activeSub as any)?.subscription_plans?.name?.toLowerCase() || '';
-  if (!planName.includes('premium')) {
-    return new Response(
-      JSON.stringify({ error: 'Read-to-Me requires an Adventure Pass subscription.' }),
-      { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-  }
+  // Read-to-Me is available to all authenticated users (free + Adventure Pass)
 
   try {
     const { text, voiceId } = await req.json();
