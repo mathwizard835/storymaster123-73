@@ -85,7 +85,7 @@ export default function SubscriptionSuccess() {
               Payment Successful!
             </CardTitle>
             <CardDescription className="text-base">
-              Your Adventure Pass is now active — $6.99/month
+              Your Adventure Pass is now active — $4.99/month
             </CardDescription>
           </div>
         </CardHeader>
