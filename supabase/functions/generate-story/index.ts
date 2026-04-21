@@ -507,7 +507,7 @@ Return ONLY valid JSON (no markdown, no explanations):
     const isNewStory = !body?.scene;
     let deviceFingerprint: string | null = null;
 
-    if (isNewStory) {
+    if (isNewStory && !isGuest) {
       // Count stories started by this user in the last 30 days
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
       const { count: storyCount, error: countErr } = await supabaseAdmin
