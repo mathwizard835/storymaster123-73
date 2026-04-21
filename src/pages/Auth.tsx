@@ -50,11 +50,22 @@ const Auth = () => {
     }
   }, [resetCooldown]);
 
+  // If user came from a cliffhanger, send them to the lightweight interest
+  // picker (which then forwards into /mission). Otherwise default to dashboard.
+  const postAuthRedirect = (): string => {
+    const from = searchParams.get('from');
+    if (from === 'cliffhanger') return '/post-signup';
+    try {
+      if (localStorage.getItem('smq.pending_starter_story')) return '/post-signup';
+    } catch {}
+    return '/dashboard';
+  };
+
   useEffect(() => {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        navigate('/dashboard');
+        navigate(postAuthRedirect());
       }
     };
     
