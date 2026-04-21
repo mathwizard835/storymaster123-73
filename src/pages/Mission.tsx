@@ -1603,6 +1603,8 @@ const Mission = () => {
                           <Crown className="h-5 w-5 mr-2" />
                           Finish Adventure
                         </Button>
+                    </>
+                    )}
                   </div>
                 </div>
               )}
