@@ -93,12 +93,17 @@ const ProfileSetup = () => {
 
   useEffect(() => {
     const isNewAdventure = searchParams.get("new") === "true";
-    if (isNewAdventure) {
+    const isGuest = searchParams.get("guest") === "true";
+    if (isNewAdventure || isGuest) {
       setName(""); setAge(8); setLexileScore(500); setSelectedBadges([]);
       setMode("thrill"); setStoryLength("medium"); setTopic(""); setInterests("");
       setNameError(""); setInterestsError(""); setTopicError("");
       setStep(1);
-      toast({ title: "Starting Fresh Adventure! 🎮", description: "Create your new hero profile!", duration: 4000 });
+      if (isGuest) {
+        toast({ title: "Try a Free Story! ✨", description: "Build your hero — no sign-up needed.", duration: 4000 });
+      } else {
+        toast({ title: "Starting Fresh Adventure! 🎮", description: "Create your new hero profile!", duration: 4000 });
+      }
     }
   }, [searchParams, toast]);
 
