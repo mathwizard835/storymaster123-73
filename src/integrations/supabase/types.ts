@@ -87,6 +87,7 @@ export type Database = {
           last_story_date: string | null
           longest_streak: number | null
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           bonus_stories_earned?: number | null
@@ -97,6 +98,7 @@ export type Database = {
           last_story_date?: string | null
           longest_streak?: number | null
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           bonus_stories_earned?: number | null
@@ -107,6 +109,7 @@ export type Database = {
           last_story_date?: string | null
           longest_streak?: number | null
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -192,7 +195,9 @@ export type Database = {
           created_at: string
           id: string
           referred_device_id: string
+          referred_user_id: string | null
           referrer_device_id: string
+          referrer_user_id: string | null
           status: string
         }
         Insert: {
@@ -201,7 +206,9 @@ export type Database = {
           created_at?: string
           id?: string
           referred_device_id: string
+          referred_user_id?: string | null
           referrer_device_id: string
+          referrer_user_id?: string | null
           status?: string
         }
         Update: {
@@ -210,7 +217,9 @@ export type Database = {
           created_at?: string
           id?: string
           referred_device_id?: string
+          referred_user_id?: string | null
           referrer_device_id?: string
+          referrer_user_id?: string | null
           status?: string
         }
         Relationships: []
@@ -222,6 +231,7 @@ export type Database = {
           device_id: string
           id: string
           profile: Json | null
+          user_id: string | null
         }
         Insert: {
           completed_at?: string
@@ -229,6 +239,7 @@ export type Database = {
           device_id: string
           id?: string
           profile?: Json | null
+          user_id?: string | null
         }
         Update: {
           completed_at?: string
@@ -236,6 +247,7 @@ export type Database = {
           device_id?: string
           id?: string
           profile?: Json | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -247,6 +259,7 @@ export type Database = {
           platform: string | null
           share_type: string
           story_id: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -255,6 +268,7 @@ export type Database = {
           platform?: string | null
           share_type: string
           story_id: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -263,6 +277,7 @@ export type Database = {
           platform?: string | null
           share_type?: string
           story_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -417,6 +432,7 @@ export type Database = {
           id: string
           position: number | null
           referral_code: string | null
+          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -425,6 +441,7 @@ export type Database = {
           id?: string
           position?: number | null
           referral_code?: string | null
+          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -433,6 +450,7 @@ export type Database = {
           id?: string
           position?: number | null
           referral_code?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }

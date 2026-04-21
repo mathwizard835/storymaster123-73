@@ -5,6 +5,8 @@ export type Referral = {
   id: string;
   referrer_device_id: string;
   referred_device_id: string;
+  referrer_user_id?: string | null;
+  referred_user_id?: string | null;
   status: 'pending' | 'completed' | 'expired';
   bonus_stories_earned: number;
   created_at: string;
@@ -13,7 +15,6 @@ export type Referral = {
 
 export const generateReferralCode = async (): Promise<string> => {
   const deviceId = await getDeviceId();
-  // Create a short, shareable code from device ID
   return deviceId.substring(0, 8).toUpperCase();
 };
 
@@ -23,13 +24,18 @@ export const getReferralCode = async (): Promise<string> => {
 
 export const createReferral = async (referralCode: string): Promise<{ success: boolean; message: string }> => {
   try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return { success: false, message: "Please sign in to use a referral code" };
+    }
+
     const deviceId = await getDeviceId();
     const referrerCode = referralCode.toUpperCase();
     
     // Find referrer device ID from code (first 8 chars)
     const { data: existingDevices } = await supabase
       .from('referrals')
-      .select('referrer_device_id')
+      .select('referrer_device_id, referrer_user_id')
       .or(`referrer_device_id.ilike.${referrerCode}%`);
 
     if (!existingDevices || existingDevices.length === 0) {
@@ -37,30 +43,30 @@ export const createReferral = async (referralCode: string): Promise<{ success: b
     }
 
     const referrerDeviceId = existingDevices[0].referrer_device_id;
+    const referrerUserId = existingDevices[0].referrer_user_id;
 
-    // Prevent self-referral
-    if (referrerDeviceId === deviceId) {
+    if (referrerDeviceId === deviceId || referrerUserId === user.id) {
       return { success: false, message: "You cannot refer yourself!" };
     }
 
-    // Check if referral already exists
     const { data: existing } = await supabase
       .from('referrals')
       .select('id')
       .eq('referrer_device_id', referrerDeviceId)
-      .eq('referred_device_id', deviceId)
-      .single();
+      .eq('referred_user_id', user.id)
+      .maybeSingle();
 
     if (existing) {
       return { success: false, message: "Referral already exists" };
     }
 
-    // Create referral
     const { error } = await supabase
       .from('referrals')
       .insert([{
         referrer_device_id: referrerDeviceId,
         referred_device_id: deviceId,
+        referrer_user_id: referrerUserId,
+        referred_user_id: user.id,
         status: 'pending'
       }]);
 
@@ -75,19 +81,18 @@ export const createReferral = async (referralCode: string): Promise<{ success: b
 
 export const completeReferral = async (): Promise<void> => {
   try {
-    const deviceId = await getDeviceId();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
 
-    // Find pending referral for this user
     const { data: referral } = await supabase
       .from('referrals')
       .select('*')
-      .eq('referred_device_id', deviceId)
+      .eq('referred_user_id', user.id)
       .eq('status', 'pending')
-      .single();
+      .maybeSingle();
 
     if (!referral) return;
 
-    // Mark referral as completed
     await supabase
       .from('referrals')
       .update({
@@ -108,12 +113,17 @@ export const getReferralStats = async (): Promise<{
   referralCode: string;
 }> => {
   try {
-    const deviceId = await getDeviceId();
-    
+    const { data: { user } } = await supabase.auth.getUser();
+    const referralCode = await getReferralCode();
+
+    if (!user) {
+      return { totalReferrals: 0, completedReferrals: 0, bonusStoriesEarned: 0, referralCode };
+    }
+
     const { data: referrals } = await supabase
       .from('referrals')
       .select('*')
-      .eq('referrer_device_id', deviceId);
+      .eq('referrer_user_id', user.id);
 
     const totalReferrals = referrals?.length || 0;
     const completedReferrals = referrals?.filter(r => r.status === 'completed').length || 0;
@@ -123,7 +133,7 @@ export const getReferralStats = async (): Promise<{
       totalReferrals,
       completedReferrals,
       bonusStoriesEarned,
-      referralCode: await getReferralCode()
+      referralCode
     };
   } catch (e) {
     console.error("Failed to get referral stats", e);

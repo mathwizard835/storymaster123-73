@@ -4,6 +4,7 @@ import { getDeviceId } from "@/lib/story";
 export type DailyStreak = {
   id: string;
   device_id: string;
+  user_id?: string | null;
   current_streak: number;
   longest_streak: number;
   last_story_date?: string;
@@ -18,32 +19,36 @@ export const updateDailyStreak = async (): Promise<{
   isNewRecord: boolean;
 }> => {
   try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      // Not authenticated — cannot update streaks under new RLS.
+      return { newStreak: 0, bonusEarned: 0, isNewRecord: false };
+    }
     const deviceId = await getDeviceId();
     const today = new Date().toISOString().split('T')[0];
 
-    // Get existing streak data
+    // Get existing streak data for this user
     let { data: streak } = await supabase
       .from('daily_streaks')
       .select('*')
-      .eq('device_id', deviceId)
-      .single();
+      .eq('user_id', user.id)
+      .maybeSingle();
 
     if (!streak) {
       // Create new streak record
-      const { data: newStreak, error } = await supabase
+      const { error } = await supabase
         .from('daily_streaks')
         .insert([{
+          user_id: user.id,
           device_id: deviceId,
           current_streak: 1,
           longest_streak: 1,
           last_story_date: today,
           bonus_stories_earned: 0
-        }])
-        .select()
-        .single();
+        }]);
 
       if (error) throw error;
-      
+
       return {
         newStreak: 1,
         bonusEarned: 0,
@@ -68,23 +73,19 @@ export const updateDailyStreak = async (): Promise<{
     let bonusEarned = 0;
 
     if (daysDifference === 1) {
-      // Consecutive day - continue streak
       newCurrentStreak = streak.current_streak + 1;
     } else {
-      // Streak broken - start over
       newCurrentStreak = 1;
     }
 
-    // Calculate bonus stories for streak milestones
     const streakMilestones = [3, 7, 14, 30, 50, 100];
     if (streakMilestones.includes(newCurrentStreak)) {
-      bonusEarned = Math.floor(newCurrentStreak / 3); // More stories for longer streaks
+      bonusEarned = Math.floor(newCurrentStreak / 3);
     }
 
     const newLongestStreak = Math.max(streak.longest_streak, newCurrentStreak);
     const isNewRecord = newCurrentStreak > streak.longest_streak;
 
-    // Update streak data
     await supabase
       .from('daily_streaks')
       .update({
@@ -93,7 +94,7 @@ export const updateDailyStreak = async (): Promise<{
         last_story_date: today,
         bonus_stories_earned: streak.bonus_stories_earned + bonusEarned
       })
-      .eq('device_id', deviceId);
+      .eq('user_id', user.id);
 
     return {
       newStreak: newCurrentStreak,
@@ -112,13 +113,14 @@ export const updateDailyStreak = async (): Promise<{
 
 export const getDailyStreak = async (): Promise<DailyStreak | null> => {
   try {
-    const deviceId = await getDeviceId();
-    
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+
     const { data, error } = await supabase
       .from('daily_streaks')
       .select('*')
-      .eq('device_id', deviceId)
-      .single();
+      .eq('user_id', user.id)
+      .maybeSingle();
 
     if (error && error.code !== 'PGRST116') throw error;
     return data;
