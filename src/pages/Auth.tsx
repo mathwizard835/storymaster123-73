@@ -348,11 +348,12 @@ const Auth = () => {
           setError(error.message);
         }
       } else {
+        const hydrated = await hydrateGuestStory();
         toast({
-          title: "Welcome back!",
-          description: "You've successfully signed in.",
+          title: hydrated ? "Welcome — your adventure was saved!" : "Welcome back!",
+          description: hydrated ? "Your story is now in your gallery." : "You've successfully signed in.",
         });
-        navigate('/dashboard');
+        navigate(hydrated ? '/gallery' : '/dashboard');
       }
     } catch (err: any) {
       setError('An unexpected error occurred');
