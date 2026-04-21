@@ -159,6 +159,13 @@ const ProfileSetup = () => {
     };
     saveProfileToLocal(profile);
 
+    // Guest preview flow → goes to a short 3-scene story before sign up
+    const isGuest = searchParams.get("guest") === "true";
+    if (isGuest) {
+      navigate("/guest-story");
+      return;
+    }
+
     const forceNew = searchParams.get("new") === "true";
     if (!forceNew) {
       try {
