@@ -1,50 +1,143 @@
-## Scope
+## Goal
 
-Fix only Issue 1 (confirmation emails not being sent) and add an "Pay with Apple" button below the existing Stripe button on the Subscription page.
+Replace the current "marketing landing → auth → 6-step profile → story" funnel with a **story-first** flow: 3 curated story cards on app open, instant tap-to-read, cliffhanger conversion, optional signup after emotional engagement.
 
-## Issue 1 — Confirmation emails
+## Key architectural decision
 
-**Root cause confirmed via DB:** Today's signup `mihirmantri@gmail.com` has `confirmation_sent_at = NULL` and `email_confirmed_at` auto-populated seconds after signup → email autoconfirm is ON at the Supabase project level, so Supabase never even attempts to send a confirmation email.
+The AI story engine (`generate-story` edge function) **requires authentication** and counts against story limits. So the 3 starter stories will be **pre-authored static content** bundled with the app — not AI-generated. This delivers:
 
-**Fix plan:**
+- True <1s start (no network call, no auth)
+- Zero AI cost on guest traffic
+- Identical experience for every guest (testable, predictable hooks)
+- Clean handoff: after signup, the AI engine takes over for story #4+
 
-1. Re-enable email confirmation at the Supabase project level (turn autoconfirm OFF). Once off, Supabase will populate `confirmation_sent_at` and route the email through the standard pipeline.
-2. Set up branded auth email infrastructure so the confirmation email is sent from `notify.storymaster.app` with StoryMaster Kids branding (purple/pink gradient, kid-friendly copy) instead of the default unstyled Supabase template.
-3. Scaffold all 6 auth email templates (signup, magic-link, recovery, invite, email-change, reauthentication), apply brand styling (white body, purple primary `#7c3aed`-ish accents matching the app's gradient theme), then deploy `auth-email-hook`.
-4. Update `mem://auth/email-verification-disabled` → replace with a rule stating verification IS required and emails are branded.
-5. Update post-signup toast copy in `src/pages/Auth.tsx` so users always see "Check your email to confirm your account" (the current branch logic already shows this when `data.user && !data.session`, which will now always fire).
+Each starter story = 3 short scenes ending in a cliffhanger, with one inline choice in scene 2.
 
-## Add "Pay with Apple" button (web Subscription page)
+## What gets built
 
-Currently in `src/pages/Subscription.tsx`, the **web** branch (`!isNativePlatform()`) shows only the Stripe "Start Your Adventure" button. Add a secondary "Pay with Apple" button **below** it.
+### 1. New guest home `/` (replaces current Index for both web + native)
 
-**Behavior:** Since Apple IAP is a native-iOS-only mechanism (RevenueCat SDK), tapping "Pay with Apple" on the web cannot actually open the App Store IAP flow. The realistic options are:
+- Headline: **"Pick a story"**
+- 3 large tap-cards, each with title + 1-line tease + cover gradient:
+  - "The iPad That Started Talking Back"
+  - "The Door Inside the Screen"
+  - "The Message You Shouldn't Have Seen"
+- No header, no nav, no auth prompt, no marketing copy
+- Logged-in users get a small "Continue your adventure →" link to `/dashboard` (non-intrusive)
 
-- (a) Show a toast/dialog explaining Apple Pay requires the iOS app, with a link to the App Store, OR
-- (b) Trigger Stripe Checkout's Apple Pay payment method (Stripe supports Apple Pay as a wallet on Safari/iOS web).
+### 2. New guest reader `/story/:slug`
 
-I'll go with **(b)** — it actually works on the web and is the user's stated intent. The existing `create-checkout-session` already configures Stripe Checkout, which automatically surfaces Apple Pay when the browser supports it. The new button calls the same edge function but passes a flag (`paymentMethodPreference: 'apple_pay'`) so the edge function restricts `payment_method_types` to `['card']` with `payment_method_options.card.request_three_d_secure: 'automatic'` and Apple Pay is auto-enabled by Stripe when domain is verified.
+- Renders pre-authored scene immediately on mount (no spinner)
+- Scene text fades in line-by-line (hook line first, ~80ms stagger)
+- Scene 2 shows the inline choice (2 buttons)
+- Scene 3 ends mid-sentence on a cliffhanger
+- Tracks: card view, tap, scene reached, drop-off (anonymous, no PII)
 
-Simpler approach that requires no edge function change: the new button just invokes the same `handleSubscribe` flow (Stripe auto-shows Apple Pay on supported devices). The button is purely a visual affordance signaling "Apple Pay is supported here" — same parental gate, same flow.
+### 3. Cliffhanger conversion screen
 
-**Implementation:**
+After scene 3:
 
-- In `src/pages/Subscription.tsx`, inside the web (non-native) branch, directly below the existing "Start Your Adventure" Stripe button, add a second button: black background, Apple logo (SVG inline), text "Pay with Apple", calls the same `requireParentalGate(handleSubscribe)`.
-- No edge function changes.
+- Title: **"Continue the story?"**
+- Two buttons:
+  - **"Continue now"** → reveals one more bonus paragraph then a soft prompt "Want the full ending? Save your progress." (no hard wall)
+  - **"Save progress"** → goes to streamlined signup (`/auth?from=cliffhanger&story=<slug>`)
 
-## Files Modified
+### 4. Streamlined post-cliffhanger signup
 
-- **NEW** `supabase/functions/auth-email-hook/index.ts` (auto-scaffolded)
-- **NEW** `supabase/functions/_shared/email-templates/*.tsx` (6 branded templates, scaffolded then styled)
-- `src/pages/Auth.tsx` — adjust post-signup toast copy
-- `src/pages/Subscription.tsx` — add "Pay with Apple" button below Stripe button (web branch only)
-- Supabase Auth config — disable autoconfirm (re-enable email confirmation)
-- `mem://auth/email-verification-disabled` → updated to reflect verification IS now required
+New compressed `/auth` mode when `?from=cliffhanger`:
 
-## Result
+- Single screen: email + password (Apple/Google sign-in buttons stubbed for native — Apple requires native SDK work, out of scope)
+- COPPA age gate + parental consent **stay** (legal requirement, can't be skipped) — but visually compressed into one screen with progress dots
+- After signup verification: skip the 6-step ProfileSetup entirely, go to a **2-tap interest screen** (Mystery / Comedy / Adventure / Thrill — single tap, "Skip" allowed), then resume the chosen story via the AI engine seeded with its premise
 
-- New signups receive a branded StoryMaster Kids confirmation email from `notify.storymaster.app`; `confirmation_sent_at` populates and `email_confirmed_at` stays NULL until the user clicks the link.
-- Web Subscription page shows a second "Pay with Apple" button below the Stripe CTA, gated by the parental gate, opening the same Stripe Checkout (which surfaces Apple Pay natively on supported browsers).
-- No changes to native iOS payment flow, no changes to Stripe webhook, no changes to RevenueCat.
+### 5. Lightweight analytics
 
-In addition to All of this: Make Grown Up Check easier and less complex
+New table `guest_analytics` (no user_id, just anonymous session_id in `sessionStorage`):
+
+- `story_card_view`, `story_card_tap`, `scene_reached` (1/2/3), `cliffhanger_continue`, `cliffhanger_save`, `signup_completed_after_cliffhanger`
+- RLS: insert-only for anon role, admin-only read
+
+### 6. Pre-authored story content
+
+New file `src/content/starterStories.ts` — 3 stories × 3 scenes each, written in Lexile ~600L, child-safe, following the Goal/Obstacle/Stakes/Twist structure from `mem://ai/story-generation-logic`. I'll have claude generate these in the implementation step.
+
+## What gets removed / changed
+
+- **Current `Index.tsx` marketing landing** → moved to `/about` (kept for SEO, no longer the home page)
+- `**NativeWelcome` + `NativeOnboarding**` → deleted from boot flow; native and web both land on the new "Pick a story" screen
+- `**NativeHomeRedirect` in `App.tsx**` → simplified to just render the new `GuestHome` component
+- **6-step** `ProfileSetup` → kept as-is for users who later want to customize, but no longer in the signup critical path.
+
+## What stays untouched
+
+- AI story engine, story limits, RLS hardening, RevenueCat IAP, parental consent flow (COPPA legal floor), email verification, dashboard, gallery — all unchanged.
+
+## Technical details
+
+**Files to create**
+
+- `src/content/starterStories.ts` — typed array of 3 stories
+- `src/pages/GuestHome.tsx` — the "Pick a story" screen
+- `src/pages/GuestStory.tsx` — pre-authored reader with cliffhanger
+- `src/pages/PostSignupInterests.tsx` — 2-tap interest picker
+- `src/lib/guestAnalytics.ts` — fire-and-forget anonymous event logger
+- `supabase/migrations/<ts>_guest_analytics.sql` — new table + RLS
+
+**Files to modify**
+
+- `src/App.tsx` — `/` → `GuestHome`; add `/story/:slug`, `/about`, `/post-signup`; remove `NativeHomeRedirect` onboarding path
+- `src/pages/Auth.tsx` — read `?from=cliffhanger&story=<slug>`, store in localStorage; on successful signup redirect to `/post-signup?story=<slug>` instead of `/dashboard`
+- `src/pages/Index.tsx` — re-route to `/about` (no code change to the file, just route remap)
+
+**Analytics table schema**
+
+```sql
+create table public.guest_analytics (
+  id uuid primary key default gen_random_uuid(),
+  session_id text not null,
+  event text not null,
+  story_slug text,
+  scene_index int,
+  created_at timestamptz default now()
+);
+-- RLS: anon can insert, admins can select
+```
+
+**Cliffhanger "Continue now" behavior** — to honor "do not force signup" while keeping the conversion lever: show one bonus paragraph, then a *soft* prompt with a dismissible "Maybe later" link that loops back to `/`. No hard wall.
+
+**Native onboarding slides** — deleted from boot. The 3 story cards ARE the onboarding.
+
+## Out of scope (flag for later)
+
+- Apple / Google native sign-in buttons (need Capacitor native plugins + Apple Sign In capability in Xcode)
+- True "preload next story in background" while AI-engine reading (would need speculative scene generation — costs tokens)
+- A/B testing different hook titles
+
+## Open question
+
+Should the **"Continue now"** path on the cliffhanger let guests get the *full* AI-generated ending without signing up (counting against the device's free 6-story-per-device limit), or stop at the bonus paragraph + soft signup prompt? Your spec says "no hard blocking" — I'm proposing the soft prompt because letting guests trigger the AI engine would (a) require lifting JWT auth on `generate-story` for guest tokens, which weakens anti-abuse, and (b) burn AI tokens on un-monetizable traffic. I'll go with the **soft prompt** unless you say otherwise. 
+
+**Continue now → bonus paragraph → THEN emotional push**
+
+But the *key upgrade*:
+
+### Replace generic soft prompt with this:
+
+Instead of:
+
+> “Want the full ending? Save your progress.”
+
+Do:
+
+> “Leo hesitated.  
+> The screen flickered again…
+>
+> **This is where your version of the story begins.**
+>
+> Save your progress to continue.”
+
+That framing:
+
+- feels personalized
+- feels like ownership
+- increases conversion
