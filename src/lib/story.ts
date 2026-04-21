@@ -216,16 +216,20 @@ export const markStoryCompleted = async (
 ): Promise<{ newAchievements: any[]; characterProgress: any; newAbilities: any[] }> => {
   try {
     const deviceId = await getDeviceId();
-    const { error } = await supabase
-      .from('story_completions')
-      .insert([
-        {
-          device_id: deviceId,
-          profile: profile,
-        },
-      ]);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { error } = await supabase
+        .from('story_completions')
+        .insert([
+          {
+            user_id: user.id,
+            device_id: deviceId,
+            profile: profile,
+          },
+        ]);
 
-    if (error) throw error;
+      if (error) throw error;
+    }
 
     // Update streak and complete referral if applicable
     const { updateDailyStreak } = await import("@/lib/streaks");

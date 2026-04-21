@@ -205,18 +205,25 @@ export const getStoriesRemaining = async (): Promise<{
       storiesUsedThisMonth = monthStories?.length || 0;
     }
 
-    // Get bonus stories from referrals and streaks
-    const { data: referralData } = await supabase
-      .from('referrals')
-      .select('bonus_stories_earned')
-      .eq('referrer_device_id', deviceId)
-      .eq('status', 'completed');
+    // Get bonus stories from referrals and streaks (scoped to authenticated user)
+    let referralData: { bonus_stories_earned: number | null }[] | null = null;
+    let streakData: { bonus_stories_earned: number | null } | null = null;
 
-    const { data: streakData } = await supabase
-      .from('daily_streaks')
-      .select('bonus_stories_earned')
-      .eq('device_id', deviceId)
-      .single();
+    if (user) {
+      const { data: refs } = await supabase
+        .from('referrals')
+        .select('bonus_stories_earned')
+        .eq('referrer_user_id', user.id)
+        .eq('status', 'completed');
+      referralData = refs;
+
+      const { data: streak } = await supabase
+        .from('daily_streaks')
+        .select('bonus_stories_earned')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      streakData = streak;
+    }
 
     const referralBonus = referralData?.reduce((total, ref) => total + (ref.bonus_stories_earned || 0), 0) || 0;
     const streakBonus = streakData?.bonus_stories_earned || 0;
