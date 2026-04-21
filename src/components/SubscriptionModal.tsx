@@ -162,14 +162,15 @@ export const SubscriptionModal = ({ open, onOpenChange, currentPlan }: Subscript
                   )}
                 </ul>
                 
-                <Button 
-                  className="w-full"
+                <Button
+                  className={`w-full ${plan.name === 'premium' && currentPlan?.id !== plan.id ? 'btn-shine font-bold ring-2 ring-yellow-300/60 shadow-[0_0_24px_hsl(var(--primary)/0.55)]' : ''}`}
                   variant={plan.name === 'premium' ? 'default' : 'outline'}
                   disabled={currentPlan?.id === plan.id}
                   onClick={() => handleUpgrade()}
                 >
-                  {currentPlan?.id === plan.id ? 'Current Plan' : 
-                   plan.price_monthly > 0 ? 'Subscribe' : 'Current Plan'}
+                  {plan.name === 'premium' && currentPlan?.id !== plan.id && <Crown className="h-4 w-4 mr-1" />}
+                  {currentPlan?.id === plan.id ? 'Current Plan' :
+                   plan.price_monthly > 0 ? 'Get Adventure Pass' : 'Current Plan'}
                 </Button>
               </CardContent>
             </Card>
