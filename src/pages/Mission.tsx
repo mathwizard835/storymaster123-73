@@ -130,12 +130,8 @@ const Mission = () => {
     }
   }, [scene]);
 
-  // Check if user has Read-to-Me access (any Adventure Pass)
-  const hasReadToMeAccess = () => {
-    if (!userPlan) return false;
-    const planName = userPlan.name?.toLowerCase().trim().replace(/\s+/g, '_');
-    return planName === 'premium' || planName === 'premium_plus' || planName?.includes('premium') || userPlan.features?.read_to_me === true;
-  };
+  // Read-to-Me is available to all authenticated users
+  const hasReadToMeAccess = () => true;
 
   // Text-to-speech handler
   const handleReadToMe = async () => {
@@ -156,16 +152,6 @@ const Mission = () => {
       toast({
         title: "Already Used",
         description: "Read-to-Me can only be used once per scene.",
-      });
-      return;
-    }
-
-    // Check premium access for Read-to-Me
-    if (!hasReadToMeAccess()) {
-      toast({
-        title: "Premium+ Feature",
-        description: "Upgrade to Premium+ to unlock Read-to-Me for all stories!",
-        variant: "destructive",
       });
       return;
     }
