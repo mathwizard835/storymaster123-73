@@ -58,8 +58,11 @@ serve(async (req) => {
     const cancelUrl = `${origin}/subscription?cancelled=true`;
 
     // Create checkout session
+    // Note: Omitting payment_method_types lets Stripe automatically enable
+    // wallets like Apple Pay and Google Pay (configured via Stripe Dashboard
+    // > Settings > Payment methods). This makes Apple Pay appear as a button
+    // inside Stripe Checkout on supported Safari/iOS devices.
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
       line_items: [
         {
           price: priceId,
