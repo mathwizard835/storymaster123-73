@@ -1214,7 +1214,7 @@ const Mission = () => {
                           <span>
                             <Button
                               onClick={handleReadToMe}
-                              disabled={audioLoading || !userPlan?.features?.read_to_me || hasUsedReadToMe}
+                              disabled={audioLoading || hasUsedReadToMe}
                               variant="secondary"
                               size="sm"
                               className="gap-2"
@@ -1238,11 +1238,7 @@ const Mission = () => {
                             </Button>
                           </span>
                         </TooltipTrigger>
-                        {!userPlan?.features?.read_to_me ? (
-                          <TooltipContent>
-                            <p>Only Available for Adventure Pass Plus</p>
-                          </TooltipContent>
-                        ) : hasUsedReadToMe ? (
+                        {hasUsedReadToMe ? (
                           <TooltipContent>
                             <p>Already used on this scene</p>
                           </TooltipContent>
