@@ -304,8 +304,7 @@ export const generateNextScene = async (
   sceneCount: number = 1,
   storyId?: string,
   forceNewSession: boolean = false,
-  availableAbilities: string[] = [],
-  guest: boolean = false
+  availableAbilities: string[] = []
 ): Promise<{ text: string; parsed: Scene | null; raw: any; deviceFingerprint?: string }> => {
   // Phase 4: Defensive logging
   console.log(`🎬 generateNextScene called:`, {
@@ -361,7 +360,7 @@ export const generateNextScene = async (
   
   try {
     const { data, error } = await supabase.functions.invoke("generate-story", {
-      body: { profile, scene, megastory, max_tokens: adjustedTokens, scene_count: sceneCount, abilities: availableAbilities, guest },
+      body: { profile, scene, megastory, max_tokens: adjustedTokens, scene_count: sceneCount, abilities: availableAbilities },
     });
 
     if (error) throw error;

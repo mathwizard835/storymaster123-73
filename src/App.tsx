@@ -27,7 +27,6 @@ import NativeWelcome from "./pages/NativeWelcome";
 const NotFound = lazy(() => import("./pages/NotFound"));
 const ProfileSetup = lazy(() => import("./pages/ProfileSetup"));
 const Mission = lazy(() => import("./pages/Mission"));
-const GuestStory = lazy(() => import("./pages/GuestStory"));
 const ComingSoon = lazy(() => import("./pages/ComingSoon"));
 const StoryGallery = lazy(() => import("./pages/StoryGallery"));
 const Achievements = lazy(() => import("./pages/Achievements"));

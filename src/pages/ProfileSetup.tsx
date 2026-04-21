@@ -93,17 +93,12 @@ const ProfileSetup = () => {
 
   useEffect(() => {
     const isNewAdventure = searchParams.get("new") === "true";
-    const isGuest = searchParams.get("guest") === "true";
-    if (isNewAdventure || isGuest) {
+    if (isNewAdventure) {
       setName(""); setAge(8); setLexileScore(500); setSelectedBadges([]);
       setMode("thrill"); setStoryLength("medium"); setTopic(""); setInterests("");
       setNameError(""); setInterestsError(""); setTopicError("");
       setStep(1);
-      if (isGuest) {
-        toast({ title: "Try a Free Story! ✨", description: "Build your hero — no sign-up needed.", duration: 4000 });
-      } else {
-        toast({ title: "Starting Fresh Adventure! 🎮", description: "Create your new hero profile!", duration: 4000 });
-      }
+      toast({ title: "Starting Fresh Adventure! 🎮", description: "Create your new hero profile!", duration: 4000 });
     }
   }, [searchParams, toast]);
 
@@ -163,13 +158,6 @@ const ProfileSetup = () => {
       storyLength: storyLength as "short" | "medium" | "epic", topic, interests,
     };
     saveProfileToLocal(profile);
-
-    // Guest preview flow → goes to a short 3-scene story before sign up
-    const isGuest = searchParams.get("guest") === "true";
-    if (isGuest) {
-      navigate("/guest-story");
-      return;
-    }
 
     const forceNew = searchParams.get("new") === "true";
     if (!forceNew) {
