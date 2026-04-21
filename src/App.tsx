@@ -118,8 +118,8 @@ const AnimatedRoutes = () => {
           <Route path="/auth" element={<PublicRoute><PageTransition><Auth /></PageTransition></PublicRoute>} />
           <Route path="/reset-password" element={<PageTransition><ResetPassword /></PageTransition>} />
           <Route path="/" element={isNative ? <NativeHomeRedirect /> : <Index />} />
-          <Route path="/profile" element={<PageTransition><ProfileSetup /></PageTransition>} />
-          <Route path="/mission" element={<Mission />} />
+          <Route path="/profile" element={<ProtectedRoute><PageTransition><ProfileSetup /></PageTransition></ProtectedRoute>} />
+          <Route path="/mission" element={<ProtectedRoute><Mission /></ProtectedRoute>} />
           <Route path="/gallery" element={<ProtectedRoute><PageTransition><StoryGallery /></PageTransition></ProtectedRoute>} />
           <Route path="/achievements" element={<ProtectedRoute><PageTransition><Achievements /></PageTransition></ProtectedRoute>} />
           <Route path="/dashboard" element={<ProtectedRoute><PageTransition><Dashboard /></PageTransition></ProtectedRoute>} />

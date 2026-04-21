@@ -1,105 +1,50 @@
+## Scope
 
+Fix only Issue 1 (confirmation emails not being sent) and add an "Pay with Apple" button below the existing Stripe button on the Subscription page.
 
-## Guest Instant-Story + Pricing Refresh
+## Issue 1 — Confirmation emails
 
-Goal: After splash, an unauthenticated user can build their hero and play a complete personalized story. When they finish, prompt to **save** → routes to sign up. Also: lower Adventure Pass price to **$4.99**, and make the upgrade button much more prominent.
+**Root cause confirmed via DB:** Today's signup `mihirmantri@gmail.com` has `confirmation_sent_at = NULL` and `email_confirmed_at` auto-populated seconds after signup → email autoconfirm is ON at the Supabase project level, so Supabase never even attempts to send a confirmation email.
 
-### 1. Guest can start a personalized story without signup
+**Fix plan:**
 
-**`src/App.tsx`**
-- Make `/profile` and `/mission` **public routes** (no `ProtectedRoute` wrapper). Auth-only stays on `/dashboard`, `/gallery`, `/achievements`, `/parent-dashboard`, `/settings`, `/subscription`.
+1. Re-enable email confirmation at the Supabase project level (turn autoconfirm OFF). Once off, Supabase will populate `confirmation_sent_at` and route the email through the standard pipeline.
+2. Set up branded auth email infrastructure so the confirmation email is sent from `notify.storymaster.app` with StoryMaster Kids branding (purple/pink gradient, kid-friendly copy) instead of the default unstyled Supabase template.
+3. Scaffold all 6 auth email templates (signup, magic-link, recovery, invite, email-change, reauthentication), apply brand styling (white body, purple primary `#7c3aed`-ish accents matching the app's gradient theme), then deploy `auth-email-hook`.
+4. Update `mem://auth/email-verification-disabled` → replace with a rule stating verification IS required and emails are branded.
+5. Update post-signup toast copy in `src/pages/Auth.tsx` so users always see "Check your email to confirm your account" (the current branch logic already shows this when `data.user && !data.session`, which will now always fire).
 
-**`src/pages/Index.tsx` (web landing)**
-- Replace the unauthenticated CTA "Sign Up!" with **"Start My Story"** → `navigate("/profile?new=true&guest=1")`.
-- Keep "Log In" link in header for returning users.
+## Add "Pay with Apple" button (web Subscription page)
 
-**`src/pages/NativeWelcome.tsx` (iOS splash)**
-- Primary CTA becomes **"Start My Story"** → `/profile?new=true&guest=1`.
-- Secondary text-link "I already have an account" → `/auth`.
+Currently in `src/pages/Subscription.tsx`, the **web** branch (`!isNativePlatform()`) shows only the Stripe "Start Your Adventure" button. Add a secondary "Pay with Apple" button **below** it.
 
-**`src/pages/ProfileSetup.tsx`**
-- Already works without an account (uses `saveProfileToLocal`). No logic change required — just confirm the "Begin Adventure" button routes to `/mission?new=true` regardless of auth state.
+**Behavior:** Since Apple IAP is a native-iOS-only mechanism (RevenueCat SDK), tapping "Pay with Apple" on the web cannot actually open the App Store IAP flow. The realistic options are:
 
-**`src/pages/Mission.tsx`**
-- Skip the `getStoriesRemaining()` gate when `!user` (guests aren't billed against the limit).
-- Skip database persistence calls (`saveStoryToDatabase`, `markStoryCompleted`, `pauseStoryInDatabase`) when `!user`. Guest progress stays in `localStorage` only via existing `saveCurrentStory` / `saveCompletedStory`.
-- At the **story-complete** moment (where authenticated users currently see the finish screen), if `!user`, render a new modal:
-  - Title: **"Save Your Adventure?"**
-  - Body: "Sign up to keep this story, unlock new ones, and track your hero's journey."
-  - Buttons: **"Save & Sign Up"** → `navigate('/auth?postSignup=hydrate')`; **"Maybe later"** → `/` (story stays in localStorage).
+- (a) Show a toast/dialog explaining Apple Pay requires the iOS app, with a link to the App Store, OR
+- (b) Trigger Stripe Checkout's Apple Pay payment method (Stripe supports Apple Pay as a wallet on Safari/iOS web).
 
-**`src/pages/Auth.tsx`**
-- After successful signup, if `localStorage` has a completed guest story or guest profile, write them to the database (reuse `saveStoryToDatabase` + `saveProfileToLocal`-driven sync) so the just-finished adventure shows up in their Gallery.
+I'll go with **(b)** — it actually works on the web and is the user's stated intent. The existing `create-checkout-session` already configures Stripe Checkout, which automatically surfaces Apple Pay when the browser supports it. The new button calls the same edge function but passes a flag (`paymentMethodPreference: 'apple_pay'`) so the edge function restricts `payment_method_types` to `['card']` with `payment_method_options.card.request_three_d_secure: 'automatic'` and Apple Pay is auto-enabled by Stripe when domain is verified.
 
-**`supabase/functions/generate-story/index.ts`**
-- Already `verify_jwt = false`. Add a guard: if no `Authorization` header, skip user-scoped DB writes (subscription checks, user_stories inserts) but keep IP/device rate-limit. No schema changes.
+Simpler approach that requires no edge function change: the new button just invokes the same `handleSubscribe` flow (Stripe auto-shows Apple Pay on supported devices). The button is purely a visual affordance signaling "Apple Pay is supported here" — same parental gate, same flow.
 
-### 2. Pricing change to $4.99
+**Implementation:**
 
-**Migration** (`supabase/migrations/<ts>_adventure_pass_499.sql`)
-```sql
-update public.subscription_plans
-set price_monthly = 4.99
-where lower(name) like '%premium%' or lower(name) = 'adventure pass';
-```
+- In `src/pages/Subscription.tsx`, inside the web (non-native) branch, directly below the existing "Start Your Adventure" Stripe button, add a second button: black background, Apple logo (SVG inline), text "Pay with Apple", calls the same `requireParentalGate(handleSubscribe)`.
+- No edge function changes.
 
-**Code copy updates** (replace all `$6.99` strings):
-- `src/pages/Subscription.tsx` — `basePlan.price = 4.99`, plus any "$6.99" labels.
-- `src/components/SubscriptionModal.tsx` — header & comparison row.
-- `src/pages/Index.tsx` — pricing mentions in marketing sections.
-- Any other `$6.99` references found in landing/marketing copy.
+## Files Modified
 
-**Stripe**: Existing `STRIPE_PREMIUM_PRICE_ID` env still controls the actual charge. Lovable will need a new $4.99 Stripe price created and the env updated — flagged as a follow-up step after migration.
+- **NEW** `supabase/functions/auth-email-hook/index.ts` (auto-scaffolded)
+- **NEW** `supabase/functions/_shared/email-templates/*.tsx` (6 branded templates, scaffolded then styled)
+- `src/pages/Auth.tsx` — adjust post-signup toast copy
+- `src/pages/Subscription.tsx` — add "Pay with Apple" button below Stripe button (web branch only)
+- Supabase Auth config — disable autoconfirm (re-enable email confirmation)
+- `mem://auth/email-verification-disabled` → updated to reflect verification IS now required
 
-**RevenueCat / iOS IAP**: Apple IAP price is set in App Store Connect, not in code. Mention that the iOS product price must be updated separately in App Store Connect; no code change required beyond the display strings.
+## Result
 
-### 3. Make "Upgrade" button shine
+- New signups receive a branded StoryMaster Kids confirmation email from `notify.storymaster.app`; `confirmation_sent_at` populates and `email_confirmed_at` stays NULL until the user clicks the link.
+- Web Subscription page shows a second "Pay with Apple" button below the Stripe CTA, gated by the parental gate, opening the same Stripe Checkout (which surfaces Apple Pay natively on supported browsers).
+- No changes to native iOS payment flow, no changes to Stripe webhook, no changes to RevenueCat.
 
-**`src/index.css`** — add a reusable shimmer keyframe:
-```css
-@keyframes shine {
-  0%   { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
-.btn-shine {
-  background-image: linear-gradient(110deg,
-    hsl(var(--primary)) 0%,
-    hsl(var(--accent)) 40%,
-    #ffffff 50%,
-    hsl(var(--accent)) 60%,
-    hsl(var(--primary)) 100%);
-  background-size: 200% 100%;
-  animation: shine 2.4s linear infinite;
-}
-```
-
-**Floating Adventure Pass button (`src/pages/Index.tsx`)**
-- Expand from a circular icon into a pill with **icon + label "Get Adventure Pass · $4.99"**.
-- Apply `btn-shine`, stronger glow (`shadow-[0_0_30px_rgba(168,85,247,0.7)]`), `ring-2 ring-yellow-300/60`, and a subtle bounce (`animate-bounce` once on mount, then idle pulse).
-
-**Subscription modal CTA (`SubscriptionModal.tsx`)** — premium plan's "Subscribe" button gets `btn-shine`, larger size, and a Crown icon prefix.
-
-### Technical notes
-
-- No new tables. `subscription_plans` row update only.
-- `Mission.tsx` guest branch reuses existing `localStorage`-backed helpers (`saveCurrentStory`, `saveCompletedStory`, `getCompletedStories`) — no new storage layer.
-- `generate-story` edge function already supports anonymous calls; only adds an early-return path for DB writes when no JWT.
-- Hydration after signup is best-effort (try/catch, never blocks the auth redirect).
-
-### Flow diagram
-
-```text
-Splash / Landing
-   │  Start My Story
-   ▼
-ProfileSetup  (guest, no auth)
-   │  Begin Adventure
-   ▼
-Mission  (full personalized story, localStorage only)
-   │  Story complete
-   ▼
-"Save Your Adventure?" modal
-   ├─ Save & Sign Up → /auth → on success, hydrate guest story → /dashboard
-   └─ Maybe later     → /  (story remains in localStorage)
-```
-
+In addition to All of this: Make Grown Up Check easier and less complex

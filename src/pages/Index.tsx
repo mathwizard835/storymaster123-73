@@ -98,13 +98,11 @@ const Index = () => {
             {user && (
               <Button
                 onClick={() => navigate("/subscription")}
-                className="btn-shine fixed top-4 right-4 sm:top-8 sm:right-8 h-12 sm:h-14 rounded-full px-4 sm:px-6 font-extrabold text-white shadow-[0_0_30px_hsl(var(--primary)/0.7)] ring-2 ring-yellow-300/70 transition-all duration-300 hover:scale-105 z-50 flex items-center gap-2"
+                className="fixed top-4 right-4 sm:top-8 sm:right-8 h-12 w-12 sm:h-14 sm:w-14 md:h-16 md:w-16 rounded-full bg-gradient-to-br from-purple-600 via-purple-500 to-pink-500 hover:from-purple-700 hover:via-purple-600 hover:to-pink-600 shadow-2xl shadow-purple-500/50 hover:shadow-purple-500/80 transition-all duration-500 hover:scale-110 border-2 border-white/20 z-50 flex items-center justify-center group animate-pulse hover:animate-none"
                 style={{ top: `max(env(safe-area-inset-top, 16px), 16px)` }}
                 aria-label="Upgrade to Adventure Pass"
               >
-                <Crown className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-200" />
-                <span className="hidden sm:inline">Adventure Pass · $4.99</span>
-                <span className="sm:hidden">$4.99</span>
+                <Crown className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 text-white group-hover:scale-125 transition-transform duration-300" />
               </Button>
             )}
 
@@ -163,13 +161,12 @@ const Index = () => {
                           navigate("/profile?new=true");
                         }
                       } else {
-                        // Guest: jump straight into personalized story creation
-                        navigate("/profile?new=true");
+                        navigate("/auth");
                       }
                     }}
-                    aria-label="Start my story"
+                    aria-label="Create my hero"
                   >
-                    {user ? "Start New Adventure" : "🚀 Start My Story"}
+                    {user ? "Start New Adventure" : "Sign Up!"}
                   </Button>
                 )}
               </div>
@@ -296,13 +293,11 @@ const Index = () => {
           {user && (
             <Button
               onClick={() => navigate("/subscription")}
-              className="btn-shine fixed top-4 right-4 sm:top-8 sm:right-8 h-12 sm:h-14 rounded-full px-4 sm:px-6 font-extrabold text-white shadow-[0_0_30px_hsl(var(--primary)/0.7)] ring-2 ring-yellow-300/70 transition-all duration-300 hover:scale-105 z-50 flex items-center gap-2"
+              className="fixed top-4 right-4 sm:top-8 sm:right-8 h-12 w-12 sm:h-14 sm:w-14 md:h-16 md:w-16 rounded-full bg-gradient-to-br from-purple-600 via-purple-500 to-pink-500 hover:from-purple-700 hover:via-purple-600 hover:to-pink-600 shadow-2xl shadow-purple-500/50 hover:shadow-purple-500/80 transition-all duration-500 hover:scale-110 border-2 border-white/20 z-50 flex items-center justify-center group animate-pulse hover:animate-none"
               style={{ top: `max(env(safe-area-inset-top, 16px), 16px)` }}
               aria-label="Upgrade to Adventure Pass"
             >
-              <Crown className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-200" />
-              <span className="hidden sm:inline">Adventure Pass · $4.99</span>
-              <span className="sm:hidden">$4.99</span>
+              <Crown className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 text-white group-hover:scale-125 transition-transform duration-300" />
             </Button>
           )}
 
@@ -354,13 +349,12 @@ const Index = () => {
                     if (user) {
                       navigate("/dashboard");
                     } else {
-                      // Guest: start a personalized story immediately
-                      navigate("/profile?new=true");
+                      navigate("/auth");
                     }
                   }}
                   className="text-lg px-8 py-4 animate-pulse"
                 >
-                  {user ? "Go to Dashboard" : "🚀 Start My Story"}
+                  {user ? "Go to Dashboard" : "Sign Up!"}
                 </Button>
               )}
               <Button

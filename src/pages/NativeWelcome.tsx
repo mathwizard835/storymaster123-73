@@ -9,13 +9,8 @@ const NativeWelcome = () => {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
 
-  const handleStartStory = () => {
+  const handleSignUp = () => {
     addHapticFeedback('medium');
-    navigate('/profile?new=true');
-  };
-
-  const handleLogin = () => {
-    addHapticFeedback('light');
     navigate('/auth');
   };
 
@@ -112,21 +107,21 @@ const NativeWelcome = () => {
         ) : (
           <>
             <button
-              onClick={handleStartStory}
+              onClick={handleSignUp}
               className="w-full py-4 rounded-2xl bg-gradient-to-r from-[hsl(265,85%,60%)] to-[hsl(195,85%,55%)] text-white font-bold text-lg shadow-[0_8px_32px_-8px_hsl(265,85%,60%,0.5)] active:scale-[0.97] transition-transform duration-100"
             >
-              🚀 Start My Story
+              Sign Up
             </button>
             <button
-              onClick={handleLogin}
+              onClick={handleSignUp}
               className="w-full py-3 mt-3 rounded-2xl bg-white/[0.08] border border-white/[0.12] text-white/80 font-semibold text-base active:scale-[0.97] transition-transform duration-100"
             >
-              I already have an account
+              Log In
             </button>
           </>
         )}
         <p className="text-center text-white/30 text-xs mt-4 mb-2">
-          No signup required to start • Save your story when you're done
+          3 free stories • No credit card required
         </p>
       </motion.div>
     </div>
