@@ -100,6 +100,13 @@ serve(async (req) => {
           console.error('Error creating subscription:', error);
         } else {
           console.log('Subscription created:', { deviceId, userId, planType });
+          // Aggregate-only analytics — no identifiers.
+          await supabaseClient.from('analytics_events').insert({
+            event_category: 'subscription',
+            event_name: 'subscription_started',
+            session_token: `srv_${Date.now().toString(36)}_${crypto.randomUUID().slice(0, 8)}`,
+            meta: { event: 'started', plan: String(planType ?? 'premium').slice(0, 32) },
+          });
         }
         break;
       }
@@ -148,6 +155,12 @@ serve(async (req) => {
           .eq('device_id', deviceId);
 
         console.log('Subscription cancelled for device:', deviceId);
+        await supabaseClient.from('analytics_events').insert({
+          event_category: 'subscription',
+          event_name: 'subscription_churned',
+          session_token: `srv_${Date.now().toString(36)}_${crypto.randomUUID().slice(0, 8)}`,
+          meta: { event: 'churned', plan: 'premium' },
+        });
         break;
       }
 
