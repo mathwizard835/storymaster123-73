@@ -14,6 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
+      analytics_daily_rollups: {
+        Row: {
+          bucket_date: string
+          dimensions: Json
+          id: string
+          metric_key: string
+          metric_value: number
+          updated_at: string
+        }
+        Insert: {
+          bucket_date: string
+          dimensions?: Json
+          id?: string
+          metric_key: string
+          metric_value?: number
+          updated_at?: string
+        }
+        Update: {
+          bucket_date?: string
+          dimensions?: Json
+          id?: string
+          metric_key?: string
+          metric_value?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      analytics_events: {
+        Row: {
+          created_at: string
+          event_category: string
+          event_name: string
+          id: number
+          meta: Json
+          session_token: string
+        }
+        Insert: {
+          created_at?: string
+          event_category: string
+          event_name: string
+          id?: number
+          meta?: Json
+          session_token: string
+        }
+        Update: {
+          created_at?: string
+          event_category?: string
+          event_name?: string
+          id?: number
+          meta?: Json
+          session_token?: string
+        }
+        Relationships: []
+      }
       banned_users: {
         Row: {
           banned_at: string
@@ -179,6 +233,27 @@ export type Database = {
           parental_consent_method?: string | null
           trial_used?: boolean | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      prompt_hash_counts: {
+        Row: {
+          hit_count: number
+          last_seen_at: string
+          miss_count: number
+          prompt_hash: string
+        }
+        Insert: {
+          hit_count?: number
+          last_seen_at?: string
+          miss_count?: number
+          prompt_hash: string
+        }
+        Update: {
+          hit_count?: number
+          last_seen_at?: string
+          miss_count?: number
+          prompt_hash?: string
         }
         Relationships: []
       }
@@ -486,6 +561,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      bump_prompt_hash: {
+        Args: { _hash: string; _hit: boolean }
+        Returns: undefined
+      }
       check_email_banned: { Args: { p_email: string }; Returns: Json }
       has_role: {
         Args: {
