@@ -17,3 +17,7 @@ project_id = "lwxaqxxuednuwflojlfc"
     verify_jwt = false
   [functions.verify-checkout-session]
     verify_jwt = false
+  [functions.track-event]
+    verify_jwt = false
+  [functions.analytics-rollup]
+    verify_jwt = false
