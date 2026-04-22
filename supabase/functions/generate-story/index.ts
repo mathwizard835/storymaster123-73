@@ -748,6 +748,28 @@ ${profile.mode === "learning" ? "- Embed educational content naturally into the 
       `Profile validation - Age: ${profile.age}, Lexile: ${profile.lexileScore}L, Badges: ${(profile.selectedBadges || []).join(", ")}, Mode: ${profile.mode}`,
     );
 
+    // ---- Privacy-safe analytics: anonymous prompt hash + bucketed metadata ----
+    // Hash is over NORMALIZED parameters only (mode + length + age bucket + scene #).
+    // We never hash or store the user's name, topic, badges, or raw prompt text.
+    const ageBucketForHash = (() => {
+      const a = Number(profile?.age);
+      if (!Number.isFinite(a)) return "unknown";
+      if (a <= 7) return "5-7";
+      if (a <= 10) return "8-10";
+      return "11-13";
+    })();
+    let promptHash: string | null = null;
+    try {
+      const normalized = `${profile?.mode ?? ""}|${profile?.storyLength ?? "medium"}|${ageBucketForHash}|${sceneCount}`;
+      const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(normalized));
+      promptHash = Array.from(new Uint8Array(buf))
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join("");
+    } catch {
+      promptHash = null;
+    }
+
+    const anthropicStart = Date.now();
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -762,6 +784,7 @@ ${profile.mode === "learning" ? "- Embed educational content naturally into the 
         messages: [{ role: "user", content: userPrompt }],
       }),
     });
+    const latencyMs = Date.now() - anthropicStart;
 
     if (!response.ok) {
       const errText = await response.text();
