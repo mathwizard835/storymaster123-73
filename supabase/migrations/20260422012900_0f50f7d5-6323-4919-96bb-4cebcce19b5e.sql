@@ -1,0 +1,1 @@
+UPDATE subscription_plans SET price_monthly = 4.99 WHERE price_monthly = 6.99;
