@@ -49,7 +49,7 @@ export const SubscriptionModal = ({ open, onOpenChange, currentPlan }: Subscript
         <DialogHeader>
           <DialogTitle className="text-2xl">Make Reading Your Child's Favorite Activity</DialogTitle>
           <DialogDescription>
-            Unlimited stories + reading progress tracking parents love. Starting at $6.99/month.
+            Unlimited stories + reading progress tracking parents love. Starting at $4.99/month.
           </DialogDescription>
         </DialogHeader>
 
@@ -64,7 +64,7 @@ export const SubscriptionModal = ({ open, onOpenChange, currentPlan }: Subscript
               <span className="font-medium">Other Apps:</span> $9.99+ without personalization
             </div>
             <div>
-              <span className="font-medium text-primary">StoryMaster Kids:</span> $6.99/mo = unlimited interactive stories
+              <span className="font-medium text-primary">StoryMaster Kids:</span> $4.99/mo = unlimited interactive stories
             </div>
           </div>
         </div>

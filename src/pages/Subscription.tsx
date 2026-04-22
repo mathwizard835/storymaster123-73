@@ -82,7 +82,7 @@ export default function Subscription() {
   };
 
   const basePlan = {
-    price: 6.99,
+    price: 4.99,
     stories: "Unlimited",
     features: [
       "Unlimited interactive stories per month",
@@ -425,7 +425,7 @@ export default function Subscription() {
               <CardTitle className="text-white text-lg">StoryMaster Kids</CardTitle>
             </CardHeader>
             <CardContent className="relative">
-              <p className="text-3xl font-bold text-white mb-2">$6.99</p>
+              <p className="text-3xl font-bold text-white mb-2">$4.99</p>
               <p className="text-green-300 text-sm font-semibold">engaging + educational</p>
             </CardContent>
           </Card>

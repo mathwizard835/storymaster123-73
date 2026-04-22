@@ -73,7 +73,7 @@ serve(async (req) => {
       
       // Try matching by price
       const priceMap: Record<string, number> = {
-        sm_699_1m: 6.99,
+        sm_699_1m: 4.99,
         "sm_7.99_1m": 7.99,
       };
       const targetPrice = priceMap[productId];
