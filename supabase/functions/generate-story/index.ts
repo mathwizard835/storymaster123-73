@@ -800,6 +800,70 @@ ${profile.mode === "learning" ? "- Embed educational content naturally into the 
 
     console.log("Story generation completed, length:", text.length);
 
+    // ---- Privacy-safe analytics writes (aggregate, no identifiers) ----
+    // We use an ephemeral session token derived from the request timestamp +
+    // a small random value — NOT the user_id or device_id. The track-event
+    // pipeline rejects identifiers, so we keep the same contract here.
+    try {
+      const sessionToken = `srv_${Date.now().toString(36)}_${crypto.randomUUID().slice(0, 8)}`;
+      const tokensIn = Number(data?.usage?.input_tokens) || 0;
+      const tokensOut = Number(data?.usage?.output_tokens) || 0;
+      const themeCategory = typeof profile?.mode === "string"
+        ? profile.mode.toLowerCase().replace(/[^a-z_-]/g, "").slice(0, 32)
+        : null;
+      const lengthBucket = ["short", "medium", "epic"].includes(profile?.storyLength)
+        ? profile.storyLength
+        : "medium";
+
+      const rows = [
+        {
+          event_category: "system",
+          event_name: "story_generated",
+          session_token: sessionToken,
+          meta: {
+            scene_index_bucket:
+              sceneCount === 1 ? "first" : sceneCount <= 2 ? "1-2" : sceneCount <= 5 ? "3-5" : sceneCount <= 10 ? "6-10" : "11+",
+            is_first_scene: sceneCount === 1,
+          },
+        },
+        {
+          event_category: "performance",
+          event_name: "story_latency",
+          session_token: sessionToken,
+          meta: {
+            latency_ms: Math.min(120000, Math.max(0, latencyMs)),
+            tokens_in: tokensIn,
+            tokens_out: tokensOut,
+            model: typeof data?.model === "string" ? data.model.slice(0, 64) : selectedModel,
+          },
+        },
+        {
+          event_category: "content",
+          event_name: "story_started",
+          session_token: sessionToken,
+          meta: {
+            length_bucket: lengthBucket,
+            age_bucket: ageBucketForHash,
+            theme_category: themeCategory,
+          },
+        },
+        {
+          event_category: "cache",
+          event_name: "cache_miss", // server-generated = always a miss at API layer
+          session_token: sessionToken,
+          meta: { hit: false, prompt_hash: promptHash },
+        },
+      ];
+      await supabaseAdmin.from("analytics_events").insert(rows);
+      if (promptHash) {
+        await supabaseAdmin.rpc("bump_prompt_hash", { _hash: promptHash, _hit: false });
+      }
+    } catch (analyticsErr) {
+      // Never let analytics break the user response.
+      console.warn("analytics write failed:", analyticsErr);
+    }
+
+
     // Use enhanced JSON extraction
     const parsed = extractJSON(text);
 
