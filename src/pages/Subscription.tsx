@@ -165,6 +165,7 @@ export default function Subscription() {
   const handleSubscribe = async () => {
     setLoading(true);
     const planType = 'premium';
+    trackFunnelStep("subscription_started");
 
     // Web platform only - use Stripe checkout
     toast({
