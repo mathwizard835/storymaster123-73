@@ -257,39 +257,6 @@ export type Database = {
         }
         Relationships: []
       }
-      reading_sessions: {
-        Row: {
-          completed_at: string
-          created_at: string
-          id: string
-          reading_time_seconds: number
-          story_id: string
-          story_title: string | null
-          user_id: string
-          words_read: number
-        }
-        Insert: {
-          completed_at?: string
-          created_at?: string
-          id?: string
-          reading_time_seconds?: number
-          story_id: string
-          story_title?: string | null
-          user_id: string
-          words_read?: number
-        }
-        Update: {
-          completed_at?: string
-          created_at?: string
-          id?: string
-          reading_time_seconds?: number
-          story_id?: string
-          story_title?: string | null
-          user_id?: string
-          words_read?: number
-        }
-        Relationships: []
-      }
       referrals: {
         Row: {
           bonus_stories_earned: number | null
