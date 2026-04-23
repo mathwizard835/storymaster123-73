@@ -211,7 +211,36 @@ serve(async (req) => {
       const ph = typeof meta.prompt_hash === "string" ? meta.prompt_hash : null;
       if (ph) promptHashFreq.set(ph, (promptHashFreq.get(ph) ?? 0) + 1);
     }
+
+    if (r.event_category === "funnel") {
+      if (r.event_name in funnelCounts) {
+        funnelCounts[r.event_name] += 1;
+      }
+    }
   }
+
+  // Funnel conversion rates between consecutive steps. A rate is null when
+  // the previous step has no events in the window (avoids divide-by-zero
+  // and prevents misleading "0%" values from showing up).
+  function rate(numerator: number, denominator: number): number | null {
+    if (denominator <= 0) return null;
+    return numerator / denominator;
+  }
+
+  const funnelRates = {
+    app_to_story_started: rate(funnelCounts.story_started, funnelCounts.app_opened),
+    story_started_to_completed: rate(funnelCounts.story_completed, funnelCounts.story_started),
+    completed_to_paywall: rate(funnelCounts.paywall_viewed, funnelCounts.story_completed),
+    paywall_to_parent_gate: rate(funnelCounts.parent_gate_opened, funnelCounts.paywall_viewed),
+    parent_gate_to_subscription: rate(funnelCounts.subscription_started, funnelCounts.parent_gate_opened),
+  };
+
+  const definedRates = Object.values(funnelRates).filter(
+    (v): v is number => typeof v === "number",
+  );
+  const avgFunnelRate = definedRates.length
+    ? definedRates.reduce((a, b) => a + b, 0) / definedRates.length
+    : null;
 
   const sessionStoryCounts = Array.from(storiesPerSession.values());
   const avgStoriesPerSession = sessionStoryCounts.length
