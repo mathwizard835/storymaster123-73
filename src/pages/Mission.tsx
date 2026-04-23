@@ -92,6 +92,12 @@ const Mission = () => {
   
   const { toast } = useToast();
 
+  // Funnel: a user landing on /mission counts as starting a story attempt.
+  // Deduped per analytics session inside trackFunnelStep.
+  useEffect(() => {
+    trackFunnelStep("story_started");
+  }, []);
+
   // ABILITIES DISABLED - Uncomment to re-enable
   // const [abilitiesLoaded, setAbilitiesLoaded] = useState(false);
   const abilitiesLoaded = true; // Always true when abilities disabled
