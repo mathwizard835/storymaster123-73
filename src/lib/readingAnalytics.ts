@@ -1,4 +1,8 @@
-import { supabase } from "@/integrations/supabase/client";
+import { supabase as supabaseClient } from "@/integrations/supabase/client";
+
+// Cast to `any` because the `reading_sessions` table is not present in the
+// generated Supabase types but exists in the database.
+const supabase = supabaseClient as any;
 
 export type ReadingSession = {
   id: string;
