@@ -43,6 +43,7 @@ import { motion } from "framer-motion";
 // import { AbilityToast } from "@/components/AbilityToast";
 // import { AbilityProgressIndicator } from "@/components/AbilityProgressIndicator";
 import { getUserSubscription } from "@/lib/subscription";
+import { trackFunnelStep } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 
 const Mission = () => {
