@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ShieldCheck, RefreshCw } from 'lucide-react';
 import { generateSimpleChallenge, checkSimpleAnswer, type SimpleChallenge } from '@/lib/numberToWords';
+import { trackFunnelStep } from '@/lib/analytics';
 
 interface ParentalGateDialogProps {
   open: boolean;
@@ -37,6 +38,8 @@ const ParentalGateDialog = ({
       setAnswer('');
       setError('');
       setAttempts(0);
+      // Funnel: parent gate shown — important paywall→purchase step.
+      trackFunnelStep('parent_gate_opened');
     }
   }, [open]);
 

@@ -40,6 +40,17 @@ type Rollup = {
     cache_misses_total: number;
     top_cached_prompt_hashes: Array<{ hash: string; count: number }>;
   };
+  funnel?: {
+    step_counts: Record<string, number>;
+    conversion_rates: {
+      app_to_story_started: number | null;
+      story_started_to_completed: number | null;
+      completed_to_paywall: number | null;
+      paywall_to_parent_gate: number | null;
+      parent_gate_to_subscription: number | null;
+    };
+    average_conversion_rate: number | null;
+  };
 };
 
 const DAY_OPTIONS = [1, 7, 30];
@@ -172,6 +183,55 @@ export default function AdminAnalytics() {
             </CardContent>
           </Card>
 
+          {/* Conversion funnel */}
+          {data.funnel && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Conversion funnel</CardTitle>
+                <CardDescription>
+                  Step-to-step conversion across the last {data.window.days} day(s).
+                  Each rate is dropped (—) when the prior step has zero events.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  <Metric
+                    label="App → Story started"
+                    value={fmtRate(data.funnel.conversion_rates.app_to_story_started)}
+                  />
+                  <Metric
+                    label="Story started → Completed"
+                    value={fmtRate(data.funnel.conversion_rates.story_started_to_completed)}
+                  />
+                  <Metric
+                    label="Completed → Paywall"
+                    value={fmtRate(data.funnel.conversion_rates.completed_to_paywall)}
+                  />
+                  <Metric
+                    label="Paywall → Parent gate"
+                    value={fmtRate(data.funnel.conversion_rates.paywall_to_parent_gate)}
+                  />
+                  <Metric
+                    label="Parent gate → Subscription"
+                    value={fmtRate(data.funnel.conversion_rates.parent_gate_to_subscription)}
+                  />
+                  <Metric
+                    label="Average conversion"
+                    value={fmtRate(data.funnel.average_conversion_rate)}
+                  />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-2">Step counts</p>
+                  <div className="flex flex-wrap gap-2">
+                    {Object.entries(data.funnel.step_counts).map(([k, v]) => (
+                      <Badge key={k} variant="secondary">{k}: {v}</Badge>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Performance + cost */}
           <Card>
             <CardHeader>
@@ -278,6 +338,11 @@ function Metric({ label, value }: { label: string; value: string | number }) {
       <p className="text-2xl font-semibold mt-1">{value}</p>
     </div>
   );
+}
+
+function fmtRate(v: number | null | undefined): string {
+  if (typeof v !== "number" || !Number.isFinite(v)) return "—";
+  return `${(v * 100).toFixed(1)}%`;
 }
 
 function Distribution({ map }: { map: Record<string, number> }) {

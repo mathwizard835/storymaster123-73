@@ -27,6 +27,7 @@ const ALLOWED_CATEGORIES = new Set([
   "subscription",
   "content",
   "cache",
+  "funnel",
 ]);
 
 // Allowlist of metadata keys per category. Any key not listed is dropped.
@@ -41,6 +42,7 @@ const META_ALLOWLIST: Record<string, Set<string>> = {
     "theme_category", // mystery|comedy|thrill|explore|learning
   ]),
   cache: new Set(["hit", "prompt_hash"]), // prompt_hash = 64-char sha256
+  funnel: new Set([]), // funnel events use only event_name; no meta needed
 };
 
 const AGE_BUCKETS: Array<[number, number, string]> = [

@@ -17,6 +17,7 @@ import { NativeLoadingScreen } from "@/components/NativeLoadingScreen";
 import { NativeOnboarding, hasSeenOnboarding } from "@/components/NativeOnboarding";
 import { Capacitor } from "@capacitor/core";
 import ErrorBoundary from "./components/ErrorBoundary";
+import { trackFunnelStep } from "@/lib/analytics";
 
 // Eager: landing + auth (critical path)
 import Index from "./pages/Index";
@@ -145,6 +146,9 @@ const AnimatedRoutes = () => {
 const App = () => {
   // Load saved theme and initialize RevenueCat on app mount
   useEffect(() => {
+    // Funnel: top of the conversion funnel — fired once per analytics session.
+    trackFunnelStep("app_opened");
+
     // Lightweight: capture inbound story-share param so we can route into it later
     try {
       const params = new URLSearchParams(window.location.search);

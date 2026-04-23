@@ -9,7 +9,18 @@
 
 import { supabase } from "@/integrations/supabase/client";
 
-type Category = "system" | "performance" | "subscription" | "content" | "cache";
+type Category = "system" | "performance" | "subscription" | "content" | "cache" | "funnel";
+
+// Conversion funnel step names. Keep this list in sync with the
+// analytics-rollup edge function — those names drive the % stats shown
+// on the admin dashboard.
+export type FunnelStep =
+  | "app_opened"
+  | "story_started"
+  | "story_completed"
+  | "paywall_viewed"
+  | "parent_gate_opened"
+  | "subscription_started";
 
 const SESSION_KEY = "smq.analytics_session";
 const SESSION_TTL_MS = 30 * 60 * 1000; // 30 minutes
@@ -57,6 +68,7 @@ export function rotateAnalyticsSession(): void {
   } catch {
     /* ignore */
   }
+  firedFunnelSteps.clear();
 }
 
 // Convert a raw age into one of the public buckets so callers can't leak it.
@@ -172,4 +184,14 @@ export function trackSubscriptionEvent(args: {
     plan: args.plan,
     event: args.event,
   });
+}
+
+// De-dupe funnel events within a session so a noisy mount/effect doesn't
+// inflate denominators. Each step counts at most once per analytics session.
+const firedFunnelSteps = new Set<FunnelStep>();
+
+export function trackFunnelStep(step: FunnelStep): void {
+  if (firedFunnelSteps.has(step)) return;
+  firedFunnelSteps.add(step);
+  trackEvent("funnel", step, {});
 }

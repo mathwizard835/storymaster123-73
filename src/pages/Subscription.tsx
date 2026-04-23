@@ -19,6 +19,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getDeviceId } from "@/lib/story";
 
 import { useDevice } from "@/contexts/DeviceContext";
+import { trackFunnelStep } from "@/lib/analytics";
 
 export default function Subscription() {
   const navigate = useNavigate();
@@ -50,6 +51,8 @@ export default function Subscription() {
   };
 
   useEffect(() => {
+    // Funnel: arriving on /subscription = paywall view.
+    trackFunnelStep("paywall_viewed");
     loadCurrentPlan();
   }, []);
 
@@ -162,6 +165,7 @@ export default function Subscription() {
   const handleSubscribe = async () => {
     setLoading(true);
     const planType = 'premium';
+    trackFunnelStep("subscription_started");
 
     // Web platform only - use Stripe checkout
     toast({
@@ -499,6 +503,7 @@ export default function Subscription() {
                       requireParentalGate(async () => {
                         setLoading(true);
                         const planType = 'premium';
+                        trackFunnelStep("subscription_started");
                         const result = await purchasePackage(planType);
                         if (result.success) {
                           // Activate subscription directly in Supabase

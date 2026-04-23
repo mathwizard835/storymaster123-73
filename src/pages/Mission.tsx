@@ -43,6 +43,7 @@ import { motion } from "framer-motion";
 // import { AbilityToast } from "@/components/AbilityToast";
 // import { AbilityProgressIndicator } from "@/components/AbilityProgressIndicator";
 import { getUserSubscription } from "@/lib/subscription";
+import { trackFunnelStep } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 
 const Mission = () => {
@@ -90,6 +91,12 @@ const Mission = () => {
   const availableAbilities: any[] = []; // Placeholder for disabled abilities
   
   const { toast } = useToast();
+
+  // Funnel: a user landing on /mission counts as starting a story attempt.
+  // Deduped per analytics session inside trackFunnelStep.
+  useEffect(() => {
+    trackFunnelStep("story_started");
+  }, []);
 
   // ABILITIES DISABLED - Uncomment to re-enable
   // const [abilitiesLoaded, setAbilitiesLoaded] = useState(false);
@@ -1411,6 +1418,7 @@ const Mission = () => {
                             try {
                               const actualChoicesMade = savedStory?.choicesMade || 0;
                               console.log(`Story completed with ${actualChoicesMade} choices made, ${profile.selectedBadges.length} badges`);
+                              trackFunnelStep("story_completed");
                               const { newAchievements, characterProgress, newAbilities } = await markStoryCompleted(
                                 profile, 
                                 actualChoicesMade,
