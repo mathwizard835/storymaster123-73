@@ -307,6 +307,11 @@ serve(async (req) => {
       cache_misses_total: cacheMisses,
       top_cached_prompt_hashes: topCached,
     },
+    funnel: {
+      step_counts: funnelCounts,
+      conversion_rates: funnelRates,
+      average_conversion_rate: avgFunnelRate,
+    },
   };
 
   return new Response(JSON.stringify(result), {
