@@ -55,11 +55,11 @@ serve(async (req) => {
     auth: { persistSession: false },
   });
 
-  // Pass the JWT explicitly — relying on the Authorization global header
-  // can fail when the function is invoked without a session attached to
-  // the SDK instance.
-  const { data: userData, error: userErr } = await userClient.auth.getUser(token);
-  if (userErr || !userData?.user) {
+  const { data: claimsData, error: claimsErr } = await userClient.auth.getClaims(token);
+  const userId = claimsData?.claims?.sub;
+
+  if (claimsErr || !userId) {
+    console.error("analytics-rollup auth failed", claimsErr);
     return new Response(JSON.stringify({ error: "unauthorized" }), {
       status: 401,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -73,7 +73,7 @@ serve(async (req) => {
   const { data: roleData, error: roleErr } = await admin
     .from("user_roles")
     .select("role")
-    .eq("user_id", userData.user.id)
+    .eq("user_id", userId)
     .eq("role", "admin")
     .maybeSingle();
 
