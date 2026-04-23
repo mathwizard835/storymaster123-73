@@ -51,6 +51,8 @@ export default function Subscription() {
   };
 
   useEffect(() => {
+    // Funnel: arriving on /subscription = paywall view.
+    trackFunnelStep("paywall_viewed");
     loadCurrentPlan();
   }, []);
 
