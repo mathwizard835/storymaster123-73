@@ -503,6 +503,7 @@ export default function Subscription() {
                       requireParentalGate(async () => {
                         setLoading(true);
                         const planType = 'premium';
+                        trackFunnelStep("subscription_started");
                         const result = await purchasePackage(planType);
                         if (result.success) {
                           // Activate subscription directly in Supabase
