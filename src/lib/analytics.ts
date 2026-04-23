@@ -184,3 +184,13 @@ export function trackSubscriptionEvent(args: {
     event: args.event,
   });
 }
+
+// De-dupe funnel events within a session so a noisy mount/effect doesn't
+// inflate denominators. Each step counts at most once per analytics session.
+const firedFunnelSteps = new Set<FunnelStep>();
+
+export function trackFunnelStep(step: FunnelStep): void {
+  if (firedFunnelSteps.has(step)) return;
+  firedFunnelSteps.add(step);
+  trackEvent("funnel", step, {});
+}
