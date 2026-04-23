@@ -1,4 +1,8 @@
-import { supabase } from "@/integrations/supabase/client";
+import { supabase as supabaseClient } from "@/integrations/supabase/client";
+
+// Cast to `any` because the `reading_sessions` table is not present in the
+// generated Supabase types but exists in the database.
+const supabase = supabaseClient as any;
 
 export type ReadingSession = {
   id: string;
@@ -192,7 +196,7 @@ export const getReadingStats = async (): Promise<ReadingStats> => {
     
     if (sessions.length > 0) {
       const dates = sessions.map(s => new Date(s.completed_at).toISOString().split('T')[0]);
-      const uniqueDates = [...new Set(dates)].sort().reverse();
+      const uniqueDates = [...new Set(dates)].sort().reverse() as string[];
       
       // Current streak
       const today = new Date().toISOString().split('T')[0];
