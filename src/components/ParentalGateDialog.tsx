@@ -38,6 +38,8 @@ const ParentalGateDialog = ({
       setAnswer('');
       setError('');
       setAttempts(0);
+      // Funnel: parent gate shown — important paywall→purchase step.
+      trackFunnelStep('parent_gate_opened');
     }
   }, [open]);
 
