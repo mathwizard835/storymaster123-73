@@ -17,6 +17,7 @@ import { NativeLoadingScreen } from "@/components/NativeLoadingScreen";
 import { NativeOnboarding, hasSeenOnboarding } from "@/components/NativeOnboarding";
 import { Capacitor } from "@capacitor/core";
 import ErrorBoundary from "./components/ErrorBoundary";
+import { trackFunnelStep } from "@/lib/analytics";
 
 // Eager: landing + auth (critical path)
 import Index from "./pages/Index";
