@@ -340,6 +340,11 @@ function Metric({ label, value }: { label: string; value: string | number }) {
   );
 }
 
+function fmtRate(v: number | null | undefined): string {
+  if (typeof v !== "number" || !Number.isFinite(v)) return "—";
+  return `${(v * 100).toFixed(1)}%`;
+}
+
 function Distribution({ map }: { map: Record<string, number> }) {
   const entries = Object.entries(map);
   if (entries.length === 0) return <span className="text-sm text-muted-foreground">No data</span>;
