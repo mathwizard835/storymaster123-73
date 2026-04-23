@@ -183,6 +183,55 @@ export default function AdminAnalytics() {
             </CardContent>
           </Card>
 
+          {/* Conversion funnel */}
+          {data.funnel && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Conversion funnel</CardTitle>
+                <CardDescription>
+                  Step-to-step conversion across the last {data.window.days} day(s).
+                  Each rate is dropped (—) when the prior step has zero events.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  <Metric
+                    label="App → Story started"
+                    value={fmtRate(data.funnel.conversion_rates.app_to_story_started)}
+                  />
+                  <Metric
+                    label="Story started → Completed"
+                    value={fmtRate(data.funnel.conversion_rates.story_started_to_completed)}
+                  />
+                  <Metric
+                    label="Completed → Paywall"
+                    value={fmtRate(data.funnel.conversion_rates.completed_to_paywall)}
+                  />
+                  <Metric
+                    label="Paywall → Parent gate"
+                    value={fmtRate(data.funnel.conversion_rates.paywall_to_parent_gate)}
+                  />
+                  <Metric
+                    label="Parent gate → Subscription"
+                    value={fmtRate(data.funnel.conversion_rates.parent_gate_to_subscription)}
+                  />
+                  <Metric
+                    label="Average conversion"
+                    value={fmtRate(data.funnel.average_conversion_rate)}
+                  />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-2">Step counts</p>
+                  <div className="flex flex-wrap gap-2">
+                    {Object.entries(data.funnel.step_counts).map(([k, v]) => (
+                      <Badge key={k} variant="secondary">{k}: {v}</Badge>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Performance + cost */}
           <Card>
             <CardHeader>
