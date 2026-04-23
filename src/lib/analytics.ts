@@ -9,7 +9,18 @@
 
 import { supabase } from "@/integrations/supabase/client";
 
-type Category = "system" | "performance" | "subscription" | "content" | "cache";
+type Category = "system" | "performance" | "subscription" | "content" | "cache" | "funnel";
+
+// Conversion funnel step names. Keep this list in sync with the
+// analytics-rollup edge function — those names drive the % stats shown
+// on the admin dashboard.
+export type FunnelStep =
+  | "app_opened"
+  | "story_started"
+  | "story_completed"
+  | "paywall_viewed"
+  | "parent_gate_opened"
+  | "subscription_started";
 
 const SESSION_KEY = "smq.analytics_session";
 const SESSION_TTL_MS = 30 * 60 * 1000; // 30 minutes
