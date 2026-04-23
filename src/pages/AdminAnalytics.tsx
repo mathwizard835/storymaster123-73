@@ -40,6 +40,17 @@ type Rollup = {
     cache_misses_total: number;
     top_cached_prompt_hashes: Array<{ hash: string; count: number }>;
   };
+  funnel?: {
+    step_counts: Record<string, number>;
+    conversion_rates: {
+      app_to_story_started: number | null;
+      story_started_to_completed: number | null;
+      completed_to_paywall: number | null;
+      paywall_to_parent_gate: number | null;
+      parent_gate_to_subscription: number | null;
+    };
+    average_conversion_rate: number | null;
+  };
 };
 
 const DAY_OPTIONS = [1, 7, 30];
