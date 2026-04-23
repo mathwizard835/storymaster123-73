@@ -68,6 +68,7 @@ export function rotateAnalyticsSession(): void {
   } catch {
     /* ignore */
   }
+  firedFunnelSteps.clear();
 }
 
 // Convert a raw age into one of the public buckets so callers can't leak it.
