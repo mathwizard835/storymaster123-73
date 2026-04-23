@@ -1418,6 +1418,7 @@ const Mission = () => {
                             try {
                               const actualChoicesMade = savedStory?.choicesMade || 0;
                               console.log(`Story completed with ${actualChoicesMade} choices made, ${profile.selectedBadges.length} badges`);
+                              trackFunnelStep("story_completed");
                               const { newAchievements, characterProgress, newAbilities } = await markStoryCompleted(
                                 profile, 
                                 actualChoicesMade,
