@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ShieldCheck, RefreshCw } from 'lucide-react';
 import { generateSimpleChallenge, checkSimpleAnswer, type SimpleChallenge } from '@/lib/numberToWords';
+import { trackFunnelStep } from '@/lib/analytics';
 
 interface ParentalGateDialogProps {
   open: boolean;
