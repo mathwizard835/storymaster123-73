@@ -19,6 +19,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getDeviceId } from "@/lib/story";
 
 import { useDevice } from "@/contexts/DeviceContext";
+import { trackFunnelStep } from "@/lib/analytics";
 
 export default function Subscription() {
   const navigate = useNavigate();
