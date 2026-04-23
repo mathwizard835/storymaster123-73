@@ -42,19 +42,23 @@ serve(async (req) => {
 
   // Auth: must be a logged-in admin.
   const authHeader = req.headers.get("Authorization");
-  if (!authHeader) {
+  if (!authHeader || !authHeader.toLowerCase().startsWith("bearer ")) {
     return new Response(JSON.stringify({ error: "unauthorized" }), {
       status: 401,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 
+  const token = authHeader.slice("bearer ".length).trim();
+
   const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-    global: { headers: { Authorization: authHeader } },
     auth: { persistSession: false },
   });
 
-  const { data: userData, error: userErr } = await userClient.auth.getUser();
+  // Pass the JWT explicitly — relying on the Authorization global header
+  // can fail when the function is invoked without a session attached to
+  // the SDK instance.
+  const { data: userData, error: userErr } = await userClient.auth.getUser(token);
   if (userErr || !userData?.user) {
     return new Response(JSON.stringify({ error: "unauthorized" }), {
       status: 401,
