@@ -140,6 +140,20 @@ serve(async (req) => {
   const promptHashFreq = new Map<string, number>();
   const cacheByDay = new Map<string, { hits: number; misses: number }>();
 
+  // ---------- 6. Funnel ----------
+  // Total event counts (one per session-step is fine; client de-dupes per session).
+  const FUNNEL_STEPS = [
+    "app_opened",
+    "story_started",
+    "story_completed",
+    "paywall_viewed",
+    "parent_gate_opened",
+    "subscription_started",
+  ] as const;
+  const funnelCounts: Record<string, number> = Object.fromEntries(
+    FUNNEL_STEPS.map((s) => [s, 0]),
+  );
+
   for (const r of rows) {
     sessions.add(r.session_token);
     const meta = (r.meta ?? {}) as Record<string, unknown>;
