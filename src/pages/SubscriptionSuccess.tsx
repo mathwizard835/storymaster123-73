@@ -46,7 +46,7 @@ export default function SubscriptionSuccess() {
             setIsVerifying(false);
             toast({
               title: "🎉 Welcome to Adventure Pass!",
-              description: "Your subscription is now active. Enjoy unlimited stories and Read-to-Me!",
+              description: "Your subscription is now active. Enjoy stories your child will want to come back to every day and Read-to-Me!",
             });
           } else {
             setIsVerifying(false);
