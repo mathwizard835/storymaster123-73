@@ -78,27 +78,21 @@ export const StoryLimitWidget = () => {
             <div className="flex justify-between text-sm">
               <span>Stories Started This Month</span>
               <span className="font-medium">
-                {storyData.monthlyLimit >= 999999
-                  ? `${storyData.storiesUsedThisMonth} (Unlimited)`
-                  : `${storyData.storiesUsedThisMonth}/${totalAllowed}`}
+                {storyData.storiesUsedThisMonth}/{totalAllowed}
               </span>
             </div>
-            {storyData.monthlyLimit < 999999 && (
-              <>
-                <Progress 
-                  value={usagePercent} 
-                  className="h-2"
-                />
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>
-                    {storyData.bonusStories > 0 && (
-                      <span className="text-primary">+{storyData.bonusStories} bonus</span>
-                    )}
-                  </span>
-                  <span>{remaining} remaining</span>
-                </div>
-              </>
-            )}
+            <Progress 
+              value={usagePercent} 
+              className="h-2"
+            />
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>
+                {storyData.bonusStories > 0 && (
+                  <span className="text-primary">+{storyData.bonusStories} bonus</span>
+                )}
+              </span>
+              <span>{remaining} remaining</span>
+            </div>
           </div>
 
           {!storyData.canPlay && (
