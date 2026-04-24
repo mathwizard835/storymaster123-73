@@ -286,7 +286,7 @@ export default function Subscription() {
                 Monthly Story Limit Reached
               </CardTitle>
               <CardDescription className="text-purple-200 text-base">
-                You have unlimited stories with your Adventure Pass!
+                Stories your child will want to come back to every day with your Adventure Pass!
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
