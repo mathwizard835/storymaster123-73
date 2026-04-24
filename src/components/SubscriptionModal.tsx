@@ -101,7 +101,7 @@ export const SubscriptionModal = ({ open, onOpenChange, currentPlan }: Subscript
                     <span className="text-sm">
                       {plan.name === 'free' || plan.name === 'basic'
                         ? "3 stories per month" 
-                        : "Unlimited stories per month"}
+                        : "Stories your child will want to come back to every day"}
                     </span>
                   </li>
                   {plan.name === 'free' && (
