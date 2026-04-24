@@ -517,10 +517,18 @@ Return ONLY valid JSON (no markdown, no explanations):
         .maybeSingle();
 
       const FREE_STORY_LIMIT = 3;
+      const PREMIUM_SOFT_CAP = 40;
       if (!activeSub && userStoryCount >= FREE_STORY_LIMIT) {
         console.warn(`Story limit reached for user ${userId}: ${userStoryCount}/${FREE_STORY_LIMIT}`);
         return new Response(
-          JSON.stringify({ error: "Story limit reached. Upgrade to Adventure Pass for unlimited stories." }),
+          JSON.stringify({ error: "Story limit reached. Upgrade to Adventure Pass for stories your child will want to come back to every day." }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+      if (activeSub && userStoryCount >= PREMIUM_SOFT_CAP) {
+        console.warn(`Premium soft cap reached for user ${userId}: ${userStoryCount}/${PREMIUM_SOFT_CAP}`);
+        return new Response(
+          JSON.stringify({ error: `You've reached ${PREMIUM_SOFT_CAP} stories in the last 30 days. Take a break and come back tomorrow — your stories reset on a rolling 30-day basis.` }),
           { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
