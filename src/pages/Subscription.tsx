@@ -446,7 +446,7 @@ export default function Subscription() {
               </div>
             </div>
             <CardTitle className="text-3xl text-white mb-2">StoryMaster Kids Adventure Pass</CardTitle>
-            <CardDescription className="text-purple-200 text-lg">Unlimited interactive storytelling</CardDescription>
+            <CardDescription className="text-purple-200 text-lg">Stories your child will want to come back to every day</CardDescription>
           </CardHeader>
 
           <CardContent className="p-8 space-y-8">
