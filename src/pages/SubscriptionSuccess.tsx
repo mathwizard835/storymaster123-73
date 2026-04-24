@@ -111,7 +111,7 @@ export default function SubscriptionSuccess() {
             <ul className="space-y-2 text-muted-foreground">
               <li className="flex items-start gap-2">
                 <BookOpen className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-                <span>Unlimited interactive stories every month</span>
+                <span>Stories your child will want to come back to every day</span>
               </li>
               <li className="flex items-start gap-2">
                 <Volume2 className="w-5 h-5 text-primary shrink-0 mt-0.5" />
