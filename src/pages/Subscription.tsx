@@ -257,7 +257,7 @@ export default function Subscription() {
                   <Sparkles className="h-5 w-5 text-amber-500 flex-shrink-0 mt-1" />
                   <div>
                     <p className="font-semibold">Your stories reset on a 30-day rolling basis</p>
-                    <p className="text-sm text-purple-300 mt-1">Or upgrade to the Adventure Pass now for unlimited stories!</p>
+                    <p className="text-sm text-purple-300 mt-1">Or upgrade to the Adventure Pass now for stories your child will want to come back to every day!</p>
                   </div>
                 </div>
               </div>
