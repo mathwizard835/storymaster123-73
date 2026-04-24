@@ -332,7 +332,7 @@ export default function Subscription() {
               <div className="space-y-3 bg-white/5 rounded-lg p-4 border border-white/10">
                 <div className="flex items-start gap-3">
                   <CheckCircle className="h-5 w-5 text-green-400 shrink-0 mt-0.5" />
-                  <span className="text-white">Unlimited stories per month</span>
+                  <span className="text-white">Stories your child will want to come back to every day</span>
                 </div>
                 <div className="flex items-start gap-3">
                   <CheckCircle className="h-5 w-5 text-green-400 shrink-0 mt-0.5" />
