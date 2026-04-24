@@ -563,7 +563,7 @@ Return ONLY valid JSON (no markdown, no explanations):
             `🚫 Device abuse blocked: fingerprint ${deviceFingerprint.slice(0, 12)}... has ${deviceTotal} stories across accounts`,
           );
           return new Response(
-            JSON.stringify({ error: "Story limit reached. Upgrade to Adventure Pass for unlimited stories." }),
+            JSON.stringify({ error: "Story limit reached. Upgrade to Adventure Pass for stories your child will want to come back to every day." }),
             { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
           );
         } else if (deviceTotal >= 3) {
