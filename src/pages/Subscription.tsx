@@ -86,9 +86,9 @@ export default function Subscription() {
 
   const basePlan = {
     price: 4.99,
-    stories: "Unlimited",
+    stories: "Stories your child will want to come back to every day",
     features: [
-      "Unlimited interactive stories per month",
+      "Stories your child will want to come back to every day",
       "All story modes (Mystery, Comedy, Thrill, Explore)",
       "Full character customization",
       "Progress tracking & achievements",
