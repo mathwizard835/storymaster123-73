@@ -64,7 +64,7 @@ export const SubscriptionModal = ({ open, onOpenChange, currentPlan }: Subscript
               <span className="font-medium">Other Apps:</span> $9.99+ without personalization
             </div>
             <div>
-              <span className="font-medium text-primary">StoryMaster Kids:</span> $4.99/mo = unlimited interactive stories
+              <span className="font-medium text-primary">StoryMaster Kids:</span> $4.99/mo = stories your child will want to come back to every day
             </div>
           </div>
         </div>
