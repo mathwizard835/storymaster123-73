@@ -231,7 +231,7 @@ export const getStoriesRemaining = async (): Promise<{
     const totalAllowed = monthlyLimit + bonusStories;
     const canPlay = storiesUsedThisMonth < totalAllowed;
 
-    console.log(`📊 Story limits: ${storiesUsedThisMonth}/${isUnlimited ? '∞' : monthlyLimit} started in last 30 days (${bonusStories} bonus, canPlay: ${canPlay})`);
+    console.log(`📊 Story limits: ${storiesUsedThisMonth}/${monthlyLimit} started in last 30 days (${bonusStories} bonus, canPlay: ${canPlay})`);
 
     return {
       storiesUsedThisMonth,
