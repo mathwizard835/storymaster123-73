@@ -76,17 +76,17 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   }
 
   if (!user) {
-    return <Navigate to="/auth" replace />;
+    return <Navigate to={isNativePlatform() ? "/auth" : "/"} replace />;
   }
 
   return <>{children}</>;
 };
 
 const NativeAppRoute = ({ children }: { children: React.ReactNode }) => {
-  if (!isNativePlatform()) {
-    return <Navigate to="/" replace />;
-  }
-
+  // Authenticated app routes must not depend on platform detection after login.
+  // If Capacitor reports web for a moment during native navigation, a hard
+  // web-only redirect sends users to / and then NativeHomeRedirect bounces them
+  // back to /dashboard.
   return <ProtectedRoute>{children}</ProtectedRoute>;
 };
 
