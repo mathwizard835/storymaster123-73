@@ -50,6 +50,15 @@ const Dashboard = () => {
   const loadData = useCallback(async () => {
     if (user) {
       try {
+        const safeLoad = async <T,>(label: string, fallback: T, loader: () => Promise<T>): Promise<T> => {
+          try {
+            return await loader();
+          } catch (error) {
+            console.error(`Failed to load ${label}:`, error);
+            return fallback;
+          }
+        };
+
         console.log('🔄 Syncing progress from database...');
         const { syncProgressFromDatabase } = await import('@/lib/syncProgress');
         
@@ -60,20 +69,20 @@ const Dashboard = () => {
           console.error('Failed to sync progress:', syncError);
         }
         
-        const { plan } = await getUserSubscription();
+        const { plan } = await safeLoad('subscription', { subscription: null, plan: null }, getUserSubscription);
         setIsPremium(plan?.name === "premium" || plan?.name?.includes("premium"));
         
-        const stories = await loadRecentStoriesFromDatabase();
+        const stories = await safeLoad('recent stories', [], loadRecentStoriesFromDatabase);
         setRecentStories(stories);
         
-        const totalCount = await getTotalStoryCountFromDatabase();
+        const totalCount = await safeLoad('story count', 0, getTotalStoryCountFromDatabase);
         setTotalStoryCount(totalCount);
         
-        const inProgress = await loadInProgressStoriesFromDatabase();
+        const inProgress = await safeLoad('in-progress stories', [], loadInProgressStoriesFromDatabase);
         setInProgressStories(inProgress);
         
-        const activeStory = await loadCurrentStoryFromDatabase();
-        setHasActiveStory(!!activeStory && activeStory.scenes.length > 0);
+        const activeStory = await safeLoad('active story', null, loadCurrentStoryFromDatabase);
+        setHasActiveStory(!!activeStory && Array.isArray(activeStory.scenes) && activeStory.scenes.length > 0);
       } catch (e) {
         console.error('Failed to load stories:', e);
         toast({
