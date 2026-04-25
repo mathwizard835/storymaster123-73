@@ -112,13 +112,13 @@ export const StoryLimitWidget = () => {
               variant={storyData.canPlay ? "outline" : "default"}
             >
               <Crown className="w-4 h-4 mr-2" />
-              Upgrade for stories your child will come back to every day
+              Upgrade for Unlimited Stories
             </Button>
           )}
 
           {subscription?.plan && subscription.plan.name !== 'free' && (
             <div className="text-center text-sm text-muted-foreground">
-              Stories your child will want to come back to every day with Premium
+              Unlimited Stories with Premium
             </div>
           )}
         </CardContent>
