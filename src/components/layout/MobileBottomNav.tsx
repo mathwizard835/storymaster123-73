@@ -14,7 +14,7 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { icon: Home, label: 'Home', path: isNativePlatform() ? '/dashboard' : '/' },
+  { icon: Home, label: 'Home', path: '/dashboard' },
   { icon: BookOpen, label: 'Gallery', path: '/gallery' },
   { icon: Trophy, label: 'Trophies', path: '/achievements' },
   { icon: Users, label: 'Parents', path: '/parent-dashboard' },
@@ -57,7 +57,7 @@ export function MobileBottomNav() {
               key={item.path}
               onClick={() => {
                 addHapticFeedback('light');
-                navigate(item.path);
+                navigate(isNative ? item.path : item.path === '/dashboard' ? '/' : item.path);
               }}
               className={cn(
                 "relative flex flex-col items-center justify-center min-w-[60px] min-h-[44px] rounded-xl transition-colors",
