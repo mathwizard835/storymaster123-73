@@ -83,38 +83,14 @@ const Index = () => {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-              {/* Continue or Start New Button */}
-              {hasActiveStory ? (
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <Button size="xl" variant="hero" onClick={() => navigate("/dashboard")} className="text-lg px-8 py-4">
-                    Go to Dashboard
-                  </Button>
-                  <Button
-                    size="xl"
-                    variant="outline"
-                    onClick={() => setShowNewStoryDialog(true)}
-                    className="text-lg px-8 py-4 flex items-center gap-2"
-                  >
-                    <Play className="h-4 w-4" />
-                    Start New Story
-                  </Button>
-                </div>
-              ) : (
-                <Button
-                  size="xl"
-                  variant="hero"
-                  onClick={() => {
-                    if (user) {
-                      navigate("/dashboard");
-                    } else {
-                      navigate("/auth");
-                    }
-                  }}
-                  className="text-lg px-8 py-4 animate-pulse"
-                >
-                  {user ? "Go to Dashboard" : "Sign Up!"}
-                </Button>
-              )}
+              <Button
+                size="xl"
+                variant="hero"
+                onClick={() => navigate("/auth")}
+                className="text-lg px-8 py-4 animate-pulse"
+              >
+                Sign In
+              </Button>
               <Button
                 size="xl"
                 variant="outline"
@@ -469,32 +445,14 @@ const Index = () => {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-6 justify-center mb-8">
-            {/* Same button logic as the main CTA */}
-            {hasActiveStory ? (
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Button size="xl" variant="hero" onClick={() => navigate("/mission")} className="text-xl px-12 py-6">
-                  Continue Your Quest
-                </Button>
-                <Button
-                  size="xl"
-                  variant="outline"
-                  onClick={() => setShowNewStoryDialog(true)}
-                  className="text-xl px-12 py-6 flex items-center gap-2"
-                >
-                  <Play className="h-5 w-5" />
-                  Start New Story
-                </Button>
-              </div>
-            ) : (
-              <Button
-                size="xl"
-                variant="hero"
-                onClick={() => navigate(user ? "/profile?new=true" : "/auth")}
-                className="text-xl px-12 py-6 animate-pulse"
-              >
-                {user ? "Start New Adventure" : "Sign Up!"}
-              </Button>
-            )}
+            <Button
+              size="xl"
+              variant="hero"
+              onClick={() => navigate("/auth")}
+              className="text-xl px-12 py-6 animate-pulse"
+            >
+              Sign In
+            </Button>
           </div>
 
           <div className="bg-muted/30 rounded-2xl p-8 max-w-4xl mx-auto">
