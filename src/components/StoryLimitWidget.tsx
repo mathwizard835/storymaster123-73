@@ -118,7 +118,7 @@ export const StoryLimitWidget = () => {
 
           {subscription?.plan && subscription.plan.name !== 'free' && (
             <div className="text-center text-sm text-muted-foreground">
-              Stories your child will want to come back to every day with Premium
+              Unlimited Stories with Premium
             </div>
           )}
         </CardContent>

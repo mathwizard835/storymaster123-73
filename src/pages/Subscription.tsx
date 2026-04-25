@@ -86,9 +86,9 @@ export default function Subscription() {
 
   const basePlan = {
     price: 4.99,
-    stories: "Stories your child will want to come back to every day",
+    stories: "Unlimited Stories",
     features: [
-      "Stories your child will want to come back to every day",
+      "Unlimited Stories",
       "All story modes (Mystery, Comedy, Thrill, Explore)",
       "Full character customization",
       "Progress tracking & achievements",
@@ -257,7 +257,7 @@ export default function Subscription() {
                   <Sparkles className="h-5 w-5 text-amber-500 flex-shrink-0 mt-1" />
                   <div>
                     <p className="font-semibold">Your stories reset on a 30-day rolling basis</p>
-                    <p className="text-sm text-purple-300 mt-1">Or upgrade to Premium now for stories your child will want to come back to every day!</p>
+                    <p className="text-sm text-purple-300 mt-1">Or upgrade to Premium now for unlimited stories!</p>
                   </div>
                 </div>
               </div>
@@ -286,7 +286,7 @@ export default function Subscription() {
                 Monthly Story Limit Reached
               </CardTitle>
               <CardDescription className="text-purple-200 text-base">
-                Stories your child will want to come back to every day with Premium!
+                Unlimited Stories with Premium!
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -332,7 +332,7 @@ export default function Subscription() {
               <div className="space-y-3 bg-white/5 rounded-lg p-4 border border-white/10">
                 <div className="flex items-start gap-3">
                   <CheckCircle className="h-5 w-5 text-green-400 shrink-0 mt-0.5" />
-                  <span className="text-white">Stories your child will want to come back to every day</span>
+                  <span className="text-white">Unlimited Stories</span>
                 </div>
                 <div className="flex items-start gap-3">
                   <CheckCircle className="h-5 w-5 text-green-400 shrink-0 mt-0.5" />
@@ -450,7 +450,7 @@ export default function Subscription() {
               <Sparkles className="h-3.5 w-3.5 mr-1" /> Premium • Adventure Pass Benefits
             </Badge>
             <CardTitle className="text-4xl text-white mb-2">StoryMaster Kids Premium</CardTitle>
-            <CardDescription className="text-purple-200 text-lg">Stories your child will want to come back to every day</CardDescription>
+            <CardDescription className="text-purple-200 text-lg">Unlimited Stories</CardDescription>
           </CardHeader>
 
           <CardContent className="p-8 space-y-8">
