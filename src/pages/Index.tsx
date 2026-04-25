@@ -53,33 +53,6 @@ const Index = () => {
         }}
       />
 
-      {/* New Story Confirmation Dialog */}
-      <NewStoryDialog open={showNewStoryDialog} onOpenChange={setShowNewStoryDialog}>
-        <NewDialogContent className="max-w-md">
-          <NewDialogHeader>
-            <NewDialogTitle>Start New Adventure?</NewDialogTitle>
-            <DialogDescription>
-              You have an adventure in progress. Starting a new one will save your current progress and begin a fresh
-              story.
-            </DialogDescription>
-          </NewDialogHeader>
-          <div className="flex gap-3 mt-6">
-            <Button variant="outline" onClick={() => setShowNewStoryDialog(false)} className="flex-1">
-              Cancel
-            </Button>
-            <Button
-              onClick={() => {
-                setShowNewStoryDialog(false);
-                navigate("/profile?new=true");
-              }}
-              className="flex-1"
-            >
-              Start New Adventure
-            </Button>
-          </div>
-        </NewDialogContent>
-      </NewStoryDialog>
-
       {/* Hero Section - The Big Pitch */}
        <section className="relative min-h-screen w-full overflow-hidden pb-24 md:pb-8">
         <img
@@ -91,24 +64,7 @@ const Index = () => {
         <div className="absolute inset-0 bg-background/5" />
 
         <div className="relative z-10 flex min-h-screen items-center justify-center px-6">
-          {/* Floating Adventure Pass Button - Top Right */}
-          {user && (
-            <Button
-              onClick={() => navigate("/subscription")}
-              className="fixed top-4 right-4 sm:top-8 sm:right-8 h-12 w-12 sm:h-14 sm:w-14 md:h-16 md:w-16 rounded-full bg-gradient-to-br from-purple-600 via-purple-500 to-pink-500 hover:from-purple-700 hover:via-purple-600 hover:to-pink-600 shadow-2xl shadow-purple-500/50 hover:shadow-purple-500/80 transition-all duration-500 hover:scale-110 border-2 border-white/20 z-50 flex items-center justify-center group animate-pulse hover:animate-none"
-              style={{ top: `max(env(safe-area-inset-top, 16px), 16px)` }}
-              aria-label="Upgrade to Adventure Pass"
-            >
-              <Crown className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 text-white group-hover:scale-125 transition-transform duration-300" />
-            </Button>
-          )}
-
           <div className="max-w-4xl text-center animate-enter">
-            {user && (
-              <div className="mb-8 flex items-center justify-end">
-                <SignOutButton />
-              </div>
-            )}
             <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-extrabold tracking-tight drop-shadow-2xl mb-4 sm:mb-6">
                <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
                  StoryMaster Kids
