@@ -17,10 +17,11 @@ import AgeGateForm from '@/components/auth/AgeGateForm';
 import ParentalConsentForm from '@/components/auth/ParentalConsentForm';
 import ParentalGateChallenge from '@/components/auth/ParentalGateChallenge';
 import { getAuthRedirectUrl } from '@/lib/authRedirect';
+import { isNativePlatform } from '@/lib/platform';
 
 const NATIVE_AUTH_URL = 'storymasterquest://auth';
 
-const isNativeApp = () => !!(window as any).Capacitor?.isNativePlatform?.();
+const isNativeApp = isNativePlatform;
 
 const buildNativeAuthUrl = (params: Record<string, string | null | undefined>) => {
   const nativeParams = new URLSearchParams();
