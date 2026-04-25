@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { isNativePlatform } from '@/lib/platform';
 
 interface AuthContextType {
   user: User | null;
@@ -41,12 +42,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             description: "Welcome to StoryMaster Kids!",
           });
         });
-        
-        // Clean up URL and redirect to dashboard
-        setTimeout(() => {
+
+        if (isNativePlatform()) {
           window.history.replaceState({}, document.title, '/dashboard');
-          window.location.href = '/dashboard';
-        }, 500);
+        }
       }
     };
 
