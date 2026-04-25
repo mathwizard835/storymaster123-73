@@ -438,14 +438,18 @@ export default function Subscription() {
 
         {/* Main Pricing Card - Only show if no premium */}
         {!currentPlan && (
-        <Card className="max-w-2xl mx-auto bg-white/10 backdrop-blur-md border-white/20 overflow-hidden">
+        <Card className="max-w-2xl mx-auto bg-white/10 backdrop-blur-md border-yellow-300/50 overflow-hidden ring-4 ring-yellow-300/30 shadow-2xl shadow-yellow-300/20 relative">
+          <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-yellow-300 via-pink-300 to-purple-300" />
           <CardHeader className="text-center border-b border-white/10 pb-6">
             <div className="flex justify-center mb-4">
-              <div className="bg-gradient-to-r from-purple-500 to-pink-500 p-4 rounded-full">
+              <div className="bg-gradient-to-r from-yellow-400 via-pink-500 to-purple-500 p-4 rounded-full shadow-2xl shadow-yellow-300/40 animate-pulse">
                 <BookOpen className="h-12 w-12 text-white" />
               </div>
             </div>
-            <CardTitle className="text-3xl text-white mb-2">StoryMaster Kids Adventure Pass</CardTitle>
+            <Badge className="mx-auto mb-3 bg-yellow-300 text-purple-950 hover:bg-yellow-300 shadow-lg shadow-yellow-300/30">
+              <Sparkles className="h-3.5 w-3.5 mr-1" /> Premium • Adventure Pass Benefits
+            </Badge>
+            <CardTitle className="text-4xl text-white mb-2">StoryMaster Kids Premium</CardTitle>
             <CardDescription className="text-purple-200 text-lg">Stories your child will want to come back to every day</CardDescription>
           </CardHeader>
 
@@ -510,7 +514,7 @@ export default function Subscription() {
                           await activateSubscriptionAfterPurchase(planType);
                           toast({
                             title: "🎉 Subscription Activated!",
-                            description: "Welcome to StoryMaster Kids Adventure Pass!",
+                            description: "Welcome to StoryMaster Kids Premium!",
                           });
                           await loadCurrentPlan();
                         } else if (result.error !== 'cancelled') {
@@ -576,7 +580,7 @@ export default function Subscription() {
                     {loading ? "Processing..." : (
                       <span className="flex items-center gap-3">
                         <CreditCard className="h-6 w-6" />
-                        Start Your Adventure
+                         Start Premium
                       </span>
                     )}
                   </Button>
