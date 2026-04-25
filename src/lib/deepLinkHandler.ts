@@ -1,5 +1,6 @@
 import type { EmailOtpType } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { isNativePlatform } from '@/lib/platform';
 
 const SUPPORTED_OTP_TYPES: EmailOtpType[] = ['signup', 'recovery', 'invite', 'email_change', 'magiclink'];
 
@@ -98,7 +99,7 @@ export async function initDeepLinkHandler(navigate: (path: string) => void) {
     return;
   }
 
-  if (!Capacitor.isNativePlatform()) return;
+  if (!isNativePlatform()) return;
 
   const { App: CapApp } = await import('@capacitor/app');
 
