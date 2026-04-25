@@ -5,7 +5,6 @@ import { cn } from '@/lib/utils';
 import { useDevice } from '@/contexts/DeviceContext';
 import { addHapticFeedback } from '@/lib/mobileFeatures';
 import { motion } from 'framer-motion';
-import { isNativePlatform } from '@/lib/platform';
 
 interface NavItem {
   icon: React.ComponentType<{ className?: string }>;
