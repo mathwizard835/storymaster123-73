@@ -18,6 +18,20 @@ import ParentalConsentForm from '@/components/auth/ParentalConsentForm';
 import ParentalGateChallenge from '@/components/auth/ParentalGateChallenge';
 import { getAuthRedirectUrl } from '@/lib/authRedirect';
 
+const NATIVE_AUTH_URL = 'storymasterquest://auth';
+
+const isNativeApp = () => !!(window as any).Capacitor?.isNativePlatform?.();
+
+const buildNativeAuthUrl = (params: Record<string, string | null | undefined>) => {
+  const nativeParams = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value) nativeParams.set(key, value);
+  });
+
+  const query = nativeParams.toString();
+  return query ? `${NATIVE_AUTH_URL}?${query}` : NATIVE_AUTH_URL;
+};
+
 type SignupStep = 'credentials' | 'age-gate' | 'parental-gate' | 'parental-consent';
 
 const Auth = () => {
@@ -76,28 +90,19 @@ const Auth = () => {
         return;
       }
 
-      const isIosBrowser = /iPad|iPhone|iPod/.test(window.navigator.userAgent);
-      const isInNativeApp = !!(window as any).Capacitor?.isNativePlatform?.();
+      const isInNativeApp = isNativeApp();
 
-      // Try handing off auth callback to native app first (for iOS Safari web fallback case).
-      if (isIosBrowser && !isInNativeApp) {
-        const nativeParams = new URLSearchParams();
-        if (accessToken) nativeParams.set('access_token', accessToken);
-        if (refreshToken) nativeParams.set('refresh_token', refreshToken);
-        if (tokenHash) nativeParams.set('token_hash', tokenHash);
-        if (type) nativeParams.set('type', type);
-        if (code) nativeParams.set('code', code);
-
-        const handoffUrl = `storymasterquest://auth?${nativeParams.toString()}`;
+      // Try handing off auth callback to native app first for browser-opened email links.
+      if (!isInNativeApp) {
+        const handoffUrl = buildNativeAuthUrl({ access_token: accessToken, refresh_token: refreshToken, token_hash: tokenHash, type, code });
 
         // Surface a tap-to-open button so the user can manually launch the app
-        // (Safari only honors custom-scheme redirects from a user gesture).
+        // if the browser blocks automatic custom-scheme redirects.
         setAppHandoffUrl(handoffUrl);
 
-        // Best-effort silent attempt — works on some iOS versions, ignored on others.
         window.location.href = handoffUrl;
 
-        // Give iOS a moment to switch to native app before running browser fallback.
+        // Give the OS a moment to switch to native app before running browser fallback.
         await new Promise((resolve) => setTimeout(resolve, 1200));
       }
 
@@ -281,6 +286,17 @@ const Auth = () => {
         });
         setSignupStep('credentials');
       } else if (data?.session) {
+        if (!isNativeApp()) {
+          const handoffUrl = buildNativeAuthUrl({
+            access_token: data.session.access_token,
+            refresh_token: data.session.refresh_token,
+            type: 'signup',
+          });
+          setAppHandoffUrl(handoffUrl);
+          window.location.href = handoffUrl;
+          return;
+        }
+
         toast({
           title: "Account created successfully!",
           description: "You can now start your adventure.",
@@ -329,8 +345,20 @@ const Auth = () => {
       } else {
         toast({
           title: "Welcome back!",
-          description: "You've successfully signed in.",
+          description: isNativeApp() ? "You've successfully signed in." : "Opening StoryMaster Kids...",
         });
+
+        if (!isNativeApp() && data.session) {
+          const handoffUrl = buildNativeAuthUrl({
+            access_token: data.session.access_token,
+            refresh_token: data.session.refresh_token,
+            type: 'magiclink',
+          });
+          setAppHandoffUrl(handoffUrl);
+          window.location.href = handoffUrl;
+          return;
+        }
+
         navigate('/dashboard');
       }
     } catch (err: any) {
@@ -595,7 +623,7 @@ const Auth = () => {
                   Open in App
                 </a>
                 <p className="text-purple-200 text-xs">
-                  Don't have the app? Continue below to use the web version.
+                  If the app doesn't open automatically, tap the button above.
                 </p>
               </div>
             )}
