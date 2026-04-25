@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Capacitor } from '@capacitor/core';
+import { isNativePlatform } from '@/lib/platform';
 
 interface DeviceContextType {
   isPhone: boolean;
@@ -126,15 +126,7 @@ export function useDevice(): DeviceContextType {
 }
 
 function checkIsNative(): boolean {
-  try {
-    if (typeof window !== 'undefined' && (window as any).Capacitor) {
-      const platform = Capacitor.getPlatform();
-      return platform === 'ios' || platform === 'android';
-    }
-  } catch (error) {
-    console.warn('[DeviceContext] Failed to check native platform:', error);
-  }
-  return false;
+  return isNativePlatform();
 }
 
 function getDeviceType(width: number): 'phone' | 'tablet' | 'desktop' {
