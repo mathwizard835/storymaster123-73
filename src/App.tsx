@@ -83,6 +83,14 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+const NativeAppRoute = ({ children }: { children: React.ReactNode }) => {
+  if (!isNative) {
+    return <Navigate to="/" replace />;
+  }
+
+  return <ProtectedRoute>{children}</ProtectedRoute>;
+};
+
 const PublicRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   
@@ -94,7 +102,7 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
   const hashParams = new URLSearchParams(window.location.hash.substring(1));
   const isEmailVerification = hashParams.get('type') === 'signup' || hashParams.get('type') === 'recovery';
   
-  if (user && !isEmailVerification) {
+  if (isNative && user && !isEmailVerification) {
     return <Navigate to="/dashboard" replace />;
   }
   
@@ -120,21 +128,21 @@ const AnimatedRoutes = () => {
           <Route path="/auth" element={<PublicRoute><PageTransition><Auth /></PageTransition></PublicRoute>} />
           <Route path="/reset-password" element={<PageTransition><ResetPassword /></PageTransition>} />
           <Route path="/" element={isNative ? <NativeHomeRedirect /> : <Index />} />
-          <Route path="/profile" element={<ProtectedRoute><PageTransition><ProfileSetup /></PageTransition></ProtectedRoute>} />
-          <Route path="/mission" element={<ProtectedRoute><Mission /></ProtectedRoute>} />
-          <Route path="/gallery" element={<ProtectedRoute><PageTransition><StoryGallery /></PageTransition></ProtectedRoute>} />
-          <Route path="/achievements" element={<ProtectedRoute><PageTransition><Achievements /></PageTransition></ProtectedRoute>} />
-          <Route path="/dashboard" element={<ProtectedRoute><PageTransition><Dashboard /></PageTransition></ProtectedRoute>} />
-          <Route path="/subscription" element={<ProtectedRoute><PageTransition><Subscription /></PageTransition></ProtectedRoute>} />
-          <Route path="/subscription/success" element={<PageTransition><SubscriptionSuccess /></PageTransition>} />
-          <Route path="/coming-soon" element={<ProtectedRoute><PageTransition><ComingSoon /></PageTransition></ProtectedRoute>} />
+          <Route path="/profile" element={<NativeAppRoute><PageTransition><ProfileSetup /></PageTransition></NativeAppRoute>} />
+          <Route path="/mission" element={<NativeAppRoute><Mission /></NativeAppRoute>} />
+          <Route path="/gallery" element={<NativeAppRoute><PageTransition><StoryGallery /></PageTransition></NativeAppRoute>} />
+          <Route path="/achievements" element={<NativeAppRoute><PageTransition><Achievements /></PageTransition></NativeAppRoute>} />
+          <Route path="/dashboard" element={<NativeAppRoute><PageTransition><Dashboard /></PageTransition></NativeAppRoute>} />
+          <Route path="/subscription" element={<NativeAppRoute><PageTransition><Subscription /></PageTransition></NativeAppRoute>} />
+          <Route path="/subscription/success" element={isNative ? <PageTransition><SubscriptionSuccess /></PageTransition> : <Navigate to="/" replace />} />
+          <Route path="/coming-soon" element={<NativeAppRoute><PageTransition><ComingSoon /></PageTransition></NativeAppRoute>} />
           <Route path="/privacy" element={<PageTransition><PrivacyPolicy /></PageTransition>} />
           <Route path="/terms" element={<PageTransition><TermsOfService /></PageTransition>} />
           <Route path="/support" element={<PageTransition><Support /></PageTransition>} />
-          <Route path="/parent-dashboard" element={<ProtectedRoute><PageTransition><ParentDashboard /></PageTransition></ProtectedRoute>} />
-          <Route path="/settings" element={<ProtectedRoute><PageTransition><Settings /></PageTransition></ProtectedRoute>} />
+          <Route path="/parent-dashboard" element={<NativeAppRoute><PageTransition><ParentDashboard /></PageTransition></NativeAppRoute>} />
+          <Route path="/settings" element={<NativeAppRoute><PageTransition><Settings /></PageTransition></NativeAppRoute>} />
           <Route path="/shared/:storyId" element={<PageTransition><SharedStory /></PageTransition>} />
-          <Route path="/admin/analytics" element={<ProtectedRoute><PageTransition><AdminAnalytics /></PageTransition></ProtectedRoute>} />
+          <Route path="/admin/analytics" element={<NativeAppRoute><PageTransition><AdminAnalytics /></PageTransition></NativeAppRoute>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
