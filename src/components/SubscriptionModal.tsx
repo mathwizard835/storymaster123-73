@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Star, Crown, Zap } from "lucide-react";
+import { CheckCircle, Star, Crown, Zap, Sparkles } from "lucide-react";
 import { getSubscriptionPlans, type SubscriptionPlan } from "@/lib/subscription";
 import { useNavigate } from "react-router-dom";
 
