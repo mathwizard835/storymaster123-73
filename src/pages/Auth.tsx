@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { EmailOtpType } from '@supabase/supabase-js';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, BookOpen, Stars } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
-import { signInSchema, signUpSchema, type SignInFormData, type SignUpFormData } from '@/lib/validationSchemas';
+import { signInSchema, signUpSchema } from '@/lib/validationSchemas';
 import { checkIfBanned } from '@/lib/banCheck';
 import heroPortal from '@/assets/hero-portal.jpg';
 import AgeGateForm from '@/components/auth/AgeGateForm';
@@ -46,7 +46,6 @@ const Auth = () => {
   const [childAge, setChildAge] = useState<number>(0);
   const [appHandoffUrl, setAppHandoffUrl] = useState<string | null>(null);
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const { toast } = useToast();
 
   // Cooldown timer effect
@@ -68,6 +67,17 @@ const Auth = () => {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
+        if (!isNativeApp()) {
+          const handoffUrl = buildNativeAuthUrl({
+            access_token: session.access_token,
+            refresh_token: session.refresh_token,
+            type: 'magiclink',
+          });
+          setAppHandoffUrl(handoffUrl);
+          window.location.href = handoffUrl;
+          return;
+        }
+
         navigate('/dashboard');
       }
     };
