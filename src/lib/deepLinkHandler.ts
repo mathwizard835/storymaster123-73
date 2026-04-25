@@ -3,6 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { isNativePlatform } from '@/lib/platform';
 
 const SUPPORTED_OTP_TYPES: EmailOtpType[] = ['signup', 'recovery', 'invite', 'email_change', 'magiclink'];
+const processedDeepLinkUrls = new Set<string>();
+let deepLinkHandlerInitialized = false;
 
 function isSupportedOtpType(value: string | null): value is EmailOtpType {
   return !!value && SUPPORTED_OTP_TYPES.includes(value as EmailOtpType);
@@ -18,6 +20,12 @@ function navigateAfterAuth(type: string | null, navigate: (path: string) => void
 }
 
 async function handleDeepLinkUrl(urlString: string, navigate: (path: string) => void) {
+  if (processedDeepLinkUrls.has(urlString)) {
+    console.log('[DeepLink] Skipping already processed URL:', urlString);
+    return;
+  }
+
+  processedDeepLinkUrls.add(urlString);
   console.log('[DeepLink] Processing URL:', urlString);
 
   const url = new URL(urlString);
@@ -91,6 +99,8 @@ async function handleDeepLinkUrl(urlString: string, navigate: (path: string) => 
  * Handles both warm opens (appUrlOpen) and cold starts (getLaunchUrl).
  */
 export async function initDeepLinkHandler(navigate: (path: string) => void) {
+  if (deepLinkHandlerInitialized) return;
+
   let Capacitor: typeof import('@capacitor/core').Capacitor;
   try {
     const core = await import('@capacitor/core');
@@ -102,6 +112,7 @@ export async function initDeepLinkHandler(navigate: (path: string) => void) {
   if (!isNativePlatform()) return;
 
   const { App: CapApp } = await import('@capacitor/app');
+  deepLinkHandlerInitialized = true;
 
   try {
     const launchUrl = await CapApp.getLaunchUrl();
