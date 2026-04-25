@@ -44,7 +44,18 @@ const SharedStory = lazy(() => import("./pages/SharedStory"));
 const AdminAnalytics = lazy(() => import("./pages/AdminAnalytics"));
 
 const queryClient = new QueryClient();
-const isNative = Capacitor.isNativePlatform();
+
+const isNativePlatform = () => {
+  try {
+    if (Capacitor.isNativePlatform()) return true;
+
+    const capacitor = typeof window !== 'undefined' ? (window as any).Capacitor : null;
+    const platform = capacitor?.getPlatform?.();
+    return platform === 'ios' || platform === 'android' || capacitor?.isNativePlatform?.() === true;
+  } catch {
+    return false;
+  }
+};
 
 // On native, show onboarding → welcome screen if not logged in, dashboard if logged in
 const NativeHomeRedirect = () => {
@@ -52,7 +63,7 @@ const NativeHomeRedirect = () => {
   const [showOnboarding, setShowOnboarding] = useState<boolean | null>(null);
 
   useEffect(() => {
-    if (isNative) {
+    if (isNativePlatform()) {
       hasSeenOnboarding().then(seen => setShowOnboarding(!seen));
     } else {
       setShowOnboarding(false);
@@ -84,7 +95,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 const NativeAppRoute = ({ children }: { children: React.ReactNode }) => {
-  if (!isNative) {
+  if (!isNativePlatform()) {
     return <Navigate to="/" replace />;
   }
 
@@ -102,7 +113,7 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
   const hashParams = new URLSearchParams(window.location.hash.substring(1));
   const isEmailVerification = hashParams.get('type') === 'signup' || hashParams.get('type') === 'recovery';
   
-  if (isNative && user && !isEmailVerification) {
+  if (isNativePlatform() && user && !isEmailVerification) {
     return <Navigate to="/dashboard" replace />;
   }
   
@@ -121,6 +132,8 @@ const LazyFallback = () => <NativeLoadingScreen />;
 
 const AnimatedRoutes = () => {
   const location = useLocation();
+  const isNative = isNativePlatform();
+
   return (
     <Suspense fallback={<LazyFallback />}>
       <AnimatePresence mode="wait">
@@ -154,6 +167,8 @@ const AnimatedRoutes = () => {
 const App = () => {
   // Load saved theme and initialize RevenueCat on app mount
   useEffect(() => {
+    const isNative = isNativePlatform();
+
     // Funnel: top of the conversion funnel — fired once per analytics session.
     trackFunnelStep("app_opened");
 
