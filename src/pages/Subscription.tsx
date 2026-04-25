@@ -98,7 +98,7 @@ export default function Subscription() {
   };
 
   const handleCancelSubscription = async () => {
-    if (!confirm("Are you sure you want to cancel your subscription? You'll lose access to Adventure Pass features at the end of your billing period.")) {
+    if (!confirm("Are you sure you want to cancel your subscription? You'll lose access to Premium features at the end of your billing period.")) {
       return;
     }
 
@@ -145,7 +145,7 @@ export default function Subscription() {
         if (status) {
           toast({
             title: "🎉 Subscription Activated!",
-            description: "Welcome to StoryMaster Kids Adventure Pass!",
+            description: "Welcome to StoryMaster Kids Premium!",
           });
           loadCurrentPlan();
         }
@@ -257,7 +257,7 @@ export default function Subscription() {
                   <Sparkles className="h-5 w-5 text-amber-500 flex-shrink-0 mt-1" />
                   <div>
                     <p className="font-semibold">Your stories reset on a 30-day rolling basis</p>
-                    <p className="text-sm text-purple-300 mt-1">Or upgrade to the Adventure Pass now for stories your child will want to come back to every day!</p>
+                    <p className="text-sm text-purple-300 mt-1">Or upgrade to Premium now for stories your child will want to come back to every day!</p>
                   </div>
                 </div>
               </div>
@@ -286,7 +286,7 @@ export default function Subscription() {
                 Monthly Story Limit Reached
               </CardTitle>
               <CardDescription className="text-purple-200 text-base">
-                Stories your child will want to come back to every day with your Adventure Pass!
+                Stories your child will want to come back to every day with Premium!
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -319,7 +319,7 @@ export default function Subscription() {
                   <Crown className="h-12 w-12 text-white" />
                 </div>
               </div>
-              <CardTitle className="text-3xl text-white mb-2">Active Adventure Pass</CardTitle>
+              <CardTitle className="text-3xl text-white mb-2">Premium Active</CardTitle>
               <CardDescription className="text-green-200 text-lg">{currentPlan.name}</CardDescription>
             </CardHeader>
 
@@ -340,7 +340,7 @@ export default function Subscription() {
                 </div>
                 <div className="flex items-start gap-3">
                   <CheckCircle className="h-5 w-5 text-green-400 shrink-0 mt-0.5" />
-                  <span className="text-white">All Adventure Pass features unlocked</span>
+                  <span className="text-white">All Premium features unlocked</span>
                 </div>
               </div>
 
@@ -438,14 +438,18 @@ export default function Subscription() {
 
         {/* Main Pricing Card - Only show if no premium */}
         {!currentPlan && (
-        <Card className="max-w-2xl mx-auto bg-white/10 backdrop-blur-md border-white/20 overflow-hidden">
+        <Card className="max-w-2xl mx-auto bg-white/10 backdrop-blur-md border-yellow-300/50 overflow-hidden ring-4 ring-yellow-300/30 shadow-2xl shadow-yellow-300/20 relative">
+          <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-yellow-300 via-pink-300 to-purple-300" />
           <CardHeader className="text-center border-b border-white/10 pb-6">
             <div className="flex justify-center mb-4">
-              <div className="bg-gradient-to-r from-purple-500 to-pink-500 p-4 rounded-full">
+              <div className="bg-gradient-to-r from-yellow-400 via-pink-500 to-purple-500 p-4 rounded-full shadow-2xl shadow-yellow-300/40 animate-pulse">
                 <BookOpen className="h-12 w-12 text-white" />
               </div>
             </div>
-            <CardTitle className="text-3xl text-white mb-2">StoryMaster Kids Adventure Pass</CardTitle>
+            <Badge className="mx-auto mb-3 bg-yellow-300 text-purple-950 hover:bg-yellow-300 shadow-lg shadow-yellow-300/30">
+              <Sparkles className="h-3.5 w-3.5 mr-1" /> Premium • Adventure Pass Benefits
+            </Badge>
+            <CardTitle className="text-4xl text-white mb-2">StoryMaster Kids Premium</CardTitle>
             <CardDescription className="text-purple-200 text-lg">Stories your child will want to come back to every day</CardDescription>
           </CardHeader>
 
@@ -510,7 +514,7 @@ export default function Subscription() {
                           await activateSubscriptionAfterPurchase(planType);
                           toast({
                             title: "🎉 Subscription Activated!",
-                            description: "Welcome to StoryMaster Kids Adventure Pass!",
+                            description: "Welcome to StoryMaster Kids Premium!",
                           });
                           await loadCurrentPlan();
                         } else if (result.error !== 'cancelled') {
@@ -576,7 +580,7 @@ export default function Subscription() {
                     {loading ? "Processing..." : (
                       <span className="flex items-center gap-3">
                         <CreditCard className="h-6 w-6" />
-                        Start Your Adventure
+                         Start Premium
                       </span>
                     )}
                   </Button>

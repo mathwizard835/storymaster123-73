@@ -3,9 +3,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Star, Crown, Zap } from "lucide-react";
+import { CheckCircle, Star, Crown, Zap, Sparkles } from "lucide-react";
 import { getSubscriptionPlans, type SubscriptionPlan } from "@/lib/subscription";
-import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 
 interface SubscriptionModalProps {
@@ -16,7 +15,6 @@ interface SubscriptionModalProps {
 
 export const SubscriptionModal = ({ open, onOpenChange, currentPlan }: SubscriptionModalProps) => {
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
-  const { toast } = useToast();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -73,11 +71,11 @@ export const SubscriptionModal = ({ open, onOpenChange, currentPlan }: Subscript
           {plans.map((plan) => (
             <Card 
               key={plan.id} 
-              className={`relative ${plan.name === 'premium' ? 'ring-2 ring-primary border-primary' : ''} ${currentPlan?.id === plan.id ? 'bg-muted' : ''}`}
+              className={`relative overflow-visible ${plan.name === 'premium' ? 'ring-4 ring-primary/60 border-primary shadow-2xl shadow-primary/30 scale-[1.02]' : ''} ${currentPlan?.id === plan.id ? 'bg-muted' : ''}`}
             >
               {plan.name === 'premium' && (
-                <Badge className="absolute -top-2 left-1/2 transform -translate-x-1/2 bg-primary">
-                  Most Popular
+                <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground shadow-lg shadow-primary/40 animate-pulse">
+                  <Sparkles className="w-3 h-3 mr-1" /> Premium • Most Popular
                 </Badge>
               )}
               
@@ -85,7 +83,10 @@ export const SubscriptionModal = ({ open, onOpenChange, currentPlan }: Subscript
                 <div className="flex justify-center mb-2">
                   {getPlanIcon(plan.name)}
                 </div>
-                <CardTitle className="text-xl capitalize">{plan.name === 'premium' ? 'Adventure Pass' : plan.name}</CardTitle>
+                <CardTitle className="text-xl capitalize">{plan.name === 'premium' ? 'Premium' : plan.name}</CardTitle>
+                {plan.name === 'premium' && (
+                  <p className="text-xs font-medium text-primary">Adventure Pass benefits included</p>
+                )}
                 <CardDescription>
                   <span className="text-3xl font-bold text-foreground">
                     ${plan.price_monthly}

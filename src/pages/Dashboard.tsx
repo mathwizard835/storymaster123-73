@@ -234,7 +234,7 @@ const Dashboard = () => {
         {isPhone && isNative && (
           <NativeNavigationHeader
             title="Home"
-            subtitle={isPremium ? '✨ Adventure Pass Active' : undefined}
+            subtitle={isPremium ? '✨ Premium Active' : undefined}
             scrollRef={mainRef as React.RefObject<HTMLDivElement>}
             rightAction={
               <button onClick={() => { addHapticFeedback('light'); navigate("/settings"); }} className="p-1">
@@ -358,7 +358,7 @@ const Dashboard = () => {
                   {isPremium && (
                     <Badge className="bg-gradient-to-r from-amber-500 to-yellow-500 text-white border-0 text-xs px-2 py-0.5">
                       <Crown className="h-3 w-3 mr-1" />
-                      PASS
+                      PREMIUM
                     </Badge>
                   )}
                 </div>
@@ -455,7 +455,7 @@ const Dashboard = () => {
                     } text-white transition-all duration-300 hover:scale-105 font-semibold`}
                   >
                     <Crown className="h-5 w-5" />
-                    {isPremium ? "Adventure Pass ✨" : "Upgrade to Adventure Pass"}
+                    {isPremium ? "Premium ✨" : "Upgrade to Premium"}
                   </Button>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -524,12 +524,12 @@ const Dashboard = () => {
                   {isPremium && (
                     <Badge className="bg-gradient-to-r from-amber-500 to-yellow-500 text-white border-0 shadow-lg shadow-amber-500/30 px-3 py-1 text-sm font-semibold">
                       <Crown className="h-3.5 w-3.5 mr-1" />
-                      ADVENTURE PASS
+                      PREMIUM
                     </Badge>
                   )}
                 </div>
                 <p className="text-muted-foreground mt-2">
-                  {isPremium ? "Enjoying your Adventure Pass with custom themes!" : "Your stories, achievements, and progress"}
+                  {isPremium ? "Enjoying Premium with custom themes!" : "Your stories, achievements, and progress"}
                 </p>
               </div>
             </>

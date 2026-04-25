@@ -41,7 +41,7 @@ export const StoryLimitWidget = () => {
     
     const { plan } = subscription;
     if (plan.name === 'premium') {
-      return <Badge className="bg-gradient-to-r from-purple-500 to-pink-500"><Crown className="w-3 h-3 mr-1" />Adventure Pass</Badge>;
+      return <Badge className="bg-gradient-to-r from-purple-500 to-pink-500"><Crown className="w-3 h-3 mr-1" />Premium</Badge>;
     }
     if (plan.name === 'basic') {
       return <Badge variant="default"><Zap className="w-3 h-3 mr-1" />Basic</Badge>;
@@ -118,7 +118,7 @@ export const StoryLimitWidget = () => {
 
           {subscription?.plan && subscription.plan.name !== 'free' && (
             <div className="text-center text-sm text-muted-foreground">
-              Stories your child will want to come back to every day with Adventure Pass
+              Stories your child will want to come back to every day with Premium
             </div>
           )}
         </CardContent>
