@@ -1,12 +1,10 @@
 import { motion } from 'framer-motion';
 import React from 'react';
-import { Capacitor } from '@capacitor/core';
+import { isNativePlatform } from '@/lib/platform';
 
 interface PageTransitionProps {
   children: React.ReactNode;
 }
-
-const isNative = Capacitor.isNativePlatform();
 
 // iOS-style push transitions for native, subtle fade for web
 const nativeVariants = {
@@ -61,6 +59,8 @@ const webVariants = {
 };
 
 export const PageTransition: React.FC<PageTransitionProps> = ({ children }) => {
+  const isNative = isNativePlatform();
+
   return (
     <motion.div
       variants={isNative ? nativeVariants : webVariants}

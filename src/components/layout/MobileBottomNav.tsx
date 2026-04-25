@@ -4,7 +4,6 @@ import { Home, BookOpen, Trophy, Users, Crown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useDevice } from '@/contexts/DeviceContext';
 import { addHapticFeedback } from '@/lib/mobileFeatures';
-import { Capacitor } from '@capacitor/core';
 import { motion } from 'framer-motion';
 
 interface NavItem {
@@ -13,10 +12,8 @@ interface NavItem {
   path: string;
 }
 
-const isNativeApp = Capacitor.isNativePlatform();
-
 const navItems: NavItem[] = [
-  { icon: Home, label: 'Home', path: isNativeApp ? '/dashboard' : '/' },
+  { icon: Home, label: 'Home', path: '/dashboard' },
   { icon: BookOpen, label: 'Gallery', path: '/gallery' },
   { icon: Trophy, label: 'Trophies', path: '/achievements' },
   { icon: Users, label: 'Parents', path: '/parent-dashboard' },
@@ -59,7 +56,7 @@ export function MobileBottomNav() {
               key={item.path}
               onClick={() => {
                 addHapticFeedback('light');
-                navigate(item.path);
+                navigate(isNative ? item.path : item.path === '/dashboard' ? '/' : item.path);
               }}
               className={cn(
                 "relative flex flex-col items-center justify-center min-w-[60px] min-h-[44px] rounded-xl transition-colors",

@@ -1,10 +1,10 @@
 import { Preferences } from '@capacitor/preferences';
-import { Capacitor } from '@capacitor/core';
+import { isNativePlatform } from '@/lib/platform';
 
 // Enhanced local storage for mobile with fallback to web localStorage
 export const mobileStorage = {
   async setItem(key: string, value: string): Promise<void> {
-    if (Capacitor.isNativePlatform()) {
+    if (isNativePlatform()) {
       await Preferences.set({ key, value });
     } else {
       localStorage.setItem(key, value);
@@ -12,7 +12,7 @@ export const mobileStorage = {
   },
   
   async getItem(key: string): Promise<string | null> {
-    if (Capacitor.isNativePlatform()) {
+    if (isNativePlatform()) {
       const { value } = await Preferences.get({ key });
       return value;
     } else {
@@ -21,7 +21,7 @@ export const mobileStorage = {
   },
   
   async removeItem(key: string): Promise<void> {
-    if (Capacitor.isNativePlatform()) {
+    if (isNativePlatform()) {
       await Preferences.remove({ key });
     } else {
       localStorage.removeItem(key);
@@ -29,7 +29,7 @@ export const mobileStorage = {
   },
 
   async clear(): Promise<void> {
-    if (Capacitor.isNativePlatform()) {
+    if (isNativePlatform()) {
       await Preferences.clear();
     } else {
       localStorage.clear();

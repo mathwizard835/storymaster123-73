@@ -1,4 +1,4 @@
-import { Capacitor } from '@capacitor/core';
+import { isNativePlatform } from '@/lib/platform';
 
 /** Published web domain — use this for web auth redirects */
 const PUBLISHED_DOMAIN = 'https://storymaster123-73.lovable.app';
@@ -10,7 +10,7 @@ const NATIVE_SCHEME = 'storymasterquest://';
  * Web builds use the published domain so callbacks avoid preview/editor URLs.
  */
 export function getAuthRedirectUrl(path: string = '/auth'): string {
-  if (Capacitor.isNativePlatform()) {
+  if (isNativePlatform()) {
     return `${NATIVE_SCHEME}${path.replace(/^\//, '')}`;
   }
 

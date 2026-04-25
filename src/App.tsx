@@ -15,9 +15,9 @@ import { AnimatePresence } from "framer-motion";
 import { PageTransition } from "@/components/PageTransition";
 import { NativeLoadingScreen } from "@/components/NativeLoadingScreen";
 import { NativeOnboarding, hasSeenOnboarding } from "@/components/NativeOnboarding";
-import { Capacitor } from "@capacitor/core";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { trackFunnelStep } from "@/lib/analytics";
+import { isNativePlatform } from "@/lib/platform";
 
 // Eager: landing + auth (critical path)
 import Index from "./pages/Index";
@@ -44,18 +44,6 @@ const SharedStory = lazy(() => import("./pages/SharedStory"));
 const AdminAnalytics = lazy(() => import("./pages/AdminAnalytics"));
 
 const queryClient = new QueryClient();
-
-const isNativePlatform = () => {
-  try {
-    if (Capacitor.isNativePlatform()) return true;
-
-    const capacitor = typeof window !== 'undefined' ? (window as any).Capacitor : null;
-    const platform = capacitor?.getPlatform?.();
-    return platform === 'ios' || platform === 'android' || capacitor?.isNativePlatform?.() === true;
-  } catch {
-    return false;
-  }
-};
 
 // On native, show onboarding → welcome screen if not logged in, dashboard if logged in
 const NativeHomeRedirect = () => {
