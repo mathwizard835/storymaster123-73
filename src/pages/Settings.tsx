@@ -67,7 +67,7 @@ export default function Settings() {
         },
         {
           icon: Crown,
-          label: "Adventure Pass",
+          label: "Premium",
           description: "Manage your subscription",
           action: () => { addHapticFeedback("light"); navigate("/subscription"); },
           chevron: true,
