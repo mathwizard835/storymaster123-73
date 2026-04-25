@@ -1,22 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { Seo } from "@/components/Seo";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import {
-  Dialog as NewStoryDialog,
-  DialogContent as NewDialogContent,
-  DialogHeader as NewDialogHeader,
-  DialogTitle as NewDialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
 import heroParentTrust from "@/assets/hero-parent-trust.jpg";
 import familyReading from "@/assets/family-reading.jpg";
 import storyGenres from "@/assets/story-genres.jpg";
-import heroPortal from "@/assets/hero-portal.jpg";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
-import { getCompletedStories } from "@/lib/story";
-import { loadCurrentStoryFromDatabase } from "@/lib/databaseStory";
-import { getStoriesRemaining } from "@/lib/subscription";
 import {
   BookOpen,
   Star,
@@ -29,196 +16,11 @@ import {
   Sparkles,
   ChevronDown,
   Rocket,
-  Crown,
   GraduationCap,
-  LogOut,
-  Play,
 } from "lucide-react";
-import { useState, useEffect } from "react";
 
 const Index = () => {
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
-  const completedStories = getCompletedStories();
-  const [showPitch, setShowPitch] = useState(true);
-  const [hasActiveStory, setHasActiveStory] = useState(false);
-  const [showNewStoryDialog, setShowNewStoryDialog] = useState(false);
-
-  // Check for active story when component mounts
-  useEffect(() => {
-    const checkActiveStory = async () => {
-      if (user) {
-        try {
-          const activeStory = await loadCurrentStoryFromDatabase();
-          setHasActiveStory(!!activeStory && activeStory.scenes.length > 0);
-        } catch (e) {
-          setHasActiveStory(false);
-        }
-      }
-    };
-    checkActiveStory();
-  }, [user]);
-
-  const SignOutButton = () => (
-    <Button variant="ghost" size="sm" onClick={signOut} className="text-white/70 hover:text-white hover:bg-white/10">
-      <LogOut className="h-4 w-4 mr-2" />
-      Sign Out
-    </Button>
-  );
-
-  // If user wants to skip to the original experience
-  if (!showPitch) {
-    return (
-      <>
-        <Seo
-          title="StoryMaster Kids – Your Adventure Awaits"
-          description="Create your hero and begin your interactive reading adventure with StoryMaster Kids."
-          canonical="/"
-          jsonLd={{
-            "@context": "https://schema.org",
-            "@type": "SoftwareApplication",
-            name: "StoryMaster Kids",
-            applicationCategory: "EducationalApplication",
-          }}
-        />
-        <header className="sr-only">
-          <h1>Welcome to StoryMaster Kids! 🎮✨</h1>
-        </header>
-        <main className="relative min-h-screen w-full overflow-hidden">
-          <img
-            src={heroPortal}
-            alt="Vibrant sci‑fi portal with stars and magical energy"
-            className="absolute inset-0 h-full w-full object-cover"
-            loading="eager"
-          />
-          <div className="absolute inset-0 bg-background/20" />
-
-          <section className="relative z-10 flex min-h-screen items-center justify-center px-6">
-            {/* Floating Adventure Pass Button - Top Right */}
-            {user && (
-              <Button
-                onClick={() => navigate("/subscription")}
-                className="fixed top-4 right-4 sm:top-8 sm:right-8 h-12 w-12 sm:h-14 sm:w-14 md:h-16 md:w-16 rounded-full bg-gradient-to-br from-purple-600 via-purple-500 to-pink-500 hover:from-purple-700 hover:via-purple-600 hover:to-pink-600 shadow-2xl shadow-purple-500/50 hover:shadow-purple-500/80 transition-all duration-500 hover:scale-110 border-2 border-white/20 z-50 flex items-center justify-center group animate-pulse hover:animate-none"
-                style={{ top: `max(env(safe-area-inset-top, 16px), 16px)` }}
-                aria-label="Upgrade to Adventure Pass"
-              >
-                <Crown className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 text-white group-hover:scale-125 transition-transform duration-300" />
-              </Button>
-            )}
-
-            <div className="max-w-3xl text-center animate-enter">
-              {user && (
-                <div className="mb-8 flex items-center justify-end">
-                  <SignOutButton />
-                </div>
-              )}
-              <h2 className="font-heading text-4xl md:text-6xl font-extrabold tracking-tight drop-shadow-xl text-foreground">
-                Welcome to StoryMaster Kids! 🎮✨
-              </h2>
-              <p className="mt-4 text-lg md:text-xl text-muted-foreground">
-                Build your hero. Launch your mission. Your choices shape the story.
-              </p>
-              <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
-                {/* Continue or Start New Button */}
-                {hasActiveStory ? (
-                  <div className="flex flex-col sm:flex-row gap-4">
-                    <Button
-                      size="xl"
-                      variant="hero"
-                      onClick={() => navigate("/dashboard")}
-                      aria-label="Go to dashboard"
-                    >
-                      Go to Dashboard
-                    </Button>
-                    <Button
-                      size="xl"
-                      variant="outline"
-                      onClick={async () => {
-                        const { canPlay } = await getStoriesRemaining();
-                        if (!canPlay) {
-                          navigate("/subscription");
-                        } else {
-                          setShowNewStoryDialog(true);
-                        }
-                      }}
-                      aria-label="Start new adventure"
-                      className="flex items-center gap-2"
-                    >
-                      <Play className="h-4 w-4" />
-                      Start New Story
-                    </Button>
-                  </div>
-                ) : (
-                  <Button
-                    size="xl"
-                    variant="hero"
-                    onClick={async () => {
-                      if (user) {
-                        const { canPlay } = await getStoriesRemaining();
-                        if (!canPlay) {
-                          navigate("/subscription");
-                        } else {
-                          navigate("/profile?new=true");
-                        }
-                      } else {
-                        navigate("/auth");
-                      }
-                    }}
-                    aria-label="Create my hero"
-                  >
-                    {user ? "Start New Adventure" : "Sign Up!"}
-                  </Button>
-                )}
-              </div>
-
-              {/* Big Access Buttons for Logged In Users */}
-              {user && (
-                <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 tablet-lg:grid-cols-3 gap-4 max-w-4xl mx-auto">
-                  <Button
-                    size="xl"
-                    variant="game"
-                    onClick={() => navigate("/gallery")}
-                    className="min-h-[4.5rem] sm:min-h-[5rem] text-base sm:text-lg font-bold flex flex-col items-center gap-1.5 sm:gap-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 py-3"
-                    aria-label="View story gallery"
-                  >
-                    <BookOpen className="h-6 w-6 sm:h-8 sm:w-8" />
-                    <div>
-                      <div>Story Gallery</div>
-                      <div className="text-xs sm:text-sm opacity-75">({completedStories.length} stories)</div>
-                    </div>
-                  </Button>
-                  <Button
-                    onClick={() => navigate("/achievements")}
-                    variant="game"
-                    size="xl"
-                    className="min-h-[4.5rem] sm:min-h-[5rem] text-base sm:text-lg font-bold flex flex-col items-center gap-1.5 sm:gap-2 bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-700 hover:to-orange-700 py-3"
-                  >
-                    <Star className="h-6 w-6 sm:h-8 sm:w-8" />
-                    <div>
-                      <div>🏆 Achievements</div>
-                      <div className="text-xs sm:text-sm opacity-75">View progress</div>
-                    </div>
-                  </Button>
-                  <Button
-                    onClick={() => navigate("/profile")}
-                    variant="game"
-                    size="xl"
-                    className="min-h-[4.5rem] sm:min-h-[5rem] text-base sm:text-lg font-bold flex flex-col items-center gap-1.5 sm:gap-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 py-3"
-                  >
-                    <Crown className="h-6 w-6 sm:h-8 sm:w-8" />
-                    <div>
-                      <div>Hero Profile</div>
-                      <div className="text-xs sm:text-sm opacity-75">Points & stats</div>
-                    </div>
-                  </Button>
-                </div>
-              )}
-            </div>
-          </section>
-        </main>
-      </>
-    );
-  }
 
   const content = {
     title: "🌟 Become the Hero of Your Own Epic Adventure!",
@@ -251,33 +53,6 @@ const Index = () => {
         }}
       />
 
-      {/* New Story Confirmation Dialog */}
-      <NewStoryDialog open={showNewStoryDialog} onOpenChange={setShowNewStoryDialog}>
-        <NewDialogContent className="max-w-md">
-          <NewDialogHeader>
-            <NewDialogTitle>Start New Adventure?</NewDialogTitle>
-            <DialogDescription>
-              You have an adventure in progress. Starting a new one will save your current progress and begin a fresh
-              story.
-            </DialogDescription>
-          </NewDialogHeader>
-          <div className="flex gap-3 mt-6">
-            <Button variant="outline" onClick={() => setShowNewStoryDialog(false)} className="flex-1">
-              Cancel
-            </Button>
-            <Button
-              onClick={() => {
-                setShowNewStoryDialog(false);
-                navigate("/profile?new=true");
-              }}
-              className="flex-1"
-            >
-              Start New Adventure
-            </Button>
-          </div>
-        </NewDialogContent>
-      </NewStoryDialog>
-
       {/* Hero Section - The Big Pitch */}
        <section className="relative min-h-screen w-full overflow-hidden pb-24 md:pb-8">
         <img
@@ -289,24 +64,7 @@ const Index = () => {
         <div className="absolute inset-0 bg-background/5" />
 
         <div className="relative z-10 flex min-h-screen items-center justify-center px-6">
-          {/* Floating Adventure Pass Button - Top Right */}
-          {user && (
-            <Button
-              onClick={() => navigate("/subscription")}
-              className="fixed top-4 right-4 sm:top-8 sm:right-8 h-12 w-12 sm:h-14 sm:w-14 md:h-16 md:w-16 rounded-full bg-gradient-to-br from-purple-600 via-purple-500 to-pink-500 hover:from-purple-700 hover:via-purple-600 hover:to-pink-600 shadow-2xl shadow-purple-500/50 hover:shadow-purple-500/80 transition-all duration-500 hover:scale-110 border-2 border-white/20 z-50 flex items-center justify-center group animate-pulse hover:animate-none"
-              style={{ top: `max(env(safe-area-inset-top, 16px), 16px)` }}
-              aria-label="Upgrade to Adventure Pass"
-            >
-              <Crown className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 text-white group-hover:scale-125 transition-transform duration-300" />
-            </Button>
-          )}
-
           <div className="max-w-4xl text-center animate-enter">
-            {user && (
-              <div className="mb-8 flex items-center justify-end">
-                <SignOutButton />
-              </div>
-            )}
             <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-extrabold tracking-tight drop-shadow-2xl mb-4 sm:mb-6">
                <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
                  StoryMaster Kids
@@ -325,38 +83,14 @@ const Index = () => {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-              {/* Continue or Start New Button */}
-              {hasActiveStory ? (
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <Button size="xl" variant="hero" onClick={() => navigate("/dashboard")} className="text-lg px-8 py-4">
-                    Go to Dashboard
-                  </Button>
-                  <Button
-                    size="xl"
-                    variant="outline"
-                    onClick={() => setShowNewStoryDialog(true)}
-                    className="text-lg px-8 py-4 flex items-center gap-2"
-                  >
-                    <Play className="h-4 w-4" />
-                    Start New Story
-                  </Button>
-                </div>
-              ) : (
-                <Button
-                  size="xl"
-                  variant="hero"
-                  onClick={() => {
-                    if (user) {
-                      navigate("/dashboard");
-                    } else {
-                      navigate("/auth");
-                    }
-                  }}
-                  className="text-lg px-8 py-4 animate-pulse"
-                >
-                  {user ? "Go to Dashboard" : "Sign Up!"}
-                </Button>
-              )}
+              <Button
+                size="xl"
+                variant="hero"
+                onClick={() => navigate("/auth")}
+                className="text-lg px-8 py-4 animate-pulse"
+              >
+                Sign In
+              </Button>
               <Button
                 size="xl"
                 variant="outline"
@@ -711,32 +445,14 @@ const Index = () => {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-6 justify-center mb-8">
-            {/* Same button logic as the main CTA */}
-            {hasActiveStory ? (
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Button size="xl" variant="hero" onClick={() => navigate("/mission")} className="text-xl px-12 py-6">
-                  Continue Your Quest
-                </Button>
-                <Button
-                  size="xl"
-                  variant="outline"
-                  onClick={() => setShowNewStoryDialog(true)}
-                  className="text-xl px-12 py-6 flex items-center gap-2"
-                >
-                  <Play className="h-5 w-5" />
-                  Start New Story
-                </Button>
-              </div>
-            ) : (
-              <Button
-                size="xl"
-                variant="hero"
-                onClick={() => navigate(user ? "/profile?new=true" : "/auth")}
-                className="text-xl px-12 py-6 animate-pulse"
-              >
-                {user ? "Start New Adventure" : "Sign Up!"}
-              </Button>
-            )}
+            <Button
+              size="xl"
+              variant="hero"
+              onClick={() => navigate("/auth")}
+              className="text-xl px-12 py-6 animate-pulse"
+            >
+              Sign In
+            </Button>
           </div>
 
           <div className="bg-muted/30 rounded-2xl p-8 max-w-4xl mx-auto">
