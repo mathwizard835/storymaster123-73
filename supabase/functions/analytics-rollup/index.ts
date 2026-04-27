@@ -55,11 +55,11 @@ serve(async (req) => {
     auth: { persistSession: false },
   });
 
-  const { data: claimsData, error: claimsErr } = await userClient.auth.getClaims(token);
-  const userId = claimsData?.claims?.sub;
+  const { data: userData, error: userErr } = await userClient.auth.getUser(token);
+  const userId = userData?.user?.id;
 
-  if (claimsErr || !userId) {
-    console.error("analytics-rollup auth failed", claimsErr);
+  if (userErr || !userId) {
+    console.error("analytics-rollup auth failed", userErr);
     return new Response(JSON.stringify({ error: "unauthorized" }), {
       status: 401,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
