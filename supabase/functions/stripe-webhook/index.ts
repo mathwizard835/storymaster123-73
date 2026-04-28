@@ -7,6 +7,9 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, stripe-signature',
 };
 
+const getErrorMessage = (error: unknown) =>
+  error instanceof Error ? error.message : 'An unknown error occurred';
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -39,7 +42,7 @@ serve(async (req) => {
     try {
       event = stripe.webhooks.constructEvent(body, signature, webhookSecret!);
     } catch (err) {
-      console.error('Webhook signature verification failed:', err.message);
+      console.error('Webhook signature verification failed:', getErrorMessage(err));
       return new Response(
         JSON.stringify({ error: 'Webhook signature verification failed' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -178,7 +181,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error processing webhook:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: getErrorMessage(error) }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500,

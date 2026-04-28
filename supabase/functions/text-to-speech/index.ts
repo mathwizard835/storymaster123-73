@@ -6,6 +6,9 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
+const getErrorMessage = (error: unknown) =>
+  error instanceof Error ? error.message : 'An unknown error occurred';
+
 // Rate limiting for text-to-speech
 const rateLimit = (() => {
   const ipRequestLog = new Map<string, number[]>();
@@ -51,22 +54,21 @@ serve(async (req) => {
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-
   const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
     global: { headers: { Authorization: authHeader } }
   });
 
   const token = authHeader.replace('Bearer ', '');
-  const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
-  if (claimsError || !claimsData?.claims) {
+  const { data: userData, error: userError } = await supabaseAuth.auth.getUser(token);
+  if (userError || !userData?.user) {
     return new Response(
       JSON.stringify({ error: 'Invalid or expired token' }),
       { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 
-  const userId = claimsData.claims.sub as string;
+  const userId = userData.user.id;
+  console.log('Authenticated text-to-speech user:', userId);
 
   // Read-to-Me is available to all authenticated users (free + Adventure Pass)
 
@@ -156,7 +158,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Text-to-speech error:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: getErrorMessage(error) }),
       {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
