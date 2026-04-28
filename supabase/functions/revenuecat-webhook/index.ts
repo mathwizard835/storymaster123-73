@@ -7,6 +7,9 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+const getErrorMessage = (error: unknown) =>
+  error instanceof Error ? error.message : "An unknown error occurred";
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -181,7 +184,7 @@ serve(async (req) => {
   } catch (error) {
     console.error("Webhook error:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: getErrorMessage(error) }),
       {
         status: 200, // Return 200 to prevent RevenueCat retries on our errors
         headers: { ...corsHeaders, "Content-Type": "application/json" },

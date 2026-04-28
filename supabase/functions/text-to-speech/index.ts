@@ -6,6 +6,9 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
+const getErrorMessage = (error: unknown) =>
+  error instanceof Error ? error.message : 'An unknown error occurred';
+
 // Rate limiting for text-to-speech
 const rateLimit = (() => {
   const ipRequestLog = new Map<string, number[]>();
@@ -156,7 +159,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Text-to-speech error:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: getErrorMessage(error) }),
       {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
