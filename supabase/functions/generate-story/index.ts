@@ -208,6 +208,13 @@ function extractJSON(text: string): unknown | null {
   return null;
 }
 
+function hasQuizQuestions(value: unknown): value is { questions: unknown[] } {
+  return typeof value === "object" &&
+    value !== null &&
+    "questions" in value &&
+    Array.isArray((value as { questions?: unknown }).questions);
+}
+
 const SYSTEM_PROMPT = `You are StoryMaster AI, an interactive storyteller for children 6–11.
 Create cinematic, emotionally engaging, immersive choose-your-own-adventure stories that delight, inspire, and keep kids returning.
 
@@ -345,16 +352,16 @@ serve(async (req) => {
   });
 
   const token = authHeader.replace("Bearer ", "");
-  const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
-  if (claimsError || !claimsData?.claims) {
-    console.error("JWT verification failed:", claimsError);
+  const { data: userData, error: userError } = await supabaseAuth.auth.getUser(token);
+  if (userError || !userData?.user) {
+    console.error("JWT verification failed:", userError);
     return new Response(JSON.stringify({ error: "Invalid or expired token" }), {
       status: 401,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 
-  const userId = claimsData.claims.sub as string;
+  const userId = userData.user.id;
   console.log(`Authenticated user: ${userId}`);
 
   // Use service role for server-side queries (bypasses RLS)
@@ -455,7 +462,7 @@ Return ONLY valid JSON (no markdown, no explanations):
         const quizText = quizData?.content?.[0]?.text ?? "";
         const quizParsed = extractJSON(quizText);
 
-        if (!quizParsed || !quizParsed.questions) {
+        if (!hasQuizQuestions(quizParsed)) {
           console.error("Invalid quiz response format");
           return new Response(JSON.stringify({ error: "Invalid quiz format" }), {
             status: 500,
