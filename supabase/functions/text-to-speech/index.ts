@@ -54,22 +54,21 @@ serve(async (req) => {
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-
   const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
     global: { headers: { Authorization: authHeader } }
   });
 
   const token = authHeader.replace('Bearer ', '');
-  const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
-  if (claimsError || !claimsData?.claims) {
+  const { data: userData, error: userError } = await supabaseAuth.auth.getUser(token);
+  if (userError || !userData?.user) {
     return new Response(
       JSON.stringify({ error: 'Invalid or expired token' }),
       { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 
-  const userId = claimsData.claims.sub as string;
+  const userId = userData.user.id;
+  console.log('Authenticated text-to-speech user:', userId);
 
   // Read-to-Me is available to all authenticated users (free + Adventure Pass)
 
