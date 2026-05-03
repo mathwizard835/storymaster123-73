@@ -38,6 +38,31 @@ const StoryGallery = () => {
       if (isOnline()) {
         try {
           const allStories = await loadAllUserStoriesFromDatabase();
+
+          // Self-heal: any story that has reached the last scene or has completed_at
+          // but is not yet flagged completed should be marked completed in DB.
+          const toHeal = allStories.filter((s) => {
+            if (s.status === 'completed') return false;
+            if (s.completed_at) return true;
+            if ((s.scene_count || 0) > 0 && (s.current_scene_index || 0) + 1 >= (s.scene_count || 0)) return true;
+            return false;
+          });
+          if (toHeal.length > 0) {
+            await Promise.all(
+              toHeal.map((s) =>
+                markStoryCompletedInDatabase(s.id).catch((err) =>
+                  console.warn('Failed to self-heal story status:', s.id, err)
+                )
+              )
+            );
+            for (const s of allStories) {
+              if (toHeal.find((h) => h.id === s.id)) {
+                (s as DatabaseStory).status = 'completed';
+                if (!s.completed_at) (s as DatabaseStory).completed_at = new Date().toISOString();
+              }
+            }
+          }
+
           setStories(allStories);
           // Cache completed stories for offline use
           const completed = allStories.filter(s => s.status === 'completed');
