@@ -390,7 +390,7 @@ const ProfileSetup = () => {
         jsonLd={{ "@context": "https://schema.org", "@type": "WebPage", name: "Create Your Hero Profile" }}
       />
 
-      <main className="min-h-screen w-full bg-background flex flex-col">
+      <main className="min-h-screen w-full bg-background flex flex-col overflow-x-hidden">
         {/* Header with progress */}
         <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-md border-b border-border px-4 py-3">
           <div className="container max-w-lg mx-auto">

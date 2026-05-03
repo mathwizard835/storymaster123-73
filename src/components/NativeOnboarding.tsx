@@ -101,7 +101,7 @@ export function NativeOnboarding({ onComplete }: { onComplete: () => void }) {
             >
               <Icon className="w-12 h-12 text-white" />
             </motion.div>
-            <div className="space-y-3 max-w-[300px]">
+            <div className="space-y-3 max-w-[300px] w-full px-4">
               <h2 className="text-3xl font-extrabold text-white tracking-tight">{slide.title}</h2>
               <p className="text-white/50 text-base leading-relaxed">{slide.description}</p>
             </div>

@@ -3,7 +3,7 @@ import { Seo } from "@/components/Seo";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { loadAllUserStoriesFromDatabase, type DatabaseStory } from "@/lib/databaseStory";
+import { loadAllUserStoriesFromDatabase, markStoryCompletedInDatabase, type DatabaseStory } from "@/lib/databaseStory";
 import { cacheStoriesOffline, loadOfflineStories, isOnline } from "@/lib/offlineStories";
 import { Clock, Star, ArrowLeft, BookOpen, Play, Loader2, WifiOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -38,6 +38,31 @@ const StoryGallery = () => {
       if (isOnline()) {
         try {
           const allStories = await loadAllUserStoriesFromDatabase();
+
+          // Self-heal: any story that has reached the last scene or has completed_at
+          // but is not yet flagged completed should be marked completed in DB.
+          const toHeal = allStories.filter((s) => {
+            if (s.status === 'completed') return false;
+            if (s.completed_at) return true;
+            if ((s.scene_count || 0) > 0 && (s.current_scene_index || 0) + 1 >= (s.scene_count || 0)) return true;
+            return false;
+          });
+          if (toHeal.length > 0) {
+            await Promise.all(
+              toHeal.map((s) =>
+                markStoryCompletedInDatabase(s.id).catch((err) =>
+                  console.warn('Failed to self-heal story status:', s.id, err)
+                )
+              )
+            );
+            for (const s of allStories) {
+              if (toHeal.find((h) => h.id === s.id)) {
+                (s as DatabaseStory).status = 'completed';
+                if (!s.completed_at) (s as DatabaseStory).completed_at = new Date().toISOString();
+              }
+            }
+          }
+
           setStories(allStories);
           // Cache completed stories for offline use
           const completed = allStories.filter(s => s.status === 'completed');
@@ -186,22 +211,27 @@ const StoryGallery = () => {
             <div className="grid gap-6 tablet:grid-cols-2 lg:grid-cols-3 auto-rows-fr">
               {stories.map((story) => {
                 const profile = story.profile as any;
+                const isCompleted =
+                  story.status === 'completed' ||
+                  !!story.completed_at ||
+                  ((story.scene_count || 0) > 0 &&
+                    (story.current_scene_index || 0) + 1 >= (story.scene_count || 0));
                 return (
-                  <Card key={story.id} className={`glass-panel border-0 ${story.status !== 'completed' ? 'ring-1 ring-primary/30' : ''}`}>
-                    <CardHeader>
-                      <CardTitle className="text-lg flex items-center gap-2">
-                        {story.title || 'Untitled Adventure'}
-                        {story.status !== 'completed' && (
-                          <Badge variant="secondary" className="bg-primary/20 text-primary text-xs">In Progress</Badge>
+                  <Card key={story.id} className={`glass-panel border-0 min-w-0 ${!isCompleted ? 'ring-1 ring-primary/30' : ''}`}>
+                    <CardHeader className="min-w-0">
+                      <CardTitle className="text-lg flex items-center gap-2 min-w-0 break-words">
+                        <span className="break-words min-w-0 flex-1">{story.title || 'Untitled Adventure'}</span>
+                        {!isCompleted && (
+                          <Badge variant="secondary" className="bg-primary/20 text-primary text-xs shrink-0">In Progress</Badge>
                         )}
                       </CardTitle>
                       <CardDescription className="flex items-center gap-2">
-                        <Clock className="h-4 w-4" />
+                        <Clock className="h-4 w-4 shrink-0" />
                         {formatDate(story.completed_at || story.last_played_at)}
                       </CardDescription>
                     </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
+                    <CardContent className="min-w-0">
+                      <div className="space-y-4 min-w-0">
                         <div className="flex flex-wrap gap-2">
                           {(profile?.selectedBadges || []).slice(0, 3).map((badge: string) => (
                             <Badge 
@@ -220,13 +250,13 @@ const StoryGallery = () => {
                         </div>
                         
                         <div className="grid grid-cols-2 gap-4 text-sm">
-                          <div>
+                          <div className="min-w-0">
                             <span className="text-muted-foreground">Scenes:</span>
                             <div className="font-semibold">{story.scene_count || 0}</div>
                           </div>
-                          <div>
+                          <div className="min-w-0">
                             <span className="text-muted-foreground">Status:</span>
-                            <div className="font-semibold capitalize">{story.status}</div>
+                            <div className="font-semibold capitalize">{isCompleted ? 'completed' : story.status}</div>
                           </div>
                         </div>
 
@@ -241,7 +271,7 @@ const StoryGallery = () => {
                           )}
                         </div>
 
-                        {story.status !== 'completed' ? (
+                        {!isCompleted ? (
                           <Button
                             onClick={() => {
                               addHapticFeedback('light');

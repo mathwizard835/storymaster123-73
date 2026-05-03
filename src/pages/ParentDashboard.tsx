@@ -169,7 +169,7 @@ export default function ParentDashboard() {
       />
       
       <SwipeBackIndicator progress={swipeProgress} />
-      <div ref={mainRef} className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 overflow-auto pb-24 md:pb-8">
+      <div ref={mainRef} className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 overflow-x-hidden overflow-y-auto pb-24 md:pb-8">
         {/* Native iOS-style header */}
         {isPhone && isNative && (
           <NativeNavigationHeader

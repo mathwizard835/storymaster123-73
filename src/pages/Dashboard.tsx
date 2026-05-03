@@ -229,7 +229,7 @@ const Dashboard = () => {
         canonical="/dashboard"
       />
       
-      <main ref={mainRef} className="min-h-screen bg-background pb-24 md:pb-8 overflow-auto">
+      <main ref={mainRef} className="min-h-screen bg-background pb-24 md:pb-8 overflow-x-hidden overflow-y-auto">
         {/* Native iOS-style header */}
         {isPhone && isNative && (
           <NativeNavigationHeader
@@ -757,13 +757,19 @@ const Dashboard = () => {
               ) : (
                 <div className="space-y-4">
                   {/* Show database stories (both in-progress and completed) */}
-                  {recentStories.slice(0, 3).map((story) => (
-                    <Card key={story.id} className="glass-panel border-0">
-                      <CardContent className="p-4">
-                        <div className="flex justify-between items-start mb-2">
-                          <h3 className="font-semibold text-lg truncate flex-1 mr-4">{story.title || 'Untitled Adventure'}</h3>
-                          <div className="flex items-center gap-2">
-                            {story.status === 'active' || story.status === 'paused' ? (
+                  {recentStories.slice(0, 3).map((story) => {
+                    const isStoryCompleted =
+                      story.status === 'completed' ||
+                      !!story.completed_at ||
+                      ((story.scene_count || 0) > 0 &&
+                        (story.current_scene_index || 0) + 1 >= (story.scene_count || 0));
+                    return (
+                    <Card key={story.id} className="glass-panel border-0 min-w-0">
+                      <CardContent className="p-4 min-w-0">
+                        <div className="flex justify-between items-start mb-2 gap-2 min-w-0">
+                          <h3 className="font-semibold text-lg truncate flex-1 min-w-0">{story.title || 'Untitled Adventure'}</h3>
+                          <div className="flex items-center gap-2 shrink-0">
+                            {!isStoryCompleted ? (
                               <Badge className="bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-100">
                                 In Progress
                               </Badge>
@@ -790,9 +796,9 @@ const Dashboard = () => {
                             </Badge>
                           )}
                         </div>
-                        <div className="flex justify-between items-center">
-                          <div className="flex gap-4 text-sm text-muted-foreground">
-                            {story.status === 'active' || story.status === 'paused' ? (
+                        <div className="flex justify-between items-center gap-2 min-w-0">
+                          <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground min-w-0">
+                            {!isStoryCompleted ? (
                               <span>Scene {story.current_scene_index + 1} of {story.scene_count}</span>
                             ) : (
                               <>
@@ -801,12 +807,12 @@ const Dashboard = () => {
                               </>
                             )}
                           </div>
-                          {(story.status === 'active' || story.status === 'paused') && (
+                          {!isStoryCompleted && (
                             <Button
                               size="sm"
                               variant="outline"
                               onClick={() => navigate(`/mission?resume=${story.id}`)}
-                              className="flex items-center gap-1"
+                              className="flex items-center gap-1 shrink-0"
                             >
                               <Play className="h-3 w-3" />
                               Continue
@@ -815,7 +821,8 @@ const Dashboard = () => {
                         </div>
                       </CardContent>
                     </Card>
-                  ))}
+                    );
+                  })}
                   {/* Show local storage completed stories if database doesn't have them */}
                   {recentStories.length < 3 && completedStories.slice(0, 3 - recentStories.length).map((story) => (
                     <Card key={story.id} className="glass-panel border-0">

@@ -143,7 +143,7 @@ export default function Settings() {
     <div
       ref={scrollRef}
       className={cn(
-        "min-h-screen bg-background overflow-y-auto",
+        "min-h-screen bg-background overflow-x-hidden overflow-y-auto",
         isPhone && "pb-28"
       )}
     >
