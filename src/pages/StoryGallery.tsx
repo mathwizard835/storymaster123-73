@@ -3,7 +3,7 @@ import { Seo } from "@/components/Seo";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { loadAllUserStoriesFromDatabase, type DatabaseStory } from "@/lib/databaseStory";
+import { loadAllUserStoriesFromDatabase, markStoryCompletedInDatabase, type DatabaseStory } from "@/lib/databaseStory";
 import { cacheStoriesOffline, loadOfflineStories, isOnline } from "@/lib/offlineStories";
 import { Clock, Star, ArrowLeft, BookOpen, Play, Loader2, WifiOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
