@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Share2, Gift, Users, Copy, Check } from "lucide-react";
 import { getReferralStats, createReferral, getShareableReferralLink } from "@/lib/referrals";
+import { shareStory } from "@/lib/mobileFeatures";
 import { useToast } from "@/hooks/use-toast";
 import { referralCodeSchema } from "@/lib/validationSchemas";
 import ParentalGateDialog from "@/components/ParentalGateDialog";
@@ -64,26 +65,30 @@ export const ReferralWidget = () => {
   const handleShareReferral = async () => {
     const baseUrl = window.location.origin;
     const shareUrl = await getShareableReferralLink(baseUrl);
-    
-    if (navigator.share) {
+
+    try {
+      await shareStory(
+        'Join me on StoryMaster Kids!',
+        'Create amazing interactive stories together! Use my referral code to get bonus stories.',
+        shareUrl
+      );
+    } catch {
+      // Final fallback: copy to clipboard
       try {
-        await navigator.share({
-          title: 'Join me on StoryMaster Kids!',
-          text: 'Create amazing interactive stories together! Use my referral code to get bonus stories.',
-          url: shareUrl,
+        await navigator.clipboard.writeText(shareUrl);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+        toast({
+          title: "Link Copied!",
+          description: "Referral link copied to clipboard.",
         });
-      } catch (err) {
-        // Share was cancelled or unsupported
+      } catch {
+        toast({
+          title: "Unable to share",
+          description: "Please try again.",
+          variant: "destructive",
+        });
       }
-    } else {
-      // Fallback to copying link
-      await navigator.clipboard.writeText(shareUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-      toast({
-        title: "Link Copied!",
-        description: "Referral link copied to clipboard.",
-      });
     }
   };
 
