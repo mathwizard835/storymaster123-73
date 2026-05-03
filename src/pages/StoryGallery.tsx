@@ -271,7 +271,7 @@ const StoryGallery = () => {
                           )}
                         </div>
 
-                        {story.status !== 'completed' ? (
+                        {!isCompleted ? (
                           <Button
                             onClick={() => {
                               addHapticFeedback('light');
