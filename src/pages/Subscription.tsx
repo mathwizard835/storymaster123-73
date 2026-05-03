@@ -218,7 +218,7 @@ export default function Subscription() {
 
   return (
     <div 
-      className="min-h-screen bg-gradient-to-b from-primary via-purple-900 to-indigo-900 pb-24 md:pb-8"
+      className="min-h-screen bg-gradient-to-b from-primary via-purple-900 to-indigo-900 pb-24 md:pb-8 overflow-x-hidden"
       style={{ paddingBottom: isNative ? Math.max(safeAreaInsets.bottom + 96, 96) : undefined }}
     >
       {/* Header */}
