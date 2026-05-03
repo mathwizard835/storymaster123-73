@@ -211,22 +211,27 @@ const StoryGallery = () => {
             <div className="grid gap-6 tablet:grid-cols-2 lg:grid-cols-3 auto-rows-fr">
               {stories.map((story) => {
                 const profile = story.profile as any;
+                const isCompleted =
+                  story.status === 'completed' ||
+                  !!story.completed_at ||
+                  ((story.scene_count || 0) > 0 &&
+                    (story.current_scene_index || 0) + 1 >= (story.scene_count || 0));
                 return (
-                  <Card key={story.id} className={`glass-panel border-0 ${story.status !== 'completed' ? 'ring-1 ring-primary/30' : ''}`}>
-                    <CardHeader>
-                      <CardTitle className="text-lg flex items-center gap-2">
-                        {story.title || 'Untitled Adventure'}
-                        {story.status !== 'completed' && (
-                          <Badge variant="secondary" className="bg-primary/20 text-primary text-xs">In Progress</Badge>
+                  <Card key={story.id} className={`glass-panel border-0 min-w-0 ${!isCompleted ? 'ring-1 ring-primary/30' : ''}`}>
+                    <CardHeader className="min-w-0">
+                      <CardTitle className="text-lg flex items-center gap-2 min-w-0 break-words">
+                        <span className="break-words min-w-0 flex-1">{story.title || 'Untitled Adventure'}</span>
+                        {!isCompleted && (
+                          <Badge variant="secondary" className="bg-primary/20 text-primary text-xs shrink-0">In Progress</Badge>
                         )}
                       </CardTitle>
                       <CardDescription className="flex items-center gap-2">
-                        <Clock className="h-4 w-4" />
+                        <Clock className="h-4 w-4 shrink-0" />
                         {formatDate(story.completed_at || story.last_played_at)}
                       </CardDescription>
                     </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
+                    <CardContent className="min-w-0">
+                      <div className="space-y-4 min-w-0">
                         <div className="flex flex-wrap gap-2">
                           {(profile?.selectedBadges || []).slice(0, 3).map((badge: string) => (
                             <Badge 
@@ -245,13 +250,13 @@ const StoryGallery = () => {
                         </div>
                         
                         <div className="grid grid-cols-2 gap-4 text-sm">
-                          <div>
+                          <div className="min-w-0">
                             <span className="text-muted-foreground">Scenes:</span>
                             <div className="font-semibold">{story.scene_count || 0}</div>
                           </div>
-                          <div>
+                          <div className="min-w-0">
                             <span className="text-muted-foreground">Status:</span>
-                            <div className="font-semibold capitalize">{story.status}</div>
+                            <div className="font-semibold capitalize">{isCompleted ? 'completed' : story.status}</div>
                           </div>
                         </div>
 
