@@ -33,7 +33,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { gainSceneExperience, loadCharacter } from "@/lib/character";
 import { ComprehensionQuiz } from "@/components/ComprehensionQuiz";
-import { shareStory, addHapticFeedback } from "@/lib/mobileFeatures";
+import { shareStory, addHapticFeedback, getPublicShareBaseUrl } from "@/lib/mobileFeatures";
 import { QuizQuestion } from "@/lib/quizSystem";
 import { supabase } from "@/integrations/supabase/client";
 import confetti from "canvas-confetti";
@@ -1549,10 +1549,7 @@ const Mission = () => {
 
                               // Open lightweight "send to a friend" prompt instead of auto-navigating
                               const storyTitle = allScenes[0]?.sceneTitle || scene?.sceneTitle || "my StoryMaster adventure";
-                              const origin = (typeof window !== 'undefined' && window.location.origin.includes('storymaster.app'))
-                                ? 'https://storymaster.app'
-                                : window.location.origin;
-                              const shareUrl = `${origin}/shared/${savedStory.id}`;
+                              const shareUrl = `${getPublicShareBaseUrl()}/shared/${savedStory.id}`;
                               setShareStoryInfo({ title: storyTitle, url: shareUrl });
                               setTimeout(() => setShowShareDialog(true), Math.min(finalDelay, 1500));
                             } catch (error) {
@@ -1773,11 +1770,28 @@ const Mission = () => {
                 } catch (err) {
                   console.error('Failed to mark story as shared:', err);
                 }
-                await shareStory(
-                  `I just finished "${shareStoryInfo.title}" on StoryMaster!`,
-                  `Read it here 👇`,
-                  shareStoryInfo.url
-                );
+                try {
+                  await shareStory(
+                    `I just finished "${shareStoryInfo.title}" on StoryMaster!`,
+                    `Read it here 👇`,
+                    shareStoryInfo.url
+                  );
+                } catch (shareErr) {
+                  console.error('Share failed, falling back to clipboard:', shareErr);
+                  try {
+                    await navigator.clipboard.writeText(shareStoryInfo.url);
+                    toast({
+                      title: "Link copied!",
+                      description: "Paste it to your friend in any app.",
+                    });
+                  } catch {
+                    toast({
+                      title: "Couldn't share",
+                      description: "Please try again.",
+                      variant: "destructive",
+                    });
+                  }
+                }
                 setShowShareDialog(false);
               }}
               className="w-full text-lg font-bold"

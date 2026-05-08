@@ -3,7 +3,33 @@ import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import { Capacitor } from '@capacitor/core';
 
-// Share functionality for mobile
+// Canonical public URL for any link sent to other people.
+// window.location.origin is unsafe inside Capacitor (capacitor://localhost)
+// and inside lovable preview subdomains, so default to the production domain.
+export const getPublicShareBaseUrl = (): string => {
+  if (typeof window === 'undefined') return 'https://storymaster.app';
+  const { origin } = window.location;
+  if (origin.startsWith('https://storymaster.app')) return origin;
+  return 'https://storymaster.app';
+};
+
+const isCancelError = (error: unknown): boolean => {
+  if (!error) return false;
+  const err = error as { name?: string; message?: string; code?: string };
+  const name = (err.name || '').toLowerCase();
+  const message = (err.message || '').toLowerCase();
+  const code = (err.code || '').toString().toLowerCase();
+  return (
+    name === 'aborterror' ||
+    message.includes('cancel') ||
+    message.includes('dismiss') ||
+    code.includes('cancel')
+  );
+};
+
+// Share functionality for mobile.
+// Throws on real failures so callers can fall back (e.g. clipboard copy).
+// Silently resolves when the user cancels the share sheet.
 export const shareStory = async (title: string, text: string, url?: string): Promise<void> => {
   if (Capacitor.isNativePlatform()) {
     try {
@@ -13,26 +39,31 @@ export const shareStory = async (title: string, text: string, url?: string): Pro
         url,
         dialogTitle: 'Share your adventure!'
       });
+      return;
     } catch (error) {
-      console.error('Error sharing:', error);
+      if (isCancelError(error)) return;
+      console.error('Error sharing (native):', error);
+      throw error;
     }
-  } else {
-    // Fallback for web - use native Web Share API if available
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title,
-          text,
-          url
-        });
-      } catch (error) {
-        console.error('Error sharing:', error);
-      }
-    } else {
-      // Fallback to copying to clipboard
-      await navigator.clipboard.writeText(`${title}\n\n${text}${url ? `\n\n${url}` : ''}`);
-      alert('Story copied to clipboard!');
+  }
+
+  if (typeof navigator !== 'undefined' && navigator.share) {
+    try {
+      await navigator.share({ title, text, url });
+      return;
+    } catch (error) {
+      if (isCancelError(error)) return;
+      console.error('Error sharing (web):', error);
+      throw error;
     }
+  }
+
+  // No share sheet available — copy to clipboard as a last resort.
+  try {
+    await navigator.clipboard.writeText(`${title}\n\n${text}${url ? `\n\n${url}` : ''}`);
+  } catch (error) {
+    console.error('Clipboard fallback failed:', error);
+    throw error;
   }
 };
 

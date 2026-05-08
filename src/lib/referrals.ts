@@ -146,7 +146,8 @@ export const getReferralStats = async (): Promise<{
   }
 };
 
-export const getShareableReferralLink = async (baseUrl: string): Promise<string> => {
+export const getShareableReferralLink = async (_baseUrl?: string): Promise<string> => {
   const code = await getReferralCode();
-  return `${baseUrl}?ref=${code}`;
+  const { getPublicShareBaseUrl } = await import("@/lib/mobileFeatures");
+  return `${getPublicShareBaseUrl()}?ref=${code}`;
 };
