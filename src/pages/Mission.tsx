@@ -1770,11 +1770,28 @@ const Mission = () => {
                 } catch (err) {
                   console.error('Failed to mark story as shared:', err);
                 }
-                await shareStory(
-                  `I just finished "${shareStoryInfo.title}" on StoryMaster!`,
-                  `Read it here 👇`,
-                  shareStoryInfo.url
-                );
+                try {
+                  await shareStory(
+                    `I just finished "${shareStoryInfo.title}" on StoryMaster!`,
+                    `Read it here 👇`,
+                    shareStoryInfo.url
+                  );
+                } catch (shareErr) {
+                  console.error('Share failed, falling back to clipboard:', shareErr);
+                  try {
+                    await navigator.clipboard.writeText(shareStoryInfo.url);
+                    toast({
+                      title: "Link copied!",
+                      description: "Paste it to your friend in any app.",
+                    });
+                  } catch {
+                    toast({
+                      title: "Couldn't share",
+                      description: "Please try again.",
+                      variant: "destructive",
+                    });
+                  }
+                }
                 setShowShareDialog(false);
               }}
               className="w-full text-lg font-bold"
