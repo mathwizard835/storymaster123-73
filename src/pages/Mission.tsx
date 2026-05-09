@@ -72,8 +72,7 @@ const Mission = () => {
   const [showLearningProgress, setShowLearningProgress] = useState(false);
   const [storyReadyToFinish, setStoryReadyToFinish] = useState(false);
   const [showNewStoryDialog, setShowNewStoryDialog] = useState(false);
-  const [showShareDialog, setShowShareDialog] = useState(false);
-  const [shareStoryInfo, setShareStoryInfo] = useState<{ title: string; url: string } | null>(null);
+  
   
   // Quiz state
   const [showQuiz, setShowQuiz] = useState(false);
