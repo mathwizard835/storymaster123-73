@@ -1546,11 +1546,9 @@ const Mission = () => {
                                 });
                               }, finalDelay);
 
-                              // Open lightweight "send to a friend" prompt instead of auto-navigating
-                              const storyTitle = allScenes[0]?.sceneTitle || scene?.sceneTitle || "my StoryMaster adventure";
-                              const shareUrl = `${getPublicShareBaseUrl()}/shared/${savedStory.id}`;
-                              setShareStoryInfo({ title: storyTitle, url: shareUrl });
-                              setTimeout(() => setShowShareDialog(true), Math.min(finalDelay, 1500));
+                              // Navigate back to dashboard once notifications have had a moment to display
+                              const navDelay = Math.min(finalDelay + 500, 2500);
+                              setTimeout(() => navigate('/dashboard'), navDelay);
                             } catch (error) {
                               console.error("Error finishing adventure:", error);
                               toast({
