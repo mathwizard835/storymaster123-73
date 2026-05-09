@@ -33,7 +33,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { gainSceneExperience, loadCharacter } from "@/lib/character";
 import { ComprehensionQuiz } from "@/components/ComprehensionQuiz";
-import { shareStory, addHapticFeedback, getPublicShareBaseUrl } from "@/lib/mobileFeatures";
+import { addHapticFeedback } from "@/lib/mobileFeatures";
 import { QuizQuestion } from "@/lib/quizSystem";
 import { supabase } from "@/integrations/supabase/client";
 import confetti from "canvas-confetti";
@@ -72,8 +72,7 @@ const Mission = () => {
   const [showLearningProgress, setShowLearningProgress] = useState(false);
   const [storyReadyToFinish, setStoryReadyToFinish] = useState(false);
   const [showNewStoryDialog, setShowNewStoryDialog] = useState(false);
-  const [showShareDialog, setShowShareDialog] = useState(false);
-  const [shareStoryInfo, setShareStoryInfo] = useState<{ title: string; url: string } | null>(null);
+  
   
   // Quiz state
   const [showQuiz, setShowQuiz] = useState(false);
@@ -1547,11 +1546,9 @@ const Mission = () => {
                                 });
                               }, finalDelay);
 
-                              // Open lightweight "send to a friend" prompt instead of auto-navigating
-                              const storyTitle = allScenes[0]?.sceneTitle || scene?.sceneTitle || "my StoryMaster adventure";
-                              const shareUrl = `${getPublicShareBaseUrl()}/shared/${savedStory.id}`;
-                              setShareStoryInfo({ title: storyTitle, url: shareUrl });
-                              setTimeout(() => setShowShareDialog(true), Math.min(finalDelay, 1500));
+                              // Navigate back to dashboard once notifications have had a moment to display
+                              const navDelay = Math.min(finalDelay + 500, 2500);
+                              setTimeout(() => navigate('/dashboard'), navDelay);
                             } catch (error) {
                               console.error("Error finishing adventure:", error);
                               toast({
@@ -1736,77 +1733,6 @@ const Mission = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Send to a Friend - lightweight share prompt after finishing a story */}
-      <Dialog
-        open={showShareDialog}
-        onOpenChange={(open) => {
-          setShowShareDialog(open);
-          if (!open) {
-            // Once the dialog closes, return to home
-            navigate('/');
-          }
-        }}
-      >
-        <DialogContent className="max-w-sm text-center">
-          <DialogHeader>
-            <DialogTitle className="text-2xl">That was crazy 😳</DialogTitle>
-            <DialogDescription className="text-base pt-1">
-              Send this to a friend
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-col gap-3 mt-4">
-            <Button
-              size="lg"
-              variant="hero"
-              onClick={async () => {
-                if (!shareStoryInfo || !savedStory?.id) return;
-                addHapticFeedback('medium');
-                // Flip the story to publicly viewable so the recipient sees the same scenes
-                try {
-                  await supabase
-                    .from('user_stories')
-                    .update({ shared_publicly: true })
-                    .eq('id', savedStory.id);
-                } catch (err) {
-                  console.error('Failed to mark story as shared:', err);
-                }
-                try {
-                  await shareStory(
-                    `I just finished "${shareStoryInfo.title}" on StoryMaster!`,
-                    `Read it here 👇`,
-                    shareStoryInfo.url
-                  );
-                } catch (shareErr) {
-                  console.error('Share failed, falling back to clipboard:', shareErr);
-                  try {
-                    await navigator.clipboard.writeText(shareStoryInfo.url);
-                    toast({
-                      title: "Link copied!",
-                      description: "Paste it to your friend in any app.",
-                    });
-                  } catch {
-                    toast({
-                      title: "Couldn't share",
-                      description: "Please try again.",
-                      variant: "destructive",
-                    });
-                  }
-                }
-                setShowShareDialog(false);
-              }}
-              className="w-full text-lg font-bold"
-            >
-              Send
-            </Button>
-            <button
-              onClick={() => setShowShareDialog(false)}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Maybe later
-            </button>
-          </div>
-        </DialogContent>
-      </Dialog>
       {showQuiz && quizQuestions.length > 0 && (
         <ComprehensionQuiz
           open={showQuiz}
