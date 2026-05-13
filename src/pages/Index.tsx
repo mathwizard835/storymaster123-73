@@ -86,10 +86,10 @@ const Index = () => {
               <Button
                 size="xl"
                 variant="hero"
-                onClick={() => navigate("/auth")}
+                onClick={() => navigate("/try")}
                 className="text-lg px-8 py-4 animate-pulse"
               >
-                Sign In
+                🚀 Try a Free Story
               </Button>
               <Button
                 size="xl"
@@ -100,6 +100,9 @@ const Index = () => {
                 See How It Works
               </Button>
             </div>
+            <p className="text-sm text-muted-foreground -mt-8 mb-12">
+              No signup needed — jump straight into an adventure.
+            </p>
 
             <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 mb-8 border border-white/20">
               <p className="text-lg font-semibold text-center mb-4">✨ How It Works</p>
