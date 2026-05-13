@@ -1,114 +1,344 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Progress } from "@/components/ui/progress";
 import { Seo } from "@/components/Seo";
-import { ArrowLeft, BookOpen, Sparkles, Trophy, Download, UserPlus } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Sparkles,
+  BookOpen,
+  Trophy,
+  UserPlus,
+  Loader2,
+  PawPrint,
+  Rocket,
+  Search,
+  Target,
+  Users,
+  Paintbrush,
+  Zap,
+  Smile,
+  Eye,
+  Compass,
+} from "lucide-react";
 
-type Choice = { label: string; next: string };
-type Scene = {
+// ---------------------------------------------------------------
+// Self-contained guest demo: a real personalized AI-generated story.
+// Uses generate-story edge function in `guest:true` mode (no auth, no DB write).
+// Limited to short length (4-5 scenes).
+// ---------------------------------------------------------------
+
+const BADGES = [
+  { id: "beast", label: "Animals", icon: PawPrint },
+  { id: "space", label: "Space", icon: Rocket },
+  { id: "mystic", label: "Magic", icon: Sparkles },
+  { id: "detective", label: "Mystery", icon: Search },
+  { id: "action", label: "Action", icon: Target },
+  { id: "social", label: "Friends", icon: Users },
+  { id: "creative", label: "Art & Music", icon: Paintbrush },
+];
+
+const MODES = [
+  { id: "thrill", label: "Thrill", icon: Zap },
+  { id: "comedy", label: "Comedy", icon: Smile },
+  { id: "mystery", label: "Mystery", icon: Eye },
+  { id: "explore", label: "Explore", icon: Compass },
+];
+
+const getDefaultLexile = (age: number) => {
+  const map: Record<number, number> = { 5: 200, 6: 300, 7: 400, 8: 500, 9: 600, 10: 750, 11: 900, 12: 1000 };
+  return map[age] ?? 500;
+};
+
+type Choice = {
   id: string;
-  title: string;
-  narrative: string;
+  text: string;
+  type?: string;
+};
+type Scene = {
+  sceneTitle?: string;
+  narrative?: string;
   choices?: Choice[];
-  ending?: boolean;
+  end?: boolean;
 };
 
-// Self-contained mini choose-your-own-adventure (no backend, no auth).
-// ~4 scenes, ~600 words total — enough for visitors to feel the experience.
-const SCENES: Record<string, Scene> = {
-  start: {
-    id: "start",
-    title: "The Whispering Woods",
-    narrative:
-      "You step out of the cozy little cottage and the morning sun spills through the trees like melted gold. A folded map flutters at your feet. On it, someone has scribbled: \"The lost crown of King Pebble lies past the river. Bring it back before sundown.\" Your loyal pet fox, Ember, sniffs the page and sneezes — she always sneezes when adventure is near.\n\nAhead, the path splits. To the left, a creaky rope bridge swings over a fast, glittering river. To the right, a tall oak tree leans low, its branches whispering as if they have a secret to share.",
-    choices: [
-      { label: "Cross the rope bridge", next: "bridge" },
-      { label: "Climb the whispering oak", next: "tree" },
-    ],
-  },
-  bridge: {
-    id: "bridge",
-    title: "The Rope Bridge",
-    narrative:
-      "You step onto the bridge and the planks groan a tired hello. Halfway across, a grumpy river troll pops up from below, water dripping from his mossy beard. \"No one crosses,\" he rumbles, \"unless they answer my riddle: I have hands but cannot clap. I have a face but never smile. What am I?\"\n\nEmber tilts her head. You think for a moment.",
-    choices: [
-      { label: "Answer: \"A clock!\"", next: "crown" },
-      { label: "Answer: \"A statue!\"", next: "splash" },
-    ],
-  },
-  tree: {
-    id: "tree",
-    title: "The Whispering Oak",
-    narrative:
-      "You scramble up the gnarled oak. The branches really are whispering — soft and feathery, like a thousand tiny librarians. At the top, tucked into a hollow, you find a tiny brass key shaped like a leaf. Below you, the forest stretches out, and you spot a glittering meadow where something gold catches the sun.\n\nYou could climb back down and head for the meadow, or shimmy along a long branch that arches all the way to a moss-covered door set into the hillside.",
-    choices: [
-      { label: "Head for the gold in the meadow", next: "crown" },
-      { label: "Try the mossy door with the leaf key", next: "crown" },
-    ],
-  },
-  splash: {
-    id: "splash",
-    title: "Splash!",
-    narrative:
-      "The troll grins. \"Wrong!\" With a flick of his finger he tips the bridge and you tumble — SPLASH — into the cool river. Ember paddles beside you, looking very unimpressed. The current carries you both gently to a soft, sandy bank… right next to a sparkling something half-buried in the sand.",
-    choices: [{ label: "Dig it up", next: "crown" }],
-  },
-  crown: {
-    id: "crown",
-    title: "The Lost Crown",
-    narrative:
-      "There it is — the crown of King Pebble, exactly where the map promised. It is small and silver and scattered with little river stones that twinkle like quiet stars. Ember does a happy spin. As you lift it, a warm voice drifts on the breeze: \"Thank you, brave one. The kingdom remembers.\"\n\nYou tuck the crown safely into your bag and turn for home, the sun still high, the woods a little less mysterious — and a lot more friendly.",
-    ending: true,
-  },
-};
+type Stage = "setup" | "loading" | "playing" | "finished" | "error";
+
+const TOTAL_STEPS = 3;
 
 const TryStory = () => {
   const navigate = useNavigate();
-  const [sceneId, setSceneId] = useState<string>("start");
-  const [history, setHistory] = useState<string[]>([]);
+  const { toast } = useToast();
 
-  const scene = SCENES[sceneId];
-  const isEnding = !!scene.ending;
+  // Setup state
+  const [step, setStep] = useState(1);
+  const [name, setName] = useState("");
+  const [age, setAge] = useState(8);
+  const [selectedBadges, setSelectedBadges] = useState<string[]>([]);
+  const [mode, setMode] = useState("thrill");
+  const [interests, setInterests] = useState("");
 
-  const wordsRead = useMemo(() => {
-    const allIds = [...history, sceneId];
-    return allIds.reduce((sum, id) => sum + (SCENES[id]?.narrative.split(/\s+/).length || 0), 0);
-  }, [history, sceneId]);
+  // Story state
+  const [stage, setStage] = useState<Stage>("setup");
+  const [scenes, setScenes] = useState<Scene[]>([]);
+  const [currentScene, setCurrentScene] = useState<Scene | null>(null);
+  const [error, setError] = useState<string>("");
 
-  const choose = (next: string) => {
-    setHistory((h) => [...h, sceneId]);
-    setSceneId(next);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+  const wordsRead = scenes.reduce((sum, s) => sum + (s.narrative?.split(/\s+/).length || 0), 0)
+    + (currentScene?.narrative?.split(/\s+/).length || 0);
+
+  const profile = {
+    name: name || "the hero",
+    age,
+    lexileScore: getDefaultLexile(age),
+    selectedBadges: selectedBadges.length ? selectedBadges : ["action"],
+    mode,
+    storyLength: "short" as const,
+    interests,
   };
 
-  return (
-    <div className="min-h-[100dvh] bg-gradient-to-b from-[hsl(250,50%,12%)] via-[hsl(265,55%,15%)] to-[hsl(230,50%,8%)] text-white">
-      <Seo
-        title="Try a Free StoryMaster Adventure — No Signup"
-        description="Take a free interactive story for a spin. No account, no signup — just an adventure where your choices shape what happens next."
-        canonical="/try"
-      />
+  const callGenerate = async (sceneContext: Scene | null, sceneCount: number): Promise<Scene> => {
+    const { data, error: invokeError } = await supabase.functions.invoke("generate-story", {
+      body: {
+        guest: true,
+        profile,
+        scene: sceneContext,
+        scene_count: sceneCount,
+      },
+    });
+    if (invokeError) throw new Error(invokeError.message || "Could not reach the story service");
+    if (!data?.success && !data?.ok) {
+      throw new Error(data?.error || "Story generation failed");
+    }
+    const parsed: Scene | null = data?.result ?? data?.parsed ?? null;
+    if (!parsed) throw new Error("The story service returned an unexpected response");
+    return parsed;
+  };
 
-      <header className="sticky top-0 z-20 backdrop-blur-md bg-black/30 border-b border-white/10">
-        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
+  const startStory = async () => {
+    if (!selectedBadges.length && !interests.trim()) {
+      toast({ title: "Pick something fun!", description: "Choose at least one interest or tell us what you love." });
+      setStep(2);
+      return;
+    }
+    setStage("loading");
+    setError("");
+    try {
+      const first = await callGenerate(null, 1);
+      setCurrentScene(first);
+      setStage(first.end ? "finished" : "playing");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (e: any) {
+      console.error("Demo story start failed:", e);
+      setError(e?.message || "Something went wrong starting your adventure.");
+      setStage("error");
+    }
+  };
+
+  const choose = async (choice: Choice) => {
+    if (!currentScene) return;
+    const completedScene = { ...currentScene, chosen: choice.id };
+    const newScenes = [...scenes, completedScene];
+    setScenes(newScenes);
+    setStage("loading");
+    try {
+      const next = await callGenerate(
+        { ...currentScene, lastChoiceId: choice.id, lastChoiceText: choice.text } as any,
+        newScenes.length + 1,
+      );
+      setCurrentScene(next);
+      // Hard cap: end after 5 scenes total to keep demo short.
+      const isLast = next.end || newScenes.length + 1 >= 5;
+      setStage(isLast ? "finished" : "playing");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (e: any) {
+      console.error("Demo next scene failed:", e);
+      setError(e?.message || "Something went wrong continuing your adventure.");
+      setStage("error");
+    }
+  };
+
+  const reset = () => {
+    setStep(1);
+    setScenes([]);
+    setCurrentScene(null);
+    setError("");
+    setStage("setup");
+  };
+
+  // ----------------- Render -----------------
+
+  const renderSetup = () => (
+    <div className="max-w-lg mx-auto px-5 py-6">
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-3">
           <button
-            onClick={() => navigate("/")}
-            className="inline-flex items-center gap-1.5 text-sm text-white/70 hover:text-white transition"
+            onClick={() => (step > 1 ? setStep(step - 1) : navigate("/"))}
+            className="inline-flex items-center gap-1.5 text-sm text-white/70 hover:text-white"
           >
-            <ArrowLeft className="h-4 w-4" /> Home
+            <ArrowLeft className="h-4 w-4" /> Back
           </button>
-          <div className="inline-flex items-center gap-1.5 text-xs text-white/60">
-            <BookOpen className="h-3.5 w-3.5" />
-            <span>{wordsRead} words read</span>
-          </div>
+          <span className="text-xs text-white/60">Step {step} of {TOTAL_STEPS}</span>
+          <div className="w-12" />
         </div>
-      </header>
+        <Progress value={(step / TOTAL_STEPS) * 100} className="h-1.5" />
+      </div>
 
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={step}
+          initial={{ opacity: 0, x: 30 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -30 }}
+          transition={{ duration: 0.25 }}
+          className="space-y-6"
+        >
+          {step === 1 && (
+            <div className="space-y-6">
+              <div className="text-center">
+                <h2 className="font-heading text-2xl md:text-3xl font-extrabold mb-1">Who's the hero?</h2>
+                <p className="text-white/60 text-sm">We'll write a story starring you.</p>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-white/80">Hero name (optional)</Label>
+                <Input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  maxLength={30}
+                  placeholder="e.g. Maya"
+                  className="bg-white/10 border-white/20 text-white placeholder:text-white/40 text-lg py-6 text-center"
+                />
+              </div>
+              <div className="space-y-3">
+                <Label className="text-white/80">How old are you?</Label>
+                <div className="text-center">
+                  <span className="text-5xl font-extrabold text-white">{age}</span>
+                  <span className="text-white/60 ml-2">years old</span>
+                </div>
+                <Slider value={[age]} min={5} max={12} step={1} onValueChange={(v) => setAge(v[0] ?? 8)} />
+                <div className="flex justify-between text-xs text-white/50"><span>5</span><span>12</span></div>
+              </div>
+            </div>
+          )}
+
+          {step === 2 && (
+            <div className="space-y-5">
+              <div className="text-center">
+                <h2 className="font-heading text-2xl md:text-3xl font-extrabold mb-1">What do you love?</h2>
+                <p className="text-white/60 text-sm">Pick one or more — we'll weave them in.</p>
+              </div>
+              <div className="grid grid-cols-2 gap-2.5">
+                {BADGES.map((b) => {
+                  const Icon = b.icon;
+                  const active = selectedBadges.includes(b.id);
+                  return (
+                    <button
+                      key={b.id}
+                      type="button"
+                      onClick={() =>
+                        setSelectedBadges((prev) =>
+                          prev.includes(b.id) ? prev.filter((x) => x !== b.id) : [...prev, b.id],
+                        )
+                      }
+                      className={`flex items-center gap-2 rounded-xl border-2 px-3 py-3 transition ${
+                        active
+                          ? "bg-white/15 border-white text-white"
+                          : "border-white/15 bg-white/[0.04] text-white/80 hover:bg-white/[0.08]"
+                      }`}
+                    >
+                      <Icon className="h-4 w-4" />
+                      <span className="text-sm font-semibold">{b.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="space-y-2">
+                <Label className="text-white/80">Anything specific?</Label>
+                <Input
+                  value={interests}
+                  onChange={(e) => setInterests(e.target.value)}
+                  maxLength={120}
+                  placeholder="e.g. dragons, pizza, time travel..."
+                  className="bg-white/10 border-white/20 text-white placeholder:text-white/40"
+                />
+              </div>
+            </div>
+          )}
+
+          {step === 3 && (
+            <div className="space-y-5">
+              <div className="text-center">
+                <h2 className="font-heading text-2xl md:text-3xl font-extrabold mb-1">Pick your vibe</h2>
+                <p className="text-white/60 text-sm">What kind of adventure do you want?</p>
+              </div>
+              <ToggleGroup
+                type="single"
+                value={mode}
+                onValueChange={(v) => v && setMode(v)}
+                className="grid grid-cols-2 gap-2"
+              >
+                {MODES.map((m) => {
+                  const Icon = m.icon;
+                  return (
+                    <ToggleGroupItem
+                      key={m.id}
+                      value={m.id}
+                      className="rounded-xl border-2 border-white/15 bg-white/[0.04] text-white/80 data-[state=on]:bg-white/15 data-[state=on]:border-white data-[state=on]:text-white px-3 py-4"
+                    >
+                      <Icon className="h-4 w-4 mr-2" />
+                      {m.label}
+                    </ToggleGroupItem>
+                  );
+                })}
+              </ToggleGroup>
+              <div className="rounded-xl bg-white/[0.04] border border-white/10 p-3 text-xs text-white/60">
+                Demo stories are short (about 4–5 scenes). Sign up to create longer, fully personalized adventures.
+              </div>
+            </div>
+          )}
+        </motion.div>
+      </AnimatePresence>
+
+      <div className="mt-8">
+        {step < TOTAL_STEPS ? (
+          <Button size="lg" variant="hero" className="w-full" onClick={() => setStep(step + 1)}>
+            Continue <ArrowRight className="h-4 w-4" />
+          </Button>
+        ) : (
+          <Button size="lg" variant="hero" className="w-full text-base font-bold" onClick={startStory}>
+            <Sparkles className="h-5 w-5" />
+            Start my adventure
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+
+  const renderLoading = () => (
+    <div className="flex-1 flex flex-col items-center justify-center px-6 py-20 text-center">
+      <Loader2 className="h-10 w-10 animate-spin text-white/80 mb-5" />
+      <h2 className="font-heading text-xl font-bold mb-1">Writing your story…</h2>
+      <p className="text-white/60 text-sm max-w-sm">
+        Our AI is dreaming up an adventure starring {name || "you"}. This usually takes 5–15 seconds.
+      </p>
+    </div>
+  );
+
+  const renderPlaying = () => {
+    if (!currentScene) return null;
+    return (
       <main className="max-w-2xl mx-auto px-5 py-8">
         <AnimatePresence mode="wait">
           <motion.article
-            key={scene.id}
+            key={scenes.length}
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
@@ -116,96 +346,140 @@ const TryStory = () => {
           >
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/10 text-xs text-white/70 mb-4">
               <Sparkles className="h-3.5 w-3.5" />
-              Free demo adventure
+              Scene {scenes.length + 1} • Free demo
             </div>
             <h1 className="font-heading text-3xl md:text-4xl font-extrabold mb-5 leading-tight">
-              {scene.title}
+              {currentScene.sceneTitle || "Your adventure"}
             </h1>
-            <div className="prose prose-invert max-w-none text-base md:text-lg leading-relaxed text-white/85 whitespace-pre-line">
-              {scene.narrative}
+            <div className="text-base md:text-lg leading-relaxed text-white/85 whitespace-pre-line">
+              {currentScene.narrative}
             </div>
 
-            {!isEnding && scene.choices && (
+            {currentScene.choices && currentScene.choices.length > 0 && (
               <div className="mt-8 space-y-3">
                 <p className="text-xs uppercase tracking-wider text-white/50 font-semibold">
                   What do you do?
                 </p>
-                {scene.choices.map((c, i) => (
+                {currentScene.choices.map((c) => (
                   <button
-                    key={i}
-                    onClick={() => choose(c.next)}
+                    key={c.id}
+                    onClick={() => choose(c)}
                     className="w-full text-left p-4 rounded-2xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 hover:border-white/30 transition-all active:scale-[0.98] group"
                   >
                     <span className="text-base md:text-lg font-medium group-hover:text-white">
-                      {c.label}
+                      {c.text}
                     </span>
                   </button>
                 ))}
               </div>
             )}
-
-            {isEnding && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3, duration: 0.5 }}
-                className="mt-10"
-              >
-                <div className="rounded-3xl bg-gradient-to-br from-[hsl(265,85%,55%)]/20 to-[hsl(195,85%,50%)]/20 border border-white/15 p-6 md:p-8 text-center">
-                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-[hsl(265,85%,55%)] to-[hsl(195,85%,50%)] mb-4 shadow-2xl">
-                    <Trophy className="h-8 w-8 text-white" />
-                  </div>
-                  <h2 className="text-2xl md:text-3xl font-bold mb-2">
-                    Adventure complete!
-                  </h2>
-                  <p className="text-white/70 mb-1">
-                    You just read <strong className="text-white">{wordsRead} words</strong> — without even noticing.
-                  </p>
-                  <p className="text-white/60 text-sm mb-6">
-                    Real StoryMaster adventures are <strong>10× longer</strong>, personalized to your child, and full of brand-new worlds every time.
-                  </p>
-
-                  <div className="space-y-3">
-                    <Button
-                      size="lg"
-                      variant="hero"
-                      onClick={() => navigate("/auth")}
-                      className="w-full text-base font-bold"
-                    >
-                      <UserPlus className="h-5 w-5" />
-                      Create a free account to keep playing
-                    </Button>
-                    <a
-                      href="#"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        navigate("/auth");
-                      }}
-                      className="flex items-center justify-center gap-2 w-full py-3 rounded-md border border-white/20 bg-white/[0.04] hover:bg-white/[0.1] text-white/80 text-sm font-semibold transition"
-                    >
-                      <Download className="h-4 w-4" />
-                      Get the iOS app (coming soon)
-                    </a>
-                    <button
-                      onClick={() => {
-                        setHistory([]);
-                        setSceneId("start");
-                      }}
-                      className="w-full py-2 text-sm text-white/50 hover:text-white/80 transition"
-                    >
-                      Replay the demo
-                    </button>
-                  </div>
-                </div>
-
-                <p className="text-center text-xs text-white/40 mt-6">
-                  3 free stories every 30 days • No credit card required
-                </p>
-              </motion.div>
-            )}
           </motion.article>
         </AnimatePresence>
       </main>
+    );
+  };
+
+  const renderFinished = () => (
+    <main className="max-w-2xl mx-auto px-5 py-8">
+      {currentScene && (
+        <article className="mb-10">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/10 text-xs text-white/70 mb-4">
+            <Sparkles className="h-3.5 w-3.5" />
+            Final scene
+          </div>
+          <h1 className="font-heading text-3xl md:text-4xl font-extrabold mb-5 leading-tight">
+            {currentScene.sceneTitle || "The end"}
+          </h1>
+          <div className="text-base md:text-lg leading-relaxed text-white/85 whitespace-pre-line">
+            {currentScene.narrative}
+          </div>
+        </article>
+      )}
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2, duration: 0.5 }}
+      >
+        <div className="rounded-3xl bg-gradient-to-br from-[hsl(265,85%,55%)]/20 to-[hsl(195,85%,50%)]/20 border border-white/15 p-6 md:p-8 text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-[hsl(265,85%,55%)] to-[hsl(195,85%,50%)] mb-4 shadow-2xl">
+            <Trophy className="h-8 w-8 text-white" />
+          </div>
+          <h2 className="text-2xl md:text-3xl font-bold mb-2">Adventure complete!</h2>
+          <p className="text-white/70 mb-1">
+            {name ? `${name}, you` : "You"} just read{" "}
+            <strong className="text-white">{wordsRead} words</strong>.
+          </p>
+          <p className="text-white/60 text-sm mb-6">
+            Real StoryMaster adventures are <strong>longer</strong>, save your progress, level up your hero,
+            and unlock new worlds every time.
+          </p>
+
+          <div className="space-y-3">
+            <Button size="lg" variant="hero" onClick={() => navigate("/auth")} className="w-full text-base font-bold">
+              <UserPlus className="h-5 w-5" />
+              Create a free account to keep playing
+            </Button>
+            <button
+              onClick={reset}
+              className="w-full py-2 text-sm text-white/50 hover:text-white/80 transition"
+            >
+              Try another demo
+            </button>
+          </div>
+        </div>
+        <p className="text-center text-xs text-white/40 mt-6">
+          3 free stories every 30 days • No credit card required
+        </p>
+      </motion.div>
+    </main>
+  );
+
+  const renderError = () => (
+    <div className="flex-1 flex flex-col items-center justify-center px-6 py-20 text-center max-w-md mx-auto">
+      <h2 className="font-heading text-xl font-bold mb-2">Adventure interrupted</h2>
+      <p className="text-white/60 text-sm mb-6">{error}</p>
+      <div className="space-y-3 w-full">
+        <Button variant="hero" className="w-full" onClick={() => (scenes.length === 0 ? startStory() : reset())}>
+          Try again
+        </Button>
+        <Button variant="ghost" className="w-full text-white/70" onClick={() => navigate("/")}>
+          Back home
+        </Button>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="min-h-[100dvh] bg-gradient-to-b from-[hsl(250,50%,12%)] via-[hsl(265,55%,15%)] to-[hsl(230,50%,8%)] text-white flex flex-col">
+      <Seo
+        title="Try a Free StoryMaster Adventure — No Signup"
+        description="Take a free, fully personalized AI adventure for a spin. No account, no signup — your choices shape what happens next."
+        canonical="/try"
+      />
+
+      {(stage === "playing" || stage === "loading" || stage === "finished") && (
+        <header className="sticky top-0 z-20 backdrop-blur-md bg-black/30 border-b border-white/10">
+          <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
+            <button
+              onClick={() => navigate("/")}
+              className="inline-flex items-center gap-1.5 text-sm text-white/70 hover:text-white transition"
+            >
+              <ArrowLeft className="h-4 w-4" /> Home
+            </button>
+            <div className="inline-flex items-center gap-1.5 text-xs text-white/60">
+              <BookOpen className="h-3.5 w-3.5" />
+              <span>{wordsRead} words read</span>
+            </div>
+          </div>
+        </header>
+      )}
+
+      {stage === "setup" && renderSetup()}
+      {stage === "loading" && renderLoading()}
+      {stage === "playing" && renderPlaying()}
+      {stage === "finished" && renderFinished()}
+      {stage === "error" && renderError()}
     </div>
   );
 };
