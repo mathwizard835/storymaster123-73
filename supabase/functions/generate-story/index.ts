@@ -334,41 +334,16 @@ serve(async (req) => {
     });
   }
 
-  // === JWT AUTHENTICATION ===
-  const authHeader = req.headers.get("Authorization");
-  if (!authHeader?.startsWith("Bearer ")) {
-    return new Response(JSON.stringify({ error: "Authentication required" }), {
-      status: 401,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
-
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
   const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-  const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
-    global: { headers: { Authorization: authHeader } },
-  });
-
-  const token = authHeader.replace("Bearer ", "");
-  const { data: userData, error: userError } = await supabaseAuth.auth.getUser(token);
-  if (userError || !userData?.user) {
-    console.error("JWT verification failed:", userError);
-    return new Response(JSON.stringify({ error: "Invalid or expired token" }), {
-      status: 401,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
-
-  const userId = userData.user.id;
-  console.log(`Authenticated user: ${userId}`);
-
   // Use service role for server-side queries (bypasses RLS)
   const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
+  // Peek at body early to check for guest demo mode
+  let body: any;
   try {
-    // Parse and validate request body
     const contentLength = req.headers.get("content-length");
     if (contentLength && parseInt(contentLength) > 50000) {
       return new Response(JSON.stringify({ error: "Request too large" }), {
@@ -376,8 +351,55 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    body = await req.json();
+  } catch (_e) {
+    return new Response(JSON.stringify({ error: "Invalid request body" }), {
+      status: 400,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
 
-    const body = await req.json();
+  const isGuest = body?.guest === true;
+  let userId: string;
+
+  if (isGuest) {
+    // Guest demo mode: no auth required. Force a short, capped, non-persisted story.
+    userId = "guest";
+    console.log("Guest demo story request");
+    // Force short length & cap scenes
+    if (body.profile && typeof body.profile === "object") {
+      body.profile.storyLength = "short";
+    }
+  } else {
+    // === JWT AUTHENTICATION ===
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Authentication required" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: userData, error: userError } = await supabaseAuth.auth.getUser(token);
+    if (userError || !userData?.user) {
+      console.error("JWT verification failed:", userError);
+      return new Response(JSON.stringify({ error: "Invalid or expired token" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    userId = userData.user.id;
+    console.log(`Authenticated user: ${userId}`);
+  }
+
+  try {
+    // (body already parsed above)
 
     // Check if this is a quiz generation request
     if (body?.action === "generate-quiz") {
@@ -499,7 +521,7 @@ Return ONLY valid JSON (no markdown, no explanations):
     const isNewStory = !body?.scene;
     let deviceFingerprint: string | null = null;
 
-    if (isNewStory) {
+    if (isNewStory && !isGuest) {
       // Count stories started by this user in the last 30 days
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
       const { count: storyCount, error: countErr } = await supabaseAdmin
@@ -586,19 +608,22 @@ Return ONLY valid JSON (no markdown, no explanations):
     }
 
     // Determine model based on total stories started by this user
-    let selectedModel = "claude-sonnet-4-20250514";
+    // Guests always get Haiku for cost/speed.
+    let selectedModel = isGuest ? "claude-haiku-4-5-20251001" : "claude-sonnet-4-20250514";
     try {
-      // Count total stories by user_id (not device_id) for model selection
-      const { count, error: countError } = await supabaseAdmin
-        .from("user_stories")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", userId);
+      if (!isGuest) {
+        // Count total stories by user_id (not device_id) for model selection
+        const { count, error: countError } = await supabaseAdmin
+          .from("user_stories")
+          .select("*", { count: "exact", head: true })
+          .eq("user_id", userId);
 
-      if (!countError && count !== null && count >= 20) {
-        selectedModel = "claude-haiku-4-5-20251001";
-        console.log(`📊 User ${userId} has ${count} stories - using Haiku 4.5`);
-      } else {
-        console.log(`📊 User ${userId} has ${count ?? 0} stories - using Sonnet`);
+        if (!countError && count !== null && count >= 20) {
+          selectedModel = "claude-haiku-4-5-20251001";
+          console.log(`📊 User ${userId} has ${count} stories - using Haiku 4.5`);
+        } else {
+          console.log(`📊 User ${userId} has ${count ?? 0} stories - using Sonnet`);
+        }
       }
     } catch (modelErr) {
       console.warn("Failed to check story count for model selection, defaulting to Sonnet:", modelErr);
