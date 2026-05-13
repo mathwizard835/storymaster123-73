@@ -42,6 +42,7 @@ const SubscriptionSuccess = lazy(() => import("./pages/SubscriptionSuccess"));
 const Settings = lazy(() => import("./pages/Settings"));
 const SharedStory = lazy(() => import("./pages/SharedStory"));
 const AdminAnalytics = lazy(() => import("./pages/AdminAnalytics"));
+const TryStory = lazy(() => import("./pages/TryStory"));
 
 const queryClient = new QueryClient();
 
