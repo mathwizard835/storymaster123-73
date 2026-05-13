@@ -42,6 +42,7 @@ const SubscriptionSuccess = lazy(() => import("./pages/SubscriptionSuccess"));
 const Settings = lazy(() => import("./pages/Settings"));
 const SharedStory = lazy(() => import("./pages/SharedStory"));
 const AdminAnalytics = lazy(() => import("./pages/AdminAnalytics"));
+const TryStory = lazy(() => import("./pages/TryStory"));
 
 const queryClient = new QueryClient();
 
@@ -144,6 +145,7 @@ const AnimatedRoutes = () => {
           <Route path="/settings" element={<NativeAppRoute><PageTransition><Settings /></PageTransition></NativeAppRoute>} />
           <Route path="/shared/:storyId" element={<PageTransition><SharedStory /></PageTransition>} />
           <Route path="/admin/analytics" element={<NativeAppRoute><PageTransition><AdminAnalytics /></PageTransition></NativeAppRoute>} />
+          <Route path="/try" element={<PageTransition><TryStory /></PageTransition>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
