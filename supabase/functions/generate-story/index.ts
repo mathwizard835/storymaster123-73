@@ -521,7 +521,7 @@ Return ONLY valid JSON (no markdown, no explanations):
     const isNewStory = !body?.scene;
     let deviceFingerprint: string | null = null;
 
-    if (isNewStory) {
+    if (isNewStory && !isGuest) {
       // Count stories started by this user in the last 30 days
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
       const { count: storyCount, error: countErr } = await supabaseAdmin
@@ -608,19 +608,22 @@ Return ONLY valid JSON (no markdown, no explanations):
     }
 
     // Determine model based on total stories started by this user
-    let selectedModel = "claude-sonnet-4-20250514";
+    // Guests always get Haiku for cost/speed.
+    let selectedModel = isGuest ? "claude-haiku-4-5-20251001" : "claude-sonnet-4-20250514";
     try {
-      // Count total stories by user_id (not device_id) for model selection
-      const { count, error: countError } = await supabaseAdmin
-        .from("user_stories")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", userId);
+      if (!isGuest) {
+        // Count total stories by user_id (not device_id) for model selection
+        const { count, error: countError } = await supabaseAdmin
+          .from("user_stories")
+          .select("*", { count: "exact", head: true })
+          .eq("user_id", userId);
 
-      if (!countError && count !== null && count >= 20) {
-        selectedModel = "claude-haiku-4-5-20251001";
-        console.log(`📊 User ${userId} has ${count} stories - using Haiku 4.5`);
-      } else {
-        console.log(`📊 User ${userId} has ${count ?? 0} stories - using Sonnet`);
+        if (!countError && count !== null && count >= 20) {
+          selectedModel = "claude-haiku-4-5-20251001";
+          console.log(`📊 User ${userId} has ${count} stories - using Haiku 4.5`);
+        } else {
+          console.log(`📊 User ${userId} has ${count ?? 0} stories - using Sonnet`);
+        }
       }
     } catch (modelErr) {
       console.warn("Failed to check story count for model selection, defaulting to Sonnet:", modelErr);
