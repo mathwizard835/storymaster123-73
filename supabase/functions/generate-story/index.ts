@@ -334,41 +334,16 @@ serve(async (req) => {
     });
   }
 
-  // === JWT AUTHENTICATION ===
-  const authHeader = req.headers.get("Authorization");
-  if (!authHeader?.startsWith("Bearer ")) {
-    return new Response(JSON.stringify({ error: "Authentication required" }), {
-      status: 401,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
-
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
   const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-  const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
-    global: { headers: { Authorization: authHeader } },
-  });
-
-  const token = authHeader.replace("Bearer ", "");
-  const { data: userData, error: userError } = await supabaseAuth.auth.getUser(token);
-  if (userError || !userData?.user) {
-    console.error("JWT verification failed:", userError);
-    return new Response(JSON.stringify({ error: "Invalid or expired token" }), {
-      status: 401,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
-
-  const userId = userData.user.id;
-  console.log(`Authenticated user: ${userId}`);
-
   // Use service role for server-side queries (bypasses RLS)
   const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
+  // Peek at body early to check for guest demo mode
+  let body: any;
   try {
-    // Parse and validate request body
     const contentLength = req.headers.get("content-length");
     if (contentLength && parseInt(contentLength) > 50000) {
       return new Response(JSON.stringify({ error: "Request too large" }), {
@@ -376,8 +351,55 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    body = await req.json();
+  } catch (_e) {
+    return new Response(JSON.stringify({ error: "Invalid request body" }), {
+      status: 400,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
 
-    const body = await req.json();
+  const isGuest = body?.guest === true;
+  let userId: string;
+
+  if (isGuest) {
+    // Guest demo mode: no auth required. Force a short, capped, non-persisted story.
+    userId = "guest";
+    console.log("Guest demo story request");
+    // Force short length & cap scenes
+    if (body.profile && typeof body.profile === "object") {
+      body.profile.storyLength = "short";
+    }
+  } else {
+    // === JWT AUTHENTICATION ===
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Authentication required" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: userData, error: userError } = await supabaseAuth.auth.getUser(token);
+    if (userError || !userData?.user) {
+      console.error("JWT verification failed:", userError);
+      return new Response(JSON.stringify({ error: "Invalid or expired token" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    userId = userData.user.id;
+    console.log(`Authenticated user: ${userId}`);
+  }
+
+  try {
+    // (body already parsed above)
 
     // Check if this is a quiz generation request
     if (body?.action === "generate-quiz") {
