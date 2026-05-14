@@ -106,7 +106,7 @@ const Index = () => {
 
             <div className="flex flex-col items-center gap-2 mb-12">
               <a
-                href="https://apps.apple.com/app/storymaster-kids/id0000000000"
+                href="https://apps.apple.com/us/app/storymaster-kids/id6755827326"
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Download StoryMaster Kids on the App Store"
@@ -119,7 +119,6 @@ const Index = () => {
                   loading="lazy"
                 />
               </a>
-              <span className="text-xs text-muted-foreground">Coming soon to iOS</span>
             </div>
 
             <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 mb-8 border border-white/20">
