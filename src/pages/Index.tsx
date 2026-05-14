@@ -100,9 +100,27 @@ const Index = () => {
                 See How It Works
               </Button>
             </div>
-            <p className="text-sm text-muted-foreground -mt-8 mb-12">
+            <p className="text-sm text-muted-foreground -mt-8 mb-6">
               No signup needed — jump straight into an adventure.
             </p>
+
+            <div className="flex flex-col items-center gap-2 mb-12">
+              <a
+                href="https://apps.apple.com/app/storymaster-kids/id0000000000"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Download StoryMaster Kids on the App Store"
+                className="inline-block hover-scale"
+              >
+                <img
+                  src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/en-us?size=250x83&releaseDate=1700000000"
+                  alt="Download on the App Store"
+                  className="h-14 w-auto"
+                  loading="lazy"
+                />
+              </a>
+              <span className="text-xs text-muted-foreground">Coming soon to iOS</span>
+            </div>
 
             <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 mb-8 border border-white/20">
               <p className="text-lg font-semibold text-center mb-4">✨ How It Works</p>
