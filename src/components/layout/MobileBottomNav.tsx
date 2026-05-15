@@ -25,8 +25,8 @@ export function MobileBottomNav() {
   const location = useLocation();
   const { isPhone, isNative, safeAreaInsets } = useDevice();
 
-  // Only show on phone devices
-  if (!isPhone) return null;
+  // Only show on native phone devices (not web)
+  if (!isPhone || !isNative) return null;
 
   // Don't show on certain pages
   const hiddenPaths = ['/mission', '/profile', '/auth', '/reset-password'];
