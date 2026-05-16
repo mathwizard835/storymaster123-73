@@ -1,93 +1,46 @@
-## Goals
+## Goal
+Limit guest demo to one story per visitor, enforced **server-side** (not bypassable via devtools/localStorage). After use, the landing CTA flips to "Sign Up".
 
-1. Eliminate horizontal scroll / content-too-wide on iPhone across Dashboard, Settings, Parent Dashboard, Subscription, and Auth/onboarding.
-2. Fix StoryGallery showing "Continue Story" on stories that are actually completed.
+## Strategy
+Track guest demo usage in a new Supabase table keyed by a SHA-256 fingerprint of `IP + User-Agent + salt` (same pattern already used in `generate-story` for device abuse limits). The edge function rejects a 2nd guest start from the same fingerprint.
 
-Scope is intentionally narrow — no refactors, no design changes outside what's needed to stop overflow.
+## Changes
 
----
-
-## 1. Stop horizontal scroll globally (root cause guardrail)
-
-Add a single safety rule in `src/index.css` so any rogue child element (long words, wide images, untruncated emails, oversized grids) can't push the whole document sideways:
-
-```css
-html, body, #root { overflow-x: hidden; max-width: 100%; }
+### 1. Database — new table `guest_demo_usage`
 ```
+fingerprint   text primary key
+ip_prefix     text
+user_agent    text
+used_at       timestamptz default now()
+```
+- RLS enabled, no policies (only service-role edge function writes/reads).
+- Index on `used_at` for cleanup.
 
-This is a defensive backstop, not a substitute for the per-component fixes below.
+### 2. Edge function `supabase/functions/generate-story/index.ts`
+- In the `isGuest` branch, compute the same fingerprint already used below (reuse `DEVICE_FINGERPRINT_SALT`, IP prefix, UA).
+- Treat a request as the **start** of a demo when `body.scene == null` (no prior scene → first call).
+- On start:
+  - `select` from `guest_demo_usage` by fingerprint.
+  - If row exists → return `403 { error: "demo_used" }`.
+  - Else `insert` the fingerprint row before generating.
+- Subsequent scenes (`body.scene != null`) for the same fingerprint pass through (continuing the in-progress demo) — they don't insert again.
+- No change to authenticated flow.
 
----
+### 3. `src/pages/TryStory.tsx`
+- When `callGenerate` throws and the response includes `error: "demo_used"` (or status 403), set a new `stage = "demoUsed"` that renders:
+  - "You've already tried your free demo."
+  - Primary CTA → `/auth` ("Sign Up Free").
+  - Secondary → `/` ("Back home").
+- Remove the "Try another demo" reset button on `finished` stage.
+- On `finished`, also write a local hint `localStorage.setItem("demo_story_used","1")` — purely a UX optimization so the landing CTA can flip without a server round-trip. Server remains source of truth.
 
-## 2. Per-page overflow fixes
+### 4. `src/pages/Index.tsx` (hero CTA)
+- Read `localStorage.getItem("demo_story_used")` on mount:
+  - Unused → `🚀 Try a Story` → `/try` (current behavior).
+  - Used → `✨ Sign Up Free` → `/auth`, and swap subtext to "You've used your free demo — create an account to keep playing."
+- If the localStorage flag is missing but the visitor has actually used it, the server will still block them on `/try` and show the "already used" screen — so the limit holds either way.
 
-### `src/pages/Subscription.tsx`
-- Line 389: `grid-cols-1 md:grid-cols-3` for the 3 pricing/plan cards is fine, but the cards inside contain wide content. Audit the `max-w-4xl` container and ensure inner cards use `min-w-0` and text uses `break-words`.
-- Wrap the outer page container with `overflow-x-hidden` and ensure the gradient header stays within `w-full`.
-
-### `src/pages/ParentDashboard.tsx`
-- Lines 236, 300, 368: stat grids use `grid-cols-2` on mobile. Add `min-w-0` to each grid cell wrapper and `truncate` / `break-words` to long values (e.g., emails, plan names) so a long string doesn't blow out the column.
-- Add `overflow-x-hidden` to the root `<div>` (line 172).
-
-### `src/pages/Settings.tsx`
-- Line 146 root: add `overflow-x-hidden`.
-- Audit any list rows showing the user's email — wrap in `truncate min-w-0`.
-
-### `src/pages/Dashboard.tsx`
-- Line 232 main: add `overflow-x-hidden`.
-- Lines 553, 563, 655, 703 grids: add `min-w-0` to children where badges/long titles live so cards don't expand past viewport width.
-
-### `src/pages/Auth.tsx` (line 596) and `src/pages/ProfileSetup.tsx` (line 393)
-- Add `overflow-x-hidden` and ensure form containers use `w-full max-w-md` (not fixed pixel widths).
-
-### `src/components/NativeOnboarding.tsx`
-- Line 73 root already has `overflow-hidden`. Line 104 `max-w-[300px]` is fine on small screens but verify it doesn't exceed viewport on 320pt-wide devices — change to `max-w-[min(300px,100%)]`.
-
-No changes to colors, fonts, spacing rhythm, or component structure — only width/overflow guards.
-
----
-
-## 3. Fix "Continue Story" appearing on completed stories
-
-The bug is in `src/pages/StoryGallery.tsx` lines 190–256. The condition `story.status !== 'completed'` is correct in code, so if completed stories still show "Continue Story", it means the DB row's `status` is not actually `'completed'` for those stories.
-
-Looking at `src/pages/Mission.tsx` line 1457: completion calls `clearCurrentStoryInDatabase(savedStory.id)` which (per `src/lib/databaseStory.ts` line 356) does call `markStoryCompletedInDatabase`. However, the call is only reached if the user clicks the final "complete" button — if the user reaches the last scene but doesn't click through, the story remains `'active'` or `'paused'`, so the gallery correctly (per the data) shows "Continue Story".
-
-Two-part fix:
-
-**a. Defensive fallback in StoryGallery (`src/pages/StoryGallery.tsx`)**
-Treat a story as completed if any of these are true:
-- `story.status === 'completed'`, OR
-- `story.completed_at` is set, OR
-- `story.current_scene_index + 1 >= story.scene_count` AND `scene_count > 0`
-
-Replace the inline `story.status !== 'completed'` checks (lines 190, 194, 244) with a single derived `const isCompleted = ...` per card. The "Completed" badge label, the "Share Story" button, and the `In Progress` ring all key off this flag. No DB changes.
-
-**b. Self-heal on read (same file, in `loadStories`)**
-After fetching, for any story that meets the fallback completion criteria but whose DB `status` is not `'completed'`, call `markStoryCompletedInDatabase(story.id)` once and update the local list. This fixes legacy rows on first view without a migration.
-
-Same derived `isCompleted` should also be applied to the matching card in `src/pages/Dashboard.tsx` lines 766–812 so the home screen agrees with the gallery.
-
----
-
-## Files touched
-
-- `src/index.css` (add 1 rule)
-- `src/pages/Dashboard.tsx`
-- `src/pages/StoryGallery.tsx`
-- `src/pages/Settings.tsx`
-- `src/pages/ParentDashboard.tsx`
-- `src/pages/Subscription.tsx`
-- `src/pages/Auth.tsx`
-- `src/pages/ProfileSetup.tsx`
-- `src/components/NativeOnboarding.tsx`
-
-No changes to story generation, auth flow, billing, edge functions, or design tokens.
-
----
-
-## Out of scope (call out)
-
-- No visual redesign.
-- No changes to bottom nav, safe-area handling, or status bar (already correct per memory).
-- Not touching admin/analytics, edge functions, or referral sharing.
+### Notes
+- Fingerprint is the same one already trusted for the 6-story-per-device cap, so this is consistent with existing anti-abuse posture.
+- Determined attackers on changing IPs/UAs/incognito can still get extra demos — matches the existing device-fingerprint trust level; tightening further would require captcha and is out of scope.
+- No schema changes to existing tables.
