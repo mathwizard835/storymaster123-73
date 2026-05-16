@@ -70,7 +70,7 @@ type Scene = {
   end?: boolean;
 };
 
-type Stage = "setup" | "loading" | "playing" | "finished" | "error";
+type Stage = "setup" | "loading" | "playing" | "finished" | "error" | "demoUsed";
 
 const TOTAL_STEPS = 3;
 
