@@ -22,6 +22,13 @@ import {
 
 const Index = () => {
   const navigate = useNavigate();
+  const [demoUsed, setDemoUsed] = useState(false);
+
+  useEffect(() => {
+    try {
+      setDemoUsed(localStorage.getItem("demo_story_used") === "1");
+    } catch (_) { /* ignore */ }
+  }, []);
 
   const content = {
     title: "🌟 Become the Hero of Your Own Epic Adventure!",
