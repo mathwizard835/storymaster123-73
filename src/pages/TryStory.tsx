@@ -457,8 +457,8 @@ const TryStory = () => {
       <h2 className="font-heading text-xl font-bold mb-2">Adventure interrupted</h2>
       <p className="text-white/60 text-sm mb-6">{error}</p>
       <div className="space-y-3 w-full">
-        <Button variant="hero" className="w-full" onClick={() => (scenes.length === 0 ? startStory() : reset())}>
-          Try again
+        <Button variant="hero" className="w-full" onClick={() => (scenes.length === 0 ? startStory() : navigate("/auth"))}>
+          {scenes.length === 0 ? "Try again" : "Sign up to keep playing"}
         </Button>
         <Button variant="ghost" className="w-full text-white/70" onClick={() => navigate("/")}>
           Back home
