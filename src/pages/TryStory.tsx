@@ -467,6 +467,26 @@ const TryStory = () => {
     </div>
   );
 
+  const renderDemoUsed = () => (
+    <div className="flex-1 flex flex-col items-center justify-center px-6 py-20 text-center max-w-md mx-auto">
+      <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-[hsl(265,85%,55%)] to-[hsl(195,85%,50%)] mb-5 shadow-2xl">
+        <Sparkles className="h-8 w-8 text-white" />
+      </div>
+      <h2 className="font-heading text-2xl font-bold mb-2">You've already tried your free demo</h2>
+      <p className="text-white/70 text-sm mb-6">
+        Create a free account to keep playing — longer adventures, saved progress, and a hero that levels up every story.
+      </p>
+      <div className="space-y-3 w-full">
+        <Button size="lg" variant="hero" className="w-full text-base font-bold" onClick={() => navigate("/auth")}>
+          <UserPlus className="h-5 w-5" />
+          Sign Up Free
+        </Button>
+        <Button variant="ghost" className="w-full text-white/70" onClick={() => navigate("/")}>
+          Back home
+        </Button>
+      </div>
+    </div>
+  );
   return (
     <div className="min-h-[100dvh] bg-gradient-to-b from-[hsl(250,50%,12%)] via-[hsl(265,55%,15%)] to-[hsl(230,50%,8%)] text-white flex flex-col">
       <Seo
