@@ -517,6 +517,7 @@ const TryStory = () => {
       {stage === "playing" && renderPlaying()}
       {stage === "finished" && renderFinished()}
       {stage === "error" && renderError()}
+      {stage === "demoUsed" && renderDemoUsed()}
     </div>
   );
 };
