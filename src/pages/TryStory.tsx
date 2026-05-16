@@ -114,13 +114,36 @@ const TryStory = () => {
         scene_count: sceneCount,
       },
     });
-    if (invokeError) throw new Error(invokeError.message || "Could not reach the story service");
+    if (invokeError) {
+      // Supabase wraps non-2xx into a FunctionsHttpError; try to parse a JSON body if present
+      const ctx: any = (invokeError as any)?.context;
+      let bodyJson: any = null;
+      try {
+        if (ctx?.json) bodyJson = await ctx.json();
+        else if (ctx?.body) bodyJson = JSON.parse(await new Response(ctx.body).text());
+      } catch (_) { /* ignore */ }
+      if (bodyJson?.error === "demo_used") {
+        const err: any = new Error("demo_used");
+        err.code = "demo_used";
+        throw err;
+      }
+      throw new Error(invokeError.message || "Could not reach the story service");
+    }
+    if (data?.error === "demo_used") {
+      const err: any = new Error("demo_used");
+      err.code = "demo_used";
+      throw err;
+    }
     if (!data?.success && !data?.ok) {
       throw new Error(data?.error || "Story generation failed");
     }
     const parsed: Scene | null = data?.result ?? data?.parsed ?? null;
     if (!parsed) throw new Error("The story service returned an unexpected response");
     return parsed;
+  };
+
+  const markDemoUsed = () => {
+    try { localStorage.setItem("demo_story_used", "1"); } catch (_) { /* ignore */ }
   };
 
   const startStory = async () => {
@@ -134,10 +157,17 @@ const TryStory = () => {
     try {
       const first = await callGenerate(null, 1);
       setCurrentScene(first);
-      setStage(first.end ? "finished" : "playing");
+      const done = !!first.end;
+      setStage(done ? "finished" : "playing");
+      if (done) markDemoUsed();
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (e: any) {
       console.error("Demo story start failed:", e);
+      if (e?.code === "demo_used") {
+        markDemoUsed();
+        setStage("demoUsed");
+        return;
+      }
       setError(e?.message || "Something went wrong starting your adventure.");
       setStage("error");
     }
@@ -158,20 +188,13 @@ const TryStory = () => {
       // Hard cap: end after 5 scenes total to keep demo short.
       const isLast = next.end || newScenes.length + 1 >= 5;
       setStage(isLast ? "finished" : "playing");
+      if (isLast) markDemoUsed();
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (e: any) {
       console.error("Demo next scene failed:", e);
       setError(e?.message || "Something went wrong continuing your adventure.");
       setStage("error");
     }
-  };
-
-  const reset = () => {
-    setStep(1);
-    setScenes([]);
-    setCurrentScene(null);
-    setError("");
-    setStage("setup");
   };
 
   // ----------------- Render -----------------
