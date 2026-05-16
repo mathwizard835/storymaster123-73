@@ -443,12 +443,6 @@ const TryStory = () => {
               <UserPlus className="h-5 w-5" />
               Create a free account to keep playing
             </Button>
-            <button
-              onClick={reset}
-              className="w-full py-2 text-sm text-white/50 hover:text-white/80 transition"
-            >
-              Try another demo
-            </button>
           </div>
         </div>
         <p className="text-center text-xs text-white/40 mt-6">
