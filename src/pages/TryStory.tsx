@@ -92,6 +92,12 @@ const TryStory = () => {
   const [currentScene, setCurrentScene] = useState<Scene | null>(null);
   const [error, setError] = useState<string>("");
 
+  useEffect(() => {
+    try {
+      if (localStorage.getItem("demo_story_used") === "1") setStage("demoUsed");
+    } catch (_) { /* ignore */ }
+  }, []);
+
   const wordsRead = scenes.reduce((sum, s) => sum + (s.narrative?.split(/\s+/).length || 0), 0)
     + (currentScene?.narrative?.split(/\s+/).length || 0);
 
