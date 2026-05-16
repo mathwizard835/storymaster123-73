@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Seo } from "@/components/Seo";
 import heroParentTrust from "@/assets/hero-parent-trust.jpg";
