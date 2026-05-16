@@ -194,6 +194,27 @@ export type Database = {
         }
         Relationships: []
       }
+      guest_demo_usage: {
+        Row: {
+          fingerprint: string
+          ip_prefix: string | null
+          used_at: string
+          user_agent: string | null
+        }
+        Insert: {
+          fingerprint: string
+          ip_prefix?: string | null
+          used_at?: string
+          user_agent?: string | null
+        }
+        Update: {
+          fingerprint?: string
+          ip_prefix?: string | null
+          used_at?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           child_age: number | null

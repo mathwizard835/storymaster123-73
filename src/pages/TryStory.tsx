@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -70,7 +70,7 @@ type Scene = {
   end?: boolean;
 };
 
-type Stage = "setup" | "loading" | "playing" | "finished" | "error";
+type Stage = "setup" | "loading" | "playing" | "finished" | "error" | "demoUsed";
 
 const TOTAL_STEPS = 3;
 
@@ -91,6 +91,12 @@ const TryStory = () => {
   const [scenes, setScenes] = useState<Scene[]>([]);
   const [currentScene, setCurrentScene] = useState<Scene | null>(null);
   const [error, setError] = useState<string>("");
+
+  useEffect(() => {
+    try {
+      if (localStorage.getItem("demo_story_used") === "1") setStage("demoUsed");
+    } catch (_) { /* ignore */ }
+  }, []);
 
   const wordsRead = scenes.reduce((sum, s) => sum + (s.narrative?.split(/\s+/).length || 0), 0)
     + (currentScene?.narrative?.split(/\s+/).length || 0);
@@ -114,13 +120,36 @@ const TryStory = () => {
         scene_count: sceneCount,
       },
     });
-    if (invokeError) throw new Error(invokeError.message || "Could not reach the story service");
+    if (invokeError) {
+      // Supabase wraps non-2xx into a FunctionsHttpError; try to parse a JSON body if present
+      const ctx: any = (invokeError as any)?.context;
+      let bodyJson: any = null;
+      try {
+        if (ctx?.json) bodyJson = await ctx.json();
+        else if (ctx?.body) bodyJson = JSON.parse(await new Response(ctx.body).text());
+      } catch (_) { /* ignore */ }
+      if (bodyJson?.error === "demo_used") {
+        const err: any = new Error("demo_used");
+        err.code = "demo_used";
+        throw err;
+      }
+      throw new Error(invokeError.message || "Could not reach the story service");
+    }
+    if (data?.error === "demo_used") {
+      const err: any = new Error("demo_used");
+      err.code = "demo_used";
+      throw err;
+    }
     if (!data?.success && !data?.ok) {
       throw new Error(data?.error || "Story generation failed");
     }
     const parsed: Scene | null = data?.result ?? data?.parsed ?? null;
     if (!parsed) throw new Error("The story service returned an unexpected response");
     return parsed;
+  };
+
+  const markDemoUsed = () => {
+    try { localStorage.setItem("demo_story_used", "1"); } catch (_) { /* ignore */ }
   };
 
   const startStory = async () => {
@@ -134,10 +163,17 @@ const TryStory = () => {
     try {
       const first = await callGenerate(null, 1);
       setCurrentScene(first);
-      setStage(first.end ? "finished" : "playing");
+      const done = !!first.end;
+      setStage(done ? "finished" : "playing");
+      if (done) markDemoUsed();
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (e: any) {
       console.error("Demo story start failed:", e);
+      if (e?.code === "demo_used") {
+        markDemoUsed();
+        setStage("demoUsed");
+        return;
+      }
       setError(e?.message || "Something went wrong starting your adventure.");
       setStage("error");
     }
@@ -158,20 +194,13 @@ const TryStory = () => {
       // Hard cap: end after 5 scenes total to keep demo short.
       const isLast = next.end || newScenes.length + 1 >= 5;
       setStage(isLast ? "finished" : "playing");
+      if (isLast) markDemoUsed();
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (e: any) {
       console.error("Demo next scene failed:", e);
       setError(e?.message || "Something went wrong continuing your adventure.");
       setStage("error");
     }
-  };
-
-  const reset = () => {
-    setStep(1);
-    setScenes([]);
-    setCurrentScene(null);
-    setError("");
-    setStage("setup");
   };
 
   // ----------------- Render -----------------
@@ -420,12 +449,6 @@ const TryStory = () => {
               <UserPlus className="h-5 w-5" />
               Create a free account to keep playing
             </Button>
-            <button
-              onClick={reset}
-              className="w-full py-2 text-sm text-white/50 hover:text-white/80 transition"
-            >
-              Try another demo
-            </button>
           </div>
         </div>
         <p className="text-center text-xs text-white/40 mt-6">
@@ -440,8 +463,8 @@ const TryStory = () => {
       <h2 className="font-heading text-xl font-bold mb-2">Adventure interrupted</h2>
       <p className="text-white/60 text-sm mb-6">{error}</p>
       <div className="space-y-3 w-full">
-        <Button variant="hero" className="w-full" onClick={() => (scenes.length === 0 ? startStory() : reset())}>
-          Try again
+        <Button variant="hero" className="w-full" onClick={() => (scenes.length === 0 ? startStory() : navigate("/auth"))}>
+          {scenes.length === 0 ? "Try again" : "Sign up to keep playing"}
         </Button>
         <Button variant="ghost" className="w-full text-white/70" onClick={() => navigate("/")}>
           Back home
@@ -450,6 +473,26 @@ const TryStory = () => {
     </div>
   );
 
+  const renderDemoUsed = () => (
+    <div className="flex-1 flex flex-col items-center justify-center px-6 py-20 text-center max-w-md mx-auto">
+      <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-[hsl(265,85%,55%)] to-[hsl(195,85%,50%)] mb-5 shadow-2xl">
+        <Sparkles className="h-8 w-8 text-white" />
+      </div>
+      <h2 className="font-heading text-2xl font-bold mb-2">You've already tried your free demo</h2>
+      <p className="text-white/70 text-sm mb-6">
+        Create a free account to keep playing — longer adventures, saved progress, and a hero that levels up every story.
+      </p>
+      <div className="space-y-3 w-full">
+        <Button size="lg" variant="hero" className="w-full text-base font-bold" onClick={() => navigate("/auth")}>
+          <UserPlus className="h-5 w-5" />
+          Sign Up Free
+        </Button>
+        <Button variant="ghost" className="w-full text-white/70" onClick={() => navigate("/")}>
+          Back home
+        </Button>
+      </div>
+    </div>
+  );
   return (
     <div className="min-h-[100dvh] bg-gradient-to-b from-[hsl(250,50%,12%)] via-[hsl(265,55%,15%)] to-[hsl(230,50%,8%)] text-white flex flex-col">
       <Seo
@@ -480,6 +523,7 @@ const TryStory = () => {
       {stage === "playing" && renderPlaying()}
       {stage === "finished" && renderFinished()}
       {stage === "error" && renderError()}
+      {stage === "demoUsed" && renderDemoUsed()}
     </div>
   );
 };
