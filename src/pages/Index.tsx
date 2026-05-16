@@ -94,10 +94,10 @@ const Index = () => {
               <Button
                 size="xl"
                 variant="hero"
-                onClick={() => navigate("/try")}
+                onClick={() => navigate(demoUsed ? "/auth" : "/try")}
                 className="text-lg px-8 py-4 animate-pulse"
               >
-                🚀 Try a Story
+                {demoUsed ? "✨ Sign Up Free" : "🚀 Try a Story"}
               </Button>
               <Button
                 size="xl"
@@ -109,7 +109,9 @@ const Index = () => {
               </Button>
             </div>
             <p className="text-sm text-muted-foreground -mt-8 mb-6">
-              No signup needed — jump straight into an adventure.
+              {demoUsed
+                ? "You've used your free demo — create an account to keep playing."
+                : "No signup needed — jump straight into an adventure."}
             </p>
 
             <div className="flex flex-col items-center gap-2 mb-12">
