@@ -521,6 +521,49 @@ Return ONLY valid JSON (no markdown, no explanations):
     const isNewStory = !body?.scene;
     let deviceFingerprint: string | null = null;
 
+    // === GUEST DEMO ONE-SHOT LIMIT (server-enforced) ===
+    if (isGuest && isNewStory) {
+      const userAgent = req.headers.get("user-agent") || "unknown";
+      const ipPrefix = ipAddress.split(".").slice(0, 3).join(".");
+      const salt = Deno.env.get("DEVICE_FINGERPRINT_SALT") || "default-salt";
+      const guestRaw = `guest:${salt}:${userAgent}:${ipPrefix}`;
+      const guestHashBuf = await crypto.subtle.digest(
+        "SHA-256",
+        new TextEncoder().encode(guestRaw),
+      );
+      const guestFp = Array.from(new Uint8Array(guestHashBuf))
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join("");
+
+      const { data: existing, error: guestSelErr } = await supabaseAdmin
+        .from("guest_demo_usage")
+        .select("fingerprint")
+        .eq("fingerprint", guestFp)
+        .maybeSingle();
+
+      if (guestSelErr) {
+        console.error("Guest demo lookup failed:", guestSelErr);
+      }
+
+      if (existing) {
+        console.warn(`🚫 Guest demo already used for fp ${guestFp.slice(0, 12)}...`);
+        return new Response(
+          JSON.stringify({
+            error: "demo_used",
+            message: "You've already tried your free demo. Sign up to keep playing!",
+          }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+
+      const { error: guestInsErr } = await supabaseAdmin
+        .from("guest_demo_usage")
+        .insert({ fingerprint: guestFp, ip_prefix: ipPrefix, user_agent: userAgent });
+      if (guestInsErr) {
+        console.error("Guest demo insert failed:", guestInsErr);
+      }
+    }
+
     if (isNewStory && !isGuest) {
       // Count stories started by this user in the last 30 days
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
