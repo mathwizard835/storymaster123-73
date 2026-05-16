@@ -89,7 +89,7 @@ const Index = () => {
                 onClick={() => navigate("/try")}
                 className="text-lg px-8 py-4 animate-pulse"
               >
-                🚀 Try a Free Story
+                🚀 Try a Story
               </Button>
               <Button
                 size="xl"
