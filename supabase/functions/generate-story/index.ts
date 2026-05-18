@@ -792,24 +792,14 @@ ${profileSummary}
       ? `\n\n🔁 CONTINUATION REMINDER: MAINTAIN THE EXACT SAME mode tone (${profile.mode ?? "unknown"}), age (${profile.age ?? "unknown"}), Lexile (${profile.lexileScore ?? 500}L), badges (${(profile.selectedBadges || []).join(", ") || "general"}), and protagonist name (${profile.name || "the hero"}) as defined above. Do NOT drift in tone, vocabulary, or character voice from previous scenes.`
       : "";
 
-    const userPrompt = `${profileBlock}
-${continuationReinforcement}
-
-${sceneContext}
-${storyProgressContext}
-${learningModeInstructions}
-${inventoryContext}
-${abilityContext}
-
-=== PROFILE REMINDER (RE-CHECK BEFORE WRITING) ===
-${profileBlock}
+    // Stable prefix — same for every scene in this story; eligible for prompt cache.
+    const stablePrefix = `${profileBlock}
 
 === RESPONSE FORMAT ===
 Return ONLY valid JSON (no markdown, no explanations):
 {"sceneTitle":"...","hud":{"energy":0-100,"time":"...","choicePoints":0-50,"ui":["..."]},"narrative":"...","choices":[{"id":"a","text":"...","type":"standard|item_use|object_interact|secret","createsFlag":"...","requires":[],"requiresItem":"...","consumesItem":true,"requiresAbility":"..."}],"interactiveObjects":[{"id":"...","name":"...","description":"...","actions":["Examine","Search"],"requiresItem":"..."}],"itemsFound":[{"id":"...","name":"...","description":"...","type":"key|tool|consumable|document|weapon|potion","usable":true,"consumable":false}],"memory":{"flags":[],"pastChoices":[]},"end":false}
 
 SCENE REQUIREMENTS:
-- ${scene ? "Continue the story naturally from previous scene" : `Open with immediate action hook that establishes setting, character, and conflict. Introduce ${profile.name || "the hero"} as the protagonist.`}
 - Use the protagonist's name (${profile.name || "the hero"}) naturally in the narrative and address them directly
 - 3-4 compelling choices that matter, each with a distinct personality tone
 - Narrative: 215 words max, formatted in 3-4 paragraphs with \\n\\n breaks
@@ -817,6 +807,16 @@ SCENE REQUIREMENTS:
 - Include memory flags for meaningful choices
 ${profile.mode === "learning" ? "- Embed educational content naturally into the story" : ""}
 - Ensure story reflects ALL profile requirements listed above`;
+
+    // Dynamic tail — changes per scene; not cached.
+    const dynamicTail = `${continuationReinforcement}
+${sceneContext}
+${storyProgressContext}
+${learningModeInstructions}
+${inventoryContext}
+${abilityContext}
+
+THIS SCENE: ${scene ? "Continue the story naturally from the previous scene." : `Open with an immediate action hook that establishes setting, character, and conflict. Introduce ${profile.name || "the hero"} as the protagonist.`}`;
 
     // Log profile for validation
     console.log(`Story generation request: ${max_tokens} tokens, scene ${sceneCount}`);
