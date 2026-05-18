@@ -333,6 +333,7 @@ serve(async (req) => {
       total_active_subscriptions: activeSubsCount ?? 0,
       events_in_window: subscriptionEvents,
       subscription_type_distribution: Object.fromEntries(planDistribution),
+      active_subscribers: activeSubscribers,
     },
     content: {
       story_length_distribution: Object.fromEntries(lengthDistribution),
