@@ -10,7 +10,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useDevice } from "@/contexts/DeviceContext";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useEffect, useState, useRef } from "react";
-import { generateNextScene, loadProfile, checkStoryLimit, markStoryCompleted, type Scene, saveCurrentStory, loadCurrentStory, clearCurrentStory, saveCompletedStory, getCompletedStories, type SavedStory, type InventoryItem, saveProfileToLocal, clearSceneCache, recoverStorySession, prefetchNextScene, consumePrefetchedScene, clearPrefetchCache } from "@/lib/story";
+import { generateNextScene, loadProfile, checkStoryLimit, markStoryCompleted, type Scene, saveCurrentStory, loadCurrentStory, clearCurrentStory, saveCompletedStory, getCompletedStories, type SavedStory, type InventoryItem, saveProfileToLocal, clearSceneCache, recoverStorySession } from "@/lib/story";
 import { saveStoryToDatabase, loadCurrentStoryFromDatabase, loadStoryByIdFromDatabase, clearCurrentStoryInDatabase, clearAllActiveStoriesForUser, verifyStoryIsActive, pauseStoryInDatabase } from "@/lib/databaseStory";
 import { loadInventory, saveInventory, addItemToInventory, useItem, clearInventory, updateProfileInventory } from "@/lib/inventory";
 import { 
@@ -136,43 +136,8 @@ const Mission = () => {
     }
   }, [scene]);
 
-  // Adventure Pass prefetch: speculatively generate the next scene
-  // for the most likely choice while the user is reading.
-  useEffect(() => {
-    const planName = (userPlan?.name || "").toLowerCase();
-    const isPremium = planName.includes("premium") || planName.includes("adventure");
-    if (!isPremium) return;
-    if (!scene || !scene.choices?.length || scene.end) return;
-    if (!savedStory?.id) return;
-    if (choiceLoading) return;
 
-    // Pick the most likely choice: first standard (non-secret, non-locked) choice.
-    const likelyChoice = scene.choices.find(c =>
-      c.type !== "secret" && !c.requiresItem && !c.requiresAbility
-    ) || scene.choices[0];
-    if (!likelyChoice) return;
 
-    const timer = setTimeout(() => {
-      const profileWithInventory = updateProfileInventory(profile, inventory);
-      const abilityCategories = availableAbilities.map(a => a.category);
-      prefetchNextScene(
-        profileWithInventory,
-        scene,
-        likelyChoice.id,
-        sceneCount + 1,
-        savedStory.id,
-        abilityCategories,
-        storyMemory,
-      );
-    }, 3000); // let the kid start reading first
-
-    return () => clearTimeout(timer);
-  }, [scene, savedStory?.id, sceneCount, userPlan]);
-
-  // Clear prefetch cache on unmount
-  useEffect(() => {
-    return () => clearPrefetchCache();
-  }, []);
 
 
   // Read-to-Me is available to all authenticated users
@@ -859,11 +824,7 @@ const Mission = () => {
       const abilityCategories = availableAbilities.map(a => a.category);
       const sceneWithMemory = { ...scene, selectedChoiceId: choiceId, memory: storyMemory };
 
-      // Prefetch cache hit? Skip the network call entirely.
-      const prefetched = consumePrefetchedScene(savedStory.id, sceneCount, choiceId);
-      const { parsed, text } = prefetched
-        ? { parsed: prefetched.parsed, text: prefetched.text }
-        : await generateNextScene(profileWithInventory, sceneWithMemory, false, 1100, nextSceneCount, savedStory.id, false, abilityCategories);
+      const { parsed, text } = await generateNextScene(profileWithInventory, sceneWithMemory, false, 1100, nextSceneCount, savedStory.id, false, abilityCategories);
       if (!parsed) {
         const errorPreview = text ? text.slice(0, 140) : "No response received";
         throw new Error("Invalid AI response: " + errorPreview);
