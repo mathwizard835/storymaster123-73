@@ -167,7 +167,7 @@ const Mission = () => {
     }, 3000); // let the kid start reading first
 
     return () => clearTimeout(timer);
-  }, [scene, savedStory?.id, sceneCount, userPlan, choiceLoading]);
+  }, [scene, savedStory?.id, sceneCount, userPlan]);
 
   // Clear prefetch cache on unmount
   useEffect(() => {
