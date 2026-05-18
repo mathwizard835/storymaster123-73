@@ -29,14 +29,6 @@ type Rollup = {
     total_active_subscriptions: number;
     events_in_window: Record<string, number>;
     subscription_type_distribution: Record<string, number>;
-    active_subscribers?: Array<{
-      user_id: string | null;
-      email: string | null;
-      device_id: string | null;
-      starts_at: string | null;
-      expires_at: string | null;
-      platform: "apple" | "stripe";
-    }>;
   };
   content: {
     story_length_distribution: Record<string, number>;
@@ -280,33 +272,6 @@ export default function AdminAnalytics() {
                 <p className="text-xs text-muted-foreground mb-2">Plan distribution</p>
                 <Distribution map={data.subscription.subscription_type_distribution} />
               </div>
-              {data.subscription.active_subscribers && data.subscription.active_subscribers.length > 0 && (
-                <div className="col-span-2 md:col-span-4">
-                  <p className="text-xs text-muted-foreground mb-2">
-                    Active subscribers ({data.subscription.active_subscribers.length})
-                  </p>
-                  <div className="rounded-md border divide-y max-h-80 overflow-y-auto">
-                    {data.subscription.active_subscribers.map((s, i) => (
-                      <div
-                        key={`${s.user_id ?? s.device_id ?? i}`}
-                        className="flex items-center justify-between gap-3 px-3 py-2 text-sm"
-                      >
-                        <div className="min-w-0 flex-1 truncate">
-                          <span className="font-medium">
-                            {s.email ?? <span className="text-muted-foreground italic">no email (anonymous)</span>}
-                          </span>
-                        </div>
-                        <span className="text-xs uppercase tracking-wide text-muted-foreground shrink-0">
-                          {s.platform}
-                        </span>
-                        <span className="text-xs text-muted-foreground shrink-0 hidden sm:inline">
-                          {s.expires_at ? `until ${new Date(s.expires_at).toLocaleDateString()}` : "no expiry"}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
             </CardContent>
           </Card>
 

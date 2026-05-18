@@ -266,47 +266,10 @@ serve(async (req) => {
     }));
 
   // Subscriptions snapshot from user_subscriptions (parent-level only).
-  const nowIso = new Date().toISOString();
   const { count: activeSubsCount } = await admin
     .from("user_subscriptions")
     .select("*", { count: "exact", head: true })
-    .eq("status", "active")
-    .gt("expires_at", nowIso);
-
-  // Active subscriber emails (admin-only, parent accounts).
-  const { data: activeSubRows } = await admin
-    .from("user_subscriptions")
-    .select("user_id, device_id, starts_at, expires_at")
-    .eq("status", "active")
-    .gt("expires_at", nowIso)
-    .order("starts_at", { ascending: false });
-
-  const subscriberUserIds = Array.from(
-    new Set((activeSubRows ?? []).map((r) => r.user_id).filter(Boolean) as string[])
-  );
-
-  const emailByUserId = new Map<string, string>();
-  if (subscriberUserIds.length > 0) {
-    const { data: profileRows } = await admin
-      .from("profiles")
-      .select("id, email")
-      .in("id", subscriberUserIds);
-    for (const p of profileRows ?? []) {
-      if (p.email) emailByUserId.set(p.id as string, p.email as string);
-    }
-  }
-
-  const activeSubscribers = (activeSubRows ?? []).map((r) => ({
-    user_id: r.user_id,
-    email: r.user_id ? emailByUserId.get(r.user_id as string) ?? null : null,
-    device_id: r.device_id,
-    starts_at: r.starts_at,
-    expires_at: r.expires_at,
-    platform: typeof r.device_id === "string" && r.device_id.startsWith("$RCAnonymousID:")
-      ? "apple"
-      : "stripe",
-  }));
-
+    .eq("status", "active");
 
   const result = {
     window: { days, since },
@@ -333,7 +296,6 @@ serve(async (req) => {
       total_active_subscriptions: activeSubsCount ?? 0,
       events_in_window: subscriptionEvents,
       subscription_type_distribution: Object.fromEntries(planDistribution),
-      active_subscribers: activeSubscribers,
     },
     content: {
       story_length_distribution: Object.fromEntries(lengthDistribution),
