@@ -684,11 +684,12 @@ Return ONLY valid JSON (no markdown, no explanations):
     const scene = body?.scene ?? null; // optional current scene context
     const sceneCount = Number(body?.scene_count ?? 1);
     const megastory = Boolean(body?.megastory ?? false);
-    // Tightened token budgets — narrative target is ~215 words. Hard cap 4000.
+    // Token budgets — narrative target ~215 words, but JSON schema + memory flags
+    // can push total output past 3.5k chars. Keep headroom so responses don't truncate.
     const getOptimalTokens = (sceneCount: number, isNewStory: boolean) => {
-      if (isNewStory) return 1500;
-      if (sceneCount >= 12) return 1400;
-      return 1100;
+      if (isNewStory) return 2000;
+      if (sceneCount >= 12) return 1800;
+      return 1800;
     };
     const max_tokens = Math.min(Number(body?.max_tokens ?? getOptimalTokens(sceneCount, !scene)), 4000);
 
