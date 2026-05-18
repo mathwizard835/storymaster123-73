@@ -23,6 +23,7 @@ import {
 
 const Index = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [demoUsed, setDemoUsed] = useState(false);
 
   useEffect(() => {
