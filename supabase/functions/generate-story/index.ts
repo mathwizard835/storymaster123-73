@@ -348,7 +348,7 @@ serve(async (req) => {
       body.profile.storyLength = "short";
     }
   } else {
-    // === JWT AUTHENTICATION ===
+    // === JWT AUTHENTICATION (with in-memory cache) ===
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Authentication required" }), {
@@ -357,21 +357,27 @@ serve(async (req) => {
       });
     }
 
-    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
-
     const token = authHeader.replace("Bearer ", "");
-    const { data: userData, error: userError } = await supabaseAuth.auth.getUser(token);
-    if (userError || !userData?.user) {
-      console.error("JWT verification failed:", userError);
-      return new Response(JSON.stringify({ error: "Invalid or expired token" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const jwtKey = await sha256Hex(token);
+    const cachedUserId = jwtCacheGet(jwtKey);
 
-    userId = userData.user.id;
+    if (cachedUserId) {
+      userId = cachedUserId;
+    } else {
+      const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+        global: { headers: { Authorization: authHeader } },
+      });
+      const { data: userData, error: userError } = await supabaseAuth.auth.getUser(token);
+      if (userError || !userData?.user) {
+        console.error("JWT verification failed:", userError);
+        return new Response(JSON.stringify({ error: "Invalid or expired token" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      userId = userData.user.id;
+      jwtCacheSet(jwtKey, userId, decodeJwtExp(token));
+    }
     console.log(`Authenticated user: ${userId}`);
   }
 
