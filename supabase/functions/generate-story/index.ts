@@ -248,6 +248,56 @@ VOICE: natural, cinematic, adaptive to mode + age + Lexile. Make scenes feel ali
 
 RESPONSE: Always return ONLY valid JSON in the schema the user prompt provides. No markdown, no commentary.`;
 
+// ---- JWT verification cache ----
+// Skips supabase.auth.getUser on continuation scenes. Keyed by sha256(JWT).
+type JwtCacheEntry = { userId: string; expiresAt: number };
+const jwtCache = new Map<string, JwtCacheEntry>();
+const JWT_CACHE_MAX = 500;
+const JWT_CACHE_TTL_MS = 5 * 60 * 1000;
+
+async function sha256Hex(input: string): Promise<string> {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(input));
+  return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+function jwtCacheGet(key: string): string | null {
+  const entry = jwtCache.get(key);
+  if (!entry) return null;
+  if (Date.now() > entry.expiresAt) {
+    jwtCache.delete(key);
+    return null;
+  }
+  // LRU touch
+  jwtCache.delete(key);
+  jwtCache.set(key, entry);
+  return entry.userId;
+}
+
+function jwtCacheSet(key: string, userId: string, jwtExpSec?: number) {
+  if (jwtCache.size >= JWT_CACHE_MAX) {
+    const oldest = jwtCache.keys().next().value;
+    if (oldest) jwtCache.delete(oldest);
+  }
+  const ttl = jwtExpSec ? Math.min(jwtExpSec * 1000 - Date.now(), JWT_CACHE_TTL_MS) : JWT_CACHE_TTL_MS;
+  jwtCache.set(key, { userId, expiresAt: Date.now() + Math.max(30_000, ttl) });
+}
+
+function decodeJwtExp(token: string): number | undefined {
+  try {
+    const payload = token.split(".")[1];
+    const json = JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/")));
+    return typeof json.exp === "number" ? json.exp : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+// ---- Per-user model cache (stable Sonnet/Haiku choice for ~5 min) ----
+const userModelCache = new Map<string, { model: string; expiresAt: number }>();
+const USER_MODEL_TTL_MS = 5 * 60 * 1000;
+
+
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
