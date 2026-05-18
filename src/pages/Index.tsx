@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Seo } from "@/components/Seo";
+import { useAuth } from "@/hooks/useAuth";
 import heroParentTrust from "@/assets/hero-parent-trust.jpg";
 import familyReading from "@/assets/family-reading.jpg";
 import storyGenres from "@/assets/story-genres.jpg";
