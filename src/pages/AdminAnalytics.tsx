@@ -29,6 +29,14 @@ type Rollup = {
     total_active_subscriptions: number;
     events_in_window: Record<string, number>;
     subscription_type_distribution: Record<string, number>;
+    active_subscribers?: Array<{
+      user_id: string | null;
+      email: string | null;
+      device_id: string | null;
+      starts_at: string | null;
+      expires_at: string | null;
+      platform: "apple" | "stripe";
+    }>;
   };
   content: {
     story_length_distribution: Record<string, number>;
