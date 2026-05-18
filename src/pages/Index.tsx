@@ -73,6 +73,29 @@ const Index = () => {
         />
         <div className="absolute inset-0 bg-background/5" />
 
+        {/* Top-right auth controls */}
+        <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-20 flex items-center gap-2">
+          {user ? (
+            <Button size="sm" onClick={() => navigate("/dashboard")}>
+              Dashboard
+            </Button>
+          ) : (
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-foreground hover:bg-background/40 backdrop-blur-sm"
+                onClick={() => navigate("/auth")}
+              >
+                Log In
+              </Button>
+              <Button size="sm" onClick={() => navigate("/auth?mode=signup")}>
+                Sign Up
+              </Button>
+            </>
+          )}
+        </div>
+
         <div className="relative z-10 flex min-h-screen items-center justify-center px-6">
           <div className="max-w-4xl text-center animate-enter">
             <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-extrabold tracking-tight drop-shadow-2xl mb-4 sm:mb-6">
