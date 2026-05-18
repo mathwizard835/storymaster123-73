@@ -215,111 +215,88 @@ function hasQuizQuestions(value: unknown): value is { questions: unknown[] } {
     Array.isArray((value as { questions?: unknown }).questions);
 }
 
-const SYSTEM_PROMPT = `You are StoryMaster AI, an interactive storyteller for children 6–11.
-Create cinematic, emotionally engaging, immersive choose-your-own-adventure stories that delight, inspire, and keep kids returning.
+const SYSTEM_PROMPT = `You are StoryMaster AI, an interactive choose-your-own-adventure storyteller for children ages 6–11. Create cinematic, immersive, emotionally engaging stories that are fun, safe, and replayable.
 
-🚫 SAFETY RULES
+SAFETY (strict): No violence, gore, blood, weapons used to harm, sexual/romantic content, drugs/alcohol/smoking, bullying, discrimination, horror, scary imagery, or unsafe behaviors. Villains are goofy or redeemable. Keep everything age-appropriate.
 
-No violence, gore, blood, sexual content, drugs/alcohol/smoking, bullying, discrimination, or horror.
+QUEST MODES (primary tone driver):
+- FUN/COMEDY: silly, wacky, cartoon humor, onomatopoeia ("BONK!", "ZAP!"). Kids should giggle, not feel danger.
+- THRILL: high stakes, urgent ticking-clock action.
+- MYSTERY: clues, puzzles, slow-building investigation with clever payoffs.
+- EXPLORE: wonder, magical worlds, fantastical creatures, curiosity-driven discovery.
+- LEARNING: embed math/reading/science/logic; wrong answers cause fun consequences, never dead ends.
 
-Stories must be age-appropriate, fun, imaginative, and safe.
+AGE TUNING:
+- 6–7: simple words, short sentences, 3 ideas per scene, visual & humorous.
+- 8–9: moderate vocabulary, 4–5 connected ideas, early twists and problem-solving.
+- 10–11: rich but clear vocabulary, 1–2 interwoven threads, emotional arcs, character growth, subtle callbacks.
 
-🎯 QUEST MODE = main tone/plot driver
+LEXILE TUNING:
+- 200–400L: simple words, 5–10 word sentences, single-idea paragraphs, explicit cause/effect.
+- 400–650L: moderate vocab with context clues, varied sentence length, connected ideas.
+- 650–900L: rich vocab, compound-complex sentences, multiple threads, emotional depth.
+- 900–1200L: advanced vocab, sophisticated structure, layered narratives, nuanced themes.
 
-FUN (Comedy/Playful): Silly, wacky humor; characters trip/bonk; playful words & onomatopoeia ("BONK!", "ZAP!").
+STRUCTURE:
+- Opening scene: hook fast — where am I, what's happening, who am I.
+- Each scene: build stakes, reference items/achievements/personality, end with 2–4 meaningful choices.
+- Length: short = 5 scenes, medium = 8 scenes, epic = 12+ scenes.
 
-THRILL (Action/Adventure): High stakes, urgent choices, dynamic outcomes.
+INTERACTIVITY: surface objects and items that can affect choices, inventory, and achievements. Unlock new paths/secrets/rewards.
 
-MYSTERY (Detective/Investigation): Clues, puzzles, slow-building tension, clever payoff.
+VOICE: natural, cinematic, adaptive to mode + age + Lexile. Make scenes feel alive.
 
-EXPLORE (Discovery/Wonder): Magical worlds, fantastical creatures, awe-inspiring environments, curiosity-driven paths.
+RESPONSE: Always return ONLY valid JSON in the schema the user prompt provides. No markdown, no commentary.`;
 
-🧠 AGE & LEVEL SYSTEM
+// ---- JWT verification cache ----
+// Skips supabase.auth.getUser on continuation scenes. Keyed by sha256(JWT).
+type JwtCacheEntry = { userId: string; expiresAt: number };
+const jwtCache = new Map<string, JwtCacheEntry>();
+const JWT_CACHE_MAX = 500;
+const JWT_CACHE_TTL_MS = 5 * 60 * 1000;
 
-Ages:
-
-6–7: Simple words, short sentences, 3 ideas per scene, visual & humorous.
-
-8–9: Moderate vocabulary, 4–5 connected ideas, early twists & problem-solving.
-
-10–11: Rich but clear vocabulary, 1–2 interwoven story threads per scene, emotional arcs understandable at this age, character growth, leadership, and long-term choices. Subtle hints and callbacks allowed, but keep events and cause/effect clear.
-
-Lexile-Based Reading Levels:
-
-200L-400L: Simple vocabulary, short sentences (5-10 words), clear single-idea paragraphs, gentle pacing, explicit cause-and-effect.
-
-400L-650L: Moderate vocabulary with context clues, varied sentence lengths, connected ideas across paragraphs, mild complexity.
-
-650L-900L: Rich vocabulary, compound-complex sentences, multiple story threads, emotional arcs, character development.
-
-900L-1200L: Advanced vocabulary, sophisticated sentence structures, layered narratives, abstract concepts, nuanced themes.
-
-📖 STORY STRUCTURE
-
-Opening (2 sentences): Where am I? What's happening? Who am I? Backstory?
-
-Scene (300–400 words): Build stakes, end with 2–4 meaningful choices; reference items, achievements, personality.
-
-⏱️ SCENE PACING
-
-Short: 5 scenes, fast, replayable
-
-Medium: 8 scenes, balanced plot & tension
-
-Epic: 12+ scenes, deep world-building, layered arcs
-
-🎒 INTERACTIVE ELEMENTS
-
-Objects & items affect story options, inventory, achievements.
-
-Sample format:
-
-{"id":"obj1","name":"Dusty Journal","actions":["Examine","Open"]}
-
-
-🏆 ACHIEVEMENTS & PROGRESSION
-
-Unlock new paths, powers, secrets, mini rewards, replayability.
-
-🎓 LEARNING MODE (Optional)
-
-Embed math, reading, science, logic; wrong answers = fun consequences, never dead ends.
-
-🎨 TONE & VOICE
-
-Natural, cinematic, adaptive to Quest Mode, Age, Level.
-
-Scenes must feel alive, imaginative, and meaningful.
-
-📋 RESPONSE FORMAT (JSON, app-ready)
-
-{
-  "sceneTitle":"...",
-  "hud":{"energy":0-100,"time":"...","choicePoints":0-50,"ui":["..."]},
-  "narrative":"...",
-  "choices":[{"id":"a","text":"..."},{"id":"b","text":"..."}],
-  "interactiveObjects":[...],
-  "itemsFound":[...],
-  "achievementsUnlocked":[...],
-  "end":false
+async function sha256Hex(input: string): Promise<string> {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(input));
+  return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
+function jwtCacheGet(key: string): string | null {
+  const entry = jwtCache.get(key);
+  if (!entry) return null;
+  if (Date.now() > entry.expiresAt) {
+    jwtCache.delete(key);
+    return null;
+  }
+  // LRU touch
+  jwtCache.delete(key);
+  jwtCache.set(key, entry);
+  return entry.userId;
+}
 
-✅ FINAL CHECK BEFORE RESPONDING
+function jwtCacheSet(key: string, userId: string, jwtExpSec?: number) {
+  if (jwtCache.size >= JWT_CACHE_MAX) {
+    const oldest = jwtCache.keys().next().value;
+    if (oldest) jwtCache.delete(oldest);
+  }
+  const ttl = jwtExpSec ? Math.min(jwtExpSec * 1000 - Date.now(), JWT_CACHE_TTL_MS) : JWT_CACHE_TTL_MS;
+  jwtCache.set(key, { userId, expiresAt: Date.now() + Math.max(30_000, ttl) });
+}
 
-- Tone matches Quest Mode
+function decodeJwtExp(token: string): number | undefined {
+  try {
+    const payload = token.split(".")[1];
+    const json = JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/")));
+    return typeof json.exp === "number" ? json.exp : undefined;
+  } catch {
+    return undefined;
+  }
+}
 
-- Language & load match Age & Level
+// ---- Per-user model cache (stable Sonnet/Haiku choice for ~5 min) ----
+const userModelCache = new Map<string, { model: string; expiresAt: number }>();
+const USER_MODEL_TTL_MS = 5 * 60 * 1000;
 
-- Cinematic, fun, thrilling
 
-- Choices meaningful, past achievements/items referenced
-
-- Surprise, wonder, replay built-in
-
-- Story immersive, unforgettable
-
-}`;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -371,7 +348,7 @@ serve(async (req) => {
       body.profile.storyLength = "short";
     }
   } else {
-    // === JWT AUTHENTICATION ===
+    // === JWT AUTHENTICATION (with in-memory cache) ===
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Authentication required" }), {
@@ -380,21 +357,27 @@ serve(async (req) => {
       });
     }
 
-    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
-
     const token = authHeader.replace("Bearer ", "");
-    const { data: userData, error: userError } = await supabaseAuth.auth.getUser(token);
-    if (userError || !userData?.user) {
-      console.error("JWT verification failed:", userError);
-      return new Response(JSON.stringify({ error: "Invalid or expired token" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const jwtKey = await sha256Hex(token);
+    const cachedUserId = jwtCacheGet(jwtKey);
 
-    userId = userData.user.id;
+    if (cachedUserId) {
+      userId = cachedUserId;
+    } else {
+      const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+        global: { headers: { Authorization: authHeader } },
+      });
+      const { data: userData, error: userError } = await supabaseAuth.auth.getUser(token);
+      if (userError || !userData?.user) {
+        console.error("JWT verification failed:", userError);
+        return new Response(JSON.stringify({ error: "Invalid or expired token" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      userId = userData.user.id;
+      jwtCacheSet(jwtKey, userId, decodeJwtExp(token));
+    }
     console.log(`Authenticated user: ${userId}`);
   }
 
@@ -650,26 +633,36 @@ Return ONLY valid JSON (no markdown, no explanations):
       );
     }
 
-    // Determine model based on total stories started by this user
-    // Guests always get Haiku for cost/speed.
+    // Determine model based on total stories started by this user.
+    // Guests always get Haiku. Continuation scenes reuse the cached choice
+    // (model is stable within a story for a user).
+    const isNewStoryForModel = !body?.scene;
     let selectedModel = isGuest ? "claude-haiku-4-5-20251001" : "claude-sonnet-4-20250514";
-    try {
-      if (!isGuest) {
-        // Count total stories by user_id (not device_id) for model selection
-        const { count, error: countError } = await supabaseAdmin
-          .from("user_stories")
-          .select("*", { count: "exact", head: true })
-          .eq("user_id", userId);
 
-        if (!countError && count !== null && count >= 20) {
-          selectedModel = "claude-haiku-4-5-20251001";
-          console.log(`📊 User ${userId} has ${count} stories - using Haiku 4.5`);
-        } else {
-          console.log(`📊 User ${userId} has ${count ?? 0} stories - using Sonnet`);
+    if (!isGuest) {
+      const cachedModel = userModelCache.get(userId);
+      if (cachedModel && Date.now() < cachedModel.expiresAt && !isNewStoryForModel) {
+        selectedModel = cachedModel.model;
+      } else if (isNewStoryForModel) {
+        try {
+          const { count, error: countError } = await supabaseAdmin
+            .from("user_stories")
+            .select("*", { count: "exact", head: true })
+            .eq("user_id", userId);
+          if (!countError && count !== null && count >= 20) {
+            selectedModel = "claude-haiku-4-5-20251001";
+            console.log(`📊 User ${userId} has ${count} stories - using Haiku 4.5`);
+          } else {
+            console.log(`📊 User ${userId} has ${count ?? 0} stories - using Sonnet`);
+          }
+        } catch (modelErr) {
+          console.warn("Failed to check story count for model selection, defaulting to Sonnet:", modelErr);
         }
+        userModelCache.set(userId, { model: selectedModel, expiresAt: Date.now() + USER_MODEL_TTL_MS });
+      } else if (cachedModel) {
+        // Expired but continuation — keep the cached model rather than re-querying mid-story.
+        selectedModel = cachedModel.model;
       }
-    } catch (modelErr) {
-      console.warn("Failed to check story count for model selection, defaulting to Sonnet:", modelErr);
     }
 
     // Apply rate limiting with IP-based backup
@@ -691,11 +684,11 @@ Return ONLY valid JSON (no markdown, no explanations):
     const scene = body?.scene ?? null; // optional current scene context
     const sceneCount = Number(body?.scene_count ?? 1);
     const megastory = Boolean(body?.megastory ?? false);
-    // Smart token management based on story type - increased to prevent cutoffs
+    // Tightened token budgets — narrative target is ~215 words. Hard cap 4000.
     const getOptimalTokens = (sceneCount: number, isNewStory: boolean) => {
-      if (isNewStory) return 3000; // New stories need complete JSON
-      if (sceneCount >= 12) return 2500; // Ending scenes need more detail
-      return 2000; // Continuation scenes - ensure complete responses
+      if (isNewStory) return 1500;
+      if (sceneCount >= 12) return 1400;
+      return 1100;
     };
     const max_tokens = Math.min(Number(body?.max_tokens ?? getOptimalTokens(sceneCount, !scene)), 4000);
 
@@ -799,24 +792,14 @@ ${profileSummary}
       ? `\n\n🔁 CONTINUATION REMINDER: MAINTAIN THE EXACT SAME mode tone (${profile.mode ?? "unknown"}), age (${profile.age ?? "unknown"}), Lexile (${profile.lexileScore ?? 500}L), badges (${(profile.selectedBadges || []).join(", ") || "general"}), and protagonist name (${profile.name || "the hero"}) as defined above. Do NOT drift in tone, vocabulary, or character voice from previous scenes.`
       : "";
 
-    const userPrompt = `${profileBlock}
-${continuationReinforcement}
-
-${sceneContext}
-${storyProgressContext}
-${learningModeInstructions}
-${inventoryContext}
-${abilityContext}
-
-=== PROFILE REMINDER (RE-CHECK BEFORE WRITING) ===
-${profileBlock}
+    // Stable prefix — same for every scene in this story; eligible for prompt cache.
+    const stablePrefix = `${profileBlock}
 
 === RESPONSE FORMAT ===
 Return ONLY valid JSON (no markdown, no explanations):
 {"sceneTitle":"...","hud":{"energy":0-100,"time":"...","choicePoints":0-50,"ui":["..."]},"narrative":"...","choices":[{"id":"a","text":"...","type":"standard|item_use|object_interact|secret","createsFlag":"...","requires":[],"requiresItem":"...","consumesItem":true,"requiresAbility":"..."}],"interactiveObjects":[{"id":"...","name":"...","description":"...","actions":["Examine","Search"],"requiresItem":"..."}],"itemsFound":[{"id":"...","name":"...","description":"...","type":"key|tool|consumable|document|weapon|potion","usable":true,"consumable":false}],"memory":{"flags":[],"pastChoices":[]},"end":false}
 
 SCENE REQUIREMENTS:
-- ${scene ? "Continue the story naturally from previous scene" : `Open with immediate action hook that establishes setting, character, and conflict. Introduce ${profile.name || "the hero"} as the protagonist.`}
 - Use the protagonist's name (${profile.name || "the hero"}) naturally in the narrative and address them directly
 - 3-4 compelling choices that matter, each with a distinct personality tone
 - Narrative: 215 words max, formatted in 3-4 paragraphs with \\n\\n breaks
@@ -824,6 +807,16 @@ SCENE REQUIREMENTS:
 - Include memory flags for meaningful choices
 ${profile.mode === "learning" ? "- Embed educational content naturally into the story" : ""}
 - Ensure story reflects ALL profile requirements listed above`;
+
+    // Dynamic tail — changes per scene; not cached.
+    const dynamicTail = `${continuationReinforcement}
+${sceneContext}
+${storyProgressContext}
+${learningModeInstructions}
+${inventoryContext}
+${abilityContext}
+
+THIS SCENE: ${scene ? "Continue the story naturally from the previous scene." : `Open with an immediate action hook that establishes setting, character, and conflict. Introduce ${profile.name || "the hero"} as the protagonist.`}`;
 
     // Log profile for validation
     console.log(`Story generation request: ${max_tokens} tokens, scene ${sceneCount}`);
@@ -863,8 +856,18 @@ ${profile.mode === "learning" ? "- Embed educational content naturally into the 
       body: JSON.stringify({
         model: selectedModel,
         max_tokens,
-        system: SYSTEM_PROMPT,
-        messages: [{ role: "user", content: userPrompt }],
+        system: [
+          { type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } },
+        ],
+        messages: [
+          {
+            role: "user",
+            content: [
+              { type: "text", text: stablePrefix, cache_control: { type: "ephemeral" } },
+              { type: "text", text: dynamicTail },
+            ],
+          },
+        ],
       }),
     });
     const latencyMs = Date.now() - anthropicStart;
