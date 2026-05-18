@@ -858,7 +858,12 @@ const Mission = () => {
       // Include memory context so AI can reference past decisions
       const abilityCategories = availableAbilities.map(a => a.category);
       const sceneWithMemory = { ...scene, selectedChoiceId: choiceId, memory: storyMemory };
-      const { parsed, text } = await generateNextScene(profileWithInventory, sceneWithMemory, false, 1200, nextSceneCount, savedStory.id, false, abilityCategories);
+
+      // Prefetch cache hit? Skip the network call entirely.
+      const prefetched = consumePrefetchedScene(savedStory.id, sceneCount, choiceId);
+      const { parsed, text } = prefetched
+        ? { parsed: prefetched.parsed, text: prefetched.text }
+        : await generateNextScene(profileWithInventory, sceneWithMemory, false, 1100, nextSceneCount, savedStory.id, false, abilityCategories);
       if (!parsed) {
         const errorPreview = text ? text.slice(0, 140) : "No response received";
         throw new Error("Invalid AI response: " + errorPreview);
