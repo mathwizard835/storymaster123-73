@@ -136,43 +136,8 @@ const Mission = () => {
     }
   }, [scene]);
 
-  // Adventure Pass prefetch: speculatively generate the next scene
-  // for the most likely choice while the user is reading.
-  useEffect(() => {
-    const planName = (userPlan?.name || "").toLowerCase();
-    const isPremium = planName.includes("premium") || planName.includes("adventure");
-    if (!isPremium) return;
-    if (!scene || !scene.choices?.length || scene.end) return;
-    if (!savedStory?.id) return;
-    if (choiceLoading) return;
 
-    // Pick the most likely choice: first standard (non-secret, non-locked) choice.
-    const likelyChoice = scene.choices.find(c =>
-      c.type !== "secret" && !c.requiresItem && !c.requiresAbility
-    ) || scene.choices[0];
-    if (!likelyChoice) return;
 
-    const timer = setTimeout(() => {
-      const profileWithInventory = updateProfileInventory(profile, inventory);
-      const abilityCategories = availableAbilities.map(a => a.category);
-      prefetchNextScene(
-        profileWithInventory,
-        scene,
-        likelyChoice.id,
-        sceneCount + 1,
-        savedStory.id,
-        abilityCategories,
-        storyMemory,
-      );
-    }, 3000); // let the kid start reading first
-
-    return () => clearTimeout(timer);
-  }, [scene, savedStory?.id, sceneCount, userPlan]);
-
-  // Clear prefetch cache on unmount
-  useEffect(() => {
-    return () => clearPrefetchCache();
-  }, []);
 
 
   // Read-to-Me is available to all authenticated users
