@@ -856,8 +856,18 @@ THIS SCENE: ${scene ? "Continue the story naturally from the previous scene." : 
       body: JSON.stringify({
         model: selectedModel,
         max_tokens,
-        system: SYSTEM_PROMPT,
-        messages: [{ role: "user", content: userPrompt }],
+        system: [
+          { type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } },
+        ],
+        messages: [
+          {
+            role: "user",
+            content: [
+              { type: "text", text: stablePrefix, cache_control: { type: "ephemeral" } },
+              { type: "text", text: dynamicTail },
+            ],
+          },
+        ],
       }),
     });
     const latencyMs = Date.now() - anthropicStart;
