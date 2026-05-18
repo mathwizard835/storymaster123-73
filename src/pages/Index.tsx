@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Seo } from "@/components/Seo";
+import { useAuth } from "@/hooks/useAuth";
 import heroParentTrust from "@/assets/hero-parent-trust.jpg";
 import familyReading from "@/assets/family-reading.jpg";
 import storyGenres from "@/assets/story-genres.jpg";
@@ -22,6 +23,7 @@ import {
 
 const Index = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [demoUsed, setDemoUsed] = useState(false);
 
   useEffect(() => {
@@ -70,6 +72,29 @@ const Index = () => {
           loading="eager"
         />
         <div className="absolute inset-0 bg-background/5" />
+
+        {/* Top-right auth controls */}
+        <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-20 flex items-center gap-2">
+          {user ? (
+            <Button size="sm" onClick={() => navigate("/dashboard")}>
+              Dashboard
+            </Button>
+          ) : (
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-foreground hover:bg-background/40 backdrop-blur-sm"
+                onClick={() => navigate("/auth")}
+              >
+                Log In
+              </Button>
+              <Button size="sm" onClick={() => navigate("/auth?mode=signup")}>
+                Sign Up
+              </Button>
+            </>
+          )}
+        </div>
 
         <div className="relative z-10 flex min-h-screen items-center justify-center px-6">
           <div className="max-w-4xl text-center animate-enter">
