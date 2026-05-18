@@ -633,26 +633,36 @@ Return ONLY valid JSON (no markdown, no explanations):
       );
     }
 
-    // Determine model based on total stories started by this user
-    // Guests always get Haiku for cost/speed.
+    // Determine model based on total stories started by this user.
+    // Guests always get Haiku. Continuation scenes reuse the cached choice
+    // (model is stable within a story for a user).
+    const isNewStoryForModel = !body?.scene;
     let selectedModel = isGuest ? "claude-haiku-4-5-20251001" : "claude-sonnet-4-20250514";
-    try {
-      if (!isGuest) {
-        // Count total stories by user_id (not device_id) for model selection
-        const { count, error: countError } = await supabaseAdmin
-          .from("user_stories")
-          .select("*", { count: "exact", head: true })
-          .eq("user_id", userId);
 
-        if (!countError && count !== null && count >= 20) {
-          selectedModel = "claude-haiku-4-5-20251001";
-          console.log(`📊 User ${userId} has ${count} stories - using Haiku 4.5`);
-        } else {
-          console.log(`📊 User ${userId} has ${count ?? 0} stories - using Sonnet`);
+    if (!isGuest) {
+      const cachedModel = userModelCache.get(userId);
+      if (cachedModel && Date.now() < cachedModel.expiresAt && !isNewStoryForModel) {
+        selectedModel = cachedModel.model;
+      } else if (isNewStoryForModel) {
+        try {
+          const { count, error: countError } = await supabaseAdmin
+            .from("user_stories")
+            .select("*", { count: "exact", head: true })
+            .eq("user_id", userId);
+          if (!countError && count !== null && count >= 20) {
+            selectedModel = "claude-haiku-4-5-20251001";
+            console.log(`📊 User ${userId} has ${count} stories - using Haiku 4.5`);
+          } else {
+            console.log(`📊 User ${userId} has ${count ?? 0} stories - using Sonnet`);
+          }
+        } catch (modelErr) {
+          console.warn("Failed to check story count for model selection, defaulting to Sonnet:", modelErr);
         }
+        userModelCache.set(userId, { model: selectedModel, expiresAt: Date.now() + USER_MODEL_TTL_MS });
+      } else if (cachedModel) {
+        // Expired but continuation — keep the cached model rather than re-querying mid-story.
+        selectedModel = cachedModel.model;
       }
-    } catch (modelErr) {
-      console.warn("Failed to check story count for model selection, defaulting to Sonnet:", modelErr);
     }
 
     // Apply rate limiting with IP-based backup
@@ -674,11 +684,11 @@ Return ONLY valid JSON (no markdown, no explanations):
     const scene = body?.scene ?? null; // optional current scene context
     const sceneCount = Number(body?.scene_count ?? 1);
     const megastory = Boolean(body?.megastory ?? false);
-    // Smart token management based on story type - increased to prevent cutoffs
+    // Tightened token budgets — narrative target is ~215 words. Hard cap 4000.
     const getOptimalTokens = (sceneCount: number, isNewStory: boolean) => {
-      if (isNewStory) return 3000; // New stories need complete JSON
-      if (sceneCount >= 12) return 2500; // Ending scenes need more detail
-      return 2000; // Continuation scenes - ensure complete responses
+      if (isNewStory) return 1500;
+      if (sceneCount >= 12) return 1400;
+      return 1100;
     };
     const max_tokens = Math.min(Number(body?.max_tokens ?? getOptimalTokens(sceneCount, !scene)), 4000);
 
