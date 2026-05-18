@@ -269,7 +269,8 @@ serve(async (req) => {
   const { count: activeSubsCount } = await admin
     .from("user_subscriptions")
     .select("*", { count: "exact", head: true })
-    .eq("status", "active");
+    .eq("status", "active")
+    .gt("expires_at", new Date().toISOString());
 
   const result = {
     window: { days, since },
