@@ -1552,13 +1552,17 @@ const Mission = () => {
                                 });
                               }, finalDelay);
 
-                              // Native + non-subscriber → route to paywall ("Keep the adventure going")
+                              // Native + non-subscriber → show "Keep the adventure going" prompt → paywall
                               const { isNativePlatform } = await import("@/lib/platform");
                               const isNativeNoSub = isNativePlatform() && (!userPlan || userPlan?.name?.toLowerCase() === 'free');
 
-                              // Navigate after notifications display
-                              const navDelay = Math.min(finalDelay + 500, 2500);
-                              setTimeout(() => navigate(isNativeNoSub ? '/subscription?from=story_complete' : '/dashboard'), navDelay);
+                              if (isNativeNoSub) {
+                                const promptDelay = Math.min(finalDelay + 800, 3000);
+                                setTimeout(() => setShowKeepGoingDialog(true), promptDelay);
+                              } else {
+                                const navDelay = Math.min(finalDelay + 500, 2500);
+                                setTimeout(() => navigate('/dashboard'), navDelay);
+                              }
                             } catch (error) {
                               console.error("Error finishing adventure:", error);
                               toast({
