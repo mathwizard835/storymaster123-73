@@ -72,6 +72,7 @@ const Mission = () => {
   const [showLearningProgress, setShowLearningProgress] = useState(false);
   const [storyReadyToFinish, setStoryReadyToFinish] = useState(false);
   const [showNewStoryDialog, setShowNewStoryDialog] = useState(false);
+  const [showKeepGoingDialog, setShowKeepGoingDialog] = useState(false);
   
   
   // Quiz state
