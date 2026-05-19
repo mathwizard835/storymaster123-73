@@ -1551,9 +1551,13 @@ const Mission = () => {
                                 });
                               }, finalDelay);
 
-                              // Navigate back to dashboard once notifications have had a moment to display
+                              // Native + non-subscriber → route to paywall ("Keep the adventure going")
+                              const { isNativePlatform } = await import("@/lib/platform");
+                              const isNativeNoSub = isNativePlatform() && (!userPlan || userPlan?.name?.toLowerCase() === 'free');
+
+                              // Navigate after notifications display
                               const navDelay = Math.min(finalDelay + 500, 2500);
-                              setTimeout(() => navigate('/dashboard'), navDelay);
+                              setTimeout(() => navigate(isNativeNoSub ? '/subscription?from=story_complete' : '/dashboard'), navDelay);
                             } catch (error) {
                               console.error("Error finishing adventure:", error);
                               toast({
