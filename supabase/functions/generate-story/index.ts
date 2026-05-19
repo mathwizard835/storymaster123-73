@@ -548,7 +548,10 @@ Return ONLY valid JSON (no markdown, no explanations):
     }
 
     if (isNewStory && !isGuest) {
-      // Count stories started by this user in the last 30 days
+      // Detect mobile/native client — hard paywall after 1 free story applies to native only
+      const isNativeClient = body?.platform === "native" || body?.platform === "ios" || body?.platform === "android";
+
+      // Count stories started by this user in the last 30 days (used for web cap + soft cap)
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
       const { count: storyCount, error: countErr } = await supabaseAdmin
         .from("user_stories")
@@ -562,6 +565,17 @@ Return ONLY valid JSON (no markdown, no explanations):
 
       const userStoryCount = storyCount ?? 0;
 
+      // For native: count LIFETIME stories (hard paywall after 1)
+      let lifetimeStoryCount = userStoryCount;
+      if (isNativeClient) {
+        const { count: lifeCount, error: lifeErr } = await supabaseAdmin
+          .from("user_stories")
+          .select("*", { count: "exact", head: true })
+          .eq("user_id", userId);
+        if (lifeErr) console.error("Failed to count lifetime stories:", lifeErr);
+        lifetimeStoryCount = lifeCount ?? 0;
+      }
+
       // Check if user has an active subscription
       const { data: activeSub } = await supabaseAdmin
         .from("user_subscriptions")
@@ -571,10 +585,19 @@ Return ONLY valid JSON (no markdown, no explanations):
         .limit(1)
         .maybeSingle();
 
-      const FREE_STORY_LIMIT = 3;
+      const FREE_STORY_LIMIT_WEB = 3;
+      const FREE_STORY_LIMIT_NATIVE = 1;
       const PREMIUM_SOFT_CAP = 40;
-      if (!activeSub && userStoryCount >= FREE_STORY_LIMIT) {
-        console.warn(`Story limit reached for user ${userId}: ${userStoryCount}/${FREE_STORY_LIMIT}`);
+
+      if (!activeSub && isNativeClient && lifetimeStoryCount >= FREE_STORY_LIMIT_NATIVE) {
+        console.warn(`Native paywall: user ${userId} has ${lifetimeStoryCount} lifetime stories`);
+        return new Response(
+          JSON.stringify({ error: "paywall_required", message: "Keep the adventure going — unlock unlimited stories with Adventure Pass." }),
+          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+      if (!activeSub && !isNativeClient && userStoryCount >= FREE_STORY_LIMIT_WEB) {
+        console.warn(`Web story limit reached for user ${userId}: ${userStoryCount}/${FREE_STORY_LIMIT_WEB}`);
         return new Response(
           JSON.stringify({ error: "Story limit reached. Upgrade to Adventure Pass for stories your child will want to come back to every day." }),
           { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },

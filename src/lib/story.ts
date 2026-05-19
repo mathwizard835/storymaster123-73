@@ -359,8 +359,10 @@ export const generateNextScene = async (
   const adjustedTokens = Math.floor(optimizedTokens * lengthMultiplier);
   
   try {
+    const { isNativePlatform } = await import("@/lib/platform");
+    const platform = isNativePlatform() ? "native" : "web";
     const { data, error } = await supabase.functions.invoke("generate-story", {
-      body: { profile, scene, megastory, max_tokens: adjustedTokens, scene_count: sceneCount, abilities: availableAbilities },
+      body: { profile, scene, megastory, max_tokens: adjustedTokens, scene_count: sceneCount, abilities: availableAbilities, platform },
     });
 
     if (error) throw error;

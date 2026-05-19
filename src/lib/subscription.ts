@@ -149,22 +149,24 @@ export const getStoriesRemaining = async (): Promise<{
 }> => {
   try {
     const deviceId = await getDeviceId();
-    
-    // Get the rolling 30-day period (last 30 days from now)
+    const { isNativePlatform } = await import("@/lib/platform");
+    const isNative = isNativePlatform();
+
     const now = new Date();
     const thirtyDaysAgo = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
-    
+
     // Get current subscription plan
     const { plan } = await getUserSubscription();
-    
-    // Monthly limits: Free = 3, Premium = 40 stories per rolling 30 days (soft cap)
-    let monthlyLimit = 3; // Default for free users
-    let isUnlimited = false;
+
+    // Determine monthly/lifetime limit.
+    // - Native (mobile app): HARD PAYWALL after 1 lifetime free story for non-subscribers.
+    // - Web: 3 stories per rolling 30 days (legacy behavior preserved).
+    // - Subscribers: 40/30d soft cap.
+    let monthlyLimit = isNative ? 1 : 3;
     if (plan) {
       const planName = plan.name?.toLowerCase().trim().replace(/\s+/g, '_');
       if (planName === 'premium' || planName === 'premium_plus' ||
           planName?.includes('premium') || plan.story_limit === null) {
-        // Premium users get a generous soft cap of 40 stories per 30-day period
         monthlyLimit = 40;
       } else if (plan.story_limit && plan.story_limit > 0) {
         monthlyLimit = plan.story_limit;
@@ -173,26 +175,26 @@ export const getStoriesRemaining = async (): Promise<{
       }
     }
 
-    // Count stories STARTED in the last 30 days (rolling period)
-    // This prevents users from bypassing limits by starting but not finishing stories
+    const isFreeOnNative = isNative && (!plan || plan.name?.toLowerCase() === 'free');
+
     let storiesUsedThisMonth = 0;
-    
-    // Try to get user for user_stories table (requires authentication)
     const { data: { user } } = await supabase.auth.getUser();
-    
+
     if (user) {
-      // Count from user_stories table - all stories started in the period
-      const { data: userStories, error: storiesError } = await supabase
+      // Native free users: count LIFETIME stories. Otherwise: rolling 30 days.
+      let query = supabase
         .from('user_stories')
         .select('id')
-        .eq('user_id', user.id)
-        .gte('started_at', thirtyDaysAgo.toISOString())
-        .lte('started_at', now.toISOString());
-
+        .eq('user_id', user.id);
+      if (!isFreeOnNative) {
+        query = query
+          .gte('started_at', thirtyDaysAgo.toISOString())
+          .lte('started_at', now.toISOString());
+      }
+      const { data: userStories, error: storiesError } = await query;
       if (storiesError) throw storiesError;
       storiesUsedThisMonth = userStories?.length || 0;
     } else {
-      // Fallback for non-authenticated users: use story_completions with device_id
       const { data: monthStories, error: storiesError } = await supabase
         .from('story_completions')
         .select('id')
@@ -204,41 +206,30 @@ export const getStoriesRemaining = async (): Promise<{
       storiesUsedThisMonth = monthStories?.length || 0;
     }
 
-    // Get bonus stories from referrals and streaks (scoped to authenticated user)
-    let referralData: { bonus_stories_earned: number | null }[] | null = null;
-    let streakData: { bonus_stories_earned: number | null } | null = null;
-
-    if (user) {
+    // Bonus stories from referrals/streaks — only honored on web (native is a hard paywall)
+    let bonusStories = 0;
+    if (user && !isFreeOnNative) {
       const { data: refs } = await supabase
         .from('referrals')
         .select('bonus_stories_earned')
         .eq('referrer_user_id', user.id)
         .eq('status', 'completed');
-      referralData = refs;
-
       const { data: streak } = await supabase
         .from('daily_streaks')
         .select('bonus_stories_earned')
         .eq('user_id', user.id)
         .maybeSingle();
-      streakData = streak;
+      const referralBonus = refs?.reduce((t, r) => t + (r.bonus_stories_earned || 0), 0) || 0;
+      const streakBonus = streak?.bonus_stories_earned || 0;
+      bonusStories = referralBonus + streakBonus;
     }
-
-    const referralBonus = referralData?.reduce((total, ref) => total + (ref.bonus_stories_earned || 0), 0) || 0;
-    const streakBonus = streakData?.bonus_stories_earned || 0;
-    const bonusStories = referralBonus + streakBonus;
 
     const totalAllowed = monthlyLimit + bonusStories;
     const canPlay = storiesUsedThisMonth < totalAllowed;
 
-    console.log(`📊 Story limits: ${storiesUsedThisMonth}/${monthlyLimit} started in last 30 days (${bonusStories} bonus, canPlay: ${canPlay})`);
+    console.log(`📊 Story limits: ${storiesUsedThisMonth}/${monthlyLimit} (${isFreeOnNative ? 'lifetime, native' : 'rolling 30d'}, bonus ${bonusStories}, canPlay ${canPlay})`);
 
-    return {
-      storiesUsedThisMonth,
-      monthlyLimit,
-      bonusStories,
-      canPlay
-    };
+    return { storiesUsedThisMonth, monthlyLimit, bonusStories, canPlay };
   } catch (e) {
     console.error("Failed to check stories remaining", e);
     return {
