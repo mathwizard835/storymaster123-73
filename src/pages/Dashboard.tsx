@@ -511,7 +511,7 @@ const Dashboard = () => {
                     disabled={isCheckingLimit}
                   >
                     {isCheckingLimit ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-                    {isCheckingLimit ? 'Starting...' : 'New Adventure'}
+                    {isCheckingLimit ? 'Starting...' : 'Start a New Adventure'}
                   </Button>
                 </div>
               </div>
