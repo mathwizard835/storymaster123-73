@@ -1747,6 +1747,48 @@ const Mission = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Keep the Adventure Going — paywall prompt on native after first free story */}
+      <Dialog open={showKeepGoingDialog} onOpenChange={(open) => {
+        setShowKeepGoingDialog(open);
+        if (!open) navigate('/dashboard');
+      }}>
+        <DialogContent className="max-w-md text-center">
+          <DialogHeader>
+            <DialogTitle className="text-2xl flex items-center justify-center gap-2">
+              <Sparkles className="h-6 w-6 text-yellow-400" />
+              Keep the adventure going
+            </DialogTitle>
+            <DialogDescription className="text-base pt-2">
+              Your story doesn't have to end here. Unlock unlimited adventures with Adventure Pass and never get interrupted again.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-3 mt-6">
+            <Button
+              size="xl"
+              variant="hero"
+              onClick={() => {
+                setShowKeepGoingDialog(false);
+                navigate('/subscription?from=story_complete');
+              }}
+              className="w-full text-lg font-bold bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+            >
+              <Crown className="h-5 w-5 mr-2" />
+              Keep the adventure going
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setShowKeepGoingDialog(false);
+                navigate('/dashboard');
+              }}
+            >
+              Maybe later
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+
       {showQuiz && quizQuestions.length > 0 && (
         <ComprehensionQuiz
           open={showQuiz}
