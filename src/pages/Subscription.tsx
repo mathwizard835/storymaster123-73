@@ -30,6 +30,7 @@ export default function Subscription() {
   const [parentalGateOpen, setParentalGateOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState<null | (() => void | Promise<void>)>(null);
   const limitReached = searchParams.get('limitReached') === 'true';
+  const required = searchParams.get('required') === 'true';
   const cancelled = searchParams.get('cancelled') === 'true';
   const packSuccess = searchParams.get('pack_success') === 'true';
   const packCancelled = searchParams.get('pack_cancelled') === 'true';
@@ -224,12 +225,19 @@ export default function Subscription() {
       {/* Header */}
       <div className="bg-black/20 backdrop-blur-sm border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <Button variant="ghost" onClick={() => navigate(-1)} className="text-foreground hover:bg-primary/10">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
+          {required && !currentPlan ? (
+            <div className="text-white/80 text-sm font-semibold flex items-center gap-2">
+              <Crown className="h-4 w-4 text-yellow-300" />
+              Unlock StoryMaster Kids
+            </div>
+          ) : (
+            <Button variant="ghost" onClick={() => navigate(-1)} className="text-foreground hover:bg-primary/10">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back
+            </Button>
+          )}
           <Badge variant="secondary" className="bg-white/20 text-white">
-            Special Offer
+            {required && !currentPlan ? 'Subscription Required' : 'Special Offer'}
           </Badge>
         </div>
       </div>

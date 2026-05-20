@@ -83,12 +83,54 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+// Native subscription gate: after auth, users without an active subscription are
+// hard-routed to /subscription?required=true. Allowed routes: /subscription itself,
+// /settings (so they can log out), /profile (initial setup), /support.
+const RequireSubscription = ({ children }: { children: React.ReactNode }) => {
+  const { user } = useAuth();
+  const location = useLocation();
+  const [checking, setChecking] = useState(true);
+  const [hasSub, setHasSub] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    const check = async () => {
+      if (!user || !isNativePlatform()) {
+        setChecking(false);
+        setHasSub(true);
+        return;
+      }
+      try {
+        const { getUserSubscription } = await import("@/lib/subscription");
+        const { plan } = await getUserSubscription();
+        const active = !!plan && plan.name?.toLowerCase() !== 'free';
+        if (!cancelled) {
+          setHasSub(active);
+          setChecking(false);
+        }
+      } catch {
+        if (!cancelled) {
+          setHasSub(false);
+          setChecking(false);
+        }
+      }
+    };
+    check();
+    return () => { cancelled = true; };
+  }, [user, location.pathname]);
+
+  if (checking) return <NativeLoadingScreen />;
+  if (!hasSub) return <Navigate to="/subscription?required=true" replace />;
+  return <>{children}</>;
+};
+
 const NativeAppRoute = ({ children }: { children: React.ReactNode }) => {
   // Authenticated app routes must not depend on platform detection after login.
-  // If Capacitor reports web for a moment during native navigation, a hard
-  // web-only redirect sends users to / and then NativeHomeRedirect bounces them
-  // back to /dashboard.
-  return <ProtectedRoute>{children}</ProtectedRoute>;
+  return (
+    <ProtectedRoute>
+      <RequireSubscription>{children}</RequireSubscription>
+    </ProtectedRoute>
+  );
 };
 
 const PublicRoute = ({ children }: { children: React.ReactNode }) => {
@@ -135,14 +177,14 @@ const AnimatedRoutes = () => {
           <Route path="/gallery" element={<NativeAppRoute><PageTransition><StoryGallery /></PageTransition></NativeAppRoute>} />
           <Route path="/achievements" element={<NativeAppRoute><PageTransition><Achievements /></PageTransition></NativeAppRoute>} />
           <Route path="/dashboard" element={<NativeAppRoute><PageTransition><Dashboard /></PageTransition></NativeAppRoute>} />
-          <Route path="/subscription" element={<NativeAppRoute><PageTransition><Subscription /></PageTransition></NativeAppRoute>} />
+          <Route path="/subscription" element={<ProtectedRoute><PageTransition><Subscription /></PageTransition></ProtectedRoute>} />
           <Route path="/subscription/success" element={isNative ? <PageTransition><SubscriptionSuccess /></PageTransition> : <Navigate to="/" replace />} />
           <Route path="/coming-soon" element={<NativeAppRoute><PageTransition><ComingSoon /></PageTransition></NativeAppRoute>} />
           <Route path="/privacy" element={<PageTransition><PrivacyPolicy /></PageTransition>} />
           <Route path="/terms" element={<PageTransition><TermsOfService /></PageTransition>} />
           <Route path="/support" element={<PageTransition><Support /></PageTransition>} />
           <Route path="/parent-dashboard" element={<NativeAppRoute><PageTransition><ParentDashboard /></PageTransition></NativeAppRoute>} />
-          <Route path="/settings" element={<NativeAppRoute><PageTransition><Settings /></PageTransition></NativeAppRoute>} />
+          <Route path="/settings" element={<ProtectedRoute><PageTransition><Settings /></PageTransition></ProtectedRoute>} />
           <Route path="/shared/:storyId" element={<PageTransition><SharedStory /></PageTransition>} />
           <Route path="/admin/analytics" element={<NativeAppRoute><PageTransition><AdminAnalytics /></PageTransition></NativeAppRoute>} />
           <Route path="/try" element={<PageTransition><TryStory /></PageTransition>} />
