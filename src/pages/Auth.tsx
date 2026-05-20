@@ -535,7 +535,7 @@ const Auth = () => {
         <TabsContent value="signup" className="space-y-4 mt-6">
           <form onSubmit={handleSignUpCredentials} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="signup-email" className="text-white">Email</Label>
+              <Label htmlFor="signup-email" className="text-white">Parent/Guardian Email</Label>
               <Input
                 id="signup-email"
                 type="email"
@@ -543,8 +543,11 @@ const Auth = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 className="bg-black/30 border-white/20 text-white placeholder:text-white/60"
-                placeholder="Enter your email"
+                placeholder="parent@example.com"
               />
+              <p className="text-purple-300 text-xs">
+                Verification link will be sent here. This is the account login email.
+              </p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="signup-password" className="text-white">Password</Label>
