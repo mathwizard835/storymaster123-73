@@ -424,6 +424,25 @@ const Auth = () => {
     }
   };
 
+  const handleGoogleSignIn = async () => {
+    setError('');
+    setLoading(true);
+    try {
+      const redirectUrl = getAuthRedirectUrl('/auth');
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: redirectUrl },
+      });
+      if (error) {
+        setError(error.message);
+      }
+    } catch (err: any) {
+      setError('Could not start Google sign-in. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Render signup step content
   const renderSignupContent = () => {
     if (signupStep === 'age-gate') {
