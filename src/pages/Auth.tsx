@@ -631,6 +631,7 @@ const Auth = () => {
           </form>
         </TabsContent>
       </Tabs>
+      </div>
     );
   };
 
