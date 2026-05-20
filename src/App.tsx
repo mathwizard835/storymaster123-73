@@ -83,12 +83,54 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+// Native subscription gate: after auth, users without an active subscription are
+// hard-routed to /subscription?required=true. Allowed routes: /subscription itself,
+// /settings (so they can log out), /profile (initial setup), /support.
+const RequireSubscription = ({ children }: { children: React.ReactNode }) => {
+  const { user } = useAuth();
+  const location = useLocation();
+  const [checking, setChecking] = useState(true);
+  const [hasSub, setHasSub] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    const check = async () => {
+      if (!user || !isNativePlatform()) {
+        setChecking(false);
+        setHasSub(true);
+        return;
+      }
+      try {
+        const { getUserSubscription } = await import("@/lib/subscription");
+        const { plan } = await getUserSubscription();
+        const active = !!plan && plan.name?.toLowerCase() !== 'free';
+        if (!cancelled) {
+          setHasSub(active);
+          setChecking(false);
+        }
+      } catch {
+        if (!cancelled) {
+          setHasSub(false);
+          setChecking(false);
+        }
+      }
+    };
+    check();
+    return () => { cancelled = true; };
+  }, [user, location.pathname]);
+
+  if (checking) return <NativeLoadingScreen />;
+  if (!hasSub) return <Navigate to="/subscription?required=true" replace />;
+  return <>{children}</>;
+};
+
 const NativeAppRoute = ({ children }: { children: React.ReactNode }) => {
   // Authenticated app routes must not depend on platform detection after login.
-  // If Capacitor reports web for a moment during native navigation, a hard
-  // web-only redirect sends users to / and then NativeHomeRedirect bounces them
-  // back to /dashboard.
-  return <ProtectedRoute>{children}</ProtectedRoute>;
+  return (
+    <ProtectedRoute>
+      <RequireSubscription>{children}</RequireSubscription>
+    </ProtectedRoute>
+  );
 };
 
 const PublicRoute = ({ children }: { children: React.ReactNode }) => {
