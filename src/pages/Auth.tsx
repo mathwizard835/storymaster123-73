@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { EmailOtpType } from '@supabase/supabase-js';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -47,6 +47,8 @@ const Auth = () => {
   const [childAge, setChildAge] = useState<number>(0);
   const [appHandoffUrl, setAppHandoffUrl] = useState<string | null>(null);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const initialTab = searchParams.get('mode') === 'login' ? 'login' : 'signup';
   const { toast } = useToast();
 
   // Cooldown timer effect
@@ -236,9 +238,9 @@ const Auth = () => {
     setSignupStep('parental-gate');
   };
 
-  // Step 3 (if under 13): Parental consent given
-  const handleParentalConsent = (parentEmail: string) => {
-    completeSignUp(childAge, parentEmail);
+  // Step 3 (if under 13): Parental consent given — parent email IS the account email
+  const handleParentalConsent = () => {
+    completeSignUp(childAge, email);
   };
 
   // Final: Create the account
@@ -289,10 +291,8 @@ const Auth = () => {
 
       if (data?.user && !data.session) {
         toast({
-          title: "Check your email to confirm your account!",
-          description: parentEmail
-            ? "We've sent confirmation emails to both you and your parent/guardian. Click the link in the email to activate your account. Check your spam folder if it doesn't arrive within a few minutes."
-            : "We sent a confirmation link to your email. Click it to activate your account. Check your spam folder if it doesn't arrive within a few minutes.",
+          title: "Check the parent/guardian email!",
+          description: `We've sent a verification link to ${email}. Click it to activate the account. Check spam if it doesn't arrive within a few minutes.`,
           duration: 10000,
         });
         setSignupStep('credentials');
@@ -456,6 +456,7 @@ const Auth = () => {
       return (
         <ParentalConsentForm
           childAge={childAge}
+          accountEmail={email}
           onConsent={handleParentalConsent}
           onBack={() => setSignupStep('age-gate')}
           loading={loading}
@@ -466,7 +467,7 @@ const Auth = () => {
 
     // Default: credentials form
     return (
-      <Tabs defaultValue="signup" className="w-full">
+      <Tabs defaultValue={initialTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2 bg-black/30">
           <TabsTrigger value="signup" className="text-white data-[state=active]:bg-purple-600">
             Sign Up
