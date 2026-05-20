@@ -1,66 +1,79 @@
-## THE FOLLOWING CHANGES SHOULD ONLY BE MADE TO THE MOBILE APP: Goal
+# Native Onboarding Flow Overhaul
 
-Switch from "3 stories per 30 days" to a **hard paywall after 1 free story in-app**, reframed psychologically: not "pay for more stories" but **"pay to keep your adventure going — uninterrupted."**
+Replace the current "1 free story then paywall" model with a guided funnel: **Feature Tutorial → Account Creation → Hard Paywall**. No story generation is possible until the user subscribes.
 
-The kid finishes their first complete story, then sees a celebratory "Keep the adventure going" prompt that routes to the paywall.
+## New Flow (Native iOS only)
 
-## Core behavior
+```text
+App Open
+  └─> NativeOnboarding (5 feature slides, swipeable + tappable)
+        └─> NativeWelcome / Auth (Sign Up or Log In)
+              └─> Email verification + COPPA consent (existing)
+                    └─> Subscription Paywall (hard block, no skip)
+                          └─> [Subscribed] → Dashboard → full app
+                          └─> [Not subscribed] → stuck on paywall (Settings/Logout only)
+```
 
-- **New users:** 1 full free story (all scenes, start → end).
-- **After completion:** End-of-story screen shows a "Keep the adventure going →" CTA → routes to `/subscription`.
-- **Trying to start a 2nd story without a subscription:** Blocked with the same "Keep the adventure going" paywall messaging (not "limit reached").
-- **Continuation scenes within story #1:** Always allowed — never interrupt an in-progress story.
-- **Existing free users:** Immediate switch. If they've already used ≥1 story, next story start is paywalled.
-- `**/try` landing demo:** Unchanged.
+Web flow is unchanged (marketing site at `/`, web app keeps 3/30d limit).
 
-## Psychological reframe (copy)
+## 1. Expanded Tutorial (5 slides)
 
-Replace everywhere:
+Rewrite `src/components/NativeOnboarding.tsx` from 3 generic slides to 5 outcome-focused feature slides. Each slide gets an animated visual demo (not just an icon) showing the *benefit*, not the feature name.
 
-- ❌ "3 stories per month" / "Stories remaining" / "Monthly limit reached" / "Upgrade for unlimited stories"
-- ✅ "Keep the adventure going" / "Your story continues with Adventure Pass" / "Don't let the story end here" / "Unlock the next chapter of every adventure"
+| # | Slide | Visual demo | Headline | Outcome |
+|---|-------|-------------|----------|---------|
+| 1 | Interactive Stories | Animated story page with tappable choice buttons that highlight | "Stories that listen to your child" | Kids drive the plot — they're not passive |
+| 2 | Read-to-Me Narration | Sound wave animation + speaker icon, sample sentence highlighting word-by-word | "Pro narration brings every scene to life" | Reluctant readers stay engaged |
+| 3 | Reading Level Match | Animated Lexile slider 200L → 1200L with sample text re-flowing | "Grows with your reader" | Always the right challenge level |
+| 4 | Safe & Parent-Approved | Shield + parent dashboard mini-preview | "Zero scary content, full parent visibility" | Trust + COPPA reassurance |
+| 5 | Real Reading Progress | Animated streak/XP bar filling, badges popping | "Screen time that builds skills" | Measurable outcomes vs. Roblox |
 
-The shift: **subscription = continuity, not quantity.**
+Slides remain swipeable with dot indicators and Skip button (skip still leads to Welcome → Auth → Paywall, so no escape from the funnel).
 
-## Files to change
+## 2. Force Auth + Paywall After Tutorial
 
-### Gating logic
+**`src/components/NativeOnboarding.tsx`**: on completion, route to `/auth` (not just close to NativeWelcome). Keep `hasSeenOnboarding` flag so returning unauthenticated users don't see tutorial again — they go straight to Welcome/Auth.
 
-- `**src/lib/subscription.ts**` — `getStoriesRemaining`: replace 30-day rolling count with lifetime count of `user_stories` rows. Free cap = 1. Drop referral/streak bonus from gating. Return shape kept compatible but semantics now lifetime, not monthly.
-- `**supabase/functions/generate-story/index.ts**` — Limit check: if user has active sub → allow. Else count `user_stories` rows; if ≥1 AND this is a new story (not continuation) → return 402 with code `paywall_required` and message "Keep the adventure going." Continuation requests always allowed.
+**`src/App.tsx`** — add a new `RequireSubscription` gate on native:
+- After login, check subscription status (existing `subscription.ts` helpers + RevenueCat).
+- If user is authenticated but NOT subscribed → force redirect to `/subscription` for ALL app routes except `/subscription`, `/settings`, `/auth`.
+- `/subscription` on native hides its back button and dismiss affordances when reached via this gate (query param `?required=true` or context flag).
 
-### End-of-story prompt (new behavior)
+**`src/pages/Subscription.tsx`**: when `required=true`, hide close/back, show messaging like "Start your Adventure Pass to unlock StoryMaster Kids", emphasize Read-to-Me + safety + level matching (mirroring tutorial promises).
 
-- `**src/pages/Mission.tsx**` — On story completion, if user has no active subscription, show a celebratory completion screen with:
-  - "🎉 The End!" headline
-  - "Keep the adventure going" primary CTA → `navigate('/subscription')`
-  - Secondary "Back to gallery" link
-  - Subscribed users see the normal completion flow unchanged.
+**`src/pages/NativeWelcome.tsx`**: update subtitle pill "3 free stories • No credit card required" → remove (it's now misleading). Replace with "Free 7-day trial" only if billing supports it, else just remove.
 
-### Widgets / modals (reframe)
+## 3. Remove "1 Free Story" Logic on Native
 
-- `**src/components/StoryLimitWidget.tsx**` — Rewrite: free user with 0 used → "Your first adventure awaits"; with 1 used → "Keep the adventure going" CTA → `/subscription`. Remove progress bar / "X of 3" framing.
-- `**src/components/SubscriptionModal.tsx**` — Headline: "Keep the adventure going." Subhead: "Unlimited stories, uninterrupted." Remove "3 stories per month" feature row from free tier display.
-- `**src/components/ReferralWidget.tsx**` — Hide "earn free stories" messaging (bonus no longer affects gating).
-- `**src/components/StreakWidget.tsx**` — Remove "bonus stories earned" reward display.
+**`supabase/functions/generate-story/index.ts`**:
+- Native + non-subscriber + new story (scene 1) → return `402 subscription_required` immediately (no lifetime-1 grace).
+- Continuation scenes for non-subscribers: also blocked on native (since they shouldn't have any in-progress stories anyway after rollout; safe guard).
+- Web logic unchanged.
 
-### Onboarding / marketing copy
+**`src/lib/subscription.ts`**: `getStoriesRemaining` on native for free user returns `0` (not 1). Subscribed cap (40/30d soft) unchanged.
 
-- `**src/components/NativeOnboarding.tsx**`, `**src/pages/NativeWelcome.tsx**`, `**src/pages/Index.tsx**`, `**src/pages/Dashboard.tsx**` — Update any "3 stories" / "monthly limit" copy to the new continuity framing. Keep mentions of "1 free story to start" where signup value prop is shown.
+**`src/pages/Mission.tsx`**: remove `showKeepGoingDialog` end-of-story interception (no free stories will reach that state). Leave dashboard navigation default. Keep the dialog component code commented or remove — minimal scope.
 
-### Memory
+**`src/pages/Dashboard.tsx`**: "Start a New Adventure" button on native for non-subscribers → routes to `/subscription?required=true` instead of `/mission`.
 
-- Update `mem://billing/story-limits` to document: 1 free lifetime story, hard paywall, end-of-story "Keep the adventure going" prompt, continuation always allowed.
-- Update Core memory line about limits accordingly.
+## 4. Existing Free Users (Immediate Paywall)
+
+No DB migration required. The `RequireSubscription` gate runs on every native app open. Anyone who used their 1 free story (or didn't) now sees the paywall the next time they open the app. In-progress stories are not preserved beyond viewing in Gallery (read-only) — actually with hard block they can't reach Gallery either. Acceptable per user's "immediate paywall" choice.
+
+## 5. Files to Edit
+
+- `src/components/NativeOnboarding.tsx` — expand to 5 feature slides with animated demos
+- `src/App.tsx` — add `RequireSubscription` gate for native app routes
+- `src/pages/Subscription.tsx` — `required=true` mode (no dismiss, outcome-focused copy)
+- `src/pages/NativeWelcome.tsx` — remove "3 free stories" copy
+- `src/pages/Mission.tsx` — remove `showKeepGoingDialog`
+- `src/pages/Dashboard.tsx` — redirect to paywall instead of mission for non-subscribers
+- `src/lib/subscription.ts` — native free users get 0, not 1
+- `supabase/functions/generate-story/index.ts` — remove 1-lifetime native grace, return 402
+- `mem://billing/story-limits` + `mem://index.md` — update to reflect new model
 
 ## Out of scope
 
-- No DB schema migration.
-- No changes to `/try`, Stripe, RevenueCat, or webhooks.
-- No grandfathering of existing free users.
-- No new trial flow.
-
-## Risk notes
-
-- Existing free users mid-month lose remaining allotment immediately — acceptable per prior decision.
-- Apple review: 1 real free story + clear continuity messaging is defensible (similar to Duolingo/Calm patterns).
+- Free trial billing (Apple IAP introductory offer) — not adding unless asked.
+- Web flow changes.
+- Refunds / comms to existing free-tier users.
