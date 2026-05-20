@@ -1,22 +1,19 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, ShieldCheck } from 'lucide-react';
-import { emailSchema } from '@/lib/validationSchemas';
 
 interface ParentalConsentFormProps {
   childAge: number;
-  onConsent: (parentEmail: string) => void;
+  accountEmail: string;
+  onConsent: () => void;
   onBack: () => void;
   loading: boolean;
   externalError?: string;
 }
 
-const ParentalConsentForm = ({ childAge, onConsent, onBack, loading, externalError }: ParentalConsentFormProps) => {
-  const [parentEmail, setParentEmail] = useState('');
+const ParentalConsentForm = ({ childAge, accountEmail, onConsent, onBack, loading, externalError }: ParentalConsentFormProps) => {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
   const [error, setError] = useState('');
@@ -25,18 +22,12 @@ const ParentalConsentForm = ({ childAge, onConsent, onBack, loading, externalErr
     e.preventDefault();
     setError('');
 
-    const emailResult = emailSchema.safeParse(parentEmail);
-    if (!emailResult.success) {
-      setError('Please enter a valid parent/guardian email address.');
-      return;
-    }
-
     if (!acceptedTerms || !acceptedPrivacy) {
       setError('You must accept both the Terms of Service and Privacy Policy to continue.');
       return;
     }
 
-    onConsent(emailResult.data);
+    onConsent();
   };
 
   return (
@@ -63,25 +54,13 @@ const ParentalConsentForm = ({ childAge, onConsent, onBack, loading, externalErr
         </AlertDescription>
       </Alert>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="parent-email" className="text-white">
-            Parent/Guardian Email Address
-          </Label>
-          <Input
-            id="parent-email"
-            type="email"
-            value={parentEmail}
-            onChange={(e) => setParentEmail(e.target.value)}
-            required
-            className="bg-black/30 border-white/20 text-white placeholder:text-white/60"
-            placeholder="parent@example.com"
-          />
-          <p className="text-purple-300 text-xs">
-            We'll send a verification email to confirm parental consent.
-          </p>
-        </div>
+      <Alert className="bg-purple-900/40 border-purple-500/40 text-purple-100">
+        <AlertDescription className="text-sm">
+          We'll send a verification email to <strong>{accountEmail}</strong> — this is the parent/guardian email used for this account. You'll need to click the link in that email to activate the account.
+        </AlertDescription>
+      </Alert>
 
+      <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-3">
           <div className="flex items-start space-x-2">
             <Checkbox
