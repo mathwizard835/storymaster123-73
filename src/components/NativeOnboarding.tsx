@@ -8,7 +8,7 @@ import { Capacitor } from '@capacitor/core';
 const ONBOARDING_KEY = 'hasSeenOnboarding';
 
 interface OnboardingSlide {
-  icon: React.ComponentType<{ className?: string }>;
+  icon: React.ComponentType<any>;
   eyebrow: string;
   title: string;
   description: string;
