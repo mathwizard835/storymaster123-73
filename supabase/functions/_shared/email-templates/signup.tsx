@@ -38,20 +38,17 @@ export const SignupEmail = ({
           <Text style={heroTagline}>Turning Screen Time into Reading Time</Text>
         </Section>
         <Section style={card}>
-          <Heading style={h1}>Welcome aboard! 🎉</Heading>
+          <Heading style={h1}>Confirm your child's account 🎉</Heading>
           <Text style={text}>
-            Thanks for signing up for{' '}
+            Thanks for setting up a{' '}
             <Link href={siteUrl} style={link}>
               <strong>{siteName}</strong>
-            </Link>
-            ! You're one click away from a world of personalized adventures.
-          </Text>
-          <Text style={text}>
-            Please confirm your email address (<strong>{recipient}</strong>) to activate your account:
+            </Link>{' '}
+            account for your child. As the parent or guardian, please confirm this email address (<strong>{recipient}</strong>) to activate the account.
           </Text>
           <Section style={{ textAlign: 'center', margin: '32px 0' }}>
             <Button style={button} href={confirmationUrl}>
-              Confirm Email & Start Reading
+              Confirm & Activate Account
             </Button>
           </Section>
           <Text style={smallText}>
@@ -59,7 +56,7 @@ export const SignupEmail = ({
             <Link href={confirmationUrl} style={link}>{confirmationUrl}</Link>
           </Text>
           <Text style={footer}>
-            If you didn't create an account, you can safely ignore this email.
+            If you didn't create this account, you can safely ignore this email.
           </Text>
         </Section>
         <Text style={brandFooter}>

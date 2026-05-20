@@ -11,7 +11,12 @@ const NativeWelcome = () => {
 
   const handleSignUp = () => {
     addHapticFeedback('medium');
-    navigate('/auth');
+    navigate('/auth?mode=signup');
+  };
+
+  const handleLogIn = () => {
+    addHapticFeedback('medium');
+    navigate('/auth?mode=login');
   };
 
   const handleDashboard = () => {
@@ -113,7 +118,7 @@ const NativeWelcome = () => {
               Sign Up
             </button>
             <button
-              onClick={handleSignUp}
+              onClick={handleLogIn}
               className="w-full py-3 mt-3 rounded-2xl bg-white/[0.08] border border-white/[0.12] text-white/80 font-semibold text-base active:scale-[0.97] transition-transform duration-100"
             >
               Log In

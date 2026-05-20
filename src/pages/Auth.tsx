@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { EmailOtpType } from '@supabase/supabase-js';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -47,6 +47,8 @@ const Auth = () => {
   const [childAge, setChildAge] = useState<number>(0);
   const [appHandoffUrl, setAppHandoffUrl] = useState<string | null>(null);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const initialTab = searchParams.get('mode') === 'login' ? 'login' : 'signup';
   const { toast } = useToast();
 
   // Cooldown timer effect
@@ -236,9 +238,9 @@ const Auth = () => {
     setSignupStep('parental-gate');
   };
 
-  // Step 3 (if under 13): Parental consent given
-  const handleParentalConsent = (parentEmail: string) => {
-    completeSignUp(childAge, parentEmail);
+  // Step 3 (if under 13): Parental consent given — parent email IS the account email
+  const handleParentalConsent = () => {
+    completeSignUp(childAge, email);
   };
 
   // Final: Create the account
@@ -289,10 +291,8 @@ const Auth = () => {
 
       if (data?.user && !data.session) {
         toast({
-          title: "Check your email to confirm your account!",
-          description: parentEmail
-            ? "We've sent confirmation emails to both you and your parent/guardian. Click the link in the email to activate your account. Check your spam folder if it doesn't arrive within a few minutes."
-            : "We sent a confirmation link to your email. Click it to activate your account. Check your spam folder if it doesn't arrive within a few minutes.",
+          title: "Check the parent/guardian email!",
+          description: `We've sent a verification link to ${email}. Click it to activate the account. Check spam if it doesn't arrive within a few minutes.`,
           duration: 10000,
         });
         setSignupStep('credentials');
@@ -424,6 +424,25 @@ const Auth = () => {
     }
   };
 
+  const handleGoogleSignIn = async () => {
+    setError('');
+    setLoading(true);
+    try {
+      const redirectUrl = getAuthRedirectUrl('/auth');
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: redirectUrl },
+      });
+      if (error) {
+        setError(error.message);
+      }
+    } catch (err: any) {
+      setError('Could not start Google sign-in. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Render signup step content
   const renderSignupContent = () => {
     if (signupStep === 'age-gate') {
@@ -456,6 +475,7 @@ const Auth = () => {
       return (
         <ParentalConsentForm
           childAge={childAge}
+          accountEmail={email}
           onConsent={handleParentalConsent}
           onBack={() => setSignupStep('age-gate')}
           loading={loading}
@@ -466,7 +486,27 @@ const Auth = () => {
 
     // Default: credentials form
     return (
-      <Tabs defaultValue="signup" className="w-full">
+      <div className="space-y-4">
+        <Button
+          type="button"
+          onClick={handleGoogleSignIn}
+          disabled={loading}
+          className="w-full bg-white text-gray-800 hover:bg-gray-100 border border-white/20 font-semibold"
+        >
+          <svg className="mr-2 h-4 w-4" viewBox="0 0 48 48" aria-hidden="true">
+            <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.4 29.3 35.5 24 35.5c-6.4 0-11.5-5.1-11.5-11.5S17.6 12.5 24 12.5c2.9 0 5.6 1.1 7.6 2.9l5.7-5.7C33.6 6.3 29.1 4.5 24 4.5 13.2 4.5 4.5 13.2 4.5 24S13.2 43.5 24 43.5 43.5 34.8 43.5 24c0-1.2-.1-2.3-.4-3.5z"/>
+            <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 16 19 12.5 24 12.5c2.9 0 5.6 1.1 7.6 2.9l5.7-5.7C33.6 6.3 29.1 4.5 24 4.5 16.3 4.5 9.7 8.8 6.3 14.7z"/>
+            <path fill="#4CAF50" d="M24 43.5c5 0 9.5-1.7 13-4.6l-6-5.1c-2 1.4-4.4 2.2-7 2.2-5.3 0-9.7-3.1-11.3-7.5l-6.5 5C9.6 39.1 16.2 43.5 24 43.5z"/>
+            <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.2-4.3 5.5l6 5.1C40.4 35.4 43.5 30.1 43.5 24c0-1.2-.1-2.3 .1-3.5z"/>
+          </svg>
+          Continue with Google
+        </Button>
+        <div className="flex items-center gap-3">
+          <div className="h-px flex-1 bg-white/20" />
+          <span className="text-xs text-white/60">or</span>
+          <div className="h-px flex-1 bg-white/20" />
+        </div>
+        <Tabs defaultValue={initialTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2 bg-black/30">
           <TabsTrigger value="signup" className="text-white data-[state=active]:bg-purple-600">
             Sign Up
@@ -534,7 +574,7 @@ const Auth = () => {
         <TabsContent value="signup" className="space-y-4 mt-6">
           <form onSubmit={handleSignUpCredentials} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="signup-email" className="text-white">Email</Label>
+              <Label htmlFor="signup-email" className="text-white">Parent/Guardian Email</Label>
               <Input
                 id="signup-email"
                 type="email"
@@ -542,8 +582,11 @@ const Auth = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 className="bg-black/30 border-white/20 text-white placeholder:text-white/60"
-                placeholder="Enter your email"
+                placeholder="parent@example.com"
               />
+              <p className="text-purple-300 text-xs">
+                Verification link will be sent here. This is the account login email.
+              </p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="signup-password" className="text-white">Password</Label>
@@ -588,6 +631,7 @@ const Auth = () => {
           </form>
         </TabsContent>
       </Tabs>
+      </div>
     );
   };
 
