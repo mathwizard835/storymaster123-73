@@ -121,7 +121,7 @@ const NativeWelcome = () => {
           </>
         )}
         <p className="text-center text-white/30 text-xs mt-4 mb-2">
-          3 free stories • No credit card required
+          Adventure Pass · cancel anytime
         </p>
       </motion.div>
     </div>
