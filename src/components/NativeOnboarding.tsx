@@ -340,7 +340,7 @@ export function NativeOnboarding({ onComplete }: { onComplete: () => void }) {
           onClick={goNext}
           className="w-full py-4 rounded-2xl bg-gradient-to-r from-[hsl(265,85%,60%)] to-[hsl(195,85%,55%)] text-white font-bold text-lg shadow-[0_8px_32px_-8px_hsl(265,85%,60%,0.5)] active:scale-[0.97] transition-transform duration-100 flex items-center justify-center gap-2"
         >
-          {isLast ? 'See Adventure Pass' : 'Continue'}
+          {isLast ? 'Create Account' : 'Continue'}
           <ChevronRight className="w-5 h-5" />
         </button>
       </div>
