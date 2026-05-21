@@ -1,10 +1,11 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, Volume2, VolumeX, Sparkles, Backpack } from 'lucide-react';
+import { ChevronRight, Volume2, VolumeX, Crosshair, Zap, Timer, Star, Heart, Target, Sparkles } from 'lucide-react';
 import { addHapticFeedback } from '@/lib/mobileFeatures';
 import { Preferences } from '@capacitor/preferences';
 import { Capacitor } from '@capacitor/core';
 import { useNavigate } from 'react-router-dom';
+import actionHeroBg from '@/assets/action-hero-bg.jpg';
 
 const ONBOARDING_KEY = 'hasSeenOnboarding';
 
@@ -36,7 +37,7 @@ const SCENES: Record<SceneId, Scene> = {
   },
   scene2: {
     id: 'scene2',
-    text: 'You did not open it. The zipper is slightly undone.\nSomething inside taps twice.',
+    text: 'You did not open it. The zipper is slightly undone.\n\nSomething inside taps twice.',
     audio: '/onboarding-story/scene2.mp3',
     choices: [
       { label: 'Pick it up', next: 'scene3_pickup' },
@@ -91,28 +92,32 @@ const SCENES: Record<SceneId, Scene> = {
   },
 };
 
-const ALL_AUDIO = Object.values(SCENES).map(s => s.audio);
+const ALL_AUDIO = Object.values(SCENES).map((s) => s.audio);
+const STORY_TITLE = 'The Backpack';
 
 export function NativeOnboarding({ onComplete }: { onComplete: () => void }) {
+  const [started, setStarted] = useState(false);
   const [sceneId, setSceneId] = useState<SceneId>('scene1');
   const [muted, setMuted] = useState(false);
+  const [choicePoints, setChoicePoints] = useState(0);
+  const [sceneNumber, setSceneNumber] = useState(1);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const navigate = useNavigate();
 
   const scene = SCENES[sceneId];
 
-  // Preload every audio file so playback is instant
+  // Preload all audio for instant playback
   useEffect(() => {
-    ALL_AUDIO.forEach(src => {
+    ALL_AUDIO.forEach((src) => {
       const a = new Audio();
       a.preload = 'auto';
       a.src = src;
     });
   }, []);
 
-  // Play audio whenever the scene changes
+  // Play audio when scene changes (only after Start)
   useEffect(() => {
-    if (muted) return;
+    if (!started || muted) return;
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
@@ -120,9 +125,13 @@ export function NativeOnboarding({ onComplete }: { onComplete: () => void }) {
     const a = new Audio(scene.audio);
     a.preload = 'auto';
     audioRef.current = a;
-    a.play().catch(() => {/* autoplay blocked: silent */});
-    return () => { a.pause(); };
-  }, [sceneId, muted, scene.audio]);
+    a.play().catch(() => {
+      /* autoplay blocked: silent */
+    });
+    return () => {
+      a.pause();
+    };
+  }, [sceneId, muted, started, scene.audio]);
 
   const markComplete = useCallback(async () => {
     if (Capacitor.isNativePlatform()) {
@@ -132,8 +141,15 @@ export function NativeOnboarding({ onComplete }: { onComplete: () => void }) {
     }
   }, []);
 
+  const handleStart = () => {
+    addHapticFeedback('medium');
+    setStarted(true);
+  };
+
   const handleChoice = (next: SceneId) => {
     addHapticFeedback('light');
+    setChoicePoints((p) => p + 1);
+    setSceneNumber((n) => n + 1);
     setSceneId(next);
   };
 
@@ -154,130 +170,214 @@ export function NativeOnboarding({ onComplete }: { onComplete: () => void }) {
 
   const toggleMute = () => {
     addHapticFeedback('light');
-    setMuted(m => {
+    setMuted((m) => {
       const next = !m;
       if (next && audioRef.current) audioRef.current.pause();
       return next;
     });
   };
 
-  return (
-    <div className="min-h-[100dvh] flex flex-col bg-gradient-to-b from-[hsl(250,55%,8%)] via-[hsl(265,50%,12%)] to-[hsl(230,55%,6%)] overflow-hidden relative">
-      {/* Atmospheric glow */}
-      <motion.div
-        className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[520px] h-[520px] rounded-full bg-[hsl(280,90%,55%)] opacity-[0.10] blur-[120px] pointer-events-none"
-        animate={{ scale: [1, 1.15, 1], opacity: [0.08, 0.14, 0.08] }}
-        transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
-      />
+  // Shared Action Mode shell
+  const Shell = ({ children }: { children: React.ReactNode }) => (
+    <div
+      className="min-h-[100dvh] bg-cover bg-center bg-no-repeat relative"
+      style={{
+        backgroundImage: `url(${actionHeroBg})`,
+        paddingTop: 'max(env(safe-area-inset-top, 0px), 0px)',
+        paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 0px)',
+      }}
+    >
+      <div className="absolute inset-0 bg-black/40" />
+      <div className="relative z-10 min-h-[100dvh] flex flex-col">{children}</div>
+    </div>
+  );
 
-      {/* Top bar */}
-      <div
-        className="flex items-center justify-between px-5 z-20"
-        style={{ paddingTop: 'max(env(safe-area-inset-top, 16px), 16px)', paddingBottom: 12 }}
-      >
-        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/[0.06] border border-white/10">
-          <span className="w-1.5 h-1.5 rounded-full bg-[hsl(0,85%,60%)] animate-pulse" />
-          <span className="text-[10px] font-bold tracking-[0.15em] text-white/70">ACTION MODE</span>
+  const Header = ({ showCounter }: { showCounter: boolean }) => (
+    <div className="bg-black/30 backdrop-blur-sm border-b border-white/20 p-3 md:p-4">
+      <div className="max-w-6xl mx-auto flex justify-between items-center gap-2">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/[0.08] border border-white/15 flex-shrink-0">
+            <span className="w-1.5 h-1.5 rounded-full bg-[hsl(0,85%,60%)] animate-pulse" />
+            <span className="text-[10px] font-bold tracking-[0.15em] text-white/80">ACTION MODE</span>
+          </div>
+          <h1 className="font-bold text-white flex items-center gap-2 text-sm md:text-lg min-w-0">
+            <Crosshair className="h-4 w-4 flex-shrink-0" />
+            <span className="truncate">{STORY_TITLE}</span>
+          </h1>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {showCounter && (
+            <div className="text-white font-medium bg-white/10 px-2 py-1 rounded text-xs">
+              Scene {sceneNumber}
+            </div>
+          )}
           <button
             onClick={toggleMute}
-            className="w-9 h-9 rounded-full bg-white/[0.06] border border-white/10 flex items-center justify-center active:bg-white/[0.12]"
+            className="w-8 h-8 rounded-full bg-white/[0.08] border border-white/15 flex items-center justify-center active:bg-white/[0.16]"
             aria-label={muted ? 'Unmute narration' : 'Mute narration'}
           >
-            {muted ? <VolumeX className="w-4 h-4 text-white/70" /> : <Volume2 className="w-4 h-4 text-white/70" />}
+            {muted ? (
+              <VolumeX className="w-4 h-4 text-white/80" />
+            ) : (
+              <Volume2 className="w-4 h-4 text-white/80" />
+            )}
           </button>
-          {!scene.isFinal && (
-            <button
-              onClick={handleSkip}
-              className="text-white/40 text-sm font-medium px-3 py-1.5 rounded-full active:bg-white/10"
-            >
-              Skip
-            </button>
-          )}
+          <button
+            onClick={handleSkip}
+            className="text-white/60 text-xs font-medium px-2.5 py-1.5 rounded-full active:bg-white/10"
+          >
+            Skip
+          </button>
         </div>
       </div>
-
-      {/* Scene */}
-      <div className="flex-1 flex flex-col items-center justify-center px-7 z-10">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={sceneId}
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -16 }}
-            transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-            className="flex flex-col items-center text-center gap-7 w-full max-w-[360px]"
-          >
-            {/* Animated backpack icon */}
-            <motion.div
-              className="relative w-24 h-24 rounded-[28px] bg-gradient-to-br from-[hsl(280,80%,40%)] to-[hsl(250,75%,30%)] flex items-center justify-center shadow-[0_20px_60px_-15px_hsl(280,90%,50%,0.6)]"
-              animate={{ rotate: [0, -2, 2, 0] }}
-              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-            >
-              <Backpack className="w-12 h-12 text-white" strokeWidth={1.6} />
-              <motion.div
-                className="absolute -top-2 -right-2"
-                animate={{ scale: [1, 1.3, 1], rotate: [0, 25, 0] }}
-                transition={{ duration: 2.2, repeat: Infinity }}
-              >
-                <Sparkles className="w-5 h-5 text-[hsl(45,95%,65%)]" />
-              </motion.div>
-            </motion.div>
-
-            {/* Scene narration */}
-            <p className="text-white text-[22px] leading-[1.35] font-semibold tracking-tight whitespace-pre-line">
-              {scene.text}
-            </p>
-
-            {/* Choices or CTA */}
-            <div className="w-full space-y-2.5 pt-2">
-              {scene.isFinal ? (
-                <>
-                  <motion.button
-                    onClick={handleCTA}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.4 }}
-                    className="w-full py-4 rounded-2xl bg-gradient-to-r from-[hsl(280,90%,60%)] via-[hsl(310,85%,58%)] to-[hsl(20,90%,58%)] text-white font-bold text-[17px] shadow-[0_12px_36px_-10px_hsl(290,90%,55%,0.7)] active:scale-[0.97] transition-transform duration-100 flex items-center justify-center gap-2"
-                  >
-                    Keep the Adventure Going
-                    <ChevronRight className="w-5 h-5" />
-                  </motion.button>
-                  <p className="text-white/45 text-xs text-center pt-1">
-                    Unlimited interactive stories · $4.99/mo
-                  </p>
-                </>
-              ) : (
-                scene.choices.map((c, i) => (
-                  <motion.button
-                    key={`${sceneId}-${c.label}`}
-                    onClick={() => handleChoice(c.next)}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.35 + i * 0.08 }}
-                    className="w-full py-3.5 rounded-2xl bg-white/[0.07] border border-white/15 text-white font-semibold text-[15px] backdrop-blur-sm active:scale-[0.97] active:bg-white/[0.12] transition-all flex items-center justify-center gap-2"
-                  >
-                    {c.label}
-                    <ChevronRight className="w-4 h-4 text-white/60" />
-                  </motion.button>
-                ))
-              )}
-            </div>
-          </motion.div>
-        </AnimatePresence>
-      </div>
-
-      {/* Bottom hint */}
-      <div
-        className="px-7 z-20 text-center"
-        style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 20px), 20px)', paddingTop: 12 }}
-      >
-        <p className="text-white/30 text-[11px] font-medium tracking-wide">
-          {scene.isFinal ? 'Your story · Your choices · Your adventure' : 'Tap a choice to shape the story'}
-        </p>
-      </div>
     </div>
+  );
+
+  // ---------- Intro screen ----------
+  if (!started) {
+    return (
+      <Shell>
+        <Header showCounter={false} />
+        <div className="flex-1 flex flex-col items-center justify-center px-6 py-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            className="w-full max-w-md bg-black/50 backdrop-blur-md rounded-2xl border border-white/20 p-7 text-center"
+          >
+            <div className="flex justify-center mb-4">
+              <div className="w-16 h-16 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center">
+                <Crosshair className="h-8 w-8 text-white" />
+              </div>
+            </div>
+            <p className="text-white/60 text-[11px] font-bold tracking-[0.2em] mb-2">
+              ACTION MODE · MINI STORY
+            </p>
+            <h2 className="text-white text-3xl font-bold mb-3">{STORY_TITLE}</h2>
+            <p className="text-white/75 text-[15px] leading-relaxed mb-7">
+              A 20‑second taste of how every choice changes your story.
+            </p>
+            <motion.button
+              onClick={handleStart}
+              whileTap={{ scale: 0.97 }}
+              className="w-full py-4 rounded-xl bg-gradient-to-r from-[hsl(0,85%,55%)] to-[hsl(20,90%,55%)] text-white font-bold text-[17px] shadow-[0_12px_36px_-10px_hsl(10,90%,55%,0.7)] flex items-center justify-center gap-2"
+            >
+              <Sparkles className="w-5 h-5" />
+              Start My Adventure
+            </motion.button>
+            <p className="text-white/40 text-xs mt-4">Tap choices to shape what happens next</p>
+          </motion.div>
+        </div>
+      </Shell>
+    );
+  }
+
+  // ---------- Story (Action Mode structure) ----------
+  return (
+    <Shell>
+      <Header showCounter={true} />
+
+      <div className="flex-1 p-3 md:p-4 overflow-y-auto">
+        <div className="max-w-3xl mx-auto space-y-4 md:space-y-5">
+          {/* HUD */}
+          <div className="bg-black/50 backdrop-blur-sm rounded-lg p-4 border border-white/20">
+            <div className="grid grid-cols-4 gap-3 text-center">
+              <div className="flex items-center justify-center space-x-2">
+                <Zap className="h-5 w-5 text-yellow-400" />
+                <span className="text-white font-semibold text-sm">10</span>
+              </div>
+              <div className="flex items-center justify-center space-x-2">
+                <Timer className="h-5 w-5 text-blue-400" />
+                <span className="text-white font-semibold text-sm">20s</span>
+              </div>
+              <div className="flex items-center justify-center space-x-2">
+                <Star className="h-5 w-5 text-purple-400" />
+                <span className="text-white font-semibold text-sm">{choicePoints}</span>
+              </div>
+              <div className="flex items-center justify-center space-x-2">
+                <Heart className="h-5 w-5 text-red-400 opacity-80" />
+                <span className="text-white font-semibold text-sm opacity-80">Curious</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Narrative */}
+          <div className="bg-white/10 backdrop-blur-md rounded-lg p-6 border border-white/20">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={sceneId}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                className="prose prose-invert max-w-none"
+              >
+                {scene.text.split('\n\n').map((paragraph, index) => (
+                  <motion.p
+                    key={`${sceneId}-${index}`}
+                    className="text-white mb-4 last:mb-0 leading-relaxed text-lg whitespace-pre-line"
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.2, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                  >
+                    {paragraph}
+                  </motion.p>
+                ))}
+              </motion.div>
+            </AnimatePresence>
+          </div>
+
+          {/* Choices / CTA */}
+          <div className="bg-black/50 backdrop-blur-sm rounded-lg p-6 border border-white/20">
+            {scene.isFinal ? (
+              <>
+                <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-[hsl(45,95%,65%)]" />
+                  Your story is just beginning
+                </h3>
+                <motion.button
+                  onClick={handleCTA}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  whileTap={{ scale: 0.97 }}
+                  className="w-full py-4 rounded-xl bg-gradient-to-r from-[hsl(280,90%,60%)] via-[hsl(310,85%,58%)] to-[hsl(20,90%,58%)] text-white font-bold text-[17px] shadow-[0_12px_36px_-10px_hsl(290,90%,55%,0.7)] flex items-center justify-center gap-2"
+                >
+                  Keep the Adventure Going
+                  <ChevronRight className="w-5 h-5" />
+                </motion.button>
+                <p className="text-white/50 text-xs text-center pt-3">
+                  Unlimited interactive stories · $4.99/mo
+                </p>
+              </>
+            ) : (
+              <>
+                <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                  <Target className="h-5 w-5" />
+                  What do you choose?
+                </h3>
+                <div className="grid gap-3">
+                  {scene.choices.map((c, i) => (
+                    <motion.button
+                      key={`${sceneId}-${c.label}`}
+                      onClick={() => handleChoice(c.next)}
+                      initial={{ opacity: 0, y: 16, scale: 0.97 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      transition={{ delay: 0.2 + i * 0.08, duration: 0.35 }}
+                      whileTap={{ scale: 0.97 }}
+                      className="w-full p-4 rounded-lg bg-white/10 hover:bg-white/15 border-2 border-white/20 hover:border-white/30 text-white font-semibold text-left transition-all flex items-center justify-between gap-3"
+                    >
+                      <span>{c.label}</span>
+                      <ChevronRight className="w-5 h-5 text-white/60 flex-shrink-0" />
+                    </motion.button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    </Shell>
   );
 }
 
