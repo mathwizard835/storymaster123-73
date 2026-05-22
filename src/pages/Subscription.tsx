@@ -628,11 +628,11 @@ export default function Subscription() {
 
         {/* FAQ / Trust Builders */}
         <div className="max-w-3xl mx-auto mt-12 space-y-4">
-          <h2 className="text-2xl font-bold text-white text-center mb-6">Why Parents Love StoryMaster Kids</h2>
+          <h2 className="text-2xl font-bold text-white text-center mb-6">Why Families Love StoryMaster Kids</h2>
 
           <Card className="bg-white/5 backdrop-blur-sm border-white/10">
             <CardHeader>
-              <CardTitle className="text-white">🎯 Personalized Learning</CardTitle>
+              <CardTitle className="text-white">🎯 Personalized Adventures</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-purple-200">
@@ -644,7 +644,7 @@ export default function Subscription() {
 
           <Card className="bg-white/5 backdrop-blur-sm border-white/10">
             <CardHeader>
-              <CardTitle className="text-white">📊 Track Progress</CardTitle>
+              <CardTitle className="text-white">📊 Watch Them Grow</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-purple-200">
@@ -666,7 +666,7 @@ export default function Subscription() {
         </div>
 
         <p className="text-center text-xs text-purple-300/60 mt-8 pb-4">
-          By subscribing, you agree to our{' '}
+          By starting the Adventure Pass, you agree to our{' '}
           <a href="/terms" className="underline hover:text-purple-200 transition-colors">Terms of Service</a>
           {' '}and{' '}
           <a href="/privacy" className="underline hover:text-purple-200 transition-colors">Privacy Policy</a>.
