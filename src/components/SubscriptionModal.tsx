@@ -170,7 +170,7 @@ export const SubscriptionModal = ({ open, onOpenChange, currentPlan }: Subscript
                   onClick={() => handleUpgrade()}
                 >
                   {currentPlan?.id === plan.id ? 'Current Plan' : 
-                   plan.price_monthly > 0 ? 'Subscribe' : 'Current Plan'}
+                   plan.price_monthly > 0 ? 'Start Adventure' : 'Current Plan'}
                 </Button>
               </CardContent>
             </Card>
