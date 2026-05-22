@@ -799,7 +799,17 @@ Return ONLY valid JSON (no markdown, no explanations):
       if (sceneCount >= 12) return 1800;
       return 1800;
     };
-    const max_tokens = Math.min(Number(body?.max_tokens ?? getOptimalTokens(sceneCount, !scene)), 4000);
+    // Enforce a SAFE FLOOR — never let the client lower the budget below what
+    // the JSON schema actually needs, or we get truncated responses → parse
+    // failures → user-visible "Story Error".
+    const optimalFloor = getOptimalTokens(sceneCount, !scene);
+    const requestedTokens = Number(body?.max_tokens ?? optimalFloor);
+    const isRetry = Boolean(body?._retry);
+    let max_tokens = Math.min(Math.max(requestedTokens, optimalFloor, 1600), 4000);
+    if (isRetry) {
+      // Client is retrying after a parse failure — widen the budget aggressively.
+      max_tokens = Math.min(Math.floor(max_tokens * 1.6), 4000);
+    }
 
     const abilities = body?.abilities || [];
     const abilityContext =
