@@ -249,14 +249,14 @@ export default function Subscription() {
             <CardHeader className="text-center pb-4">
               <div className="flex justify-center mb-4">
                 <div className="bg-gradient-to-r from-amber-500 to-orange-500 p-3 rounded-full">
-                  <Crown className="h-10 w-10 text-white" />
+                  <BookOpen className="h-10 w-10 text-white" />
                 </div>
               </div>
               <CardTitle className="text-2xl text-white mb-2">
-                You've Reached Your Story Limit
+                What an Amazing Reader!
               </CardTitle>
               <CardDescription className="text-purple-200 text-base">
-                You've started all 3 free stories for this month!
+                Your child has enjoyed all 3 free adventures this month.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -264,8 +264,8 @@ export default function Subscription() {
                 <div className="flex items-start gap-3 text-purple-100">
                   <Sparkles className="h-5 w-5 text-amber-500 flex-shrink-0 mt-1" />
                   <div>
-                    <p className="font-semibold">Your stories reset on a 30-day rolling basis</p>
-                    <p className="text-sm text-purple-300 mt-1">Or upgrade to Premium now for unlimited stories!</p>
+                    <p className="font-semibold">New adventures unlock on a 30-day rolling basis</p>
+                    <p className="text-sm text-purple-300 mt-1">Or start the Adventure Pass for unlimited stories anytime!</p>
                   </div>
                 </div>
               </div>
