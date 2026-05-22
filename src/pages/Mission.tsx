@@ -935,22 +935,20 @@ const Mission = () => {
       console.error("Error in onChoose:", error);
       
       // Determine specific error message
-      let errorDescription = "Failed to continue story. Please try again.";
-      
+      let errorDescription = "The storyteller stumbled — tap your choice again.";
+
       if (error.message?.includes("authentication") || error.message?.includes("Not authenticated")) {
         errorDescription = "Authentication error. Please try refreshing the page.";
       } else if (error.message?.includes("Rate limit")) {
         errorDescription = "Too many requests. Please wait a moment and try again.";
       } else if (error.message?.includes("Story session corrupted") || error.message?.includes("Story session lost")) {
         errorDescription = "Your story session was interrupted. Please start a new adventure.";
-      } else if (error.message?.includes("Invalid AI response")) {
-        errorDescription = "The story generator had trouble. Please try again.";
       } else if (error.message?.includes("Edge Function") || error.message?.includes("service")) {
-        errorDescription = "Story service temporarily unavailable. Please try again in a moment.";
+        errorDescription = "Story service is briefly unavailable. Please try your choice again.";
       }
-      
+
       toast({
-        title: "Story Error",
+        title: "Story hiccup",
         description: errorDescription,
         variant: "destructive",
         duration: 5000,

@@ -300,7 +300,7 @@ export const generateNextScene = async (
   profile: Profile,
   scene?: unknown,
   megastory: boolean = false,
-  maxTokens: number = 900,
+  maxTokens: number = 1600,
   sceneCount: number = 1,
   storyId?: string,
   forceNewSession: boolean = false,
@@ -351,23 +351,53 @@ export const generateNextScene = async (
     return { ...cached.data, raw: null };
   }
 
-  // Smart token calculation based on story type
-  const optimizedTokens = maxTokens || (sceneCount === 1 ? 1800 : sceneCount >= 12 ? 1200 : 900);
-  
-  // Adjust max tokens based on story length
-  const lengthMultiplier = profile.storyLength === 'short' ? 0.7 : profile.storyLength === 'epic' ? 1.5 : 1;
-  const adjustedTokens = Math.floor(optimizedTokens * lengthMultiplier);
-  
-  try {
-    const { isNativePlatform } = await import("@/lib/platform");
-    const platform = isNativePlatform() ? "native" : "web";
-    const { data, error } = await supabase.functions.invoke("generate-story", {
-      body: { profile, scene, megastory, max_tokens: adjustedTokens, scene_count: sceneCount, abilities: availableAbilities, platform },
+  // Smart token calculation. Continuation scenes still need a generous floor
+  // because the JSON envelope (choices/memory/inventory/HUD) — not the prose —
+  // is what blows the budget. Don't shrink the floor for "short" stories.
+  const optimizedTokens = Math.max(maxTokens, sceneCount === 1 ? 2000 : 1600);
+
+  const { isNativePlatform } = await import("@/lib/platform");
+  const platform = isNativePlatform() ? "native" : "web";
+
+  const invokeOnce = async (tokens: number, isRetry: boolean) => {
+    return await supabase.functions.invoke("generate-story", {
+      body: {
+        profile,
+        scene,
+        megastory,
+        max_tokens: tokens,
+        scene_count: sceneCount,
+        abilities: availableAbilities,
+        platform,
+        _retry: isRetry,
+      },
     });
+  };
+
+  const isParseFailure = (err: any, data: any) => {
+    const msg = String(err?.message ?? data?.error ?? "");
+    return (
+      data?.retryable === true ||
+      /Failed to parse|Invalid AI response|valid JSON|422/i.test(msg)
+    );
+  };
+
+  try {
+    let { data, error } = await invokeOnce(optimizedTokens, false);
+
+    // Transparent retry on parse-failure responses before surfacing an error.
+    if (error || (!data?.success && !data?.ok)) {
+      if (isParseFailure(error, data)) {
+        console.warn("⚠️ Scene parse failed — retrying once transparently");
+        const retryTokens = Math.min(Math.floor(optimizedTokens * 1.5), 4000);
+        const retry = await invokeOnce(retryTokens, true);
+        data = retry.data;
+        error = retry.error;
+      }
+    }
 
     if (error) throw error;
-    
-    // Handle error responses from edge function
+
     if (!data?.success && !data?.ok) {
       const errorMsg = data?.error || "Failed to generate scene";
       const details = data?.details || data?.preview || "";
@@ -378,45 +408,45 @@ export const generateNextScene = async (
     const text: string = data?.resultText ?? data?.text ?? "";
     const parsed: Scene | null = data?.result ?? data?.parsed ?? null;
     const deviceFingerprintResult: string | undefined = data?.deviceFingerprint ?? undefined;
-    
-    // If we have text but no parsed result, log for debugging
+
     if (text && !parsed) {
       console.error("Failed to parse story response. Text length:", text.length);
       console.error("Text preview:", text.slice(0, 200));
     }
-    
+
     const result = { text, parsed, raw: data, deviceFingerprint: deviceFingerprintResult };
-    
-    // Cache the result with story session ID
-    sceneCache.set(cacheKey, { 
-      data: { parsed, text }, 
-      timestamp: Date.now(),
-      storyId: storyId || currentStoryId || 'unknown'
-    });
-    
-    // Clean old cache entries (keep only last 10)
-    if (sceneCache.size > 10) {
-      const oldestKey = Array.from(sceneCache.keys())[0];
-      sceneCache.delete(oldestKey);
+
+    // Only cache SUCCESSFUL parses so a one-off failure can't lock the user
+    // out of retrying with the same inputs.
+    if (parsed) {
+      sceneCache.set(cacheKey, {
+        data: { parsed, text },
+        timestamp: Date.now(),
+        storyId: storyId || currentStoryId || 'unknown'
+      });
+
+      if (sceneCache.size > 10) {
+        const oldestKey = Array.from(sceneCache.keys())[0];
+        sceneCache.delete(oldestKey);
+      }
     }
 
     return result;
   } catch (error: any) {
     console.error("Error in generateNextScene:", error);
-    
-    // Handle authentication errors specifically
+
     if (error.message?.includes("authentication") || error.message?.includes("Not authenticated")) {
       throw new Error("Authentication required. Please refresh the page and try again.");
     }
-    
-    // Handle Edge Function errors
+
     if (error.message?.includes("Edge Function")) {
       throw new Error("Story generation service is temporarily unavailable. Please try again in a moment.");
     }
-    
+
     throw error;
   }
 };
+
 
 
 

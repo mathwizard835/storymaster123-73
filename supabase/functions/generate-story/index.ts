@@ -156,18 +156,18 @@ function rateLimit(deviceId: string, ipAddress: string): boolean {
   return true;
 }
 
-// Enhanced JSON extraction function to handle markdown-wrapped responses
+// Enhanced JSON extraction — handles markdown fences, missing closing fences,
+// and (last-resort) repairs truncated JSON when Anthropic hits max_tokens.
 function extractJSON(text: string): unknown | null {
   if (!text) return null;
 
-  // Try direct parsing first
   try {
     return JSON.parse(text);
   } catch (_) {
     console.log("Direct JSON parse failed, trying extraction methods...");
   }
 
-  // Try extracting from markdown code blocks
+  // Code block with closing fence
   const codeBlockMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
   if (codeBlockMatch) {
     try {
@@ -178,34 +178,119 @@ function extractJSON(text: string): unknown | null {
     }
   }
 
-  // Try finding JSON object boundaries - look for complete objects only
-  const jsonStart = text.indexOf("{");
-  if (jsonStart !== -1) {
+  // Pick a candidate string: either after an unterminated ```json fence, or
+  // starting at the first `{`.
+  let candidate: string | null = null;
+  const openFence = text.match(/```(?:json)?\s*([\s\S]*)$/);
+  if (openFence) candidate = openFence[1];
+  if (!candidate) {
+    const jsonStart = text.indexOf("{");
+    if (jsonStart !== -1) candidate = text.substring(jsonStart);
+  }
+
+  if (candidate) {
+    // String-aware balanced-object scan
     let braceCount = 0;
     let jsonEnd = -1;
-
-    for (let i = jsonStart; i < text.length; i++) {
-      if (text[i] === "{") braceCount++;
-      if (text[i] === "}") braceCount--;
-      if (braceCount === 0) {
-        jsonEnd = i;
-        break;
+    let inString = false;
+    let escape = false;
+    for (let i = 0; i < candidate.length; i++) {
+      const ch = candidate[i];
+      if (escape) { escape = false; continue; }
+      if (ch === "\\") { escape = true; continue; }
+      if (ch === '"') { inString = !inString; continue; }
+      if (inString) continue;
+      if (ch === "{") braceCount++;
+      else if (ch === "}") {
+        braceCount--;
+        if (braceCount === 0) { jsonEnd = i; break; }
       }
     }
-
     if (jsonEnd !== -1) {
       try {
-        const jsonStr = text.substring(jsonStart, jsonEnd + 1);
-        console.log("Extracted JSON string length:", jsonStr.length);
-        return JSON.parse(jsonStr);
+        return JSON.parse(candidate.substring(0, jsonEnd + 1));
       } catch (e) {
         console.log("Extracted JSON parsing failed:", e);
       }
+    }
+
+    // Last resort: repair a truncated payload
+    try {
+      const repaired = repairTruncatedJSON(candidate);
+      if (repaired) {
+        console.log("Attempting truncated JSON repair...");
+        return JSON.parse(repaired);
+      }
+    } catch (e) {
+      console.log("JSON repair failed:", e);
     }
   }
 
   console.log("All JSON extraction methods failed. Raw response preview:", text.substring(0, 500));
   return null;
+}
+
+// Repair truncated JSON by closing any open string/array/object in LIFO order.
+function repairTruncatedJSON(text: string): string | null {
+  const start = text.indexOf("{");
+  if (start === -1) return null;
+  let s = text.substring(start);
+
+  const stack: string[] = [];
+  let inString = false;
+  let escape = false;
+  let lastStructuralIdx = -1;
+
+  for (let i = 0; i < s.length; i++) {
+    const ch = s[i];
+    if (escape) { escape = false; continue; }
+    if (ch === "\\") { escape = true; continue; }
+    if (ch === '"') {
+      inString = !inString;
+      if (!inString) lastStructuralIdx = i;
+      continue;
+    }
+    if (inString) continue;
+    if (ch === "{" || ch === "[") { stack.push(ch); lastStructuralIdx = i; }
+    else if (ch === "}" || ch === "]") { stack.pop(); lastStructuralIdx = i; }
+    else if (ch === "," || ch === ":") { lastStructuralIdx = i; }
+  }
+
+  // If mid-string, drop the incomplete tail back to the last structural char.
+  if (inString && lastStructuralIdx > 0) {
+    s = s.substring(0, lastStructuralIdx + 1);
+    // Recompute container stack from the trimmed text
+    stack.length = 0;
+    inString = false;
+    escape = false;
+    for (let i = 0; i < s.length; i++) {
+      const ch = s[i];
+      if (escape) { escape = false; continue; }
+      if (ch === "\\") { escape = true; continue; }
+      if (ch === '"') { inString = !inString; continue; }
+      if (inString) continue;
+      if (ch === "{" || ch === "[") stack.push(ch);
+      else if (ch === "}" || ch === "]") stack.pop();
+    }
+  }
+
+  // Strip dangling separators/whitespace before we close.
+  s = s.replace(/[,:\s]+$/, "");
+  if (inString) s += '"';
+  while (stack.length > 0) {
+    const opener = stack.pop();
+    s += opener === "{" ? "}" : "]";
+  }
+  return s;
+}
+
+// Minimum schema check so we never hand a repaired-but-empty payload downstream.
+function isValidSceneShape(value: unknown): boolean {
+  if (!value || typeof value !== "object") return false;
+  const v = value as Record<string, unknown>;
+  if (typeof v.narrative !== "string" || v.narrative.length < 20) return false;
+  if (!Array.isArray(v.choices) || v.choices.length < 2) return false;
+  return true;
 }
 
 function hasQuizQuestions(value: unknown): value is { questions: unknown[] } {
@@ -216,6 +301,8 @@ function hasQuizQuestions(value: unknown): value is { questions: unknown[] } {
 }
 
 const SYSTEM_PROMPT = `You are StoryMaster AI, an interactive choose-your-own-adventure storyteller for children ages 6–11. Create cinematic, immersive, emotionally engaging stories that are fun, safe, and replayable.
+
+OUTPUT FORMAT (CRITICAL): Respond with a SINGLE raw JSON object only. No markdown. No code fences (do NOT wrap in \`\`\`json). No prose before or after the JSON. The JSON MUST be complete and well-formed — every string, array, and object must be closed. If you are approaching your token limit, SHORTEN the narrative so the JSON still ends cleanly.
 
 SAFETY (strict): No violence, gore, blood, weapons used to harm, sexual/romantic content, drugs/alcohol/smoking, bullying, discrimination, horror, scary imagery, or unsafe behaviors. Villains are goofy or redeemable. Keep everything age-appropriate.
 
@@ -714,7 +801,17 @@ Return ONLY valid JSON (no markdown, no explanations):
       if (sceneCount >= 12) return 1800;
       return 1800;
     };
-    const max_tokens = Math.min(Number(body?.max_tokens ?? getOptimalTokens(sceneCount, !scene)), 4000);
+    // Enforce a SAFE FLOOR — never let the client lower the budget below what
+    // the JSON schema actually needs, or we get truncated responses → parse
+    // failures → user-visible "Story Error".
+    const optimalFloor = getOptimalTokens(sceneCount, !scene);
+    const requestedTokens = Number(body?.max_tokens ?? optimalFloor);
+    const isRetry = Boolean(body?._retry);
+    let max_tokens = Math.min(Math.max(requestedTokens, optimalFloor, 1600), 4000);
+    if (isRetry) {
+      // Client is retrying after a parse failure — widen the budget aggressively.
+      max_tokens = Math.min(Math.floor(max_tokens * 1.6), 4000);
+    }
 
     const abilities = body?.abilities || [];
     const abilityContext =
@@ -869,31 +966,38 @@ THIS SCENE: ${scene ? "Continue the story naturally from the previous scene." : 
       promptHash = null;
     }
 
+    // Call Anthropic, with a single transparent retry if the output was
+    // truncated (stop_reason=max_tokens) OR could not be parsed. The retry
+    // widens the token budget and appends a stricter format reminder.
+    const callAnthropic = async (tokenBudget: number, extraTail: string) => {
+      return await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "x-api-key": ANTHROPIC_API_KEY,
+          "anthropic-version": "2023-06-01",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          model: selectedModel,
+          max_tokens: tokenBudget,
+          system: [
+            { type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } },
+          ],
+          messages: [
+            {
+              role: "user",
+              content: [
+                { type: "text", text: stablePrefix, cache_control: { type: "ephemeral" } },
+                { type: "text", text: dynamicTail + extraTail },
+              ],
+            },
+          ],
+        }),
+      });
+    };
+
     const anthropicStart = Date.now();
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "x-api-key": ANTHROPIC_API_KEY,
-        "anthropic-version": "2023-06-01",
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({
-        model: selectedModel,
-        max_tokens,
-        system: [
-          { type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } },
-        ],
-        messages: [
-          {
-            role: "user",
-            content: [
-              { type: "text", text: stablePrefix, cache_control: { type: "ephemeral" } },
-              { type: "text", text: dynamicTail },
-            ],
-          },
-        ],
-      }),
-    });
+    let response = await callAnthropic(max_tokens, "");
     const latencyMs = Date.now() - anthropicStart;
 
     if (!response.ok) {
@@ -905,10 +1009,11 @@ THIS SCENE: ${scene ? "Continue the story naturally from the previous scene." : 
       });
     }
 
-    const data = await response.json();
-    const text: string = data?.content?.[0]?.text ?? "";
+    let data = await response.json();
+    let text: string = data?.content?.[0]?.text ?? "";
 
-    console.log("Story generation completed, length:", text.length);
+    console.log("Story generation completed, length:", text.length, "stop_reason:", data?.stop_reason);
+
 
     // ---- Privacy-safe analytics writes (aggregate, no identifiers) ----
     // We use an ephemeral session token derived from the request timestamp +
@@ -975,7 +1080,35 @@ THIS SCENE: ${scene ? "Continue the story naturally from the previous scene." : 
 
 
     // Use enhanced JSON extraction
-    const parsed = extractJSON(text);
+    let parsed = extractJSON(text);
+    let parsedValid = isValidSceneShape(parsed);
+
+    // Server-side single retry on truncation or parse/shape failure.
+    // Skip if the client already passed _retry to avoid 2x2 amplification.
+    const shouldRetry =
+      !isRetry && (data?.stop_reason === "max_tokens" || !parsed || !parsedValid);
+    if (shouldRetry) {
+      const retryBudget = Math.min(Math.floor(max_tokens * 1.6), 4000);
+      console.warn(
+        `⚠️ Retrying scene generation — stop_reason=${data?.stop_reason}, parsed=${!!parsed}, valid=${parsedValid}, newBudget=${retryBudget}`,
+      );
+      const retryTail =
+        "\n\nIMPORTANT: Your previous response was truncated or malformed. Keep the narrative shorter (≤180 words) and ensure the JSON is COMPLETE and well-formed. No markdown fences. Output raw JSON only.";
+      try {
+        const retryResp = await callAnthropic(retryBudget, retryTail);
+        if (retryResp.ok) {
+          data = await retryResp.json();
+          text = data?.content?.[0]?.text ?? "";
+          console.log("Retry completed, length:", text.length, "stop_reason:", data?.stop_reason);
+          parsed = extractJSON(text);
+          parsedValid = isValidSceneShape(parsed);
+        } else {
+          console.error("Retry call failed with status", retryResp.status);
+        }
+      } catch (retryErr) {
+        console.error("Retry threw:", retryErr);
+      }
+    }
 
     // Profile validation warning (for debugging)
     if (parsed && typeof parsed === "object") {
@@ -995,17 +1128,17 @@ THIS SCENE: ${scene ? "Continue the story naturally from the previous scene." : 
       }
     }
 
-    if (!parsed) {
+    if (!parsed || !parsedValid) {
       console.error("Failed to parse JSON from response. Raw text length:", text.length);
       console.error("Response preview:", text.substring(0, 200));
       console.error("Response ending:", text.substring(Math.max(0, text.length - 200)));
 
-      // Return error response for better debugging
       return new Response(
         JSON.stringify({
           error: "Failed to parse AI response as valid JSON",
           details: `Response was ${text.length} characters but could not be parsed`,
           preview: text.substring(0, 500),
+          retryable: true,
         }),
         { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
