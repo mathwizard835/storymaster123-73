@@ -1080,7 +1080,35 @@ THIS SCENE: ${scene ? "Continue the story naturally from the previous scene." : 
 
 
     // Use enhanced JSON extraction
-    const parsed = extractJSON(text);
+    let parsed = extractJSON(text);
+    let parsedValid = isValidSceneShape(parsed);
+
+    // Server-side single retry on truncation or parse/shape failure.
+    // Skip if the client already passed _retry to avoid 2x2 amplification.
+    const shouldRetry =
+      !isRetry && (data?.stop_reason === "max_tokens" || !parsed || !parsedValid);
+    if (shouldRetry) {
+      const retryBudget = Math.min(Math.floor(max_tokens * 1.6), 4000);
+      console.warn(
+        `⚠️ Retrying scene generation — stop_reason=${data?.stop_reason}, parsed=${!!parsed}, valid=${parsedValid}, newBudget=${retryBudget}`,
+      );
+      const retryTail =
+        "\n\nIMPORTANT: Your previous response was truncated or malformed. Keep the narrative shorter (≤180 words) and ensure the JSON is COMPLETE and well-formed. No markdown fences. Output raw JSON only.";
+      try {
+        const retryResp = await callAnthropic(retryBudget, retryTail);
+        if (retryResp.ok) {
+          data = await retryResp.json();
+          text = data?.content?.[0]?.text ?? "";
+          console.log("Retry completed, length:", text.length, "stop_reason:", data?.stop_reason);
+          parsed = extractJSON(text);
+          parsedValid = isValidSceneShape(parsed);
+        } else {
+          console.error("Retry call failed with status", retryResp.status);
+        }
+      } catch (retryErr) {
+        console.error("Retry threw:", retryErr);
+      }
+    }
 
     // Profile validation warning (for debugging)
     if (parsed && typeof parsed === "object") {
