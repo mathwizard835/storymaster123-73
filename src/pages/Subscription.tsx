@@ -227,8 +227,8 @@ export default function Subscription() {
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           {required && !currentPlan ? (
             <div className="text-white/80 text-sm font-semibold flex items-center gap-2">
-              <Crown className="h-4 w-4 text-yellow-300" />
-              Unlock StoryMaster Kids
+              <Sparkles className="h-4 w-4 text-yellow-300" />
+              Start Your Child's Adventure
             </div>
           ) : (
             <Button variant="ghost" onClick={() => navigate(-1)} className="text-foreground hover:bg-primary/10">
@@ -237,7 +237,7 @@ export default function Subscription() {
             </Button>
           )}
           <Badge variant="secondary" className="bg-white/20 text-white">
-            {required && !currentPlan ? 'Subscription Required' : 'Special Offer'}
+            {required && !currentPlan ? 'Welcome, Parent!' : 'Special Offer'}
           </Badge>
         </div>
       </div>
