@@ -966,31 +966,38 @@ THIS SCENE: ${scene ? "Continue the story naturally from the previous scene." : 
       promptHash = null;
     }
 
+    // Call Anthropic, with a single transparent retry if the output was
+    // truncated (stop_reason=max_tokens) OR could not be parsed. The retry
+    // widens the token budget and appends a stricter format reminder.
+    const callAnthropic = async (tokenBudget: number, extraTail: string) => {
+      return await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "x-api-key": ANTHROPIC_API_KEY,
+          "anthropic-version": "2023-06-01",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          model: selectedModel,
+          max_tokens: tokenBudget,
+          system: [
+            { type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } },
+          ],
+          messages: [
+            {
+              role: "user",
+              content: [
+                { type: "text", text: stablePrefix, cache_control: { type: "ephemeral" } },
+                { type: "text", text: dynamicTail + extraTail },
+              ],
+            },
+          ],
+        }),
+      });
+    };
+
     const anthropicStart = Date.now();
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "x-api-key": ANTHROPIC_API_KEY,
-        "anthropic-version": "2023-06-01",
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({
-        model: selectedModel,
-        max_tokens,
-        system: [
-          { type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } },
-        ],
-        messages: [
-          {
-            role: "user",
-            content: [
-              { type: "text", text: stablePrefix, cache_control: { type: "ephemeral" } },
-              { type: "text", text: dynamicTail },
-            ],
-          },
-        ],
-      }),
-    });
+    let response = await callAnthropic(max_tokens, "");
     const latencyMs = Date.now() - anthropicStart;
 
     if (!response.ok) {
@@ -1002,10 +1009,11 @@ THIS SCENE: ${scene ? "Continue the story naturally from the previous scene." : 
       });
     }
 
-    const data = await response.json();
-    const text: string = data?.content?.[0]?.text ?? "";
+    let data = await response.json();
+    let text: string = data?.content?.[0]?.text ?? "";
 
-    console.log("Story generation completed, length:", text.length);
+    console.log("Story generation completed, length:", text.length, "stop_reason:", data?.stop_reason);
+
 
     // ---- Privacy-safe analytics writes (aggregate, no identifiers) ----
     // We use an ephemeral session token derived from the request timestamp +
