@@ -521,8 +521,8 @@ export default function Subscription() {
                           // Activate subscription directly in Supabase
                           await activateSubscriptionAfterPurchase(planType);
                           toast({
-                            title: "🎉 Subscription Activated!",
-                            description: "Welcome to StoryMaster Kids Premium!",
+                            title: "🎉 Adventure Pass Activated!",
+                            description: "Your child's reading journey begins now!",
                           });
                           await loadCurrentPlan();
                         } else if (result.error !== 'cancelled') {
@@ -541,7 +541,7 @@ export default function Subscription() {
                   >
                     <span className="flex items-center gap-3">
                       <Apple className="h-7 w-7" />
-                      {loading ? "Processing..." : "Subscribe with Apple"}
+                      {loading ? "Processing..." : "Start the Adventure"}
                     </span>
                   </Button>
                   <Button
@@ -553,14 +553,14 @@ export default function Subscription() {
                           // Also activate in Supabase when restoring
                           await activateSubscriptionAfterPurchase('premium');
                           toast({
-                            title: "✅ Purchases Restored!",
-                            description: "Your subscription has been restored.",
+                            title: "✅ Adventure Pass Restored!",
+                            description: "Your child's stories are ready to continue.",
                           });
                           await loadCurrentPlan();
                         } else {
                           toast({
-                            title: "No Purchases Found",
-                            description: "No previous subscriptions were found for this Apple ID.",
+                            title: "No Passes Found",
+                            description: "No previous Adventure Pass was found for this Apple ID.",
                           });
                         }
                         setLoading(false);
@@ -571,7 +571,7 @@ export default function Subscription() {
                     className="w-full text-purple-300 hover:text-white hover:bg-white/10"
                   >
                     <RotateCcw className="h-4 w-4 mr-2" />
-                    Restore Purchases
+                    Restore Pass
                   </Button>
                   <p className="text-center text-purple-300 text-xs">
                     Secure payment through the App Store
@@ -588,7 +588,7 @@ export default function Subscription() {
                     {loading ? "Processing..." : (
                       <span className="flex items-center gap-3">
                         <CreditCard className="h-6 w-6" />
-                         Start Premium
+                         Start the Adventure
                       </span>
                     )}
                   </Button>
