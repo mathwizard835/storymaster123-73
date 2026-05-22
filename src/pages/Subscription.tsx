@@ -327,7 +327,7 @@ export default function Subscription() {
                   <Crown className="h-12 w-12 text-white" />
                 </div>
               </div>
-              <CardTitle className="text-3xl text-white mb-2">Premium Active</CardTitle>
+              <CardTitle className="text-3xl text-white mb-2">Adventure Pass Active</CardTitle>
               <CardDescription className="text-green-200 text-lg">{currentPlan.name}</CardDescription>
             </CardHeader>
 
@@ -340,7 +340,7 @@ export default function Subscription() {
               <div className="space-y-3 bg-white/5 rounded-lg p-4 border border-white/10">
                 <div className="flex items-start gap-3">
                   <CheckCircle className="h-5 w-5 text-green-400 shrink-0 mt-0.5" />
-                  <span className="text-white">Unlimited Stories</span>
+                  <span className="text-white">Unlimited Adventures</span>
                 </div>
                 <div className="flex items-start gap-3">
                   <CheckCircle className="h-5 w-5 text-green-400 shrink-0 mt-0.5" />
@@ -348,7 +348,7 @@ export default function Subscription() {
                 </div>
                 <div className="flex items-start gap-3">
                   <CheckCircle className="h-5 w-5 text-green-400 shrink-0 mt-0.5" />
-                  <span className="text-white">All Premium features unlocked</span>
+                  <span className="text-white">All adventure features unlocked</span>
                 </div>
               </div>
 
@@ -362,7 +362,7 @@ export default function Subscription() {
               </Button>
 
               <p className="text-center text-green-300 text-sm">
-                Your subscription will remain active until the end of the billing period.
+                Your Adventure Pass will remain active until the end of your billing period.
               </p>
             </CardContent>
           </Card>
