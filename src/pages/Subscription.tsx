@@ -380,14 +380,14 @@ export default function Subscription() {
             </div>
 
             <h1 className="text-5xl md:text-6xl font-bold text-white mb-4">
-              Replace Gaming &amp; Scrolling With
+              Start Your Child's
               <span className="block bg-gradient-to-r from-yellow-300 via-pink-300 to-purple-300 bg-clip-text text-transparent">
-                Addictive Stories
+                Reading Adventure
               </span>
             </h1>
 
             <p className="text-xl text-purple-200 max-w-2xl mx-auto">
-              Better than Roblox. More engaging than YouTube. StoryMaster Kids turns mindless screen time into brain-building adventures.
+              Give your child unlimited stories that adapt to their level and interests — turning screen time into a love of reading.
             </p>
           </div>
         )}
