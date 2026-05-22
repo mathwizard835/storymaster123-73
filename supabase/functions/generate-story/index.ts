@@ -156,18 +156,18 @@ function rateLimit(deviceId: string, ipAddress: string): boolean {
   return true;
 }
 
-// Enhanced JSON extraction function to handle markdown-wrapped responses
+// Enhanced JSON extraction — handles markdown fences, missing closing fences,
+// and (last-resort) repairs truncated JSON when Anthropic hits max_tokens.
 function extractJSON(text: string): unknown | null {
   if (!text) return null;
 
-  // Try direct parsing first
   try {
     return JSON.parse(text);
   } catch (_) {
     console.log("Direct JSON parse failed, trying extraction methods...");
   }
 
-  // Try extracting from markdown code blocks
+  // Code block with closing fence
   const codeBlockMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
   if (codeBlockMatch) {
     try {
@@ -178,34 +178,119 @@ function extractJSON(text: string): unknown | null {
     }
   }
 
-  // Try finding JSON object boundaries - look for complete objects only
-  const jsonStart = text.indexOf("{");
-  if (jsonStart !== -1) {
+  // Pick a candidate string: either after an unterminated ```json fence, or
+  // starting at the first `{`.
+  let candidate: string | null = null;
+  const openFence = text.match(/```(?:json)?\s*([\s\S]*)$/);
+  if (openFence) candidate = openFence[1];
+  if (!candidate) {
+    const jsonStart = text.indexOf("{");
+    if (jsonStart !== -1) candidate = text.substring(jsonStart);
+  }
+
+  if (candidate) {
+    // String-aware balanced-object scan
     let braceCount = 0;
     let jsonEnd = -1;
-
-    for (let i = jsonStart; i < text.length; i++) {
-      if (text[i] === "{") braceCount++;
-      if (text[i] === "}") braceCount--;
-      if (braceCount === 0) {
-        jsonEnd = i;
-        break;
+    let inString = false;
+    let escape = false;
+    for (let i = 0; i < candidate.length; i++) {
+      const ch = candidate[i];
+      if (escape) { escape = false; continue; }
+      if (ch === "\\") { escape = true; continue; }
+      if (ch === '"') { inString = !inString; continue; }
+      if (inString) continue;
+      if (ch === "{") braceCount++;
+      else if (ch === "}") {
+        braceCount--;
+        if (braceCount === 0) { jsonEnd = i; break; }
       }
     }
-
     if (jsonEnd !== -1) {
       try {
-        const jsonStr = text.substring(jsonStart, jsonEnd + 1);
-        console.log("Extracted JSON string length:", jsonStr.length);
-        return JSON.parse(jsonStr);
+        return JSON.parse(candidate.substring(0, jsonEnd + 1));
       } catch (e) {
         console.log("Extracted JSON parsing failed:", e);
       }
+    }
+
+    // Last resort: repair a truncated payload
+    try {
+      const repaired = repairTruncatedJSON(candidate);
+      if (repaired) {
+        console.log("Attempting truncated JSON repair...");
+        return JSON.parse(repaired);
+      }
+    } catch (e) {
+      console.log("JSON repair failed:", e);
     }
   }
 
   console.log("All JSON extraction methods failed. Raw response preview:", text.substring(0, 500));
   return null;
+}
+
+// Repair truncated JSON by closing any open string/array/object in LIFO order.
+function repairTruncatedJSON(text: string): string | null {
+  const start = text.indexOf("{");
+  if (start === -1) return null;
+  let s = text.substring(start);
+
+  const stack: string[] = [];
+  let inString = false;
+  let escape = false;
+  let lastStructuralIdx = -1;
+
+  for (let i = 0; i < s.length; i++) {
+    const ch = s[i];
+    if (escape) { escape = false; continue; }
+    if (ch === "\\") { escape = true; continue; }
+    if (ch === '"') {
+      inString = !inString;
+      if (!inString) lastStructuralIdx = i;
+      continue;
+    }
+    if (inString) continue;
+    if (ch === "{" || ch === "[") { stack.push(ch); lastStructuralIdx = i; }
+    else if (ch === "}" || ch === "]") { stack.pop(); lastStructuralIdx = i; }
+    else if (ch === "," || ch === ":") { lastStructuralIdx = i; }
+  }
+
+  // If mid-string, drop the incomplete tail back to the last structural char.
+  if (inString && lastStructuralIdx > 0) {
+    s = s.substring(0, lastStructuralIdx + 1);
+    // Recompute container stack from the trimmed text
+    stack.length = 0;
+    inString = false;
+    escape = false;
+    for (let i = 0; i < s.length; i++) {
+      const ch = s[i];
+      if (escape) { escape = false; continue; }
+      if (ch === "\\") { escape = true; continue; }
+      if (ch === '"') { inString = !inString; continue; }
+      if (inString) continue;
+      if (ch === "{" || ch === "[") stack.push(ch);
+      else if (ch === "}" || ch === "]") stack.pop();
+    }
+  }
+
+  // Strip dangling separators/whitespace before we close.
+  s = s.replace(/[,:\s]+$/, "");
+  if (inString) s += '"';
+  while (stack.length > 0) {
+    const opener = stack.pop();
+    s += opener === "{" ? "}" : "]";
+  }
+  return s;
+}
+
+// Minimum schema check so we never hand a repaired-but-empty payload downstream.
+function isValidSceneShape(value: unknown): boolean {
+  if (!value || typeof value !== "object") return false;
+  const v = value as Record<string, unknown>;
+  if (typeof v.narrative !== "string" || v.narrative.length < 20) return false;
+  if (!Array.isArray(v.choices) || v.choices.length < 2) return false;
+  return true;
 }
 
 function hasQuizQuestions(value: unknown): value is { questions: unknown[] } {
