@@ -455,10 +455,10 @@ export default function Subscription() {
               </div>
             </div>
             <Badge className="mx-auto mb-3 bg-yellow-300 text-purple-950 hover:bg-yellow-300 shadow-lg shadow-yellow-300/30">
-              <Sparkles className="h-3.5 w-3.5 mr-1" /> Premium • Adventure Pass Benefits
+              <Sparkles className="h-3.5 w-3.5 mr-1" /> Adventure Pass
             </Badge>
-            <CardTitle className="text-4xl text-white mb-2">StoryMaster Kids Premium</CardTitle>
-            <CardDescription className="text-purple-200 text-lg">Unlimited Stories</CardDescription>
+            <CardTitle className="text-4xl text-white mb-2">Adventure Pass</CardTitle>
+            <CardDescription className="text-purple-200 text-lg">Unlimited Stories for Your Child</CardDescription>
           </CardHeader>
 
           <CardContent className="p-8 space-y-8">
