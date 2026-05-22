@@ -227,8 +227,8 @@ export default function Subscription() {
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           {required && !currentPlan ? (
             <div className="text-white/80 text-sm font-semibold flex items-center gap-2">
-              <Crown className="h-4 w-4 text-yellow-300" />
-              Unlock StoryMaster Kids
+              <Sparkles className="h-4 w-4 text-yellow-300" />
+              Start Your Child's Adventure
             </div>
           ) : (
             <Button variant="ghost" onClick={() => navigate(-1)} className="text-foreground hover:bg-primary/10">
@@ -237,7 +237,7 @@ export default function Subscription() {
             </Button>
           )}
           <Badge variant="secondary" className="bg-white/20 text-white">
-            {required && !currentPlan ? 'Subscription Required' : 'Special Offer'}
+            {required && !currentPlan ? 'Welcome, Parent!' : 'Special Offer'}
           </Badge>
         </div>
       </div>
@@ -249,14 +249,14 @@ export default function Subscription() {
             <CardHeader className="text-center pb-4">
               <div className="flex justify-center mb-4">
                 <div className="bg-gradient-to-r from-amber-500 to-orange-500 p-3 rounded-full">
-                  <Crown className="h-10 w-10 text-white" />
+                  <BookOpen className="h-10 w-10 text-white" />
                 </div>
               </div>
               <CardTitle className="text-2xl text-white mb-2">
-                You've Reached Your Story Limit
+                What an Amazing Reader!
               </CardTitle>
               <CardDescription className="text-purple-200 text-base">
-                You've started all 3 free stories for this month!
+                Your child has enjoyed all 3 free adventures this month.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -264,8 +264,8 @@ export default function Subscription() {
                 <div className="flex items-start gap-3 text-purple-100">
                   <Sparkles className="h-5 w-5 text-amber-500 flex-shrink-0 mt-1" />
                   <div>
-                    <p className="font-semibold">Your stories reset on a 30-day rolling basis</p>
-                    <p className="text-sm text-purple-300 mt-1">Or upgrade to Premium now for unlimited stories!</p>
+                    <p className="font-semibold">New adventures unlock on a 30-day rolling basis</p>
+                    <p className="text-sm text-purple-300 mt-1">Or start the Adventure Pass for unlimited stories anytime!</p>
                   </div>
                 </div>
               </div>
@@ -291,10 +291,10 @@ export default function Subscription() {
                 </div>
               </div>
               <CardTitle className="text-2xl text-white mb-2">
-                Monthly Story Limit Reached
+                So Many Adventures This Month!
               </CardTitle>
               <CardDescription className="text-purple-200 text-base">
-                Unlimited Stories with Premium!
+                Your child has been on an incredible reading journey.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -302,8 +302,8 @@ export default function Subscription() {
                 <div className="flex items-start gap-3 text-purple-100">
                   <Sparkles className="h-5 w-5 text-amber-500 flex-shrink-0 mt-1" />
                   <div>
-                    <p className="font-semibold">Your stories reset on a 30-day rolling basis</p>
-                    <p className="text-sm text-purple-300 mt-1">You can continue any paused adventures while you wait!</p>
+                    <p className="font-semibold">New adventures unlock on a 30-day rolling basis</p>
+                    <p className="text-sm text-purple-300 mt-1">In the meantime, you can continue any paused stories!</p>
                   </div>
                 </div>
               </div>
@@ -327,7 +327,7 @@ export default function Subscription() {
                   <Crown className="h-12 w-12 text-white" />
                 </div>
               </div>
-              <CardTitle className="text-3xl text-white mb-2">Premium Active</CardTitle>
+              <CardTitle className="text-3xl text-white mb-2">Adventure Pass Active</CardTitle>
               <CardDescription className="text-green-200 text-lg">{currentPlan.name}</CardDescription>
             </CardHeader>
 
@@ -340,7 +340,7 @@ export default function Subscription() {
               <div className="space-y-3 bg-white/5 rounded-lg p-4 border border-white/10">
                 <div className="flex items-start gap-3">
                   <CheckCircle className="h-5 w-5 text-green-400 shrink-0 mt-0.5" />
-                  <span className="text-white">Unlimited Stories</span>
+                  <span className="text-white">Unlimited Adventures</span>
                 </div>
                 <div className="flex items-start gap-3">
                   <CheckCircle className="h-5 w-5 text-green-400 shrink-0 mt-0.5" />
@@ -348,7 +348,7 @@ export default function Subscription() {
                 </div>
                 <div className="flex items-start gap-3">
                   <CheckCircle className="h-5 w-5 text-green-400 shrink-0 mt-0.5" />
-                  <span className="text-white">All Premium features unlocked</span>
+                  <span className="text-white">All adventure features unlocked</span>
                 </div>
               </div>
 
@@ -362,7 +362,7 @@ export default function Subscription() {
               </Button>
 
               <p className="text-center text-green-300 text-sm">
-                Your subscription will remain active until the end of the billing period.
+                Your Adventure Pass will remain active until the end of your billing period.
               </p>
             </CardContent>
           </Card>
@@ -380,14 +380,14 @@ export default function Subscription() {
             </div>
 
             <h1 className="text-5xl md:text-6xl font-bold text-white mb-4">
-              Replace Gaming &amp; Scrolling With
+              Start Your Child's
               <span className="block bg-gradient-to-r from-yellow-300 via-pink-300 to-purple-300 bg-clip-text text-transparent">
-                Addictive Stories
+                Reading Adventure
               </span>
             </h1>
 
             <p className="text-xl text-purple-200 max-w-2xl mx-auto">
-              Better than Roblox. More engaging than YouTube. StoryMaster Kids turns mindless screen time into brain-building adventures.
+              Give your child unlimited stories that adapt to their level and interests — turning screen time into a love of reading.
             </p>
           </div>
         )}
@@ -455,10 +455,10 @@ export default function Subscription() {
               </div>
             </div>
             <Badge className="mx-auto mb-3 bg-yellow-300 text-purple-950 hover:bg-yellow-300 shadow-lg shadow-yellow-300/30">
-              <Sparkles className="h-3.5 w-3.5 mr-1" /> Premium • Adventure Pass Benefits
+              <Sparkles className="h-3.5 w-3.5 mr-1" /> Adventure Pass
             </Badge>
-            <CardTitle className="text-4xl text-white mb-2">StoryMaster Kids Premium</CardTitle>
-            <CardDescription className="text-purple-200 text-lg">Unlimited Stories</CardDescription>
+            <CardTitle className="text-4xl text-white mb-2">Adventure Pass</CardTitle>
+            <CardDescription className="text-purple-200 text-lg">Unlimited Stories for Your Child</CardDescription>
           </CardHeader>
 
           <CardContent className="p-8 space-y-8">
@@ -521,8 +521,8 @@ export default function Subscription() {
                           // Activate subscription directly in Supabase
                           await activateSubscriptionAfterPurchase(planType);
                           toast({
-                            title: "🎉 Subscription Activated!",
-                            description: "Welcome to StoryMaster Kids Premium!",
+                            title: "🎉 Adventure Pass Activated!",
+                            description: "Your child's reading journey begins now!",
                           });
                           await loadCurrentPlan();
                         } else if (result.error !== 'cancelled') {
@@ -541,7 +541,7 @@ export default function Subscription() {
                   >
                     <span className="flex items-center gap-3">
                       <Apple className="h-7 w-7" />
-                      {loading ? "Processing..." : "Subscribe with Apple"}
+                      {loading ? "Processing..." : "Start the Adventure"}
                     </span>
                   </Button>
                   <Button
@@ -553,14 +553,14 @@ export default function Subscription() {
                           // Also activate in Supabase when restoring
                           await activateSubscriptionAfterPurchase('premium');
                           toast({
-                            title: "✅ Purchases Restored!",
-                            description: "Your subscription has been restored.",
+                            title: "✅ Adventure Pass Restored!",
+                            description: "Your child's stories are ready to continue.",
                           });
                           await loadCurrentPlan();
                         } else {
                           toast({
-                            title: "No Purchases Found",
-                            description: "No previous subscriptions were found for this Apple ID.",
+                            title: "No Passes Found",
+                            description: "No previous Adventure Pass was found for this Apple ID.",
                           });
                         }
                         setLoading(false);
@@ -571,7 +571,7 @@ export default function Subscription() {
                     className="w-full text-purple-300 hover:text-white hover:bg-white/10"
                   >
                     <RotateCcw className="h-4 w-4 mr-2" />
-                    Restore Purchases
+                    Restore Pass
                   </Button>
                   <p className="text-center text-purple-300 text-xs">
                     Secure payment through the App Store
@@ -588,7 +588,7 @@ export default function Subscription() {
                     {loading ? "Processing..." : (
                       <span className="flex items-center gap-3">
                         <CreditCard className="h-6 w-6" />
-                         Start Premium
+                         Start the Adventure
                       </span>
                     )}
                   </Button>
@@ -628,11 +628,11 @@ export default function Subscription() {
 
         {/* FAQ / Trust Builders */}
         <div className="max-w-3xl mx-auto mt-12 space-y-4">
-          <h2 className="text-2xl font-bold text-white text-center mb-6">Why Parents Love StoryMaster Kids</h2>
+          <h2 className="text-2xl font-bold text-white text-center mb-6">Why Families Love StoryMaster Kids</h2>
 
           <Card className="bg-white/5 backdrop-blur-sm border-white/10">
             <CardHeader>
-              <CardTitle className="text-white">🎯 Personalized Learning</CardTitle>
+              <CardTitle className="text-white">🎯 Personalized Adventures</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-purple-200">
@@ -644,7 +644,7 @@ export default function Subscription() {
 
           <Card className="bg-white/5 backdrop-blur-sm border-white/10">
             <CardHeader>
-              <CardTitle className="text-white">📊 Track Progress</CardTitle>
+              <CardTitle className="text-white">📊 Watch Them Grow</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-purple-200">
@@ -666,7 +666,7 @@ export default function Subscription() {
         </div>
 
         <p className="text-center text-xs text-purple-300/60 mt-8 pb-4">
-          By subscribing, you agree to our{' '}
+          By starting the Adventure Pass, you agree to our{' '}
           <a href="/terms" className="underline hover:text-purple-200 transition-colors">Terms of Service</a>
           {' '}and{' '}
           <a href="/privacy" className="underline hover:text-purple-200 transition-colors">Privacy Policy</a>.
