@@ -1128,17 +1128,17 @@ THIS SCENE: ${scene ? "Continue the story naturally from the previous scene." : 
       }
     }
 
-    if (!parsed) {
+    if (!parsed || !parsedValid) {
       console.error("Failed to parse JSON from response. Raw text length:", text.length);
       console.error("Response preview:", text.substring(0, 200));
       console.error("Response ending:", text.substring(Math.max(0, text.length - 200)));
 
-      // Return error response for better debugging
       return new Response(
         JSON.stringify({
           error: "Failed to parse AI response as valid JSON",
           details: `Response was ${text.length} characters but could not be parsed`,
           preview: text.substring(0, 500),
+          retryable: true,
         }),
         { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
