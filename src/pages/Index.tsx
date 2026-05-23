@@ -77,7 +77,7 @@ const Index = () => {
                <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
                  StoryMaster Kids
                </span>
-             <span className="block text-xl sm:text-2xl md:text-3xl lg:text-5xl mt-2 text-foreground">Turning Screen Time into Reading Time</span>
+             <span className="block text-xl sm:text-2xl md:text-3xl lg:text-5xl mt-2 text-white">Turning Screen Time into Reading Time</span>
             </h1>
             <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-muted-foreground mb-6 sm:mb-8 leading-relaxed">
               <strong className="text-foreground text-lg sm:text-xl md:text-2xl">
