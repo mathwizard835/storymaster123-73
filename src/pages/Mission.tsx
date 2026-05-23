@@ -85,6 +85,9 @@ const Mission = () => {
   const [audioLoading, setAudioLoading] = useState(false);
   const [hasUsedReadToMe, setHasUsedReadToMe] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  // Once the user finishes an adventure, block any further DB writes that could
+  // re-activate or pause the row (inventory use, quiz completion, go-back, Save & Exit).
+  const isFinishedRef = useRef(false);
   
   // ABILITIES DISABLED - Uncomment to re-enable
   // const [availableAbilities, setAvailableAbilities] = useState<Ability[]>([]);
