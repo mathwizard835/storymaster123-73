@@ -40,7 +40,6 @@ const ParentDashboard = lazy(() => import("./pages/ParentDashboard"));
 const Subscription = lazy(() => import("./pages/Subscription"));
 const SubscriptionSuccess = lazy(() => import("./pages/SubscriptionSuccess"));
 const Settings = lazy(() => import("./pages/Settings"));
-const SharedStory = lazy(() => import("./pages/SharedStory"));
 const AdminAnalytics = lazy(() => import("./pages/AdminAnalytics"));
 const TryStory = lazy(() => import("./pages/TryStory"));
 
@@ -117,7 +116,7 @@ const RequireSubscription = ({ children }: { children: React.ReactNode }) => {
     };
     check();
     return () => { cancelled = true; };
-  }, [user, location.pathname]);
+  }, [user?.id]);
 
   if (checking) return <NativeLoadingScreen />;
   if (!hasSub) return <Navigate to="/subscription?required=true" replace />;
