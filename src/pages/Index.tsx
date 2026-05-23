@@ -80,7 +80,7 @@ const Index = () => {
              <span className="block text-xl sm:text-2xl md:text-3xl lg:text-5xl mt-2 text-white">Turning Screen Time into Reading Time</span>
             </h1>
             <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-muted-foreground mb-6 sm:mb-8 leading-relaxed">
-              <strong className="text-foreground text-lg sm:text-xl md:text-2xl">
+              <strong className="text-white text-lg sm:text-xl md:text-2xl">
                 AI-powered choose-your-own-adventure stories that{" "}
                 <span className="text-primary">make kids want to read</span>
               </strong>
