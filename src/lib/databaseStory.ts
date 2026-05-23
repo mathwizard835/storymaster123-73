@@ -125,10 +125,18 @@ export const saveStoryToDatabase = async (story: SavedStory, deviceFingerprint?:
     console.log('✅ Successfully paused other active stories');
   }
 
+  // Persist quizTaken/quizScore by stashing them inside the profile jsonb,
+  // since there are no dedicated columns. Re-hydrated on load.
+  const profileWithQuiz: any = {
+    ...(story.profile as any),
+    quizTaken: story.quizTaken ?? (story.profile as any)?.quizTaken ?? false,
+    quizScore: story.quizScore ?? (story.profile as any)?.quizScore ?? null,
+  };
+
   const storyData: Record<string, any> = {
     id: story.id,
     user_id: user.id,
-    profile: story.profile,
+    profile: profileWithQuiz,
     scenes: story.scenes,
     current_scene_index: story.currentSceneIndex || 0,
     started_at: story.startedAt,
@@ -191,7 +199,9 @@ export const loadCurrentStoryFromDatabase = async (): Promise<SavedStory | null>
     startedAt: data.started_at,
     lastPlayedAt: data.last_played_at,
     completed: data.status === 'completed',
-    choicesMade: 0 // Reset choice counter for loaded stories
+    choicesMade: 0,
+    quizTaken: (data.profile as any)?.quizTaken ?? false,
+    quizScore: (data.profile as any)?.quizScore ?? undefined,
   };
 };
 
@@ -222,7 +232,9 @@ export const loadStoryByIdFromDatabase = async (storyId: string): Promise<SavedS
     startedAt: data.started_at,
     lastPlayedAt: data.last_played_at,
     completed: data.status === 'completed',
-    choicesMade: 0
+    choicesMade: 0,
+    quizTaken: (data.profile as any)?.quizTaken ?? false,
+    quizScore: (data.profile as any)?.quizScore ?? undefined,
   };
 };
 
