@@ -1460,6 +1460,7 @@ const Mission = () => {
                                 }
                               }
                               
+                              isFinishedRef.current = true;
                               await clearCurrentStoryInDatabase(savedStory.id);
                               clearInventory();
                               setInventory([]);
