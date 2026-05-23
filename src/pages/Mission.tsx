@@ -85,6 +85,9 @@ const Mission = () => {
   const [audioLoading, setAudioLoading] = useState(false);
   const [hasUsedReadToMe, setHasUsedReadToMe] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  // Once the user finishes an adventure, block any further DB writes that could
+  // re-activate or pause the row (inventory use, quiz completion, go-back, Save & Exit).
+  const isFinishedRef = useRef(false);
   
   // ABILITIES DISABLED - Uncomment to re-enable
   // const [availableAbilities, setAvailableAbilities] = useState<Ability[]>([]);
@@ -978,7 +981,7 @@ const Mission = () => {
     };
     setSavedStory(updatedStory);
     
-    saveStoryToDatabase(updatedStory);
+    if (!isFinishedRef.current) saveStoryToDatabase(updatedStory);
     
     toast({
       title: "Went back to previous scene",
@@ -1457,6 +1460,7 @@ const Mission = () => {
                                 }
                               }
                               
+                              isFinishedRef.current = true;
                               await clearCurrentStoryInDatabase(savedStory.id);
                               clearInventory();
                               setInventory([]);
@@ -1616,7 +1620,7 @@ const Mission = () => {
                       setSavedStory(updatedStory);
                       
                       // Save to database to persist the change
-                      await saveStoryToDatabase(updatedStory);
+                      if (!isFinishedRef.current) await saveStoryToDatabase(updatedStory);
                     }
                     
                     toast({
@@ -1684,7 +1688,7 @@ const Mission = () => {
                 <button
                   onClick={async () => {
                     // CRITICAL FIX: Pause the story before navigating away
-                    if (savedStory?.id) {
+                    if (savedStory?.id && !isFinishedRef.current && !storyReadyToFinish) {
                       try {
                         console.log(`⏸️ Pausing story ${savedStory.id} before exit...`);
                         await pauseStoryInDatabase(savedStory.id);
@@ -1779,7 +1783,7 @@ const Mission = () => {
                 quizScore: xpEarned,
               };
               setSavedStory(updatedStory);
-              saveStoryToDatabase(updatedStory);
+              if (!isFinishedRef.current) saveStoryToDatabase(updatedStory);
             }
             
             // Show success toast

@@ -81,6 +81,21 @@ export const saveStoryToDatabase = async (story: SavedStory, deviceFingerprint?:
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
 
+  // GUARD: never downgrade a row that's already completed. If the existing row
+  // is 'completed' and the caller isn't explicitly re-completing, skip the write
+  // (and skip pausing siblings) so post-finish autosaves can't flip it back to active.
+  const { data: existingRow } = await (supabase as any)
+    .from('user_stories')
+    .select('*')
+    .eq('id', story.id)
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+  if (existingRow && existingRow.status === 'completed' && !story.completed) {
+    console.log(`🔒 Skipping save for story ${story.id} — already completed`);
+    return existingRow;
+  }
+
   // CRITICAL: Pause ALL other active stories FIRST, before attempting to save
   // This prevents unique constraint violations from the database index
   // IMPORTANT: We now PAUSE (not complete) other stories so users can continue them later
@@ -236,6 +251,7 @@ export const pauseStoryInDatabase = async (storyId: string): Promise<void> => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
 
+  // GUARD: don't pause a story that's already completed
   const { error } = await (supabase as any)
     .from('user_stories')
     .update({
@@ -243,7 +259,8 @@ export const pauseStoryInDatabase = async (storyId: string): Promise<void> => {
       last_played_at: new Date().toISOString()
     })
     .eq('id', storyId)
-    .eq('user_id', user.id);
+    .eq('user_id', user.id)
+    .neq('status', 'completed');
 
   if (error) {
     console.error('Error pausing story:', error);
