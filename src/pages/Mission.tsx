@@ -981,7 +981,7 @@ const Mission = () => {
     };
     setSavedStory(updatedStory);
     
-    saveStoryToDatabase(updatedStory);
+    if (!isFinishedRef.current) saveStoryToDatabase(updatedStory);
     
     toast({
       title: "Went back to previous scene",
