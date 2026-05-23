@@ -251,6 +251,7 @@ export const pauseStoryInDatabase = async (storyId: string): Promise<void> => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
 
+  // GUARD: don't pause a story that's already completed
   const { error } = await (supabase as any)
     .from('user_stories')
     .update({
@@ -258,7 +259,8 @@ export const pauseStoryInDatabase = async (storyId: string): Promise<void> => {
       last_played_at: new Date().toISOString()
     })
     .eq('id', storyId)
-    .eq('user_id', user.id);
+    .eq('user_id', user.id)
+    .neq('status', 'completed');
 
   if (error) {
     console.error('Error pausing story:', error);
