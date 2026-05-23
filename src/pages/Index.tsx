@@ -466,7 +466,7 @@ const Index = () => {
           </p>
 
           <div className="bg-primary/10 border border-primary/30 rounded-2xl p-8 mb-8 text-center">
-            <p className="text-2xl font-bold text-primary mb-2">Try 3 Free Stories</p>
+            <p className="text-2xl font-bold text-primary mb-2">Try a Free Story</p>
             <p className="text-lg text-muted-foreground">No credit card required • See why kids love it • Upgrade anytime</p>
             <div className="mt-3 inline-flex items-center gap-2 bg-background/50 px-4 py-2 rounded-full text-sm">
               <Rocket className="h-4 w-4 text-primary" />
