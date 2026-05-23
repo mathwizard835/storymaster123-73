@@ -184,7 +184,7 @@ const AnimatedRoutes = () => {
           <Route path="/support" element={<PageTransition><Support /></PageTransition>} />
           <Route path="/parent-dashboard" element={<NativeAppRoute><PageTransition><ParentDashboard /></PageTransition></NativeAppRoute>} />
           <Route path="/settings" element={<ProtectedRoute><PageTransition><Settings /></PageTransition></ProtectedRoute>} />
-          <Route path="/shared/:storyId" element={<PageTransition><SharedStory /></PageTransition>} />
+          
           <Route path="/admin/analytics" element={<NativeAppRoute><PageTransition><AdminAnalytics /></PageTransition></NativeAppRoute>} />
           <Route path="/try" element={<PageTransition><TryStory /></PageTransition>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
