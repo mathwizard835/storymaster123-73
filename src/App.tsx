@@ -40,7 +40,6 @@ const ParentDashboard = lazy(() => import("./pages/ParentDashboard"));
 const Subscription = lazy(() => import("./pages/Subscription"));
 const SubscriptionSuccess = lazy(() => import("./pages/SubscriptionSuccess"));
 const Settings = lazy(() => import("./pages/Settings"));
-const SharedStory = lazy(() => import("./pages/SharedStory"));
 const AdminAnalytics = lazy(() => import("./pages/AdminAnalytics"));
 const TryStory = lazy(() => import("./pages/TryStory"));
 
@@ -117,7 +116,7 @@ const RequireSubscription = ({ children }: { children: React.ReactNode }) => {
     };
     check();
     return () => { cancelled = true; };
-  }, [user, location.pathname]);
+  }, [user?.id]);
 
   if (checking) return <NativeLoadingScreen />;
   if (!hasSub) return <Navigate to="/subscription?required=true" replace />;
@@ -185,7 +184,7 @@ const AnimatedRoutes = () => {
           <Route path="/support" element={<PageTransition><Support /></PageTransition>} />
           <Route path="/parent-dashboard" element={<NativeAppRoute><PageTransition><ParentDashboard /></PageTransition></NativeAppRoute>} />
           <Route path="/settings" element={<ProtectedRoute><PageTransition><Settings /></PageTransition></ProtectedRoute>} />
-          <Route path="/shared/:storyId" element={<PageTransition><SharedStory /></PageTransition>} />
+          
           <Route path="/admin/analytics" element={<NativeAppRoute><PageTransition><AdminAnalytics /></PageTransition></NativeAppRoute>} />
           <Route path="/try" element={<PageTransition><TryStory /></PageTransition>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

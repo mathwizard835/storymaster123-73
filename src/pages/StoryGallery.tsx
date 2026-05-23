@@ -41,12 +41,11 @@ const StoryGallery = () => {
 
           // Self-heal: any story that has reached the last scene or has completed_at
           // but is not yet flagged completed should be marked completed in DB.
-          const toHeal = allStories.filter((s) => {
-            if (s.status === 'completed') return false;
-            if (s.completed_at) return true;
-            if ((s.scene_count || 0) > 0 && (s.current_scene_index || 0) + 1 >= (s.scene_count || 0)) return true;
-            return false;
-          });
+          // Self-heal: only stories explicitly stamped with completed_at but missing
+          // 'completed' status. The scene-count heuristic was too eager and would
+          // auto-complete stories the user had reached the end of but hadn't clicked
+          // Finish Adventure on yet (losing their quiz/XP opportunity).
+          const toHeal = allStories.filter((s) => s.status !== 'completed' && !!s.completed_at);
           if (toHeal.length > 0) {
             await Promise.all(
               toHeal.map((s) =>
