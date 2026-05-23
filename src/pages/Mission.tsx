@@ -1783,7 +1783,7 @@ const Mission = () => {
                 quizScore: xpEarned,
               };
               setSavedStory(updatedStory);
-              saveStoryToDatabase(updatedStory);
+              if (!isFinishedRef.current) saveStoryToDatabase(updatedStory);
             }
             
             // Show success toast
