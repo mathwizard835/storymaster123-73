@@ -1688,7 +1688,7 @@ const Mission = () => {
                 <button
                   onClick={async () => {
                     // CRITICAL FIX: Pause the story before navigating away
-                    if (savedStory?.id) {
+                    if (savedStory?.id && !isFinishedRef.current && !storyReadyToFinish) {
                       try {
                         console.log(`⏸️ Pausing story ${savedStory.id} before exit...`);
                         await pauseStoryInDatabase(savedStory.id);
