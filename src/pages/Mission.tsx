@@ -1620,7 +1620,7 @@ const Mission = () => {
                       setSavedStory(updatedStory);
                       
                       // Save to database to persist the change
-                      await saveStoryToDatabase(updatedStory);
+                      if (!isFinishedRef.current) await saveStoryToDatabase(updatedStory);
                     }
                     
                     toast({
