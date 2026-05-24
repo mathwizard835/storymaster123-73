@@ -56,7 +56,7 @@ const ParentalConsentForm = ({ childAge, accountEmail, onConsent, onBack, loadin
 
       <Alert className="bg-purple-900/40 border-purple-500/40 text-purple-100">
         <AlertDescription className="text-sm">
-          We'll send a verification email to <strong>{accountEmail}</strong> — this is the parent/guardian email used for this account. You'll need to click the link in that email to activate the account.
+          We'll send <strong>one verification email</strong> to <strong>{accountEmail}</strong> — the parent/guardian email for this account. Click the link in that email to activate the account. Your child does <strong>not</strong> receive a separate email, and there's just <strong>one login</strong> (this email + password) that you and your child share.
         </AlertDescription>
       </Alert>
 
