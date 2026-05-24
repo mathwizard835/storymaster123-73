@@ -67,6 +67,10 @@ export default function ParentDashboard() {
 
   useEffect(() => {
     loadData();
+    // Ask for an App Store review the first time a parent opens this dashboard.
+    import("@/lib/appReview").then(({ requestAppReview }) =>
+      requestAppReview("first_parent_dashboard_open")
+    );
   }, [loadData]);
 
   // Real-time refresh on progress events / focus / visibility
