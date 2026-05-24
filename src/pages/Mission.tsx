@@ -1422,9 +1422,13 @@ const Mission = () => {
                           variant="hero"
                           onClick={async () => {
                             try {
-                              const actualChoicesMade = savedStory?.choicesMade || 0;
-                              console.log(`Story completed with ${actualChoicesMade} choices made, ${profile.selectedBadges.length} badges`);
-                              trackFunnelStep("story_completed");
+                               const actualChoicesMade = savedStory?.choicesMade || 0;
+                               console.log(`Story completed with ${actualChoicesMade} choices made, ${profile.selectedBadges.length} badges`);
+                               trackFunnelStep("story_completed");
+                               // Ask for an App Store review the first time a child finishes a story.
+                               import("@/lib/appReview").then(({ requestAppReview }) =>
+                                 requestAppReview("first_story_completed")
+                               );
                               const { newAchievements, characterProgress, newAbilities } = await markStoryCompleted(
                                 profile, 
                                 actualChoicesMade,
