@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { saveAchievements, AchievementProgress, ALL_ACHIEVEMENTS } from './achievements';
+import { saveAchievements, loadAchievements, AchievementProgress, ALL_ACHIEVEMENTS } from './achievements';
 import { saveCharacter, gainExperience, DEFAULT_CHARACTER, CharacterStats } from './character';
 import { Profile } from './story';
 // ABILITIES DISABLED - Uncomment to re-enable
@@ -61,6 +61,10 @@ export const syncProgressFromDatabase = async (): Promise<{
     }
 
     console.log(`🔄 Syncing ${totalStoriesStarted} stories (${totalStoriesCompleted} completed) from database...`);
+
+    // Preserve any progress already unlocked locally so re-sync never downgrades
+    // counts or strips achievements unlocked moments ago by updateProgress().
+    const existingLocal = loadAchievements();
 
     // Initialize fresh progress tracking
     let character = { ...DEFAULT_CHARACTER };
@@ -131,13 +135,32 @@ export const syncProgressFromDatabase = async (): Promise<{
     }
     saveCharacter(character);
 
-    // Save computed totals to localStorage BEFORE checking achievements
+    // Merge with existing local progress: never downgrade totals, never drop
+    // achievements that updateProgress() unlocked locally before this sync ran.
+    achievementProgress.totalStories = Math.max(achievementProgress.totalStories, existingLocal.totalStories || 0);
+    achievementProgress.totalStoriesStarted = Math.max(achievementProgress.totalStoriesStarted, existingLocal.totalStoriesStarted || 0);
+    achievementProgress.totalChoices = Math.max(achievementProgress.totalChoices, existingLocal.totalChoices || 0);
+    for (const [k, v] of Object.entries(existingLocal.badgeUsage || {})) {
+      achievementProgress.badgeUsage[k] = Math.max(achievementProgress.badgeUsage[k] || 0, v as number);
+    }
+    for (const [k, v] of Object.entries(existingLocal.modeUsage || {})) {
+      achievementProgress.modeUsage[k] = Math.max(achievementProgress.modeUsage[k] || 0, v as number);
+    }
+    // Preserve every previously-unlocked achievement (keep original unlockedAt).
+    for (const prev of existingLocal.achievements || []) {
+      if (!achievementProgress.achievements.some(a => a.id === prev.id)) {
+        achievementProgress.achievements.push(prev);
+      }
+    }
+
+    // Save merged totals to localStorage BEFORE checking for new achievements
     saveAchievements(achievementProgress);
 
     // Check for new achievements directly against computed totals (don't re-increment)
     const newlyUnlocked: typeof achievementProgress.achievements = [];
     for (const achievement of ALL_ACHIEVEMENTS) {
       if (achievementProgress.achievements.some(a => a.id === achievement.id)) continue;
+
 
       let unlocked = false;
       switch (achievement.id) {
