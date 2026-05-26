@@ -99,6 +99,34 @@ export default function Subscription() {
   };
 
   const handleCancelSubscription = async () => {
+    // iOS (Apple IAP): Apple requires subscriptions be cancelled via the App Store.
+    // We cannot cancel programmatically, and flipping our DB row would lock the user
+    // out immediately even though Apple keeps the subscription active until period end.
+    if (isIOSPlatform()) {
+      if (!confirm("To cancel your Adventure Pass, you'll be taken to your App Store subscription settings. Your access will remain active until the end of your current billing period.")) {
+        return;
+      }
+      try {
+        const { Browser } = await import("@capacitor/browser");
+        await Browser.open({
+          url: "https://apps.apple.com/account/subscriptions",
+          presentationStyle: "popover",
+        });
+        toast({
+          title: "Manage in App Store",
+          description: "Cancel your Adventure Pass from your Apple subscriptions. You'll keep access until the end of your billing period.",
+        });
+      } catch (error) {
+        toast({
+          title: "Couldn't open App Store",
+          description: "Open Settings → Apple ID → Subscriptions to manage your Adventure Pass.",
+          variant: "destructive",
+        });
+      }
+      return;
+    }
+
+    // Web (Stripe): existing behavior — flip DB row.
     if (!confirm("Are you sure you want to cancel your subscription? You'll lose access to Premium features at the end of your billing period.")) {
       return;
     }
