@@ -47,46 +47,59 @@ export const getSubscriptionPlans = async (): Promise<SubscriptionPlan[]> => {
   }
 };
 
+// A subscription row entitles the user right now if:
+//   - status='active' AND (expires_at is null OR expires_at > now())   [normal active]
+//   - status='cancelled' AND expires_at IS NOT NULL AND expires_at > now()  [cancel-at-period-end grace]
+// Anything else (status='expired', past expires_at, status='cancelled' w/o expires_at) is NOT entitled.
+const isCurrentlyEntitled = (row: any): boolean => {
+  if (!row) return false;
+  const now = Date.now();
+  const expiresMs = row.expires_at ? new Date(row.expires_at).getTime() : null;
+  if (row.status === 'active') {
+    if (expiresMs !== null && expiresMs <= now) return false;
+    return true;
+  }
+  if (row.status === 'cancelled') {
+    if (expiresMs !== null && expiresMs > now) return true;
+  }
+  return false;
+};
+
 export const getUserSubscription = async (): Promise<{
   subscription: UserSubscription | null;
   plan: SubscriptionPlan | null;
 }> => {
   try {
     const deviceId = await getDeviceId();
-    
-    // First try to find by device_id - get most recent if multiple exist
-    let { data: deviceSubs, error } = await supabase
+
+    // Fetch the most recent active OR cancelled rows for this device (we'll
+    // pick the first one that's currently entitled, so cancel-at-period-end
+    // and expires_at are honored).
+    let { data: deviceRows, error } = await supabase
       .from('user_subscriptions')
-      .select(`
-        *,
-        subscription_plans (*)
-      `)
+      .select(`*, subscription_plans (*)`)
       .eq('device_id', deviceId)
-      .eq('status', 'active')
+      .in('status', ['active', 'cancelled'])
       .order('created_at', { ascending: false })
-      .limit(1);
+      .limit(5);
 
     if (error && error.code !== 'PGRST116') throw error;
 
-    let data = deviceSubs?.[0] || null;
+    let data = (deviceRows || []).find(isCurrentlyEntitled) || null;
 
-    // If no subscription found by device_id, try by user_id
+    // Fall back to user_id lookup (cross-device, manual grants, etc.)
     if (!data) {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        const { data: userSubs, error: userError } = await supabase
+        const { data: userRows, error: userError } = await supabase
           .from('user_subscriptions')
-          .select(`
-            *,
-            subscription_plans (*)
-          `)
+          .select(`*, subscription_plans (*)`)
           .eq('user_id', user.id)
-          .eq('status', 'active')
+          .in('status', ['active', 'cancelled'])
           .order('created_at', { ascending: false })
-          .limit(1);
-        
-        data = userSubs?.[0] || null;
+          .limit(5);
         if (userError && userError.code !== 'PGRST116') throw userError;
+        data = (userRows || []).find(isCurrentlyEntitled) || null;
       }
     }
 
@@ -111,33 +124,27 @@ export const getUserSubscription = async (): Promise<{
 // - Stripe webhook (web purchases)
 // - RevenueCat/Apple IAP (iOS purchases)
 
-export const cancelSubscription = async (): Promise<boolean> => {
+export const cancelSubscription = async (): Promise<{
+  success: boolean;
+  accessUntil?: string | null;
+  error?: string;
+}> => {
   try {
-    const deviceId = await getDeviceId();
-    
-    // Cancel by device_id
-    const { error } = await supabase
-      .from('user_subscriptions')
-      .update({ status: 'cancelled' })
-      .eq('device_id', deviceId)
-      .eq('status', 'active');
-
+    // Web cancel must go through Stripe so Stripe stops billing.
+    // The edge function flips cancel_at_period_end=true and updates expires_at,
+    // KEEPING status='active' so the user retains access until period end.
+    const { data, error } = await supabase.functions.invoke(
+      'stripe-cancel-subscription',
+      { body: {} },
+    );
     if (error) throw error;
-
-    // Also cancel by user_id as fallback (handles cross-device scenarios)
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      await supabase
-        .from('user_subscriptions')
-        .update({ status: 'cancelled' })
-        .eq('user_id', user.id)
-        .eq('status', 'active');
-    }
-
-    return true;
-  } catch (e) {
-    console.error("Failed to cancel subscription", e);
-    return false;
+    return {
+      success: true,
+      accessUntil: data?.accessUntil ?? null,
+    };
+  } catch (e: any) {
+    console.error("Failed to cancel subscription via Stripe", e);
+    return { success: false, error: e?.message || 'cancel_failed' };
   }
 };
 

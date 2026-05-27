@@ -13,6 +13,8 @@ project_id = "lwxaqxxuednuwflojlfc"
     verify_jwt = false
   [functions.stripe-webhook]
     verify_jwt = false
+  [functions.stripe-cancel-subscription]
+    verify_jwt = false
   [functions.text-to-speech]
     verify_jwt = false
   [functions.verify-checkout-session]

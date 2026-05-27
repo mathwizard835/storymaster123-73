@@ -123,19 +123,48 @@ serve(async (req) => {
           break;
         }
 
-        // Update subscription status based on Stripe status
-        const status = subscription.status === 'active' ? 'active' : 'cancelled';
+        const stripeStatus = subscription.status; // active, past_due, unpaid, canceled, ...
+        const cancelAtPeriodEnd = subscription.cancel_at_period_end === true;
+        const periodEndIso = subscription.current_period_end
+          ? new Date(subscription.current_period_end * 1000).toISOString()
+          : null;
+
+        // Map Stripe status → our status + expires_at:
+        // - canceled / incomplete_expired → cancelled now
+        // - active + cancel_at_period_end → keep active, set expires_at = period end (grace)
+        // - active (not cancelling)       → active, clear expires_at
+        // - past_due / unpaid / incomplete / trialing → KEEP active (don't drop on transient billing retries)
+        let newStatus: 'active' | 'cancelled' = 'active';
+        let newExpiresAt: string | null = null;
+
+        if (stripeStatus === 'canceled' || stripeStatus === 'incomplete_expired') {
+          newStatus = 'cancelled';
+          newExpiresAt = new Date().toISOString();
+        } else if (cancelAtPeriodEnd) {
+          newStatus = 'active';
+          newExpiresAt = periodEndIso;
+        } else {
+          newStatus = 'active';
+          newExpiresAt = null;
+        }
 
         await supabaseClient
           .from('user_subscriptions')
-          .update({ 
-            status,
+          .update({
+            status: newStatus,
+            expires_at: newExpiresAt,
             updated_at: new Date().toISOString(),
           })
           .eq('device_id', deviceId)
-          .eq('status', 'active');
+          .in('status', ['active', 'cancelled']);
 
-        console.log('Subscription updated for device:', deviceId);
+        console.log('Subscription updated:', {
+          deviceId,
+          stripeStatus,
+          cancelAtPeriodEnd,
+          newStatus,
+          newExpiresAt,
+        });
         break;
       }
 
@@ -148,11 +177,12 @@ serve(async (req) => {
           break;
         }
 
-        // Mark subscription as cancelled
+        // Final cancellation — access ends immediately
         await supabaseClient
           .from('user_subscriptions')
-          .update({ 
+          .update({
             status: 'cancelled',
+            expires_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           })
           .eq('device_id', deviceId);
