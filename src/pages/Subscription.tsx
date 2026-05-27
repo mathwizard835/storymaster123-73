@@ -126,32 +126,33 @@ export default function Subscription() {
       return;
     }
 
-    // Web (Stripe): existing behavior — flip DB row.
-    if (!confirm("Are you sure you want to cancel your subscription? You'll lose access to Premium features at the end of your billing period.")) {
+    // Web (Stripe): call Stripe via edge function to set cancel_at_period_end=true.
+    // This stops future billing AND keeps the user's access until their paid period ends.
+    if (!confirm("Are you sure you want to cancel your subscription? You'll retain access until the end of your billing period.")) {
       return;
     }
 
     setLoading(true);
     try {
-      const success = await cancelSubscription();
-      
-      if (success) {
-        // Reset premium theme to default
-        localStorage.removeItem("premium-theme");
-        document.documentElement.removeAttribute("data-theme");
-        
+      const result = await cancelSubscription();
+
+      if (result.success) {
+        const untilStr = result.accessUntil
+          ? new Date(result.accessUntil).toLocaleDateString()
+          : "the end of your billing period";
         toast({
           title: "Subscription Cancelled",
-          description: "Your subscription has been cancelled. You'll retain access until the end of your billing period.",
+          description: `You'll keep access until ${untilStr}. Stripe will not bill you again.`,
         });
+        window.dispatchEvent(new Event('subscription-refreshed'));
         await loadCurrentPlan();
       } else {
-        throw new Error("Failed to cancel subscription");
+        throw new Error(result.error || "Failed to cancel subscription");
       }
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to cancel subscription. Please try again.",
+        description: "Failed to cancel subscription. Please try again or contact support.",
         variant: "destructive",
       });
     } finally {
