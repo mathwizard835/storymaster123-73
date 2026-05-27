@@ -583,6 +583,7 @@ export default function Subscription() {
                         if (result.isSubscribed) {
                           // Also activate in Supabase when restoring
                           await activateSubscriptionAfterPurchase('premium');
+                          window.dispatchEvent(new Event('subscription-refreshed'));
                           toast({
                             title: "✅ Adventure Pass Restored!",
                             description: "Your child's stories are ready to continue.",
