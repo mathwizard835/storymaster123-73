@@ -133,6 +133,22 @@ export const syncProgressFromDatabase = async (): Promise<{
         character.experienceToNext = Math.floor(character.experienceToNext * 1.15);
       }
     }
+    // Never downgrade character progress from a re-sync: keep the higher of
+    // (computed-from-history) vs (existing local). Other sources of XP not
+    // captured in user_stories (e.g. one-off bonuses) are preserved.
+    if (existingCharacter.totalExperienceEarned > character.totalExperienceEarned) {
+      character = {
+        ...character,
+        level: Math.max(character.level, existingCharacter.level),
+        experience: existingCharacter.experience,
+        experienceToNext: existingCharacter.experienceToNext,
+        skillPoints: Math.max(character.skillPoints, existingCharacter.skillPoints),
+        totalExperienceEarned: existingCharacter.totalExperienceEarned,
+        attributes: existingCharacter.attributes,
+        titles: Array.from(new Set([...(character.titles || []), ...(existingCharacter.titles || [])])),
+        favoriteThemes: existingCharacter.favoriteThemes?.length ? existingCharacter.favoriteThemes : character.favoriteThemes,
+      };
+    }
     saveCharacter(character);
 
     // Merge with existing local progress: never downgrade totals, never drop
