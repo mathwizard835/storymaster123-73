@@ -65,20 +65,7 @@ export default function Subscription() {
         variant: "destructive",
       });
     }
-    if (packSuccess && storiesPurchased) {
-      toast({
-        title: "🎉 Story Pack Purchased!",
-        description: `${storiesPurchased} bonus stories have been added to your account.`,
-      });
-    }
-    if (packCancelled) {
-      toast({
-        title: "Purchase Cancelled",
-        description: "Your story pack purchase was cancelled.",
-        variant: "destructive",
-      });
-    }
-  }, [cancelled, packSuccess, packCancelled, storiesPurchased, toast]);
+  }, [cancelled, toast]);
 
   const loadCurrentPlan = async () => {
     const { plan } = await getUserSubscription();
