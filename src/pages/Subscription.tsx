@@ -549,6 +549,8 @@ export default function Subscription() {
                         if (result.success) {
                           // Activate subscription directly in Supabase
                           await activateSubscriptionAfterPurchase(planType);
+                          // Notify gates (RequireSubscription) to re-check immediately
+                          window.dispatchEvent(new Event('subscription-refreshed'));
                           toast({
                             title: "🎉 Adventure Pass Activated!",
                             description: "Your child's reading journey begins now!",
