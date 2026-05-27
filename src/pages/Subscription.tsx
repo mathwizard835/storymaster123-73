@@ -32,9 +32,7 @@ export default function Subscription() {
   const limitReached = searchParams.get('limitReached') === 'true';
   const required = searchParams.get('required') === 'true';
   const cancelled = searchParams.get('cancelled') === 'true';
-  const packSuccess = searchParams.get('pack_success') === 'true';
-  const packCancelled = searchParams.get('pack_cancelled') === 'true';
-  const storiesPurchased = searchParams.get('stories');
+  // Story-pack purchases are explicitly forbidden in this product — no related params.
   const { isNative, safeAreaInsets } = useDevice();
 
   // Open parental gate, then run the action on success
