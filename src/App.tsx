@@ -85,18 +85,50 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 // Native subscription gate: after auth, users without an active subscription are
 // hard-routed to /subscription?required=true. Allowed routes: /subscription itself,
 // /settings (so they can log out), /profile (initial setup), /support.
+//
+// Robustness rules:
+//  - We cache the last known sub status per user in localStorage. If a check
+//    fails (network blip, cold start), we fall back to the cache when it was
+//    "active" within the last 24 hours so paying users aren't paywalled by a
+//    transient failure.
+//  - We re-run the check on tab visibility AND on a global
+//    `subscription-refreshed` event (dispatched by purchase / cancel flows)
+//    so the gate updates immediately after the user pays.
+const SUB_CACHE_PREFIX = 'smq.sub.known.';
+const SUB_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+
+type CachedSub = { active: boolean; at: number };
+
+const readCachedSub = (userId: string): CachedSub | null => {
+  try {
+    const raw = localStorage.getItem(SUB_CACHE_PREFIX + userId);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as CachedSub;
+    if (!parsed || typeof parsed.active !== 'boolean' || typeof parsed.at !== 'number') return null;
+    return parsed;
+  } catch { return null; }
+};
+
+const writeCachedSub = (userId: string, active: boolean) => {
+  try {
+    localStorage.setItem(SUB_CACHE_PREFIX + userId, JSON.stringify({ active, at: Date.now() }));
+  } catch { /* ignore */ }
+};
+
 const RequireSubscription = ({ children }: { children: React.ReactNode }) => {
   const { user } = useAuth();
-  const location = useLocation();
   const [checking, setChecking] = useState(true);
   const [hasSub, setHasSub] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    const check = async () => {
+
+    const runCheck = async () => {
       if (!user || !isNativePlatform()) {
-        setChecking(false);
-        setHasSub(true);
+        if (!cancelled) {
+          setHasSub(true);
+          setChecking(false);
+        }
         return;
       }
       try {
@@ -107,15 +139,37 @@ const RequireSubscription = ({ children }: { children: React.ReactNode }) => {
           setHasSub(active);
           setChecking(false);
         }
-      } catch {
+        writeCachedSub(user.id, active);
+      } catch (e) {
+        // Fail-open ONLY if we recently knew the user was subscribed —
+        // this prevents transient network errors from paywalling a paying user.
+        const cached = readCachedSub(user.id);
+        const recentlyActive = !!cached && cached.active && (Date.now() - cached.at) < SUB_CACHE_TTL_MS;
         if (!cancelled) {
-          setHasSub(false);
+          setHasSub(recentlyActive);
           setChecking(false);
         }
+        console.warn('[RequireSubscription] check failed, using cache', { recentlyActive, error: e });
       }
     };
-    check();
-    return () => { cancelled = true; };
+
+    // Initial check
+    setChecking(true);
+    runCheck();
+
+    // Listen for purchase / cancel events and visibility changes
+    const onRefresh = () => { runCheck(); };
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') runCheck();
+    };
+    window.addEventListener('subscription-refreshed', onRefresh);
+    document.addEventListener('visibilitychange', onVisibility);
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener('subscription-refreshed', onRefresh);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
   }, [user?.id]);
 
   if (checking) return <NativeLoadingScreen />;
