@@ -239,11 +239,17 @@ export const getStoriesRemaining = async (): Promise<{
     return { storiesUsedThisMonth, monthlyLimit, bonusStories, canPlay };
   } catch (e) {
     console.error("Failed to check stories remaining", e);
+    // Fail-closed on native (hard paywall), fail-open on web to avoid blocking.
+    let isNative = false;
+    try {
+      const { isNativePlatform } = await import("@/lib/platform");
+      isNative = isNativePlatform();
+    } catch {}
     return {
       storiesUsedThisMonth: 0,
-      monthlyLimit: 3,
+      monthlyLimit: isNative ? 0 : 3,
       bonusStories: 0,
-      canPlay: true
+      canPlay: !isNative,
     };
   }
 };
