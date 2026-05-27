@@ -173,6 +173,7 @@ export default function Subscription() {
 
       const hasSubscription = await pollForSubscriptionUpdate(10, 2000, (status) => {
         if (status) {
+          window.dispatchEvent(new Event('subscription-refreshed'));
           toast({
             title: "🎉 Subscription Activated!",
             description: "Welcome to StoryMaster Kids Premium!",
