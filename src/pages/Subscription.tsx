@@ -32,9 +32,7 @@ export default function Subscription() {
   const limitReached = searchParams.get('limitReached') === 'true';
   const required = searchParams.get('required') === 'true';
   const cancelled = searchParams.get('cancelled') === 'true';
-  const packSuccess = searchParams.get('pack_success') === 'true';
-  const packCancelled = searchParams.get('pack_cancelled') === 'true';
-  const storiesPurchased = searchParams.get('stories');
+  // Story-pack purchases are explicitly forbidden in this product — no related params.
   const { isNative, safeAreaInsets } = useDevice();
 
   // Open parental gate, then run the action on success
@@ -65,20 +63,7 @@ export default function Subscription() {
         variant: "destructive",
       });
     }
-    if (packSuccess && storiesPurchased) {
-      toast({
-        title: "🎉 Story Pack Purchased!",
-        description: `${storiesPurchased} bonus stories have been added to your account.`,
-      });
-    }
-    if (packCancelled) {
-      toast({
-        title: "Purchase Cancelled",
-        description: "Your story pack purchase was cancelled.",
-        variant: "destructive",
-      });
-    }
-  }, [cancelled, packSuccess, packCancelled, storiesPurchased, toast]);
+  }, [cancelled, toast]);
 
   const loadCurrentPlan = async () => {
     const { plan } = await getUserSubscription();
@@ -637,8 +622,6 @@ export default function Subscription() {
         </Card>
         )}
 
-        {/* Story Pack Purchase - Only for Adventure Pass subscribers */}
-        {/* Removed from non-subscriber view - story packs are a subscriber-only benefit */}
 
         {/* Premium Guarantees */}
         <div className="max-w-4xl mx-auto mt-12 grid grid-cols-1 md:grid-cols-3 gap-6 text-center">

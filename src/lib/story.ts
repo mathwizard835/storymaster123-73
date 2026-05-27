@@ -135,12 +135,12 @@ export const checkStoryLimit = async (): Promise<{ canPlay: boolean; completedCo
     const { storiesUsedThisMonth, monthlyLimit, bonusStories, canPlay } = await getStoriesRemaining();
     
     if (!canPlay) {
-      let reason = `You've used ${storiesUsedThisMonth}/${monthlyLimit} monthly stories.`;
+      let reason = `You've used ${storiesUsedThisMonth}/${monthlyLimit} stories in the last 30 days.`;
       if (bonusStories > 0) {
         reason += ` (${bonusStories} bonus stories included)`;
       }
-      reason += " Upgrade to Adventure Pass for 10 stories per month or wait until next month!";
-      
+      reason += " Upgrade to Adventure Pass for 40 stories every 30 days, or wait for your oldest story to roll off.";
+
       return { canPlay: false, completedCount: storiesUsedThisMonth, reason };
     }
 
@@ -148,7 +148,14 @@ export const checkStoryLimit = async (): Promise<{ canPlay: boolean; completedCo
     return { canPlay: true, completedCount: storiesUsedThisMonth };
   } catch (e) {
     console.error("Failed to check story limit", e);
-    return { canPlay: true, completedCount: 0 }; // Allow play on error to avoid blocking
+    // Fail-closed on native (hard paywall), fail-open on web.
+    try {
+      const { isNativePlatform } = await import("@/lib/platform");
+      if (isNativePlatform()) {
+        return { canPlay: false, completedCount: 0, reason: "Couldn't verify your subscription. Please check your connection and try again." };
+      }
+    } catch {}
+    return { canPlay: true, completedCount: 0 };
   }
 };
 

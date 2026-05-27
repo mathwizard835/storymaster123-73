@@ -1,6 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { saveAchievements, loadAchievements, AchievementProgress, ALL_ACHIEVEMENTS } from './achievements';
-import { saveCharacter, gainExperience, DEFAULT_CHARACTER, CharacterStats } from './character';
+import { saveCharacter, gainExperience, loadCharacter, DEFAULT_CHARACTER, CharacterStats } from './character';
 import { Profile } from './story';
 // ABILITIES DISABLED - Uncomment to re-enable
 // import { checkAndAwardAbilities, saveAbilities, type AbilityProgress } from './abilities';
@@ -65,10 +65,10 @@ export const syncProgressFromDatabase = async (): Promise<{
     // Preserve any progress already unlocked locally so re-sync never downgrades
     // counts or strips achievements unlocked moments ago by updateProgress().
     const existingLocal = loadAchievements();
+    const existingCharacter = loadCharacter();
 
     // Initialize fresh progress tracking
     let character = { ...DEFAULT_CHARACTER };
-    saveCharacter(character);
     let achievementProgress: AchievementProgress = {
       totalStories: totalStoriesCompleted,
       totalStoriesStarted: totalStoriesStarted,
@@ -132,6 +132,22 @@ export const syncProgressFromDatabase = async (): Promise<{
         character.skillPoints += 2;
         character.experienceToNext = Math.floor(character.experienceToNext * 1.15);
       }
+    }
+    // Never downgrade character progress from a re-sync: keep the higher of
+    // (computed-from-history) vs (existing local). Other sources of XP not
+    // captured in user_stories (e.g. one-off bonuses) are preserved.
+    if (existingCharacter.totalExperienceEarned > character.totalExperienceEarned) {
+      character = {
+        ...character,
+        level: Math.max(character.level, existingCharacter.level),
+        experience: existingCharacter.experience,
+        experienceToNext: existingCharacter.experienceToNext,
+        skillPoints: Math.max(character.skillPoints, existingCharacter.skillPoints),
+        totalExperienceEarned: existingCharacter.totalExperienceEarned,
+        attributes: existingCharacter.attributes,
+        titles: Array.from(new Set([...(character.titles || []), ...(existingCharacter.titles || [])])),
+        favoriteThemes: existingCharacter.favoriteThemes?.length ? existingCharacter.favoriteThemes : character.favoriteThemes,
+      };
     }
     saveCharacter(character);
 
