@@ -193,11 +193,21 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
     return <NativeLoadingScreen />;
   }
   
-  // Allow email verification callbacks to complete before redirecting
-  const hashParams = new URLSearchParams(window.location.hash.substring(1));
-  const isEmailVerification = hashParams.get('type') === 'signup' || hashParams.get('type') === 'recovery';
-  
-  if (isNativePlatform() && user && !isEmailVerification) {
+  // Allow email verification / password reset callbacks to complete before redirecting.
+  // Supabase may deliver tokens in either the URL hash or the query string.
+  const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+  const queryParams = new URLSearchParams(window.location.search);
+  const type = hashParams.get('type') || queryParams.get('type');
+  const isAuthCallback =
+    type === 'signup' ||
+    type === 'recovery' ||
+    type === 'invite' ||
+    type === 'magiclink' ||
+    hashParams.has('access_token') ||
+    queryParams.has('code') ||
+    queryParams.has('token_hash');
+
+  if (isNativePlatform() && user && !isAuthCallback) {
     return <Navigate to="/dashboard" replace />;
   }
   
