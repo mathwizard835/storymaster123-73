@@ -622,8 +622,6 @@ export default function Subscription() {
         </Card>
         )}
 
-        {/* Story Pack Purchase - Only for Adventure Pass subscribers */}
-        {/* Removed from non-subscriber view - story packs are a subscriber-only benefit */}
 
         {/* Premium Guarantees */}
         <div className="max-w-4xl mx-auto mt-12 grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
