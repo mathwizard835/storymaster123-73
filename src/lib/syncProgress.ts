@@ -1,6 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { saveAchievements, loadAchievements, AchievementProgress, ALL_ACHIEVEMENTS } from './achievements';
-import { saveCharacter, gainExperience, DEFAULT_CHARACTER, CharacterStats } from './character';
+import { saveCharacter, gainExperience, loadCharacter, DEFAULT_CHARACTER, CharacterStats } from './character';
 import { Profile } from './story';
 // ABILITIES DISABLED - Uncomment to re-enable
 // import { checkAndAwardAbilities, saveAbilities, type AbilityProgress } from './abilities';
