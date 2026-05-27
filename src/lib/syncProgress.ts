@@ -65,10 +65,10 @@ export const syncProgressFromDatabase = async (): Promise<{
     // Preserve any progress already unlocked locally so re-sync never downgrades
     // counts or strips achievements unlocked moments ago by updateProgress().
     const existingLocal = loadAchievements();
+    const existingCharacter = loadCharacter();
 
     // Initialize fresh progress tracking
     let character = { ...DEFAULT_CHARACTER };
-    saveCharacter(character);
     let achievementProgress: AchievementProgress = {
       totalStories: totalStoriesCompleted,
       totalStoriesStarted: totalStoriesStarted,
