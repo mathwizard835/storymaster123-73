@@ -689,6 +689,66 @@ const Auth = () => {
           <p className="text-purple-300 text-sm mt-2">AI-powered adventures adapted to your child's reading level</p>
         </div>
 
+        {callbackState ? (
+          <Card className="bg-black/20 backdrop-blur-md border-white/20">
+            <CardHeader className="text-center">
+              <CardTitle className="text-white flex items-center justify-center gap-2">
+                {callbackState === 'verifying' && (<><Loader2 className="h-5 w-5 animate-spin text-purple-300" /> Verifying your email…</>)}
+                {callbackState === 'success' && (<><CheckCircle2 className="h-5 w-5 text-green-400" /> Email Verified!</>)}
+                {callbackState === 'error' && (<><AlertCircle className="h-5 w-5 text-red-400" /> Verification Failed</>)}
+              </CardTitle>
+              <CardDescription className="text-purple-200">
+                {callbackState === 'verifying' && "Hang tight while we confirm your account."}
+                {callbackState === 'success' && "You're all set. Taking you to your dashboard…"}
+                {callbackState === 'error' && (callbackError || "Something went wrong.")}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {appHandoffUrl && (
+                <div className="p-4 rounded-lg bg-purple-600/30 border border-purple-400/40 text-center space-y-3">
+                  <p className="text-white text-sm font-medium">
+                    Open StoryMaster Kids to continue on your device.
+                  </p>
+                  <a
+                    href={appHandoffUrl}
+                    className="inline-block w-full px-4 py-3 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold hover:opacity-90 transition-opacity"
+                  >
+                    Open in App
+                  </a>
+                </div>
+              )}
+              {callbackState === 'success' && (
+                <Button
+                  onClick={() => navigate('/dashboard')}
+                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90 text-white font-semibold"
+                >
+                  Continue to Dashboard
+                </Button>
+              )}
+              {callbackState === 'error' && (
+                <div className="space-y-2">
+                  <Button
+                    onClick={() => {
+                      setCallbackState(null);
+                      setCallbackError('');
+                    }}
+                    className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+                  >
+                    Back to Sign In
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    onClick={handleResendVerification}
+                    disabled={loading || !email || resendCooldown > 0}
+                    className="w-full text-purple-200 hover:text-white"
+                  >
+                    {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend verification email'}
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        ) : (
         <Card className="bg-black/20 backdrop-blur-md border-white/20">
           <CardHeader className="text-center">
             <CardTitle className="text-white flex items-center justify-center gap-2">
@@ -769,6 +829,7 @@ const Auth = () => {
             )}
           </CardContent>
         </Card>
+        )}
         
         <div className="text-center mt-6">
           <Button 
