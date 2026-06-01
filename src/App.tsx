@@ -111,7 +111,14 @@ const readCachedSub = (userId: string): CachedSub | null => {
 
 const writeCachedSub = (userId: string, active: boolean) => {
   try {
-    localStorage.setItem(SUB_CACHE_PREFIX + userId, JSON.stringify({ active, at: Date.now() }));
+    // Only cache POSITIVE entitlement. Caching `false` would poison the
+    // fail-open fallback: a single bad check (e.g. race right after purchase)
+    // would persist and paywall the user on the next network error.
+    if (active) {
+      localStorage.setItem(SUB_CACHE_PREFIX + userId, JSON.stringify({ active: true, at: Date.now() }));
+    } else {
+      localStorage.removeItem(SUB_CACHE_PREFIX + userId);
+    }
   } catch { /* ignore */ }
 };
 
@@ -140,6 +147,7 @@ const RequireSubscription = ({ children }: { children: React.ReactNode }) => {
           setChecking(false);
         }
         writeCachedSub(user.id, active);
+
       } catch (e) {
         // Fail-open ONLY if we recently knew the user was subscribed —
         // this prevents transient network errors from paywalling a paying user.
