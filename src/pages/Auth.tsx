@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, BookOpen, Stars } from 'lucide-react';
+import { Loader2, BookOpen, Stars, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { signInSchema, signUpSchema } from '@/lib/validationSchemas';
 import { checkIfBanned } from '@/lib/banCheck';
