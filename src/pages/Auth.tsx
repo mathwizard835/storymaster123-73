@@ -34,6 +34,22 @@ const buildNativeAuthUrl = (params: Record<string, string | null | undefined>) =
 };
 
 type SignupStep = 'credentials' | 'age-gate' | 'parental-gate' | 'parental-consent';
+type CallbackState = null | 'verifying' | 'success' | 'error';
+
+// Detect (synchronously, before first paint) whether the URL contains an auth
+// callback so we can show a dedicated "Verifying email..." screen instead of
+// flashing the Sign Up form to the user.
+const detectInitialCallback = (): CallbackState => {
+  if (typeof window === 'undefined') return null;
+  const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+  const query = new URLSearchParams(window.location.search);
+  const hasTokens =
+    (hash.get('access_token') && hash.get('refresh_token')) ||
+    (query.get('access_token') && query.get('refresh_token'));
+  const hasTokenHash = !!(hash.get('token_hash') || query.get('token_hash'));
+  const hasCode = !!query.get('code');
+  return (hasTokens || hasTokenHash || hasCode) ? 'verifying' : null;
+};
 
 const Auth = () => {
   const [email, setEmail] = useState('');
@@ -46,6 +62,8 @@ const Auth = () => {
   const [signupStep, setSignupStep] = useState<SignupStep>('credentials');
   const [childAge, setChildAge] = useState<number>(0);
   const [appHandoffUrl, setAppHandoffUrl] = useState<string | null>(null);
+  const [callbackState, setCallbackState] = useState<CallbackState>(detectInitialCallback);
+  const [callbackError, setCallbackError] = useState<string>('');
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const initialTab = searchParams.get('mode') === 'login' ? 'login' : 'signup';
