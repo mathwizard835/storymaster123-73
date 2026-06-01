@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, BookOpen, Stars } from 'lucide-react';
+import { Loader2, BookOpen, Stars, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { signInSchema, signUpSchema } from '@/lib/validationSchemas';
 import { checkIfBanned } from '@/lib/banCheck';
@@ -34,6 +34,22 @@ const buildNativeAuthUrl = (params: Record<string, string | null | undefined>) =
 };
 
 type SignupStep = 'credentials' | 'age-gate' | 'parental-gate' | 'parental-consent';
+type CallbackState = null | 'verifying' | 'success' | 'error';
+
+// Detect (synchronously, before first paint) whether the URL contains an auth
+// callback so we can show a dedicated "Verifying email..." screen instead of
+// flashing the Sign Up form to the user.
+const detectInitialCallback = (): CallbackState => {
+  if (typeof window === 'undefined') return null;
+  const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+  const query = new URLSearchParams(window.location.search);
+  const hasTokens =
+    (hash.get('access_token') && hash.get('refresh_token')) ||
+    (query.get('access_token') && query.get('refresh_token'));
+  const hasTokenHash = !!(hash.get('token_hash') || query.get('token_hash'));
+  const hasCode = !!query.get('code');
+  return (hasTokens || hasTokenHash || hasCode) ? 'verifying' : null;
+};
 
 const Auth = () => {
   const [email, setEmail] = useState('');
@@ -46,6 +62,8 @@ const Auth = () => {
   const [signupStep, setSignupStep] = useState<SignupStep>('credentials');
   const [childAge, setChildAge] = useState<number>(0);
   const [appHandoffUrl, setAppHandoffUrl] = useState<string | null>(null);
+  const [callbackState, setCallbackState] = useState<CallbackState>(detectInitialCallback);
+  const [callbackError, setCallbackError] = useState<string>('');
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const initialTab = searchParams.get('mode') === 'login' ? 'login' : 'signup';
@@ -139,6 +157,11 @@ const Auth = () => {
           if (exchangeError) throw exchangeError;
         }
 
+        // Clean the URL so a refresh doesn't re-trigger the callback flow.
+        try {
+          window.history.replaceState({}, '', window.location.pathname);
+        } catch {}
+
         if (type === 'invite') {
           toast({
             title: "Welcome!",
@@ -153,13 +176,27 @@ const Auth = () => {
           return;
         }
 
+        // Show success screen briefly so the user clearly sees confirmation
+        // before being routed forward (avoids the "back to signup form" confusion).
+        setCallbackState('success');
         toast({
           title: "Email verified!",
-          description: "Redirecting to your dashboard...",
+          description: "Taking you to your dashboard...",
         });
-        navigate('/dashboard');
-      } catch (callbackError) {
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 1200);
+      } catch (callbackError: any) {
         console.error('[Auth] Failed to process auth callback:', callbackError);
+        setCallbackError(
+          callbackError?.message?.includes('expired')
+            ? "This verification link has expired. Please request a new one below."
+            : "We couldn't verify this link. It may have already been used or expired."
+        );
+        setCallbackState('error');
+        try {
+          window.history.replaceState({}, '', window.location.pathname);
+        } catch {}
       }
     };
 
@@ -652,6 +689,66 @@ const Auth = () => {
           <p className="text-purple-300 text-sm mt-2">AI-powered adventures adapted to your child's reading level</p>
         </div>
 
+        {callbackState ? (
+          <Card className="bg-black/20 backdrop-blur-md border-white/20">
+            <CardHeader className="text-center">
+              <CardTitle className="text-white flex items-center justify-center gap-2">
+                {callbackState === 'verifying' && (<><Loader2 className="h-5 w-5 animate-spin text-purple-300" /> Verifying your email…</>)}
+                {callbackState === 'success' && (<><CheckCircle2 className="h-5 w-5 text-green-400" /> Email Verified!</>)}
+                {callbackState === 'error' && (<><AlertCircle className="h-5 w-5 text-red-400" /> Verification Failed</>)}
+              </CardTitle>
+              <CardDescription className="text-purple-200">
+                {callbackState === 'verifying' && "Hang tight while we confirm your account."}
+                {callbackState === 'success' && "You're all set. Taking you to your dashboard…"}
+                {callbackState === 'error' && (callbackError || "Something went wrong.")}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {appHandoffUrl && (
+                <div className="p-4 rounded-lg bg-purple-600/30 border border-purple-400/40 text-center space-y-3">
+                  <p className="text-white text-sm font-medium">
+                    Open StoryMaster Kids to continue on your device.
+                  </p>
+                  <a
+                    href={appHandoffUrl}
+                    className="inline-block w-full px-4 py-3 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold hover:opacity-90 transition-opacity"
+                  >
+                    Open in App
+                  </a>
+                </div>
+              )}
+              {callbackState === 'success' && (
+                <Button
+                  onClick={() => navigate('/dashboard')}
+                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90 text-white font-semibold"
+                >
+                  Continue to Dashboard
+                </Button>
+              )}
+              {callbackState === 'error' && (
+                <div className="space-y-2">
+                  <Button
+                    onClick={() => {
+                      setCallbackState(null);
+                      setCallbackError('');
+                    }}
+                    className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+                  >
+                    Back to Sign In
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    onClick={handleResendVerification}
+                    disabled={loading || !email || resendCooldown > 0}
+                    className="w-full text-purple-200 hover:text-white"
+                  >
+                    {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend verification email'}
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        ) : (
         <Card className="bg-black/20 backdrop-blur-md border-white/20">
           <CardHeader className="text-center">
             <CardTitle className="text-white flex items-center justify-center gap-2">
@@ -732,6 +829,7 @@ const Auth = () => {
             )}
           </CardContent>
         </Card>
+        )}
         
         <div className="text-center mt-6">
           <Button 
