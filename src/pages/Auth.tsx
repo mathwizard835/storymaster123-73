@@ -157,6 +157,11 @@ const Auth = () => {
           if (exchangeError) throw exchangeError;
         }
 
+        // Clean the URL so a refresh doesn't re-trigger the callback flow.
+        try {
+          window.history.replaceState({}, '', window.location.pathname);
+        } catch {}
+
         if (type === 'invite') {
           toast({
             title: "Welcome!",
@@ -171,13 +176,27 @@ const Auth = () => {
           return;
         }
 
+        // Show success screen briefly so the user clearly sees confirmation
+        // before being routed forward (avoids the "back to signup form" confusion).
+        setCallbackState('success');
         toast({
           title: "Email verified!",
-          description: "Redirecting to your dashboard...",
+          description: "Taking you to your dashboard...",
         });
-        navigate('/dashboard');
-      } catch (callbackError) {
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 1200);
+      } catch (callbackError: any) {
         console.error('[Auth] Failed to process auth callback:', callbackError);
+        setCallbackError(
+          callbackError?.message?.includes('expired')
+            ? "This verification link has expired. Please request a new one below."
+            : "We couldn't verify this link. It may have already been used or expired."
+        );
+        setCallbackState('error');
+        try {
+          window.history.replaceState({}, '', window.location.pathname);
+        } catch {}
       }
     };
 
