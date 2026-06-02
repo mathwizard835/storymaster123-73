@@ -223,10 +223,10 @@ export default function ParentDashboard() {
             </div>
           )}
 
-          <div className="text-center space-y-3">
-            <div className="flex items-center justify-center gap-2 sm:gap-3 mb-2 flex-wrap">
+          <div className="text-center space-y-3 min-w-0">
+            <div className="flex items-center justify-center gap-2 sm:gap-3 mb-2 flex-wrap min-w-0">
               <Heart className="h-6 w-6 sm:h-8 sm:w-8 md:h-10 md:w-10 text-rose-500 flex-shrink-0" />
-              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-amber-600 to-rose-600 bg-clip-text text-transparent">
+              <h1 className="text-xl sm:text-3xl md:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-amber-600 to-rose-600 bg-clip-text text-transparent break-words min-w-0 max-w-full">
                 📚 {childName}'s Reading Journey
               </h1>
               <Heart className="h-6 w-6 sm:h-8 sm:w-8 md:h-10 md:w-10 text-rose-500 flex-shrink-0" />
