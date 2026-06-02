@@ -50,6 +50,14 @@ export default function ParentDashboard() {
   const [childName, setChildName] = useState<string>("Your child");
 
   const loadData = useCallback(async () => {
+    // Sync cross-device progress before reading localStorage
+    try {
+      const { syncProgressFromDatabase } = await import('@/lib/syncProgress');
+      await syncProgressFromDatabase();
+    } catch (syncError) {
+      console.error('Failed to sync progress:', syncError);
+    }
+
     setCharacter(loadCharacter());
     setAchievements(loadAchievements());
     const stories = await loadCompletedStoriesFromDatabase();
