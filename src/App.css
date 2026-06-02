@@ -9,8 +9,9 @@
 .native-app,
 .native-app body,
 .native-app #root {
-  background-color: hsl(250, 50%, 12%);
+  background-color: hsl(250, 50%, 12%) !important;
 }
+
 
 html, body {
   margin: 0;
