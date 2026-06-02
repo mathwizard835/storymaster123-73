@@ -83,6 +83,10 @@ export const syncProgressFromDatabase = async (): Promise<{
       abilitiesUsed: 0
     };
 
+    // Reset character in localStorage so gainExperience() replays from a
+    // clean baseline instead of stacking XP on top of the previous sync.
+    saveCharacter({ ...DEFAULT_CHARACTER });
+
     // Process detailed stories to rebuild progress accurately
     for (const story of completedStories) {
       const profile = story.profile as unknown as Profile;

@@ -49,15 +49,7 @@ export default function ParentDashboard() {
   const [readingStats, setReadingStats] = useState<ReadingStats | null>(null);
   const [childName, setChildName] = useState<string>("Your child");
 
-  const loadData = useCallback(async () => {
-    // Sync cross-device progress before reading localStorage
-    try {
-      const { syncProgressFromDatabase } = await import('@/lib/syncProgress');
-      await syncProgressFromDatabase();
-    } catch (syncError) {
-      console.error('Failed to sync progress:', syncError);
-    }
-
+  const refreshLocal = useCallback(async () => {
     setCharacter(loadCharacter());
     setAchievements(loadAchievements());
     const stories = await loadCompletedStoriesFromDatabase();
@@ -67,22 +59,32 @@ export default function ParentDashboard() {
     setStreakStats(stats);
     setReadingStats(reading);
 
-    // Get child name from most recent story profile
     if (stories.length > 0 && stories[0].profile?.name) {
       setChildName(stories[0].profile.name);
     }
   }, []);
 
   useEffect(() => {
-    loadData();
-    // Ask for an App Store review the first time a parent opens this dashboard.
+    // One-time sync from database on mount only. Subsequent refreshes just
+    // re-read local state — otherwise sync writes → emits progress event →
+    // useProgressSync fires → re-sync → XP grows on every focus/visibility.
+    (async () => {
+      try {
+        const { syncProgressFromDatabase } = await import('@/lib/syncProgress');
+        await syncProgressFromDatabase();
+      } catch (syncError) {
+        console.error('Failed to sync progress:', syncError);
+      }
+      await refreshLocal();
+    })();
+
     import("@/lib/appReview").then(({ requestAppReview }) =>
       requestAppReview("first_parent_dashboard_open")
     );
-  }, [loadData]);
+  }, [refreshLocal]);
 
-  // Real-time refresh on progress events / focus / visibility
-  useProgressSync(loadData);
+  // Real-time refresh on progress events / focus / visibility (no re-sync)
+  useProgressSync(refreshLocal);
 
   const getAttributeIcon = (attr: string) => {
     switch (attr) {
@@ -221,10 +223,10 @@ export default function ParentDashboard() {
             </div>
           )}
 
-          <div className="text-center space-y-3">
-            <div className="flex items-center justify-center gap-2 sm:gap-3 mb-2 flex-wrap">
+          <div className="text-center space-y-3 min-w-0">
+            <div className="flex items-center justify-center gap-2 sm:gap-3 mb-2 flex-wrap min-w-0">
               <Heart className="h-6 w-6 sm:h-8 sm:w-8 md:h-10 md:w-10 text-rose-500 flex-shrink-0" />
-              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-amber-600 to-rose-600 bg-clip-text text-transparent">
+              <h1 className="text-xl sm:text-3xl md:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-amber-600 to-rose-600 bg-clip-text text-transparent break-words min-w-0 max-w-full">
                 📚 {childName}'s Reading Journey
               </h1>
               <Heart className="h-6 w-6 sm:h-8 sm:w-8 md:h-10 md:w-10 text-rose-500 flex-shrink-0" />
