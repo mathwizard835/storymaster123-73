@@ -269,23 +269,23 @@ const Dashboard = () => {
                 }}
                 className="w-full rounded-2xl bg-gradient-to-br from-primary to-primary/80 p-5 text-left active:scale-[0.97] transition-transform duration-100 shadow-lg shadow-primary/20"
               >
-                <div className="flex items-center justify-between">
-                  <div>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0 flex-1">
                     <p className="text-primary-foreground/70 text-sm font-medium mb-1">
                       {inProgressStories.length > 0 ? 'Continue your quest' : 'Ready for adventure?'}
                     </p>
-                    <h2 className="text-primary-foreground text-xl font-bold">
+                    <h2 className="text-primary-foreground text-xl font-bold truncate">
                       {inProgressStories.length > 0
                         ? (inProgressStories[0]?.title || 'Your Adventure')
                         : 'Start New Story'}
                     </h2>
                     {inProgressStories.length > 0 && (
-                      <p className="text-primary-foreground/60 text-xs mt-1">
+                      <p className="text-primary-foreground/60 text-xs mt-1 truncate">
                         Scene {(inProgressStories[0]?.current_scene_index || 0) + 1} of {inProgressStories[0]?.scene_count || '?'}
                       </p>
                     )}
                   </div>
-                  <div className="h-14 w-14 rounded-xl bg-primary-foreground/20 flex items-center justify-center">
+                  <div className="h-14 w-14 rounded-xl bg-primary-foreground/20 flex items-center justify-center flex-shrink-0">
                     <Play className="h-7 w-7 text-primary-foreground" />
                   </div>
                 </div>

@@ -992,7 +992,16 @@ const Mission = () => {
 
   if (!profile) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-[hsl(250,50%,12%)] via-[hsl(230,50%,10%)] to-[hsl(260,50%,8%)]" />
+      <div className="min-h-screen bg-gradient-to-b from-[hsl(250,50%,12%)] via-[hsl(230,50%,10%)] to-[hsl(260,50%,8%)] flex items-center justify-center p-4">
+        <div className="text-center space-y-4 max-w-md">
+          <div className="w-16 h-16 border-4 border-white/20 border-t-white/60 rounded-full animate-spin mx-auto" />
+          <h2 className="text-xl font-bold text-white">Loading your hero…</h2>
+          <p className="text-white/60 text-sm">Setting up your story profile.</p>
+          <button onClick={() => navigate('/profile?new=true')} className="bg-white/10 hover:bg-white/20 text-white px-5 py-2.5 rounded-lg font-semibold transition-colors">
+            Create a profile
+          </button>
+        </div>
+      </div>
     );
   }
 
@@ -1049,7 +1058,20 @@ const Mission = () => {
     );
   }
 
-  if (!scene) return null;
+  if (!scene) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-[hsl(250,50%,12%)] via-[hsl(230,50%,10%)] to-[hsl(260,50%,8%)] flex items-center justify-center p-4">
+        <div className="bg-white/10 backdrop-blur-md rounded-lg p-8 max-w-md text-center space-y-4">
+          <RefreshCw className="h-12 w-12 text-white/70 mx-auto" />
+          <h2 className="text-xl font-bold text-white">No scene available</h2>
+          <p className="text-white/60 text-sm">We couldn't load this scene. Head back and try again.</p>
+          <button onClick={() => navigate('/dashboard')} className="bg-white/10 hover:bg-white/20 text-white px-6 py-3 rounded-lg font-semibold transition-colors w-full">
+            Return to Dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }
 
 
   return (

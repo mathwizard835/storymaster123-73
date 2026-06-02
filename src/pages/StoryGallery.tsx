@@ -125,7 +125,7 @@ const StoryGallery = () => {
         canonical="/gallery"
       />
       
-      <main ref={mainRef} className="min-h-screen bg-background">
+      <main ref={mainRef} className="min-h-screen bg-background overflow-x-hidden">
         {/* Native iOS-style header */}
         {isPhone && isNative && (
           <NativeNavigationHeader
