@@ -247,42 +247,42 @@ export default function ParentDashboard() {
                 <CardDescription>Real measurable growth you can celebrate!</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="text-center p-4 rounded-lg bg-card border">
-                    <Clock className="w-8 h-8 mx-auto mb-2 text-blue-500" />
-                    <div className="text-3xl font-bold">{readingStats.totalReadingTimeMinutes}</div>
-                    <div className="text-sm text-muted-foreground">Minutes Read</div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 min-w-0">
+                  <div className="text-center p-3 sm:p-4 rounded-lg bg-card border min-w-0">
+                    <Clock className="w-6 h-6 sm:w-8 sm:h-8 mx-auto mb-2 text-blue-500" />
+                    <div className="text-xl sm:text-3xl font-bold break-words">{readingStats.totalReadingTimeMinutes}</div>
+                    <div className="text-xs sm:text-sm text-muted-foreground">Minutes Read</div>
                   </div>
-                  <div className="text-center p-4 rounded-lg bg-card border">
-                    <Book className="w-8 h-8 mx-auto mb-2 text-green-500" />
-                    <div className="text-3xl font-bold">{readingStats.totalWordsRead.toLocaleString()}</div>
-                    <div className="text-sm text-muted-foreground">Words Read</div>
+                  <div className="text-center p-3 sm:p-4 rounded-lg bg-card border min-w-0">
+                    <Book className="w-6 h-6 sm:w-8 sm:h-8 mx-auto mb-2 text-green-500" />
+                    <div className="text-xl sm:text-3xl font-bold break-words">{readingStats.totalWordsRead.toLocaleString()}</div>
+                    <div className="text-xs sm:text-sm text-muted-foreground">Words Read</div>
                   </div>
-                  <div className="text-center p-4 rounded-lg bg-card border">
-                    <Flame className="w-8 h-8 mx-auto mb-2 text-orange-500" />
-                    <div className="text-3xl font-bold">{readingStats.currentStreak}</div>
-                    <div className="text-sm text-muted-foreground">Day Streak</div>
+                  <div className="text-center p-3 sm:p-4 rounded-lg bg-card border min-w-0">
+                    <Flame className="w-6 h-6 sm:w-8 sm:h-8 mx-auto mb-2 text-orange-500" />
+                    <div className="text-xl sm:text-3xl font-bold break-words">{readingStats.currentStreak}</div>
+                    <div className="text-xs sm:text-sm text-muted-foreground">Day Streak</div>
                   </div>
-                  <div className="text-center p-4 rounded-lg bg-card border">
-                    <Zap className="w-8 h-8 mx-auto mb-2 text-yellow-500" />
-                    <div className="text-3xl font-bold">{readingStats.averageReadingSpeed}</div>
-                    <div className="text-sm text-muted-foreground">Words/Min</div>
+                  <div className="text-center p-3 sm:p-4 rounded-lg bg-card border min-w-0">
+                    <Zap className="w-6 h-6 sm:w-8 sm:h-8 mx-auto mb-2 text-yellow-500" />
+                    <div className="text-xl sm:text-3xl font-bold break-words">{readingStats.averageReadingSpeed}</div>
+                    <div className="text-xs sm:text-sm text-muted-foreground">Words/Min</div>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <h3 className="font-semibold text-lg flex items-center gap-2">
+                  <h3 className="font-semibold text-base sm:text-lg flex items-center gap-2">
                     <TrendingUp className="w-5 h-5 text-primary" />
                     Recent Activity
                   </h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="p-3 rounded-lg bg-muted/50">
-                      <div className="text-sm text-muted-foreground">This Week</div>
-                      <div className="text-2xl font-bold">{readingStats.sessionsThisWeek} stories</div>
+                  <div className="grid grid-cols-2 gap-3 sm:gap-4 min-w-0">
+                    <div className="p-3 rounded-lg bg-muted/50 min-w-0">
+                      <div className="text-xs sm:text-sm text-muted-foreground">This Week</div>
+                      <div className="text-lg sm:text-2xl font-bold break-words">{readingStats.sessionsThisWeek} stories</div>
                     </div>
-                    <div className="p-3 rounded-lg bg-muted/50">
-                      <div className="text-sm text-muted-foreground">This Month</div>
-                      <div className="text-2xl font-bold">{readingStats.sessionsThisMonth} stories</div>
+                    <div className="p-3 rounded-lg bg-muted/50 min-w-0">
+                      <div className="text-xs sm:text-sm text-muted-foreground">This Month</div>
+                      <div className="text-lg sm:text-2xl font-bold break-words">{readingStats.sessionsThisMonth} stories</div>
                     </div>
                   </div>
                 </div>
