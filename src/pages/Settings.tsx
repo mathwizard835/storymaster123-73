@@ -144,7 +144,7 @@ export default function Settings() {
       ref={scrollRef}
       className={cn(
         "min-h-screen bg-background overflow-x-hidden overflow-y-auto",
-        isPhone && "pb-28"
+        isPhone && isNative && "pb-28"
       )}
     >
       <Seo title="Settings | StoryMaster Kids" description="Manage your StoryMaster Kids settings" />
@@ -217,7 +217,7 @@ export default function Settings() {
                           <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                         ) : null}
                       </button>
-                      {!isLast && <Separator className="ml-15" />}
+                      {!isLast && <Separator className="ml-14" />}
                     </div>
                   );
                 })}

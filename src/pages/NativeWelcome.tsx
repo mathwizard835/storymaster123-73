@@ -33,7 +33,7 @@ const NativeWelcome = () => {
       <div className="absolute bottom-1/4 right-0 w-[300px] h-[300px] rounded-full bg-[hsl(195,85%,55%)] opacity-[0.06] blur-[100px] pointer-events-none" />
 
       {/* Top spacer for safe area */}
-      <div className="flex-shrink-0 h-8" />
+      <div className="flex-shrink-0" style={{ height: 'max(env(safe-area-inset-top, 32px), 32px)' }} />
 
       {/* Hero content */}
       <motion.div

@@ -234,7 +234,7 @@ export default function Subscription() {
 
   return (
     <div 
-      className="min-h-screen bg-gradient-to-b from-primary via-purple-900 to-indigo-900 pb-24 md:pb-8 overflow-x-hidden"
+      className="min-h-screen bg-gradient-to-b from-purple-900 via-purple-900 to-indigo-900 pb-24 md:pb-8 overflow-x-hidden"
       style={{ paddingBottom: isNative ? Math.max(safeAreaInsets.bottom + 96, 96) : undefined }}
     >
       {/* Header */}
@@ -246,7 +246,7 @@ export default function Subscription() {
               Start Your Child's Adventure
             </div>
           ) : (
-            <Button variant="ghost" onClick={() => navigate(-1)} className="text-foreground hover:bg-primary/10">
+            <Button variant="ghost" onClick={() => navigate(-1)} className="text-white hover:bg-white/10">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back
             </Button>
@@ -394,7 +394,7 @@ export default function Subscription() {
               <span className="text-sm font-semibold">Limited Time Offer</span>
             </div>
 
-            <h1 className="text-5xl md:text-6xl font-bold text-white mb-4">
+            <h1 className="text-5xl md:text-6xl font-bold text-white mb-4 leading-tight break-words">
               Start Your Child's
               <span className="block bg-gradient-to-r from-yellow-300 via-pink-300 to-purple-300 bg-clip-text text-transparent">
                 Reading Adventure

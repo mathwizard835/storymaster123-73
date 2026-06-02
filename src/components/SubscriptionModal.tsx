@@ -71,7 +71,7 @@ export const SubscriptionModal = ({ open, onOpenChange, currentPlan }: Subscript
           {plans.map((plan) => (
             <Card 
               key={plan.id} 
-              className={`relative overflow-visible ${plan.name === 'premium' ? 'ring-4 ring-primary/60 border-primary shadow-2xl shadow-primary/30 scale-[1.02]' : ''} ${currentPlan?.id === plan.id ? 'bg-muted' : ''}`}
+              className={`relative overflow-visible ${plan.name === 'premium' ? 'ring-4 ring-primary/60 border-primary shadow-2xl shadow-primary/30 md:scale-[1.02]' : ''} ${currentPlan?.id === plan.id ? 'bg-muted' : ''}`}
             >
               {plan.name === 'premium' && (
                 <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground shadow-lg shadow-primary/40 animate-pulse">
@@ -169,8 +169,13 @@ export const SubscriptionModal = ({ open, onOpenChange, currentPlan }: Subscript
                   disabled={currentPlan?.id === plan.id}
                   onClick={() => handleUpgrade()}
                 >
-                  {currentPlan?.id === plan.id ? 'Current Plan' : 
-                   plan.price_monthly > 0 ? 'Start Adventure' : 'Current Plan'}
+                  {currentPlan?.id === plan.id
+                    ? 'Current Plan'
+                    : plan.price_monthly > 0
+                      ? 'Start Adventure'
+                      : !currentPlan
+                        ? 'Current (Free)'
+                        : 'Free Plan'}
                 </Button>
               </CardContent>
             </Card>
