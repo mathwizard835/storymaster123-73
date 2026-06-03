@@ -174,7 +174,7 @@ const LevelDemo = () => {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.4 }}
         >
-          Stories rewrite themselves to match your reader.
+          Tailored reading levels, controlled by parents.
         </motion.p>
       </AnimatePresence>
     </div>
