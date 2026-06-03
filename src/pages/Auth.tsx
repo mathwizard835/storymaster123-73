@@ -461,7 +461,6 @@ const Auth = () => {
     }
   };
 
-
   // Render signup step content
   const renderSignupContent = () => {
     if (signupStep === 'age-gate') {
