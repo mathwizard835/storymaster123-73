@@ -123,14 +123,14 @@ const writeCachedSub = (userId: string, active: boolean) => {
 };
 
 const RequireSubscription = ({ children }: { children: React.ReactNode }) => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [checking, setChecking] = useState(true);
   const [hasSub, setHasSub] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
 
-    const runCheck = async () => {
+    const runCheck = async (allowRetry = true) => {
       if (!user || !isNativePlatform()) {
         if (!cancelled) {
           setHasSub(true);
@@ -142,6 +142,16 @@ const RequireSubscription = ({ children }: { children: React.ReactNode }) => {
         const { getUserSubscription } = await import("@/lib/subscription");
         const { plan } = await getUserSubscription();
         const active = !!plan && plan.name?.toLowerCase() !== 'free';
+
+        // Cold-start race: first check after sign-in can return no rows
+        // before the session is fully propagated. Retry once silently
+        // before paywalling a potentially paying user.
+        if (!active && allowRetry) {
+          await new Promise(r => setTimeout(r, 800));
+          if (cancelled) return;
+          return runCheck(false);
+        }
+
         if (!cancelled) {
           setHasSub(active);
           setChecking(false);
@@ -161,7 +171,13 @@ const RequireSubscription = ({ children }: { children: React.ReactNode }) => {
       }
     };
 
-    // Initial check
+    // Wait for auth to settle before the first check so the RLS-protected
+    // user_subscriptions query has a valid session attached.
+    if (authLoading) {
+      setChecking(true);
+      return;
+    }
+
     setChecking(true);
     runCheck();
 
@@ -178,7 +194,7 @@ const RequireSubscription = ({ children }: { children: React.ReactNode }) => {
       window.removeEventListener('subscription-refreshed', onRefresh);
       document.removeEventListener('visibilitychange', onVisibility);
     };
-  }, [user?.id]);
+  }, [user?.id, authLoading]);
 
   if (checking) return <NativeLoadingScreen />;
   if (!hasSub) return <Navigate to="/subscription?required=true" replace />;
