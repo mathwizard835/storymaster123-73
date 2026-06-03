@@ -54,24 +54,79 @@ const ChoicesDemo = () => {
 };
 
 const NarrationDemo = () => {
-  const words = ['The', 'dragon', 'snored', 'a', 'tiny', 'puff', 'of', 'glitter.'];
+  const words = MYSTERY_NARRATION_TEXT.split(' ');
+  const [isLoading, setIsLoading] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const urlRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+      if (urlRef.current) {
+        URL.revokeObjectURL(urlRef.current);
+        urlRef.current = null;
+      }
+    };
+  }, []);
+
+  const handlePlay = async () => {
+    addHapticFeedback('light');
+    if (isPlaying && audioRef.current) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+      return;
+    }
+    if (isLoading) return;
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('text-to-speech', {
+        body: { text: MYSTERY_NARRATION_TEXT, voiceId: MYSTERY_VOICE_ID },
+      });
+      if (error) throw error;
+      if (!data?.audioContent) throw new Error('No audio returned');
+
+      const audio = new Audio(`data:audio/mpeg;base64,${data.audioContent}`);
+      audioRef.current = audio;
+      audio.onended = () => setIsPlaying(false);
+      audio.onpause = () => setIsPlaying(false);
+      await audio.play();
+      setIsPlaying(true);
+    } catch (err) {
+      console.error('Onboarding narration error:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="w-full max-w-[280px] rounded-2xl bg-white/[0.06] border border-white/10 p-4 backdrop-blur-sm">
       <div className="flex items-center gap-3 mb-3">
-        <motion.div
-          animate={{ scale: [1, 1.15, 1] }}
-          transition={{ duration: 1.2, repeat: Infinity }}
-          className="w-10 h-10 rounded-full bg-gradient-to-br from-[hsl(310,80%,60%)] to-[hsl(265,85%,55%)] flex items-center justify-center"
+        <motion.button
+          onClick={handlePlay}
+          aria-label={isPlaying ? 'Pause narration' : 'Play narration'}
+          animate={isPlaying ? { scale: [1, 1.15, 1] } : { scale: 1 }}
+          transition={isPlaying ? { duration: 1.2, repeat: Infinity } : { duration: 0.2 }}
+          className="w-10 h-10 rounded-full bg-gradient-to-br from-[hsl(310,80%,60%)] to-[hsl(265,85%,55%)] flex items-center justify-center active:scale-95"
         >
-          <Volume2 className="w-5 h-5 text-white" />
-        </motion.div>
+          {isLoading ? (
+            <Loader2 className="w-5 h-5 text-white animate-spin" />
+          ) : isPlaying ? (
+            <Volume2 className="w-5 h-5 text-white" />
+          ) : (
+            <Play className="w-5 h-5 text-white ml-0.5" fill="currentColor" />
+          )}
+        </motion.button>
         <div className="flex-1 flex items-end gap-0.5 h-6">
           {[...Array(14)].map((_, i) => (
             <motion.div
               key={i}
               className="flex-1 bg-gradient-to-t from-[hsl(310,80%,60%)] to-[hsl(195,85%,55%)] rounded-full"
-              animate={{ height: ['20%', '90%', '40%', '70%', '20%'] }}
-              transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.08 }}
+              animate={isPlaying ? { height: ['20%', '90%', '40%', '70%', '20%'] } : { height: '20%' }}
+              transition={isPlaying ? { duration: 1.2, repeat: Infinity, delay: i * 0.08 } : { duration: 0.3 }}
             />
           ))}
         </div>
@@ -81,8 +136,8 @@ const NarrationDemo = () => {
           <motion.span
             key={i}
             className="inline-block mr-1 text-white/40"
-            animate={{ color: ['hsl(0,0%,100%,0.4)', 'hsl(45,90%,65%)', 'hsl(0,0%,100%,0.4)'] }}
-            transition={{ duration: words.length * 0.4, repeat: Infinity, delay: i * 0.4, times: [0, 0.1, 1] }}
+            animate={isPlaying ? { color: ['hsl(0,0%,100%,0.4)', 'hsl(45,90%,65%)', 'hsl(0,0%,100%,0.4)'] } : { color: 'hsl(0,0%,100%,0.4)' }}
+            transition={isPlaying ? { duration: words.length * 0.4, repeat: Infinity, delay: i * 0.4, times: [0, 0.1, 1] } : { duration: 0.2 }}
           >
             {w}
           </motion.span>
