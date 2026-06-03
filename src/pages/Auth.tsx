@@ -407,7 +407,28 @@ const Auth = () => {
           return;
         }
 
-        navigate('/dashboard');
+        // Native: decide destination based on subscription so paying users
+        // don't flash the paywall via RequireSubscription's first check.
+        try {
+          const { getUserSubscription } = await import('@/lib/subscription');
+          const { plan } = await getUserSubscription();
+          const active = !!plan && plan.name?.toLowerCase() !== 'free';
+          if (active && data.user) {
+            try {
+              localStorage.setItem(
+                'smq.sub.known.' + data.user.id,
+                JSON.stringify({ active: true, at: Date.now() }),
+              );
+            } catch { /* ignore */ }
+            navigate('/dashboard');
+          } else {
+            navigate('/subscription?required=true');
+          }
+        } catch (subErr) {
+          // Fail-open to dashboard — RequireSubscription will re-check.
+          console.warn('[Auth] post-signin sub check failed', subErr);
+          navigate('/dashboard');
+        }
       }
     } catch (err: any) {
       setError('An unexpected error occurred');
