@@ -102,8 +102,8 @@ const NarrationDemo = () => {
 
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('text-to-speech', {
-        body: { text: MYSTERY_NARRATION_TEXT, voiceId: MYSTERY_VOICE_ID },
+      const { data, error } = await supabase.functions.invoke('onboarding-narration', {
+        body: {},
       });
       if (error) throw error;
       if (!data?.audioContent) throw new Error('No audio returned');
