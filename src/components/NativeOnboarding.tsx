@@ -261,7 +261,7 @@ const slides: OnboardingSlide[] = [
     icon: Gauge,
     eyebrow: 'GROWS WITH YOUR READER',
     title: 'Always the right challenge',
-    description: 'Reading levels from 200L to 1200L. The story rewrites itself so your child is never stuck or bored.',
+    description: "Easily adjust story difficulty to match your child's exact reading level — customizable reading designed to grow with them.",
     color: 'from-[hsl(195,85%,50%)] to-[hsl(220,80%,55%)]',
     demo: <LevelDemo />,
   },
