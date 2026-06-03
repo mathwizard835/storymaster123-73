@@ -58,7 +58,7 @@ const NarrationDemo = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const urlRef = useRef<string | null>(null);
+  const cachedSrcRef = useRef<string | null>(null);
 
   useEffect(() => {
     return () => {
@@ -66,12 +66,20 @@ const NarrationDemo = () => {
         audioRef.current.pause();
         audioRef.current = null;
       }
-      if (urlRef.current) {
-        URL.revokeObjectURL(urlRef.current);
-        urlRef.current = null;
-      }
     };
   }, []);
+
+  const playFromSrc = async (src: string) => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+    }
+    const audio = new Audio(src);
+    audioRef.current = audio;
+    audio.onended = () => setIsPlaying(false);
+    audio.onpause = () => setIsPlaying(false);
+    await audio.play();
+    setIsPlaying(true);
+  };
 
   const handlePlay = async () => {
     addHapticFeedback('light');
@@ -81,6 +89,17 @@ const NarrationDemo = () => {
       return;
     }
     if (isLoading) return;
+
+    // Replay from cache — no extra ElevenLabs cost
+    if (cachedSrcRef.current) {
+      try {
+        await playFromSrc(cachedSrcRef.current);
+      } catch (err) {
+        console.error('Onboarding narration replay error:', err);
+      }
+      return;
+    }
+
     setIsLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('text-to-speech', {
@@ -89,12 +108,9 @@ const NarrationDemo = () => {
       if (error) throw error;
       if (!data?.audioContent) throw new Error('No audio returned');
 
-      const audio = new Audio(`data:audio/mpeg;base64,${data.audioContent}`);
-      audioRef.current = audio;
-      audio.onended = () => setIsPlaying(false);
-      audio.onpause = () => setIsPlaying(false);
-      await audio.play();
-      setIsPlaying(true);
+      const src = `data:audio/mpeg;base64,${data.audioContent}`;
+      cachedSrcRef.current = src;
+      await playFromSrc(src);
     } catch (err) {
       console.error('Onboarding narration error:', err);
     } finally {
