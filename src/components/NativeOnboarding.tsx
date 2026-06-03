@@ -1,11 +1,17 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BookOpen, Volume2, Gauge, ShieldCheck, Trophy, ChevronRight, Sparkles } from 'lucide-react';
+import { BookOpen, Volume2, Gauge, ShieldCheck, Trophy, ChevronRight, Sparkles, Loader2, Play } from 'lucide-react';
 import { addHapticFeedback } from '@/lib/mobileFeatures';
 import { Preferences } from '@capacitor/preferences';
 import { Capacitor } from '@capacitor/core';
+import { supabase } from '@/integrations/supabase/client';
 
 const ONBOARDING_KEY = 'hasSeenOnboarding';
+
+// Mystery mode voice ID (matches in-game Read-to-Me for Mystery mode)
+const MYSTERY_VOICE_ID = '1UllZlmEKI6fNlrEtCx7';
+const MYSTERY_NARRATION_TEXT =
+  'The clock struck midnight as the detective slipped through the shadowed hall, every footstep a whispered clue.';
 
 interface OnboardingSlide {
   icon: React.ComponentType<any>;
