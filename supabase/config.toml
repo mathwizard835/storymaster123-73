@@ -23,3 +23,5 @@ project_id = "lwxaqxxuednuwflojlfc"
     verify_jwt = false
   [functions.analytics-rollup]
     verify_jwt = false
+  [functions.onboarding-narration]
+    verify_jwt = false
