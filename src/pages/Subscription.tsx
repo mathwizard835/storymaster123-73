@@ -750,7 +750,7 @@ export default function Subscription() {
             </Button>
             <button
               type="button"
-              onClick={confirmCancelSubscription}
+              onClick={handleContinueToCancel}
               className="text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground transition-colors"
             >
               Continue to Cancel
