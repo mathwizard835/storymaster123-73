@@ -32,6 +32,7 @@ export default function Subscription() {
   const [currentPlan, setCurrentPlan] = useState<SubscriptionPlan | null>(null);
   const [parentalGateOpen, setParentalGateOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState<null | (() => void | Promise<void>)>(null);
+  const [retentionOpen, setRetentionOpen] = useState(false);
   const limitReached = searchParams.get('limitReached') === 'true';
   const required = searchParams.get('required') === 'true';
   const cancelled = searchParams.get('cancelled') === 'true';
