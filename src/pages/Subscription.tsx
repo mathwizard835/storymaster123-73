@@ -14,6 +14,7 @@ import {
 } from "@/lib/nativePayments";
 import { purchasePackage, restorePurchases, getOfferings, activateSubscriptionAfterPurchase, type IAPPackage } from "@/lib/iapService";
 import ParentalGateDialog from "@/components/ParentalGateDialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 import { supabase } from "@/integrations/supabase/client";
 import { getDeviceId } from "@/lib/story";
@@ -31,6 +32,7 @@ export default function Subscription() {
   const [currentPlan, setCurrentPlan] = useState<SubscriptionPlan | null>(null);
   const [parentalGateOpen, setParentalGateOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState<null | (() => void | Promise<void>)>(null);
+  const [retentionOpen, setRetentionOpen] = useState(false);
   const limitReached = searchParams.get('limitReached') === 'true';
   const required = searchParams.get('required') === 'true';
   const cancelled = searchParams.get('cancelled') === 'true';
@@ -124,12 +126,12 @@ export default function Subscription() {
       return;
     }
 
-    // Web (Stripe): call Stripe via edge function to set cancel_at_period_end=true.
-    // This stops future billing AND keeps the user's access until their paid period ends.
-    if (!confirm("Are you sure you want to cancel your subscription? You'll retain access until the end of your billing period.")) {
-      return;
-    }
+    // Web (Stripe): show the retention modal instead of a native confirm dialog.
+    setRetentionOpen(true);
+  };
 
+  const confirmCancelSubscription = async () => {
+    setRetentionOpen(false);
     setLoading(true);
     try {
       const result = await cancelSubscription();
@@ -718,6 +720,37 @@ export default function Subscription() {
         title="Grown-Up Approval Required"
         description="Please ask a parent or guardian to approve this purchase by typing the number below in words."
       />
+
+      <Dialog open={retentionOpen} onOpenChange={setRetentionOpen}>
+        <DialogContent className="sm:max-w-md text-center">
+          <DialogHeader>
+            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+              <BookOpen className="h-7 w-7 text-primary" />
+            </div>
+            <DialogTitle className="text-2xl text-center">Before you go...</DialogTitle>
+            <DialogDescription className="text-base text-center pt-2 text-muted-foreground leading-relaxed">
+              A single physical book costs around $10. For just $4.99/month, you are giving your child an infinite, personalized library built just for them.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex flex-col items-center gap-3 pt-2">
+            <Button
+              size="lg"
+              className="w-full font-semibold"
+              onClick={() => setRetentionOpen(false)}
+            >
+              Keep My Plan
+            </Button>
+            <button
+              type="button"
+              onClick={confirmCancelSubscription}
+              className="text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground transition-colors"
+            >
+              Continue to Cancel
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
