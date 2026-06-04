@@ -1,44 +1,51 @@
-## Goal
-
-When a user with an active subscription signs in, send them to `/dashboard` reliably instead of bouncing them to `/subscription?required=true`.
+# Fix Parent Dashboard reading session sync
 
 ## Root cause
 
-`RequireSubscription` (in `src/App.tsx`) runs `getUserSubscription()` the instant `/dashboard` mounts after sign-in. On native that check often races the auth session being attached, so the RLS-protected `user_subscriptions` query returns nothing, the local positive-entitlement cache is empty on a fresh login, and the user is redirected to the paywall — even though they're paid.
+`src/lib/readingAnalytics.ts` writes to and reads from a `public.reading_sessions` table — but that table does **not exist** in the database (verified via information_schema). Every `trackReadingSession` / `trackSceneReading` call silently errors out. The Parent Dashboard never sees real per-scene reading data; it only renders the rough fallback that estimates 150 words / 45 sec per scene from `user_stories`, which is the same number on every device and never updates mid-story.
 
-## Changes
+## Fix (single migration, no code changes)
 
-### 1. `src/pages/Auth.tsx` — `handleSignIn`
+Create `public.reading_sessions` with the exact shape the existing client code already inserts/selects, plus proper RLS and grants so cross-device sync works for authenticated users.
 
-After `signInWithPassword` succeeds (native path, just before `navigate('/dashboard')`):
+```sql
+CREATE TABLE public.reading_sessions (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  story_id text NOT NULL,
+  story_title text,
+  words_read integer NOT NULL DEFAULT 0,
+  reading_time_seconds integer NOT NULL DEFAULT 0,
+  completed_at timestamptz NOT NULL DEFAULT now(),
+  created_at timestamptz NOT NULL DEFAULT now()
+);
 
-- `await getUserSubscription()`.
-- If `plan` is present and `plan.name.toLowerCase() !== 'free'`:
-  - Write the positive entitlement cache key `smq.sub.known.<user.id>` so `RequireSubscription` short-circuits.
-  - `navigate('/dashboard')`.
-- Else: `navigate('/subscription?required=true')` (deterministic, same destination they get today).
-- Wrap in try/catch; on error, default to `/dashboard` so transient failures don't paywall a paying user.
+CREATE INDEX reading_sessions_user_completed_idx
+  ON public.reading_sessions (user_id, completed_at DESC);
 
-No change to the web→native handoff branch.
+GRANT SELECT, INSERT ON public.reading_sessions TO authenticated;
+GRANT ALL ON public.reading_sessions TO service_role;
 
-### 2. `src/App.tsx` — `RequireSubscription`
+ALTER TABLE public.reading_sessions ENABLE ROW LEVEL SECURITY;
 
-- Pull `loading` from `useAuth()` and gate the first check on `!loading && user` so it doesn't run before the session is wired.
-- If the first check returns `active === false`, do exactly one silent retry after ~800ms before flipping `hasSub` to false. This covers the cold-start race without weakening the paywall.
-- Keep the existing positive-cache fail-open path on thrown errors.
+CREATE POLICY "Users can view their own reading sessions"
+  ON public.reading_sessions FOR SELECT TO authenticated
+  USING (user_id = auth.uid());
 
-### 3. No other changes
+CREATE POLICY "Users can insert their own reading sessions"
+  ON public.reading_sessions FOR INSERT TO authenticated
+  WITH CHECK (user_id = auth.uid());
+```
 
-- No DB migration, no edge function, no new routes, no UI.
-- Free-user behavior is unchanged: still routed to `/subscription?required=true`.
+No UPDATE/DELETE policies — sessions are append-only.
 
-## Files - ONLY EDIT THESE FILES
+## Why this is enough
 
-- `src/pages/Auth.tsx`
-- `src/App.tsx`
+- `trackSceneReading` already fires on every scene save in `Mission.tsx` (line 925) and `trackReadingSession` on completion (line 1481). Once the table exists, inserts will succeed.
+- `getReadingStats` already queries by `user_id` and falls back to estimating from `user_stories` when no rows exist — so old completed stories still show data while new sessions accumulate accurate per-scene minutes/words.
+- ParentDashboard already calls `syncProgressFromDatabase()` on mount and re-reads via `useProgressSync`, so cross-device refresh works as soon as the table is reachable.
+- `readingAnalytics.ts` already casts the client to `any` to bypass missing generated types, so no client code edits are needed; the regenerated `types.ts` will pick up the table automatically.
 
-## Verification
+## Out of scope
 
-- Sign in as a known premium user on native → lands on `/dashboard`, no paywall flash.
-- Sign in as a free user → lands on `/subscription?required=true` as before.
-- Sign in on web → unchanged (handoff URL path is not touched).
+No changes to `Mission.tsx`, `ParentDashboard.tsx`, `readingAnalytics.ts`, `syncProgress.ts`, or any UI. Single migration only.
