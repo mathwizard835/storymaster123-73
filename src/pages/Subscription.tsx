@@ -126,12 +126,12 @@ export default function Subscription() {
       return;
     }
 
-    // Web (Stripe): call Stripe via edge function to set cancel_at_period_end=true.
-    // This stops future billing AND keeps the user's access until their paid period ends.
-    if (!confirm("Are you sure you want to cancel your subscription? You'll retain access until the end of your billing period.")) {
-      return;
-    }
+    // Web (Stripe): show the retention modal instead of a native confirm dialog.
+    setRetentionOpen(true);
+  };
 
+  const confirmCancelSubscription = async () => {
+    setRetentionOpen(false);
     setLoading(true);
     try {
       const result = await cancelSubscription();
