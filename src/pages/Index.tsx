@@ -172,7 +172,7 @@ const Index = () => {
           <div className="mt-8 inline-flex items-center gap-3 bg-primary/10 border border-primary/20 rounded-full px-6 py-3">
             <span className="text-2xl">✨</span>
             <p className="text-base md:text-lg font-semibold text-foreground">
-              Created by a 13-year-old who believes kids deserve better screen time
+              Created by a 14-year-old who believes kids deserve better screen time
             </p>
           </div>
 
@@ -193,7 +193,7 @@ const Index = () => {
               <span className="text-primary font-semibold">because they want to see what happens next.</span>
             </p>
             <p className="mt-4 text-sm text-muted-foreground/70 italic">
-              Built by a 13-year-old for kids who deserve something better than mindless scrolling
+              Built by a 14-year-old for kids who deserve something better than mindless scrolling
             </p>
           </div>
 
@@ -549,7 +549,7 @@ const Index = () => {
 
           <footer className="mt-12 pt-6 border-t border-border/50">
             <p className="text-sm text-muted-foreground mb-4 italic">
-              Built with ❤️ by a 13-year-old who's turning screen time into reading time
+              Built with ❤️ by a 14-year-old who's turning screen time into reading time
             </p>
             <div className="flex flex-wrap justify-center gap-6 text-sm text-muted-foreground">
               <a href="/privacy" className="hover:text-foreground transition-colors">

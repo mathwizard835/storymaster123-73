@@ -159,7 +159,7 @@ const Support = () => {
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground text-sm">
-                  StoryMaster Kids was created by a 13-year-old who wanted to build something that makes reading as exciting as gaming. 
+                  StoryMaster Kids was created by a 14-year-old who wanted to build something that makes reading as exciting as gaming. 
                   Because kids deserve screen time that actually helps them grow.
                 </p>
               </CardContent>
