@@ -51,21 +51,6 @@ export const SubscriptionModal = ({ open, onOpenChange, currentPlan }: Subscript
           </DialogDescription>
         </DialogHeader>
 
-        {/* Value Comparison */}
-        <div className="bg-muted/50 rounded-lg p-4 mb-4">
-          <p className="text-sm font-semibold mb-2">📊 Compare the Value:</p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs">
-            <div>
-              <span className="font-medium">Traditional Books:</span> $10-15 each, often unread
-            </div>
-            <div>
-              <span className="font-medium">Other Apps:</span> $9.99+ without personalization
-            </div>
-            <div>
-              <span className="font-medium text-primary">StoryMaster Kids:</span> $4.99/mo = unlimited stories
-            </div>
-          </div>
-        </div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
           {plans.map((plan) => (
