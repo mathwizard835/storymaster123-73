@@ -26,6 +26,7 @@ export default function Subscription() {
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
+  const [initialLoad, setInitialLoad] = useState(true);
   const [currentPlan, setCurrentPlan] = useState<SubscriptionPlan | null>(null);
   const [parentalGateOpen, setParentalGateOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState<null | (() => void | Promise<void>)>(null);
@@ -33,7 +34,8 @@ export default function Subscription() {
   const required = searchParams.get('required') === 'true';
   const cancelled = searchParams.get('cancelled') === 'true';
   // Story-pack purchases are explicitly forbidden in this product — no related params.
-  const { isNative, safeAreaInsets } = useDevice();
+  const { safeAreaInsets } = useDevice();
+  const isNative = isNativePlatform();
 
   // Open parental gate, then run the action on success
   const requireParentalGate = (action: () => void | Promise<void>) => {
@@ -66,8 +68,18 @@ export default function Subscription() {
   }, [cancelled, toast]);
 
   const loadCurrentPlan = async () => {
-    const { plan } = await getUserSubscription();
-    setCurrentPlan(plan);
+    try {
+      const { plan } = await getUserSubscription();
+      setCurrentPlan(plan);
+      // If a paying user lands on the required-paywall, bounce them straight
+      // to the dashboard — they should never be asked to pay again.
+      if (plan && plan.name?.toLowerCase() !== 'free' && required && isNativePlatform()) {
+        navigate('/dashboard', { replace: true });
+        return;
+      }
+    } finally {
+      setInitialLoad(false);
+    }
   };
 
   const basePlan = {
