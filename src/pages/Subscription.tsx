@@ -245,6 +245,9 @@ export default function Subscription() {
     }
   };
 
+  // Avoid flashing the upsell to paying users while the plan is loading.
+  if (initialLoad) return <NativeLoadingScreen />;
+
   return (
     <div 
       className="min-h-screen bg-gradient-to-b from-purple-900 via-purple-900 to-indigo-900 pb-24 md:pb-8 overflow-x-hidden"
@@ -272,7 +275,7 @@ export default function Subscription() {
 
       <div className="max-w-6xl mx-auto px-4 py-12">
         {/* Story Limit Reached Alert - Free users */}
-        {limitReached && !currentPlan && (
+        {limitReached && !currentPlan && !required && (
           <Card className="max-w-2xl mx-auto mb-8 border-2 border-amber-500/50 bg-gradient-to-br from-amber-900/20 to-orange-900/20 backdrop-blur-md">
             <CardHeader className="text-center pb-4">
               <div className="flex justify-center mb-4">
@@ -555,6 +558,9 @@ export default function Subscription() {
                             description: "Your child's reading journey begins now!",
                           });
                           await loadCurrentPlan();
+                          setLoading(false);
+                          navigate('/dashboard', { replace: true });
+                          return;
                         } else if (result.error !== 'cancelled') {
                           toast({
                             title: "Purchase Failed",
@@ -588,6 +594,9 @@ export default function Subscription() {
                             description: "Your child's stories are ready to continue.",
                           });
                           await loadCurrentPlan();
+                          setLoading(false);
+                          navigate('/dashboard', { replace: true });
+                          return;
                         } else {
                           toast({
                             title: "No Passes Found",
