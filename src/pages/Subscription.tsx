@@ -20,12 +20,14 @@ import { getDeviceId } from "@/lib/story";
 
 import { useDevice } from "@/contexts/DeviceContext";
 import { trackFunnelStep } from "@/lib/analytics";
+import { NativeLoadingScreen } from "@/components/NativeLoadingScreen";
 
 export default function Subscription() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
+  const [initialLoad, setInitialLoad] = useState(true);
   const [currentPlan, setCurrentPlan] = useState<SubscriptionPlan | null>(null);
   const [parentalGateOpen, setParentalGateOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState<null | (() => void | Promise<void>)>(null);
@@ -33,7 +35,8 @@ export default function Subscription() {
   const required = searchParams.get('required') === 'true';
   const cancelled = searchParams.get('cancelled') === 'true';
   // Story-pack purchases are explicitly forbidden in this product — no related params.
-  const { isNative, safeAreaInsets } = useDevice();
+  const { safeAreaInsets } = useDevice();
+  const isNative = isNativePlatform();
 
   // Open parental gate, then run the action on success
   const requireParentalGate = (action: () => void | Promise<void>) => {
@@ -66,8 +69,18 @@ export default function Subscription() {
   }, [cancelled, toast]);
 
   const loadCurrentPlan = async () => {
-    const { plan } = await getUserSubscription();
-    setCurrentPlan(plan);
+    try {
+      const { plan } = await getUserSubscription();
+      setCurrentPlan(plan);
+      // If a paying user lands on the required-paywall, bounce them straight
+      // to the dashboard — they should never be asked to pay again.
+      if (plan && plan.name?.toLowerCase() !== 'free' && required && isNativePlatform()) {
+        navigate('/dashboard', { replace: true });
+        return;
+      }
+    } finally {
+      setInitialLoad(false);
+    }
   };
 
   const basePlan = {
@@ -232,6 +245,9 @@ export default function Subscription() {
     }
   };
 
+  // Avoid flashing the upsell to paying users while the plan is loading.
+  if (initialLoad) return <NativeLoadingScreen />;
+
   return (
     <div 
       className="min-h-screen bg-gradient-to-b from-purple-900 via-purple-900 to-indigo-900 pb-24 md:pb-8 overflow-x-hidden"
@@ -259,7 +275,7 @@ export default function Subscription() {
 
       <div className="max-w-6xl mx-auto px-4 py-12">
         {/* Story Limit Reached Alert - Free users */}
-        {limitReached && !currentPlan && (
+        {limitReached && !currentPlan && !required && (
           <Card className="max-w-2xl mx-auto mb-8 border-2 border-amber-500/50 bg-gradient-to-br from-amber-900/20 to-orange-900/20 backdrop-blur-md">
             <CardHeader className="text-center pb-4">
               <div className="flex justify-center mb-4">
@@ -542,6 +558,9 @@ export default function Subscription() {
                             description: "Your child's reading journey begins now!",
                           });
                           await loadCurrentPlan();
+                          setLoading(false);
+                          navigate('/dashboard', { replace: true });
+                          return;
                         } else if (result.error !== 'cancelled') {
                           toast({
                             title: "Purchase Failed",
@@ -575,6 +594,9 @@ export default function Subscription() {
                             description: "Your child's stories are ready to continue.",
                           });
                           await loadCurrentPlan();
+                          setLoading(false);
+                          navigate('/dashboard', { replace: true });
+                          return;
                         } else {
                           toast({
                             title: "No Passes Found",
