@@ -29,7 +29,7 @@ export function MobileBottomNav() {
   if (!isPhone || !isNative) return null;
 
   // Don't show on certain pages
-  const hiddenPaths = ['/mission', '/profile', '/auth', '/reset-password'];
+  const hiddenPaths = ['/mission', '/profile', '/auth', '/reset-password', '/subscription'];
   if (hiddenPaths.some(path => location.pathname.startsWith(path))) return null;
 
   // Don't show on native welcome screen (root when not logged in)
