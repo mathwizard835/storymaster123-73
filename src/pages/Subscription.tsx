@@ -720,6 +720,37 @@ export default function Subscription() {
         title="Grown-Up Approval Required"
         description="Please ask a parent or guardian to approve this purchase by typing the number below in words."
       />
+
+      <Dialog open={retentionOpen} onOpenChange={setRetentionOpen}>
+        <DialogContent className="sm:max-w-md text-center">
+          <DialogHeader>
+            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+              <BookOpen className="h-7 w-7 text-primary" />
+            </div>
+            <DialogTitle className="text-2xl text-center">Before you go...</DialogTitle>
+            <DialogDescription className="text-base text-center pt-2 text-muted-foreground leading-relaxed">
+              A single physical book costs around $10. For just $4.99/month, you are giving your child an infinite, personalized library built just for them.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex flex-col items-center gap-3 pt-2">
+            <Button
+              size="lg"
+              className="w-full font-semibold"
+              onClick={() => setRetentionOpen(false)}
+            >
+              Keep My Plan
+            </Button>
+            <button
+              type="button"
+              onClick={confirmCancelSubscription}
+              className="text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground transition-colors"
+            >
+              Continue to Cancel
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
