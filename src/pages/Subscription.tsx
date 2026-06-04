@@ -99,35 +99,42 @@ export default function Subscription() {
   };
 
   const handleCancelSubscription = async () => {
-    // iOS (Apple IAP): Apple requires subscriptions be cancelled via the App Store.
-    // We cannot cancel programmatically, and flipping our DB row would lock the user
-    // out immediately even though Apple keeps the subscription active until period end.
-    if (isIOSPlatform()) {
-      if (!confirm("To cancel your Adventure Pass, you'll be taken to your App Store subscription settings. Your access will remain active until the end of your current billing period.")) {
-        return;
-      }
-      try {
-        const { Browser } = await import("@capacitor/browser");
-        await Browser.open({
-          url: "https://apps.apple.com/account/subscriptions",
-          presentationStyle: "popover",
-        });
-        toast({
-          title: "Manage in App Store",
-          description: "Cancel your Adventure Pass from your Apple subscriptions. You'll keep access until the end of your billing period.",
-        });
-      } catch (error) {
-        toast({
-          title: "Couldn't open App Store",
-          description: "Open Settings → Apple ID → Subscriptions to manage your Adventure Pass.",
-          variant: "destructive",
-        });
-      }
-      return;
-    }
-
-    // Web (Stripe): show the retention modal instead of a native confirm dialog.
+    // Both iOS (Apple IAP) and Web (Stripe) show the retention modal first.
+    // The modal's "Continue to Cancel" branches by platform at click time.
     setRetentionOpen(true);
+  };
+
+  const confirmCancelSubscriptionIOS = async () => {
+    // Close the modal BEFORE launching Capacitor Browser. If the OS suspends
+    // the app while the modal is still open, the backdrop can freeze on return.
+    setRetentionOpen(false);
+    try {
+      const { Browser } = await import("@capacitor/browser");
+      await Browser.open({
+        url: "https://apps.apple.com/account/subscriptions",
+        presentationStyle: "popover",
+      });
+      toast({
+        title: "Manage in App Store",
+        description: "Cancel your Adventure Pass from your Apple subscriptions. You'll keep access until the end of your billing period.",
+      });
+    } catch (error) {
+      toast({
+        title: "Couldn't open App Store",
+        description: "Open Settings → Apple ID → Subscriptions to manage your Adventure Pass.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleContinueToCancel = () => {
+    // Branch synchronously from the platform helper at click time — no
+    // intermediate React state that could race with the modal closing.
+    if (isIOSPlatform()) {
+      void confirmCancelSubscriptionIOS();
+    } else {
+      void confirmCancelSubscription();
+    }
   };
 
   const confirmCancelSubscription = async () => {
@@ -743,7 +750,7 @@ export default function Subscription() {
             </Button>
             <button
               type="button"
-              onClick={confirmCancelSubscription}
+              onClick={handleContinueToCancel}
               className="text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground transition-colors"
             >
               Continue to Cancel

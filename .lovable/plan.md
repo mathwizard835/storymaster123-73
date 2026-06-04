@@ -1,35 +1,32 @@
 ## Goal
 
-Replace the native `confirm()` cancel dialog on the Web (Stripe) cancellation path with a designed retention modal. Keep the iOS App Store flow unchanged (Apple requires its own confirmation/redirect).
+Apply the existing retention modal to the iOS (Apple IAP) cancellation flow as well, so both platforms share the exact same "Before you go..." retention experience before any cancellation action is taken.
 
 ## Changes
 
 **File: `src/pages/Subscription.tsx**`
 
-1. Add a new state `retentionOpen: boolean`.
-2. Split `handleCancelSubscription` into two functions:
-  - `handleCancelClick()` — entry point bound to the "Cancel Subscription" button.
-    - If iOS/Apple IAP path: keep existing behavior unchanged (App Store redirect + existing confirm).
-    - If Web/Stripe: instead of `confirm(...)`, set `retentionOpen = true`.
-  - `confirmCancelSubscription()` — the existing Stripe cancel logic (edge function call, toast, refresh) extracted as-is. Triggered from the modal's "Continue to Cancel" button.
-3. Render a new retention `<Dialog>` (shadcn) at the bottom of the page, controlled by `retentionOpen`:
-  - **Heading:** "Before you go..."
-  - **Body:** "A single physical book costs around $10. For just $4.99/month, you are giving your child an infinite, personalized library built just for them."
-  - **Primary button:** "Keep My Plan" — closes the modal, no backend call.
-  - **Secondary text button (ghost/link variant, smaller):** "Continue to Cancel" — closes the modal, then runs `confirmCancelSubscription()`.
+1. Simplify `handleCancelSubscription` to just open the retention modal regardless of platform — remove the iOS `confirm()` and immediate App Store redirect.
+2. Add a new `confirmCancelSubscriptionIOS()` function that:
+  - Calls `setRetentionOpen(false)` **first**, before any async work, so the modal is dismissed before Capacitor `Browser.open` suspends the app (avoids frozen-backdrop artifact when the user returns).
+  - Opens the existing exact URL `https://apps.apple.com/account/subscriptions` via `@capacitor/browser` with `presentationStyle: "popover"` (unchanged from current implementation — preserves native deep-link into Apple subscription settings).
+  - Shows the existing "Manage in App Store" toast on success, and the existing fallback toast on error.
+3. Add a small synchronous `handleContinueToCancel()` dispatcher wired to the modal's "Continue to Cancel" button:
+  - Reads `isIOSPlatform()` directly at click time (no intermediate state) — this avoids any stale-state race because the branch decision is made synchronously from the platform helper, not from React state that could be reset early.
+  - Calls `confirmCancelSubscriptionIOS()` on iOS, otherwise `confirmCancelSubscription()` (existing Stripe path, unchanged).
+4. Wire the modal's "Continue to Cancel" button `onClick` to `handleContinueToCancel`.
 
-## Design
+No new state variables are introduced — platform detection happens at the moment of click, so there is no `cancelPlatform` value that could be reset prematurely.
 
-Use existing shadcn `Dialog`, `Button`, semantic tokens (primary, muted-foreground). Centered content, large heading, supportive body copy, primary CTA full-width and bold, secondary as a small underlined text link beneath it. Subtle book/sparkle icon (lucide) above the heading for warmth. Keep within the project's existing semantic-token design system — no hardcoded colors.
+## Details to Review
 
-### Implementation Notes for Lovable:
+### 1. Verification of `isIOSPlatform()`
 
-- **State Management:** Ensure `confirmCancelSubscription` safely accesses current component states (like loading states or user IDs) without creating stale closures.
-- **Loading UI:** When "Continue to Cancel" is clicked, immediately close the modal and trigger the existing loading spinner/state so the user cannot double-submit.
-- **Platform Check:** Determine the iOS/Apple IAP path by checking our existing database/auth user metadata (e.g., payment provider type) rather than relying on browser user-agent strings.
+Ensure that the helper function `isIOSPlatform()` (or whatever the exact name is in your project, like `isIOS` from a utilities file or Capacitor's `Capacitor.getPlatform() === 'ios'`) is imported and readily available inside `src/pages/Subscription.tsx`. If it isn't already imported there, Lovable will just need to add the import statement at the top of the file.
 
 ## Out of scope
 
-- No changes to `cancelSubscription()` in `src/lib/subscription.ts` or the `stripe-cancel-subscription` edge function.
-- iOS App Store flow unchanged.
-- No copy/UI changes elsewhere on the Subscription page.
+- No changes to modal copy, layout, or the "Keep My Plan" button.
+- No changes to `cancelSubscription()` in `src/lib/subscription.ts` or any edge function.
+- No changes to RevenueCat or Apple IAP entitlement handling.
+- Web/Stripe flow behavior unchanged.
