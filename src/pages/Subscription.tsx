@@ -20,6 +20,7 @@ import { getDeviceId } from "@/lib/story";
 
 import { useDevice } from "@/contexts/DeviceContext";
 import { trackFunnelStep } from "@/lib/analytics";
+import { NativeLoadingScreen } from "@/components/NativeLoadingScreen";
 
 export default function Subscription() {
   const navigate = useNavigate();
