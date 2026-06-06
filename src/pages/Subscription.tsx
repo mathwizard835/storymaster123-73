@@ -291,9 +291,22 @@ export default function Subscription() {
               Back
             </Button>
           )}
-          <Badge variant="secondary" className="bg-white/20 text-white">
-            {required && !currentPlan ? 'Welcome, Parent!' : 'Special Offer'}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary" className="bg-white/20 text-white">
+              {required && !currentPlan ? 'Welcome, Parent!' : 'Special Offer'}
+            </Badge>
+            {user && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleLogout}
+                className="text-white/80 hover:text-white hover:bg-white/10"
+              >
+                <LogOut className="h-4 w-4 mr-1.5" />
+                Log Out
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
