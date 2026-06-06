@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, BookOpen, Trophy, Users, Crown } from 'lucide-react';
+import { Home, BookOpen, Trophy, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useDevice } from '@/contexts/DeviceContext';
 import { addHapticFeedback } from '@/lib/mobileFeatures';
@@ -17,7 +17,6 @@ const navItems: NavItem[] = [
   { icon: BookOpen, label: 'Gallery', path: '/gallery' },
   { icon: Trophy, label: 'Trophies', path: '/achievements' },
   { icon: Users, label: 'Parents', path: '/parent-dashboard' },
-  { icon: Crown, label: 'Pass', path: '/subscription' },
 ];
 
 export function MobileBottomNav() {
@@ -29,8 +28,11 @@ export function MobileBottomNav() {
   if (!isPhone || !isNative) return null;
 
   // Don't show on certain pages
-  const hiddenPaths = ['/mission', '/profile', '/auth', '/reset-password', '/subscription'];
+  const hiddenPaths = ['/mission', '/profile', '/auth', '/reset-password'];
   if (hiddenPaths.some(path => location.pathname.startsWith(path))) return null;
+
+  // Hide on paywall and subscription success screens
+  if (location.pathname === '/subscription' || location.pathname === '/subscription/success') return null;
 
   // Don't show on native welcome screen (root when not logged in)
   if (isNative && location.pathname === '/') return null;
