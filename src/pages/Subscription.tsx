@@ -48,6 +48,19 @@ export default function Subscription() {
     setParentalGateOpen(true);
   };
 
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      navigate('/', { replace: true });
+    } catch (error) {
+      toast({
+        title: "Couldn't log out",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleParentalGatePassed = () => {
     if (pendingAction) {
       const fn = pendingAction;
