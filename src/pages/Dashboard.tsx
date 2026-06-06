@@ -231,7 +231,7 @@ const Dashboard = () => {
       
       <main ref={mainRef} className="min-h-screen bg-background pb-24 md:pb-8 overflow-x-hidden overflow-y-auto">
         {/* Native iOS-style header */}
-        {isPhone && isNative && (
+        {(isPhone || isTablet) && isNative && (
           <NativeNavigationHeader
             title="Home"
             subtitle={isPremium ? '✨ Premium Active' : undefined}
