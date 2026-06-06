@@ -1059,9 +1059,23 @@ THIS SCENE: ${scene ? "Continue the story naturally from the previous scene." : 
           meta: { hit: false, prompt_hash: promptHash },
         },
       ];
-      await supabaseAdmin.from("analytics_events").insert(rows);
-      if (promptHash) {
-        await supabaseAdmin.rpc("bump_prompt_hash", { _hash: promptHash, _hit: false });
+      const analyticsPromise = (async () => {
+        try {
+          await supabaseAdmin.from("analytics_events").insert(rows);
+          if (promptHash) {
+            await supabaseAdmin.rpc("bump_prompt_hash", { _hash: promptHash, _hit: false });
+          }
+        } catch (e) {
+          console.warn("analytics deferred write failed:", e);
+        }
+      })();
+      // Fire-and-forget so we don't block the response. EdgeRuntime.waitUntil
+      // keeps the worker alive until the writes finish.
+      try {
+        // @ts-ignore — EdgeRuntime is provided by Supabase Edge Runtime
+        (globalThis as any).EdgeRuntime?.waitUntil?.(analyticsPromise);
+      } catch {
+        /* ignore */
       }
     } catch (analyticsErr) {
       // Never let analytics break the user response.
