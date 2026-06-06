@@ -638,39 +638,52 @@ Return ONLY valid JSON (no markdown, no explanations):
       // Detect mobile/native client — hard paywall after 1 free story applies to native only
       const isNativeClient = body?.platform === "native" || body?.platform === "ios" || body?.platform === "android";
 
-      // Count stories started by this user in the last 30 days (used for web cap + soft cap)
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-      const { count: storyCount, error: countErr } = await supabaseAdmin
-        .from("user_stories")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", userId)
-        .gte("started_at", thirtyDaysAgo);
 
-      if (countErr) {
-        console.error("Failed to count user stories:", countErr);
-      }
+      // Compute device fingerprint up-front so we can parallelize the device-count query
+      const userAgent = req.headers.get("user-agent") || "unknown";
+      const ipPrefix = ipAddress.split(".").slice(0, 3).join("."); // /24 prefix only
+      const salt = Deno.env.get("DEVICE_FINGERPRINT_SALT") || "default-salt";
+      const fingerprintRaw = `${salt}:${deviceId}:${userAgent}:${ipPrefix}`;
+      const hashBuffer = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(fingerprintRaw));
+      deviceFingerprint = Array.from(new Uint8Array(hashBuffer))
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join("");
 
-      const userStoryCount = storyCount ?? 0;
-
-      // For native: count LIFETIME stories (hard paywall after 1)
-      let lifetimeStoryCount = userStoryCount;
-      if (isNativeClient) {
-        const { count: lifeCount, error: lifeErr } = await supabaseAdmin
+      // Run all independent pre-LLM checks in parallel.
+      const [storyCountRes, lifetimeRes, subRes, deviceCountRes] = await Promise.all([
+        supabaseAdmin
           .from("user_stories")
           .select("*", { count: "exact", head: true })
-          .eq("user_id", userId);
-        if (lifeErr) console.error("Failed to count lifetime stories:", lifeErr);
-        lifetimeStoryCount = lifeCount ?? 0;
-      }
+          .eq("user_id", userId)
+          .gte("started_at", thirtyDaysAgo),
+        isNativeClient
+          ? supabaseAdmin
+              .from("user_stories")
+              .select("*", { count: "exact", head: true })
+              .eq("user_id", userId)
+          : Promise.resolve({ count: null, error: null } as any),
+        supabaseAdmin
+          .from("user_subscriptions")
+          .select("id, status, plan_id")
+          .eq("user_id", userId)
+          .eq("status", "active")
+          .limit(1)
+          .maybeSingle(),
+        supabaseAdmin
+          .from("user_stories")
+          .select("*", { count: "exact", head: true })
+          .eq("device_fingerprint", deviceFingerprint)
+          .gte("started_at", thirtyDaysAgo),
+      ]);
 
-      // Check if user has an active subscription
-      const { data: activeSub } = await supabaseAdmin
-        .from("user_subscriptions")
-        .select("id, status, plan_id")
-        .eq("user_id", userId)
-        .eq("status", "active")
-        .limit(1)
-        .maybeSingle();
+      if (storyCountRes.error) console.error("Failed to count user stories:", storyCountRes.error);
+      if ((lifetimeRes as any)?.error) console.error("Failed to count lifetime stories:", (lifetimeRes as any).error);
+      if (deviceCountRes.error) console.error("Failed to count device stories:", deviceCountRes.error);
+
+      const userStoryCount = storyCountRes.count ?? 0;
+      const lifetimeStoryCount = isNativeClient ? ((lifetimeRes as any).count ?? 0) : userStoryCount;
+      const activeSub = (subRes as any)?.data ?? null;
 
       const FREE_STORY_LIMIT_WEB = 3;
       const FREE_STORY_LIMIT_NATIVE = 0; // Hard paywall on native — subscription required to generate.
@@ -698,31 +711,8 @@ Return ONLY valid JSON (no markdown, no explanations):
         );
       }
 
-      // === DEVICE FINGERPRINT ANTI-ABUSE CHECK ===
-      const userAgent = req.headers.get("user-agent") || "unknown";
-      const ipPrefix = ipAddress.split(".").slice(0, 3).join("."); // /24 prefix only
-      const salt = Deno.env.get("DEVICE_FINGERPRINT_SALT") || "default-salt";
-
-      const fingerprintRaw = `${salt}:${deviceId}:${userAgent}:${ipPrefix}`;
-      const hashBuffer = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(fingerprintRaw));
-      deviceFingerprint = Array.from(new Uint8Array(hashBuffer))
-        .map((b) => b.toString(16).padStart(2, "0"))
-        .join("");
-
       if (!activeSub) {
-        // Count stories across ALL accounts from this device fingerprint
-        const { count: deviceStoryCount, error: deviceCountErr } = await supabaseAdmin
-          .from("user_stories")
-          .select("*", { count: "exact", head: true })
-          .eq("device_fingerprint", deviceFingerprint)
-          .gte("started_at", thirtyDaysAgo);
-
-        if (deviceCountErr) {
-          console.error("Failed to count device stories:", deviceCountErr);
-        }
-
-        const deviceTotal = deviceStoryCount ?? 0;
-
+        const deviceTotal = deviceCountRes.count ?? 0;
         if (deviceTotal >= 6) {
           console.warn(
             `🚫 Device abuse blocked: fingerprint ${deviceFingerprint.slice(0, 12)}... has ${deviceTotal} stories across accounts`,
