@@ -27,6 +27,7 @@ import { NativeLoadingScreen } from "@/components/NativeLoadingScreen";
 export default function Subscription() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user, signOut } = useAuth();
   const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [initialLoad, setInitialLoad] = useState(true);
