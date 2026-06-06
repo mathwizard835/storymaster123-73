@@ -3,8 +3,9 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, X, BookOpen, Star, Sparkles, Crown, ArrowLeft, Gamepad2, Apple, CreditCard, RotateCcw, Volume2 } from "lucide-react";
+import { CheckCircle, X, BookOpen, Star, Sparkles, Crown, ArrowLeft, Gamepad2, Apple, CreditCard, RotateCcw, Volume2, LogOut } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import { cancelSubscription, getUserSubscription, type SubscriptionPlan } from "@/lib/subscription";
 import { 
   isNativePlatform, 
@@ -26,6 +27,7 @@ import { NativeLoadingScreen } from "@/components/NativeLoadingScreen";
 export default function Subscription() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user, signOut } = useAuth();
   const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [initialLoad, setInitialLoad] = useState(true);
@@ -44,6 +46,19 @@ export default function Subscription() {
   const requireParentalGate = (action: () => void | Promise<void>) => {
     setPendingAction(() => action);
     setParentalGateOpen(true);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      navigate('/', { replace: true });
+    } catch (error) {
+      toast({
+        title: "Couldn't log out",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleParentalGatePassed = () => {
@@ -276,9 +291,22 @@ export default function Subscription() {
               Back
             </Button>
           )}
-          <Badge variant="secondary" className="bg-white/20 text-white">
-            {required && !currentPlan ? 'Welcome, Parent!' : 'Special Offer'}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary" className="bg-white/20 text-white">
+              {required && !currentPlan ? 'Welcome, Parent!' : 'Special Offer'}
+            </Badge>
+            {user && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleLogout}
+                className="text-white/80 hover:text-white hover:bg-white/10"
+              >
+                <LogOut className="h-4 w-4 mr-1.5" />
+                Log Out
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 

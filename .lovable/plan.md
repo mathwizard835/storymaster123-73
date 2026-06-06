@@ -1,32 +1,17 @@
-## Goal
+Add a **Log Out** button to the Subscription (paywall) page header so users can easily sign out without leaving the paywall.
 
-Apply the existing retention modal to the iOS (Apple IAP) cancellation flow as well, so both platforms share the exact same "Before you go..." retention experience before any cancellation action is taken.
+### Scope
+- **File:** `src/pages/Subscription.tsx`
+- **Changes only:** import `useAuth` + `LogOut` icon, add a small header button, wire it to the existing `signOut()` function.
 
-## Changes
+### Implementation
+1. Import `useAuth` from `@/hooks/useAuth` and `LogOut` from `lucide-react`.
+2. Inside the `Subscription` component, read `const { user, signOut } = useAuth();`.
+3. Add an async `handleLogout` helper that calls `await signOut();` and then `navigate('/')`.
+4. In the existing header bar (the `bg-black/20` strip at the top), add a small ghost-styled **Log Out** button to the right of the badge — visible only when `user` is truthy.
+   - Uses `text-white/80 hover:text-white hover:bg-white/10` styling to match the existing header.
+   - Shows a `LogOut` icon + "Log Out" text.
+5. No changes to auth logic, routing, or other pages.
 
-**File: `src/pages/Subscription.tsx**`
-
-1. Simplify `handleCancelSubscription` to just open the retention modal regardless of platform — remove the iOS `confirm()` and immediate App Store redirect.
-2. Add a new `confirmCancelSubscriptionIOS()` function that:
-  - Calls `setRetentionOpen(false)` **first**, before any async work, so the modal is dismissed before Capacitor `Browser.open` suspends the app (avoids frozen-backdrop artifact when the user returns).
-  - Opens the existing exact URL `https://apps.apple.com/account/subscriptions` via `@capacitor/browser` with `presentationStyle: "popover"` (unchanged from current implementation — preserves native deep-link into Apple subscription settings).
-  - Shows the existing "Manage in App Store" toast on success, and the existing fallback toast on error.
-3. Add a small synchronous `handleContinueToCancel()` dispatcher wired to the modal's "Continue to Cancel" button:
-  - Reads `isIOSPlatform()` directly at click time (no intermediate state) — this avoids any stale-state race because the branch decision is made synchronously from the platform helper, not from React state that could be reset early.
-  - Calls `confirmCancelSubscriptionIOS()` on iOS, otherwise `confirmCancelSubscription()` (existing Stripe path, unchanged).
-4. Wire the modal's "Continue to Cancel" button `onClick` to `handleContinueToCancel`.
-
-No new state variables are introduced — platform detection happens at the moment of click, so there is no `cancelPlatform` value that could be reset prematurely.
-
-## Details to Review
-
-### 1. Verification of `isIOSPlatform()`
-
-Ensure that the helper function `isIOSPlatform()` (or whatever the exact name is in your project, like `isIOS` from a utilities file or Capacitor's `Capacitor.getPlatform() === 'ios'`) is imported and readily available inside `src/pages/Subscription.tsx`. If it isn't already imported there, Lovable will just need to add the import statement at the top of the file.
-
-## Out of scope
-
-- No changes to modal copy, layout, or the "Keep My Plan" button.
-- No changes to `cancelSubscription()` in `src/lib/subscription.ts` or any edge function.
-- No changes to RevenueCat or Apple IAP entitlement handling.
-- Web/Stripe flow behavior unchanged.
+### Result
+A clean, readable logout control in the paywall header that works immediately and preserves all existing UI behavior.
