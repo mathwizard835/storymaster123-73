@@ -1,24 +1,29 @@
-## Hide bottom navigation on paywall
+# Reduce story loading time
 
-### Problem
 
-Users on the paywall (`/subscription`) see bottom navigation buttons, which is confusing.
 
-### Changes
+## 1. Parallelize the pre-LLM Supabase queries
 
-`**src/components/layout/MobileBottomNav.tsx**`
+In `serve()` for a new story we currently run, in series:
 
-1. Keep `/subscription` in `hiddenPaths` (already there).
-2. Switch from `startsWith` to exact path matching for the paywall so there's no edge-case leakage:
-  ```tsx
-   const hiddenPaths = ['/mission', '/profile', '/auth', '/reset-password'];
-   if (hiddenPaths.some(path => location.pathname.startsWith(path))) return null;
-   if (location.pathname === '/subscription' || location.pathname === '/subscription/success') return null;
-  ```
-3. Remove the **"Pass"** (Crown) item from `navItems` entirely. It is confusing for paying users to see a subscription button in their main navigation, and non-paying users on native are hard-gated to the paywall anyway. Subscription management stays accessible via **Settings → Premium**.
+1. count user stories (30d)
+2. count lifetime stories (native only)
+3. fetch active subscription
+4. count device-fingerprint stories
+5. count for model selection
 
-**Result**
+These have no dependencies on each other. Run them with `Promise.all`. Removes ~200-500ms on cold paths.
 
-- Bottom nav is definitively hidden on the paywall and subscription-success page.
-- Paying users no longer see a confusing "Pass" tab in their daily navigation.
-- Cleaner 4-item nav: Home, Gallery, Trophies, Parents.
+## 2. Move analytics + prompt-hash writes off the hot path
+
+`supabaseAdmin.from("analytics_events").insert(rows)` and `rpc("bump_prompt_hash", ...)` are awaited before we return the scene. Wrap them in `EdgeRuntime.waitUntil(...)` so they run after the response is sent.
+
+## Files touched
+
+- `supabase/functions/generate-story/index.ts` — Parallelize pre-LLM queries with `Promise.all` and wrap analytics/prompt-hash writes in `EdgeRuntime.waitUntil`.
+
+## Out of scope
+
+- Pre-generating "common" first scenes into a cache (worth doing later, but needs an admin job).
+- Replacing Anthropic with a different provider.
+- Audio/Read-to-Me latency (separate path).
