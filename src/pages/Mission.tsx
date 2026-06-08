@@ -826,7 +826,13 @@ const Mission = () => {
 
       const generateSceneWithRetry = async () => {
         try {
-          return await generateNextScene(profileWithInventory, sceneWithMemory, false, 1800, nextSceneCount, savedStory.id, false, abilityCategories);
+          const result = await generateNextScene(profileWithInventory, sceneWithMemory, false, 1800, nextSceneCount, savedStory.id, false, abilityCategories);
+          if (result.parsed) return result;
+
+          const errorPreview = result.text ? result.text.slice(0, 140) : "No response received";
+          console.warn("Story choice generation returned an invalid scene, retrying:", errorPreview);
+          await new Promise(resolve => setTimeout(resolve, 600));
+          return generateNextScene(profileWithInventory, sceneWithMemory, false, 1800, nextSceneCount, savedStory.id, false, abilityCategories);
         } catch (error: any) {
           console.warn("Story choice generation failed, checking retry eligibility:", error?.message || error);
           if (!shouldRetryChoiceGeneration(error)) throw error;
