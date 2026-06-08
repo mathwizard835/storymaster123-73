@@ -788,19 +788,6 @@ const Mission = () => {
         return;
       }
 
-      if (choice.consumesItem && choice.requiresItem) {
-        const { item, newInventory } = useItem(choice.requiresItem!, inventory);
-        if (item) {
-          setInventory(newInventory);
-          saveInventory(newInventory);
-          toast({
-            title: "Item used",
-            description: choice.consumesItem ? "Item consumed" : "Item used successfully",
-            duration: 3000,
-          });
-        }
-      }
-      
       const nextSceneCount = sceneCount + 1;
       const profileWithInventory = updateProfileInventory(profile, inventory);
       
@@ -828,14 +815,54 @@ const Mission = () => {
       const abilityCategories = availableAbilities.map(a => a.category);
       const sceneWithMemory = { ...scene, selectedChoiceId: choiceId, memory: storyMemory };
 
-      const { parsed, text } = await generateNextScene(profileWithInventory, sceneWithMemory, false, 1100, nextSceneCount, savedStory.id, false, abilityCategories);
+      const shouldRetryChoiceGeneration = (error: any) => {
+        const message = String(error?.message || "");
+        return !message.includes("paywall_required") &&
+          !message.includes("Story session corrupted") &&
+          !message.includes("Story session lost") &&
+          !message.includes("authentication") &&
+          !message.includes("Not authenticated");
+      };
+
+      const generateSceneWithRetry = async () => {
+        try {
+          const result = await generateNextScene(profileWithInventory, sceneWithMemory, false, 1800, nextSceneCount, savedStory.id, false, abilityCategories);
+          if (result.parsed) return result;
+
+          const errorPreview = result.text ? result.text.slice(0, 140) : "No response received";
+          console.warn("Story choice generation returned an invalid scene, retrying:", errorPreview);
+          await new Promise(resolve => setTimeout(resolve, 600));
+          return generateNextScene(profileWithInventory, sceneWithMemory, false, 1800, nextSceneCount, savedStory.id, false, abilityCategories);
+        } catch (error: any) {
+          console.warn("Story choice generation failed, checking retry eligibility:", error?.message || error);
+          if (!shouldRetryChoiceGeneration(error)) throw error;
+
+          await new Promise(resolve => setTimeout(resolve, 600));
+          return generateNextScene(profileWithInventory, sceneWithMemory, false, 1800, nextSceneCount, savedStory.id, false, abilityCategories);
+        }
+      };
+
+      const { parsed, text } = await generateSceneWithRetry();
       if (!parsed) {
         const errorPreview = text ? text.slice(0, 140) : "No response received";
         throw new Error("Invalid AI response: " + errorPreview);
       }
+
+      let effectiveInventory = inventory;
+      if (choice.consumesItem && choice.requiresItem) {
+        const { item, newInventory } = useItem(choice.requiresItem!, effectiveInventory);
+        if (item) {
+          effectiveInventory = newInventory;
+          toast({
+            title: "Item used",
+            description: choice.consumesItem ? "Item consumed" : "Item used successfully",
+            duration: 3000,
+          });
+        }
+      }
       
       if (parsed.itemsFound && parsed.itemsFound.length > 0) {
-        let newInventory = inventory;
+        let newInventory = effectiveInventory;
         for (const item of parsed.itemsFound) {
           newInventory = addItemToInventory(item, newInventory);
           
@@ -851,6 +878,9 @@ const Mission = () => {
           description: `Found ${parsed.itemsFound.length} new item(s)`,
           duration: 4000,
         });
+      } else if (effectiveInventory !== inventory) {
+        setInventory(effectiveInventory);
+        saveInventory(effectiveInventory);
       }
       
       // Update story memory from AI response
@@ -938,20 +968,25 @@ const Mission = () => {
       console.error("Error in onChoose:", error);
       
       // Determine specific error message
-      let errorDescription = "The storyteller stumbled — tap your choice again.";
+      let errorTitle = "Try that choice again";
+      let errorDescription = "The storyteller paused for a moment. Your scene is safe — tap your choice once more.";
 
       if (error.message?.includes("authentication") || error.message?.includes("Not authenticated")) {
+        errorTitle = "Story Error";
         errorDescription = "Authentication error. Please try refreshing the page.";
       } else if (error.message?.includes("Rate limit")) {
+        errorTitle = "Story Error";
         errorDescription = "Too many requests. Please wait a moment and try again.";
       } else if (error.message?.includes("Story session corrupted") || error.message?.includes("Story session lost")) {
+        errorTitle = "Story Error";
         errorDescription = "Your story session was interrupted. Please start a new adventure.";
       } else if (error.message?.includes("Edge Function") || error.message?.includes("service")) {
+        errorTitle = "Try that choice again";
         errorDescription = "Story service is briefly unavailable. Please try your choice again.";
       }
 
       toast({
-        title: "Story hiccup",
+        title: errorTitle,
         description: errorDescription,
         variant: "destructive",
         duration: 5000,
