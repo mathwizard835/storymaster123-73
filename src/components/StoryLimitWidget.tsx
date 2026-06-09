@@ -32,9 +32,10 @@ export const StoryLimitWidget = () => {
     setSubscription({ subscription, plan });
   };
 
+  const isUnlimited = !Number.isFinite(storyData.monthlyLimit);
   const totalAllowed = storyData.monthlyLimit + storyData.bonusStories;
-  const usagePercent = (storyData.storiesUsedThisMonth / Math.max(totalAllowed, 1)) * 100;
-  const remaining = Math.max(0, totalAllowed - storyData.storiesUsedThisMonth);
+  const usagePercent = isUnlimited ? 0 : (storyData.storiesUsedThisMonth / Math.max(totalAllowed, 1)) * 100;
+  const remaining = isUnlimited ? Infinity : Math.max(0, totalAllowed - storyData.storiesUsedThisMonth);
 
   const getPlanBadge = () => {
     if (!subscription?.plan) return <Badge variant="outline">Free</Badge>;
