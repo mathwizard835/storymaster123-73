@@ -271,6 +271,84 @@ serve(async (req) => {
     .select("*", { count: "exact", head: true })
     .eq("status", "active");
 
+  // ---------- Subscriber monthly usage tiers ----------
+  // For all currently-active subscribers, count stories started in the last
+  // 30 days per user, then bucket into ≥20/≥40/≥60/≥80/≥100 cohorts. Window
+  // is always 30 days regardless of the dashboard `days` selector.
+  const THIRTY_DAYS_AGO = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  const TIER_THRESHOLDS = [20, 40, 60, 80, 100];
+  let subscriberUsageTiers = TIER_THRESHOLDS.map((threshold) => ({
+    threshold,
+    subscribers: 0,
+    percent: 0,
+  }));
+
+  try {
+    // Paginate active subscribers (Supabase default cap is 1000).
+    const subUserIds: string[] = [];
+    const PAGE = 1000;
+    let from = 0;
+    while (true) {
+      const { data: subPage, error: subErr } = await admin
+        .from("user_subscriptions")
+        .select("user_id")
+        .eq("status", "active")
+        .range(from, from + PAGE - 1);
+      if (subErr) throw subErr;
+      if (!subPage || subPage.length === 0) break;
+      for (const row of subPage) {
+        if (row.user_id) subUserIds.push(row.user_id as string);
+      }
+      if (subPage.length < PAGE) break;
+      from += PAGE;
+    }
+
+    const uniqueSubUserIds = Array.from(new Set(subUserIds));
+    const totalSubs = uniqueSubUserIds.length;
+
+    if (totalSubs > 0) {
+      // Count stories per user in the last 30 days. Chunk the IN clause to
+      // keep URLs reasonable and paginate within each chunk.
+      const counts = new Map<string, number>();
+      const CHUNK = 200;
+      for (let i = 0; i < uniqueSubUserIds.length; i += CHUNK) {
+        const chunk = uniqueSubUserIds.slice(i, i + CHUNK);
+        let chunkFrom = 0;
+        while (true) {
+          const { data: storyRows, error: storyErr } = await admin
+            .from("user_stories")
+            .select("user_id")
+            .in("user_id", chunk)
+            .gte("started_at", THIRTY_DAYS_AGO)
+            .range(chunkFrom, chunkFrom + PAGE - 1);
+          if (storyErr) throw storyErr;
+          if (!storyRows || storyRows.length === 0) break;
+          for (const r of storyRows) {
+            const uid = r.user_id as string;
+            counts.set(uid, (counts.get(uid) ?? 0) + 1);
+          }
+          if (storyRows.length < PAGE) break;
+          chunkFrom += PAGE;
+        }
+      }
+
+      subscriberUsageTiers = TIER_THRESHOLDS.map((threshold) => {
+        let hit = 0;
+        for (const c of counts.values()) {
+          if (c >= threshold) hit += 1;
+        }
+        return {
+          threshold,
+          subscribers: hit,
+          percent: Number((hit / totalSubs).toFixed(4)),
+        };
+      });
+    }
+  } catch (e) {
+    console.error("subscriber_usage tier calc failed:", e);
+  }
+
+
   const result = {
     window: { days, since },
     system: {
@@ -311,6 +389,11 @@ serve(async (req) => {
       step_counts: funnelCounts,
       conversion_rates: funnelRates,
       average_conversion_rate: avgFunnelRate,
+    },
+    subscriber_usage: {
+      window_days: 30,
+      total_active_subscribers: activeSubsCount ?? 0,
+      tiers: subscriberUsageTiers,
     },
   };
 

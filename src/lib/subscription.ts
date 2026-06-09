@@ -168,13 +168,13 @@ export const getStoriesRemaining = async (): Promise<{
     // Determine monthly/lifetime limit.
     // - Native (mobile app): HARD PAYWALL — non-subscribers cannot generate ANY stories.
     // - Web: 3 stories per rolling 30 days (legacy behavior preserved).
-    // - Subscribers: 40/30d soft cap.
+    // - Subscribers: unlimited.
     let monthlyLimit = isNative ? 0 : 3;
     if (plan) {
       const planName = plan.name?.toLowerCase().trim().replace(/\s+/g, '_');
       if (planName === 'premium' || planName === 'premium_plus' ||
           planName?.includes('premium') || plan.story_limit === null) {
-        monthlyLimit = 40;
+        monthlyLimit = Number.POSITIVE_INFINITY;
       } else if (plan.story_limit && plan.story_limit > 0) {
         monthlyLimit = plan.story_limit;
       } else if (plan.features?.daily_stories) {

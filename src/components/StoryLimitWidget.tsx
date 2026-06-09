@@ -32,9 +32,10 @@ export const StoryLimitWidget = () => {
     setSubscription({ subscription, plan });
   };
 
+  const isUnlimited = !Number.isFinite(storyData.monthlyLimit);
   const totalAllowed = storyData.monthlyLimit + storyData.bonusStories;
-  const usagePercent = (storyData.storiesUsedThisMonth / Math.max(totalAllowed, 1)) * 100;
-  const remaining = Math.max(0, totalAllowed - storyData.storiesUsedThisMonth);
+  const usagePercent = isUnlimited ? 0 : (storyData.storiesUsedThisMonth / Math.max(totalAllowed, 1)) * 100;
+  const remaining = isUnlimited ? Infinity : Math.max(0, totalAllowed - storyData.storiesUsedThisMonth);
 
   const getPlanBadge = () => {
     if (!subscription?.plan) return <Badge variant="outline">Free</Badge>;
@@ -78,20 +79,20 @@ export const StoryLimitWidget = () => {
             <div className="flex justify-between text-sm">
               <span>Stories Started This Month</span>
               <span className="font-medium">
-                {storyData.storiesUsedThisMonth}/{totalAllowed}
+                {isUnlimited ? `${storyData.storiesUsedThisMonth} (Unlimited)` : `${storyData.storiesUsedThisMonth}/${totalAllowed}`}
               </span>
             </div>
             <Progress 
-              value={usagePercent} 
+              value={isUnlimited ? 100 : usagePercent} 
               className="h-2"
             />
             <div className="flex justify-between text-xs text-muted-foreground">
               <span>
-                {storyData.bonusStories > 0 && (
+                {storyData.bonusStories > 0 && !isUnlimited && (
                   <span className="text-primary">+{storyData.bonusStories} bonus</span>
                 )}
               </span>
-              <span>{remaining} remaining</span>
+              <span>{isUnlimited ? "Unlimited" : `${remaining} remaining`}</span>
             </div>
           </div>
 
