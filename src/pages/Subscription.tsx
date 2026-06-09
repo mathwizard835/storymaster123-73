@@ -279,11 +279,11 @@ export default function Subscription() {
     >
       {/* Header */}
       <div className="bg-black/20 backdrop-blur-sm border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between gap-2">
           {required && !currentPlan ? (
-            <div className="text-white/80 text-sm font-semibold flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-yellow-300" />
-              Start Your Child's Adventure
+            <div className="text-white/80 text-sm font-semibold flex items-center gap-2 min-w-0">
+              <Sparkles className="h-4 w-4 text-yellow-300 flex-shrink-0" />
+              <span className="truncate">Start Your Child's Adventure</span>
             </div>
           ) : (
             <Button variant="ghost" onClick={() => navigate(-1)} className="text-white hover:bg-white/10">
@@ -291,8 +291,8 @@ export default function Subscription() {
               Back
             </Button>
           )}
-          <div className="flex items-center gap-2">
-            <Badge variant="secondary" className="bg-white/20 text-white">
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <Badge variant="secondary" className="bg-white/20 text-white hidden sm:inline-flex">
               {required && !currentPlan ? 'Welcome, Parent!' : 'Special Offer'}
             </Badge>
             {user && (
@@ -300,14 +300,16 @@ export default function Subscription() {
                 variant="ghost"
                 size="sm"
                 onClick={handleLogout}
-                className="text-white/80 hover:text-white hover:bg-white/10"
+                className="text-white/80 hover:text-white hover:bg-white/10 px-2"
               >
-                <LogOut className="h-4 w-4 mr-1.5" />
-                Log Out
+                <LogOut className="h-4 w-4 sm:mr-1.5" />
+                <span className="hidden sm:inline">Log Out</span>
+                <span className="sr-only sm:hidden">Log Out</span>
               </Button>
             )}
           </div>
         </div>
+
       </div>
 
       <div className="max-w-6xl mx-auto px-4 py-12">
