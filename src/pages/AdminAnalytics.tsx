@@ -280,6 +280,53 @@ export default function AdminAnalytics() {
             </CardContent>
           </Card>
 
+          {/* Subscriber usage tiers */}
+          {data.subscriber_usage && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Subscriber usage tiers (last 30 days)</CardTitle>
+                <CardDescription>
+                  Share of active subscribers who generated at least N stories in the past 30 days.
+                  Helps gauge true demand now that subscribers are unlimited.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Metric
+                  label="Active subscribers (denominator)"
+                  value={data.subscriber_usage.total_active_subscribers}
+                />
+                {data.subscriber_usage.total_active_subscribers === 0 ? (
+                  <p className="text-sm text-muted-foreground">No active subscribers yet.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {data.subscriber_usage.tiers.map((t) => {
+                      const pct = t.percent * 100;
+                      return (
+                        <div key={t.threshold} className="space-y-1">
+                          <div className="flex justify-between text-sm">
+                            <span>≥ {t.threshold} stories</span>
+                            <span className="font-medium tabular-nums">
+                              {pct.toFixed(1)}%{" "}
+                              <span className="text-muted-foreground font-normal">
+                                ({t.subscribers} of {data.subscriber_usage!.total_active_subscribers})
+                              </span>
+                            </span>
+                          </div>
+                          <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+                            <div
+                              className="h-full bg-primary transition-all"
+                              style={{ width: `${Math.min(100, pct)}%` }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
           {/* Content */}
           <Card>
             <CardHeader>
