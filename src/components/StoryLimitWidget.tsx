@@ -79,20 +79,20 @@ export const StoryLimitWidget = () => {
             <div className="flex justify-between text-sm">
               <span>Stories Started This Month</span>
               <span className="font-medium">
-                {storyData.storiesUsedThisMonth}/{totalAllowed}
+                {isUnlimited ? `${storyData.storiesUsedThisMonth} (Unlimited)` : `${storyData.storiesUsedThisMonth}/${totalAllowed}`}
               </span>
             </div>
             <Progress 
-              value={usagePercent} 
+              value={isUnlimited ? 100 : usagePercent} 
               className="h-2"
             />
             <div className="flex justify-between text-xs text-muted-foreground">
               <span>
-                {storyData.bonusStories > 0 && (
+                {storyData.bonusStories > 0 && !isUnlimited && (
                   <span className="text-primary">+{storyData.bonusStories} bonus</span>
                 )}
               </span>
-              <span>{remaining} remaining</span>
+              <span>{isUnlimited ? "Unlimited" : `${remaining} remaining`}</span>
             </div>
           </div>
 
