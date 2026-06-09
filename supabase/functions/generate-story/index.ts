@@ -19,23 +19,23 @@ const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
 // Strict content blocking for ages 5-12
 const BLOCKED_PATTERNS = [
   // Sexual content and innuendo
-  /\b(sex|sexual|porn|pornography|xxx|nsfw|nude|naked|explicit|romantic|kiss|dating|boyfriend|girlfriend|lover|seductive|flirt)\b/i,
+  /\b(sex|sexual|porn|pornography|xxx|nsfw|nude|naked|explicit|seductive)\b/i,
   // Drugs, alcohol, smoking
   /\b(drugs|cocaine|heroin|meth|marijuana|weed|cannabis|alcohol|beer|wine|liquor|drunk|smoking|cigarette|vape|tobacco)\b/i,
-  // Graphic violence and gore
-  /\b(kill|killing|murder|stab|stabbing|blood|bloody|gore|gory|death|die|dying|corpse|torture|mutilate|dismember|decapitate)\b/i,
-  // Weapons and violence
-  /\b(gun|guns|firearm|shoot|shooting|weapon|knife|sword|explosive|bomb|grenade|attack|assault)\b/i,
+  // Graphic violence and gore (fantasy adventure terms allowed)
+  /\b(murder|stab|stabbing|bloody|gore|gory|corpse|torture|mutilate|dismember|decapitate)\b/i,
+  // Real-world weapons (fantasy items like sword/shield allowed)
+  /\b(gun|guns|firearm|pistol|rifle|explosive|bomb|grenade)\b/i,
   // Hate and discrimination
   /\b(hate|racist|racism|nazi|supremacy|discriminat|bully|bullying|harass|harassment)\b/i,
   // Self-harm and mental health crisis
   /\b(suicide|self-harm|cutting|hanging)\b/i,
   // Gambling and adult themes
   /\b(gambling|casino|betting|adult|mature|18\+|21\+)\b/i,
-  // Dark horror themes
-  /\b(horror|terrifying|nightmare|demon|possessed|haunted|evil|sinister|creepy|scary|frightening)\b/i,
-  // Unsafe behaviors
-  /\b(dangerous|unsafe|reckless|poison|toxic)\b/i,
+  // Extreme horror (mild "scary" themes are OK for adventure stories)
+  /\b(terrifying|nightmare|possessed|stalker|stalking|predator|demonic|satanic|occult|voodoo|séance|exorcism)\b/i,
+  // Profanity
+  /\b(fuck|fucking|fucker|shit|bitch|bastard|asshole|dick|cock|pussy|cunt|twat|whore|slut|wanker|motherfucker|nigger|nigga|faggot|fag|retard|pedophile|pedo|rapist|rape|raping)\b/i,
 ];
 
 function containsInappropriateContent(text: string): boolean {
@@ -1139,9 +1139,7 @@ THIS SCENE: ${scene ? "Continue the story naturally from the previous scene." : 
 
       return new Response(
         JSON.stringify({
-          error: "Failed to parse AI response as valid JSON",
-          details: `Response was ${text.length} characters but could not be parsed`,
-          preview: text.substring(0, 500),
+          error: "AI response could not be parsed",
           retryable: true,
         }),
         { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } },
@@ -1158,7 +1156,6 @@ THIS SCENE: ${scene ? "Continue the story naturally from the previous scene." : 
         result: parsed,
         parsed: parsed,
         text: text,
-        deviceFingerprint: deviceFingerprint,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
