@@ -50,6 +50,7 @@ type Rollup = {
       parent_gate_to_subscription: number | null;
     };
     average_conversion_rate: number | null;
+  };
   subscriber_usage?: {
     window_days: number;
     total_active_subscribers: number;
