@@ -460,57 +460,6 @@ export default function Subscription() {
           </div>
         )}
 
-        {/* Value Comparison - Only show if no premium */}
-        {!currentPlan && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12 max-w-4xl mx-auto">
-          <Card className="bg-white/5 backdrop-blur-sm border-white/10 relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-red-500/10 to-transparent" />
-            <CardHeader className="relative">
-              <div className="flex items-center justify-between mb-2">
-                <Gamepad2 className="h-8 w-8 text-red-400" />
-                <X className="h-5 w-5 text-red-400" />
-              </div>
-              <CardTitle className="text-white text-lg">Roblox/Gaming</CardTitle>
-            </CardHeader>
-            <CardContent className="relative">
-              <p className="text-3xl font-bold text-white mb-2">$19.99</p>
-              <p className="text-purple-300 text-sm">mindless entertainment</p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white/5 backdrop-blur-sm border-white/10 relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 to-transparent" />
-            <CardHeader className="relative">
-              <div className="flex items-center justify-between mb-2">
-                <Star className="h-8 w-8 text-orange-400" />
-                <X className="h-5 w-5 text-orange-400" />
-              </div>
-              <CardTitle className="text-white text-lg">YouTube Premium</CardTitle>
-            </CardHeader>
-            <CardContent className="relative">
-              <p className="text-3xl font-bold text-white mb-2">$13.99</p>
-              <p className="text-purple-300 text-sm">passive scrolling</p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-green-500/20 to-emerald-500/20 backdrop-blur-sm border-green-400/30 relative overflow-hidden ring-2 ring-green-400/50">
-            <div className="absolute top-0 right-0 bg-green-400 text-green-900 px-3 py-1 text-xs font-bold rounded-bl-lg">
-              BEST VALUE
-            </div>
-            <CardHeader className="relative">
-              <div className="flex items-center justify-between mb-2">
-                <Crown className="h-8 w-8 text-green-400" />
-                <CheckCircle className="h-5 w-5 text-green-400" />
-              </div>
-              <CardTitle className="text-white text-lg">StoryMaster Kids</CardTitle>
-            </CardHeader>
-            <CardContent className="relative">
-              <p className="text-3xl font-bold text-white mb-2">$4.99</p>
-              <p className="text-green-300 text-sm font-semibold">engaging + educational</p>
-            </CardContent>
-          </Card>
-        </div>
-        )}
 
         {/* Main Pricing Card - Only show if no premium */}
         {!currentPlan && (
