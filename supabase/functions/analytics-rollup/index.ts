@@ -390,6 +390,11 @@ serve(async (req) => {
       conversion_rates: funnelRates,
       average_conversion_rate: avgFunnelRate,
     },
+    subscriber_usage: {
+      window_days: 30,
+      total_active_subscribers: activeSubsCount ?? 0,
+      tiers: subscriberUsageTiers,
+    },
   };
 
   return new Response(JSON.stringify(result), {
