@@ -862,10 +862,10 @@ const Dashboard = () => {
 
             {/* Recent Achievements */}
             <section>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="font-heading text-2xl font-bold flex items-center gap-2">
-                  <Trophy className="h-6 w-6 text-amber-500" />
-                  Achievements ({unlockedAchievements.length})
+              <div className="flex items-center justify-between gap-2 flex-wrap mb-4">
+                <h2 className="font-heading text-2xl font-bold flex items-center gap-2 min-w-0 flex-1">
+                  <Trophy className="h-6 w-6 text-amber-500 shrink-0" />
+                  <span className="truncate">Achievements ({unlockedAchievements.length})</span>
                 </h2>
                 <Button 
                   variant="ghost" 
