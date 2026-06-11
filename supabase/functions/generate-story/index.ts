@@ -1088,10 +1088,14 @@ THIS SCENE: ${scene ? "Continue the story naturally from the previous scene." : 
     let parsed = extractJSON(text);
     let parsedValid = isValidSceneShape(parsed);
 
-    // Server-side single retry on truncation or parse/shape failure.
-    // Skip if the client already passed _retry to avoid 2x2 amplification.
+    // Server-side single retry ONLY on hard failures: truncation or unparseable
+    // JSON. We deliberately do NOT retry on `!parsedValid` (shape mismatch) —
+    // a slightly-off shape is still readable, and a second ~17s Anthropic call
+    // is far worse for UX than a minor optional-field gap. `parsedValid` is
+    // kept below for logging/metrics only.
     const shouldRetry =
-      !isRetry && (data?.stop_reason === "max_tokens" || !parsed || !parsedValid);
+      !isRetry && (data?.stop_reason === "max_tokens" || !parsed);
+
     if (shouldRetry) {
       const retryBudget = Math.min(Math.floor(max_tokens * 1.6), 4000);
       console.warn(
