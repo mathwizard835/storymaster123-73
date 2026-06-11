@@ -787,10 +787,11 @@ Return ONLY valid JSON (no markdown, no explanations):
     // Token budgets — narrative target ~215 words, but JSON schema + memory flags
     // can push total output past 3.5k chars. Keep headroom so responses don't truncate.
     const getOptimalTokens = (sceneCount: number, isNewStory: boolean) => {
-      if (isNewStory) return 2000;
-      if (sceneCount >= 12) return 1800;
-      return 1800;
+      if (isNewStory) return 1800;
+      if (sceneCount >= 12) return 1400;
+      return 1400;
     };
+
     // Enforce a SAFE FLOOR — never let the client lower the budget below what
     // the JSON schema actually needs, or we get truncated responses → parse
     // failures → user-visible "Story Error".
