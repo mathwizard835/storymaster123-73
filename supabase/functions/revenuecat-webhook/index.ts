@@ -147,18 +147,20 @@ serve(async (req) => {
           ? new Date(event.expiration_at_ms).toISOString()
           : null;
 
+        // Determine which app_user_id to attribute the row to.
+        const ownerUserId = event.type === "TRANSFER" ? transferTargetUserId : userId;
+
         const insertData: Record<string, any> = {
           plan_id: planId,
           status: "active",
-          device_id: userId || "revenuecat", // fallback device_id
+          device_id: ownerUserId || userId || "revenuecat", // fallback device_id
           starts_at: new Date().toISOString(),
           expires_at: expirationDate,
         };
 
         // Only set user_id if it's a real Supabase user ID (UUID format)
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-        if (userId && uuidRegex.test(userId)) {
-          insertData.user_id = userId;
+        if (ownerUserId && uuidRegex.test(ownerUserId)) {
+          insertData.user_id = ownerUserId;
         }
 
         const { error: insertError } = await supabase
@@ -168,7 +170,7 @@ serve(async (req) => {
         if (insertError) {
           console.error("Failed to insert subscription:", insertError);
         } else {
-          console.log(`✅ Subscription activated for user ${userId}, plan: ${planType}`);
+          console.log(`✅ Subscription ${event.type} applied for user ${ownerUserId || userId}, plan: ${planType}`);
         }
         break;
       }
@@ -176,8 +178,6 @@ serve(async (req) => {
       case "CANCELLATION":
       case "EXPIRATION": {
         if (userId && userId !== "$RCAnonymousID") {
-          const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-          
           if (uuidRegex.test(userId)) {
             const { error: updateError } = await supabase
               .from("user_subscriptions")
