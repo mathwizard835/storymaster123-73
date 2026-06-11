@@ -726,9 +726,9 @@ const Dashboard = () => {
             </Card>
           )} */}
 
-          <div className="grid gap-8 tablet-lg:grid-cols-2 lg:grid-cols-2">
+          <div className="grid gap-8 tablet-lg:grid-cols-2 lg:grid-cols-2 min-w-0 max-w-full">
             {/* Recent Stories */}
-            <section>
+            <section className="min-w-0 max-w-full overflow-hidden">
               <div className="flex items-center justify-between gap-2 flex-wrap mb-4">
                 <h2 className="font-heading text-2xl font-bold flex items-center gap-2 min-w-0 flex-1">
                   <BookOpen className="h-6 w-6 text-blue-500 shrink-0" />
@@ -764,7 +764,7 @@ const Dashboard = () => {
                       ((story.scene_count || 0) > 0 &&
                         (story.current_scene_index || 0) + 1 >= (story.scene_count || 0));
                     return (
-                    <Card key={story.id} className="glass-panel border-0 min-w-0">
+                    <Card key={story.id} className="glass-panel border-0 min-w-0 max-w-full overflow-hidden">
                       <CardContent className="p-4 min-w-0">
                         <div className="flex justify-between items-start mb-2 gap-2 min-w-0">
                           <h3 className="font-semibold text-lg truncate flex-1 min-w-0">{story.title || 'Untitled Adventure'}</h3>
@@ -825,11 +825,11 @@ const Dashboard = () => {
                   })}
                   {/* Show local storage completed stories if database doesn't have them */}
                   {recentStories.length < 3 && completedStories.slice(0, 3 - recentStories.length).map((story) => (
-                    <Card key={story.id} className="glass-panel border-0">
-                      <CardContent className="p-4">
-                        <div className="flex justify-between items-start mb-2">
-                          <h3 className="font-semibold text-lg truncate flex-1 mr-4">{story.title}</h3>
-                          <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
+                    <Card key={story.id} className="glass-panel border-0 min-w-0 max-w-full overflow-hidden">
+                      <CardContent className="p-4 min-w-0">
+                        <div className="flex justify-between items-start mb-2 gap-2 min-w-0">
+                          <h3 className="font-semibold text-lg truncate flex-1 min-w-0">{story.title}</h3>
+                          <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100 shrink-0">
                             Completed
                           </Badge>
                         </div>
