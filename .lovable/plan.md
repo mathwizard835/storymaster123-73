@@ -1,61 +1,36 @@
-## Diagnosis (account `30dmantri@ransomeverglades.org`, user id `68d8…d57`)
+## Problem
 
-The DB shows a valid `active` row created today (`expires_at 2026‑06‑11 22:37`) attached to this user, written by a RevenueCat `RENEWAL` webhook. So entitlement data exists — the bug is in how the app reads and refreshes it after a reinstall/update. Three real defects line up with what the user saw:
+On the native iOS app (TestFlight), the home Dashboard renders content that extends past the right edge of the screen. Root cause is in `src/pages/Dashboard.tsx`:
 
-### 1. RevenueCat is NOT re-identified on app reopen
-`src/hooks/useAuth.tsx` only calls `identifyUser(session.user.id)` inside the `if (event === 'SIGNED_IN')` branch of `onAuthStateChange`. When the app launches with an existing Supabase session, Supabase fires `INITIAL_SESSION`, not `SIGNED_IN`. After a reinstall the RevenueCat SDK has no cached `appUserID` either, so it stays as `$RCAnonymousID`.
+The page wrapper uses `<div className="container py-4 md:py-8 px-4 md:px-8">`. Tailwind's `container` is configured in `tailwind.config.ts` with `padding: '2rem'` for **all** breakpoints. Because Tailwind merges these as separate CSS rules (not as a Tailwind override), the container's hardcoded 2rem padding combines with the wrapper's own `px-4`, and — more importantly — the `container` utility also sets a centered, fixed-width box at each breakpoint. On a 390px iPhone this is fine width-wise, but two child sections still overflow:
 
-Consequences:
-- `Purchases.restorePurchases()` validates the Apple receipt against the anonymous RC user. If those transactions are already attached to the real Supabase user id from before, RC issues a `TRANSFER` event (we see `Unhandled event type: TRANSFER` in `revenuecat-webhook` logs) and the active entitlement is *moved away* from the anonymous id — `customerInfo.entitlements.active` comes back empty, so `restorePurchases()` returns `{ isSubscribed: false }` and the UI shows "No Passes Found".
-- Even when restore succeeds, the next webhook fires with `app_user_id = $RCAnonymousID`, the UUID guard in `revenuecat-webhook/index.ts` skips setting `user_id`, and the DB row is never linked to the Supabase user.
+1. The Character Progress grid is `grid-cols-2` with `gap-4` and 5 stat tiles. With long titles like the last-earned character title (`{character.titles[...]}` shown next to the `Sparkles` icon — e.g. "Master Adventurer"), the inner `flex items-center gap-1` row uses `text-xl` with no `min-w-0`/`truncate`, so the tile pushes the grid track wider than the column allows, dragging the whole card past the viewport.
+2. The "Recent Stories" and "Achievements" section headings use `text-2xl` + icon + dynamic count plus a "View All" button in a `flex items-center justify-between` row with no `min-w-0`/`flex-wrap`, which can also push past the right edge with longer counts on small screens.
 
-### 2. `revenuecat-webhook` ignores `TRANSFER`
-The `switch (event.type)` has no case for `TRANSFER`. When RC moves the entitlement between app_user_ids (exactly what happens on reinstall), our DB is never updated, so `getUserSubscription` can return a stale/expired row and the user is paywalled.
+Additionally, the wrapper's combination of `container` + extra horizontal padding shrinks usable width unnecessarily on phones. We should drop `container` on the native-phone path so the layout uses only `px-4`.
 
-### 3. `getUserSubscription` is device-first and depends on a fresh `auth.getUser()`
-`src/lib/subscription.ts` queries by `device_id` first. After a reinstall Capacitor Preferences is wiped, so `getDeviceId()` returns a brand-new id and the device query returns nothing. The fallback to `user_id` calls `supabase.auth.getUser()` (a network call) again from inside the lib — on a cold start this can race or fail, and the function then returns `{ plan: null }`, triggering `RequireSubscription` to paywall. `RequireSubscription` retries once after 800 ms, but that's not enough when the underlying call fails outright.
+## Changes (all in `src/pages/Dashboard.tsx`)
 
-### TestFlight amplifier
-Apple's sandbox renews "monthly" subs every ~5 min and only sends `RENEWAL` webhooks on each cycle. The DB row's `expires_at` is set to the receipt expiration (24 h in production, but the sandbox value is much shorter). It's easy to hit a window where the most recent DB row has already expired and the next renewal webhook hasn't landed yet — combined with bugs 1–3, the app paywalls and "Restore" can't recover because of the TRANSFER/anonymous-id problem above.
+1. **Wrapper padding**: change the outer wrapper from
+   `<div className="container py-4 md:py-8 px-4 md:px-8">`
+   to a phone-friendly version that skips `container` below `md`:
+   `<div className="w-full md:container py-4 md:py-8 px-4 md:px-8">`.
+   This keeps desktop/tablet behavior identical and gives the native phone full viewport width minus the intended 1rem gutters.
 
----
+2. **Character Progress tiles** (lines ~563–596): add `min-w-0` to each tile `<div className="p-3 bg-muted/30 rounded-lg">` and wrap the value rows in `min-w-0` with `truncate` on the value text. Specifically the Title tile (lines 589–595) must use `truncate` on the title string so a long title cannot stretch its grid cell.
 
-## Plan
+3. **Section headings** (Recent Stories line ~733 and Achievements line ~866): add `min-w-0 flex-1` to the `<h2>` and `truncate` to the count text, and add `gap-2 flex-wrap` to the parent `flex items-center justify-between` row so the "View All" button can wrap under on the narrowest phones rather than pushing the row wider.
 
-### A. Always identify RevenueCat with the current Supabase user
-In `src/hooks/useAuth.tsx`:
-- Call `identifyUser(session.user.id)` for both `SIGNED_IN` **and** `INITIAL_SESSION` events (and inside the `getSession()` bootstrap when a session is present).
-- Also call it again right before `restorePurchases()` and `purchasePackage()` in `src/pages/Subscription.tsx` as a defensive guarantee.
+4. **Recent Stories card meta row** (line ~800): the `flex flex-wrap gap-x-4 gap-y-1` row plus the Continue button at line 810 sits inside `flex justify-between items-center gap-2 min-w-0`. Add `min-w-0 flex-1` to the inner meta `<div>` so long "Scene X of Y" content cannot stretch it.
 
-### B. Handle `TRANSFER` (and treat it like a refresh) in the webhook
-In `supabase/functions/revenuecat-webhook/index.ts`:
-- Add a `case "TRANSFER":` that, when `event.transferred_to` contains a UUID app_user_id, cancels old `active` rows for that user and inserts a fresh active row using `event.expiration_at_ms` (mirroring the `RENEWAL` path).
-- Tighten the `INITIAL_PURCHASE`/`RENEWAL`/`PRODUCT_CHANGE` block to also clear stale active rows that share the same `device_id` so reinstall doesn't leave duplicates.
+## Verification
 
-### C. Make subscription lookup auth-aware and resilient
-In `src/lib/subscription.ts` `getUserSubscription`:
-- Accept an optional `userId` argument; when omitted, try `supabase.auth.getSession()` (local, synchronous-ish) before falling back to `getUser()`.
-- Query by `user_id` first when a user id is available, then by `device_id`. This matches the post-reinstall reality where `device_id` is new but `user_id` is stable.
-- Return any "currently entitled" row from either query (existing `isCurrentlyEntitled` logic stays).
+- After changes, load `/dashboard` in the preview at iPhone widths (375×812 and 390×844) and confirm no horizontal scroll on the `<main>` and no clipped content on the right.
+- Confirm tablet (820px) and desktop (≥1024px) layouts are visually unchanged — the `md:container` keeps the same centered, padded box.
+- No business-logic or data changes; this is presentation-only.
 
-In `src/App.tsx` `RequireSubscription`:
-- Pass `user.id` into the new `getUserSubscription(user.id)` so the check doesn't depend on a second network round-trip to resolve the user.
-- Bump the retry to 2 attempts at 600 ms / 1500 ms to better cover the cold-start window.
+## Out of scope
 
-### D. Make Restore self-heal the DB
-In `src/pages/Subscription.tsx` restore handler and `src/lib/iapService.ts` `restorePurchases`:
-- Before calling `Purchases.restorePurchases()`, ensure `initializeRevenueCat()` has completed and `identifyUser(currentUserId)` has run.
-- After a successful restore, call `activateSubscriptionAfterPurchase('premium')` (already wired) — this will now write a row tied to the correct `user_id` because identify happened first.
-- If restore reports no entitlement but `customerInfo.allPurchasedProductIdentifiers` includes `sm_699_1m`, surface a clearer message ("Apple shows a past purchase but no active subscription — open Settings → Apple ID → Subscriptions to confirm it's still active") instead of the generic "No Passes Found".
-
-### E. Memory + docs
-- Update `mem://billing/revenuecat-iap` to note: identify on `INITIAL_SESSION`, handle `TRANSFER`, user_id-first lookup.
-- No new secrets, no schema migration.
-
----
-
-## Technical notes
-- `INITIAL_SESSION` is the standard supabase-js v2 event for "session restored from storage at app start"; it must be treated identically to `SIGNED_IN` for any client-side identity wiring (RC, analytics, etc.).
-- The `TRANSFER` event payload (`event.transferred_to: string[]`, `event.transferred_from: string[]`) is documented by RevenueCat; we treat the last UUID in `transferred_to` as the new owner.
-- `getUserSubscription` is called from many places (RequireSubscription, StoryLimitWidget, Subscription page, analytics). Making the `userId` param optional keeps existing callers working.
-- No change to the `40/30d` removal already in flight; subscriber path stays unlimited.
+- No changes to the `NativeNavigationHeader` (already correct).
+- No changes to `PremiumThemeSelector` or any data/store/edge function.
+- No changes to the desktop "Adventure Dashboard" header.

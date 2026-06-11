@@ -251,7 +251,7 @@ const Dashboard = () => {
             </div>
           </div>
         )}
-        <div className="container py-4 md:py-8 px-4 md:px-8">
+        <div className="w-full md:container py-4 md:py-8 px-4 md:px-8">
           {/* ======= NATIVE MOBILE LAYOUT ======= */}
           {isPhone && isNative && (
             <div className="space-y-5">
