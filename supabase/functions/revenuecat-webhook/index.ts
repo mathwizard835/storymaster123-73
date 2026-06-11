@@ -102,16 +102,43 @@ serve(async (req) => {
       );
     }
 
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+    // Derive the "effective" user id for TRANSFER events — RC sends
+    // transferred_to / transferred_from arrays of app_user_ids.
+    const transferredTo: string[] = Array.isArray(event.transferred_to) ? event.transferred_to : [];
+    const transferredFrom: string[] = Array.isArray(event.transferred_from) ? event.transferred_from : [];
+    const transferTargetUserId =
+      transferredTo.find((id) => typeof id === "string" && uuidRegex.test(id)) || null;
+
     switch (event.type) {
       case "INITIAL_PURCHASE":
       case "RENEWAL":
-      case "PRODUCT_CHANGE": {
-        // Cancel any existing active subscriptions for this user
-        if (userId && userId !== "$RCAnonymousID") {
+      case "PRODUCT_CHANGE":
+      case "TRANSFER": {
+        // For TRANSFER: prefer the new owner from transferred_to; mark old
+        // owners' active rows as cancelled so they don't keep entitlement.
+        const effectiveUserId =
+          event.type === "TRANSFER" ? transferTargetUserId : (userId && userId !== "$RCAnonymousID" ? userId : null);
+
+        if (event.type === "TRANSFER") {
+          for (const oldId of transferredFrom) {
+            if (typeof oldId === "string" && uuidRegex.test(oldId)) {
+              await supabase
+                .from("user_subscriptions")
+                .update({ status: "cancelled" })
+                .eq("user_id", oldId)
+                .eq("status", "active");
+            }
+          }
+        }
+
+        // Cancel any existing active subscriptions for the effective user
+        if (effectiveUserId) {
           await supabase
             .from("user_subscriptions")
             .update({ status: "cancelled" })
-            .eq("user_id", userId)
+            .eq("user_id", effectiveUserId)
             .eq("status", "active");
         }
 

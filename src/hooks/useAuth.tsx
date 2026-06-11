@@ -62,8 +62,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           console.log('Token refreshed successfully');
         }
         
-        // Identify user with RevenueCat on sign in
-        if (event === 'SIGNED_IN' && session?.user) {
+        // Identify user with RevenueCat on sign-in AND on session restore.
+        // Supabase fires INITIAL_SESSION (not SIGNED_IN) when the app reopens
+        // with an existing session — without identifying here, RevenueCat
+        // stays anonymous and restore/webhook attribution breaks.
+        if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') && session?.user) {
           import('@/lib/iapService').then(({ identifyUser }) => {
             identifyUser(session.user.id);
           });
@@ -94,10 +97,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
-      
+
       // Check if this is an email verification callback
       if (session) {
         checkEmailVerification();
+        // Defensive: also identify on cold-start session bootstrap in case
+        // onAuthStateChange's INITIAL_SESSION fired before iapService was ready.
+        import('@/lib/iapService').then(({ identifyUser }) => {
+          identifyUser(session.user.id);
+        });
       }
     });
 
