@@ -787,10 +787,11 @@ Return ONLY valid JSON (no markdown, no explanations):
     // Token budgets — narrative target ~215 words, but JSON schema + memory flags
     // can push total output past 3.5k chars. Keep headroom so responses don't truncate.
     const getOptimalTokens = (sceneCount: number, isNewStory: boolean) => {
-      if (isNewStory) return 2000;
-      if (sceneCount >= 12) return 1800;
-      return 1800;
+      if (isNewStory) return 1800;
+      if (sceneCount >= 12) return 1400;
+      return 1400;
     };
+
     // Enforce a SAFE FLOOR — never let the client lower the budget below what
     // the JSON schema actually needs, or we get truncated responses → parse
     // failures → user-visible "Story Error".
@@ -1087,10 +1088,14 @@ THIS SCENE: ${scene ? "Continue the story naturally from the previous scene." : 
     let parsed = extractJSON(text);
     let parsedValid = isValidSceneShape(parsed);
 
-    // Server-side single retry on truncation or parse/shape failure.
-    // Skip if the client already passed _retry to avoid 2x2 amplification.
+    // Server-side single retry ONLY on hard failures: truncation or unparseable
+    // JSON. We deliberately do NOT retry on `!parsedValid` (shape mismatch) —
+    // a slightly-off shape is still readable, and a second ~17s Anthropic call
+    // is far worse for UX than a minor optional-field gap. `parsedValid` is
+    // kept below for logging/metrics only.
     const shouldRetry =
-      !isRetry && (data?.stop_reason === "max_tokens" || !parsed || !parsedValid);
+      !isRetry && (data?.stop_reason === "max_tokens" || !parsed);
+
     if (shouldRetry) {
       const retryBudget = Math.min(Math.floor(max_tokens * 1.6), 4000);
       console.warn(

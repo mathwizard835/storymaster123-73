@@ -815,38 +815,24 @@ const Mission = () => {
       const abilityCategories = availableAbilities.map(a => a.category);
       const sceneWithMemory = { ...scene, selectedChoiceId: choiceId, memory: storyMemory };
 
-      const shouldRetryChoiceGeneration = (error: any) => {
-        const message = String(error?.message || "");
-        return !message.includes("paywall_required") &&
-          !message.includes("Story session corrupted") &&
-          !message.includes("Story session lost") &&
-          !message.includes("authentication") &&
-          !message.includes("Not authenticated");
-      };
-
-      const generateSceneWithRetry = async () => {
-        try {
-          const result = await generateNextScene(profileWithInventory, sceneWithMemory, false, 1800, nextSceneCount, savedStory.id, false, abilityCategories);
-          if (result.parsed) return result;
-
-          const errorPreview = result.text ? result.text.slice(0, 140) : "No response received";
-          console.warn("Story choice generation returned an invalid scene, retrying:", errorPreview);
-          await new Promise(resolve => setTimeout(resolve, 600));
-          return generateNextScene(profileWithInventory, sceneWithMemory, false, 1800, nextSceneCount, savedStory.id, false, abilityCategories);
-        } catch (error: any) {
-          console.warn("Story choice generation failed, checking retry eligibility:", error?.message || error);
-          if (!shouldRetryChoiceGeneration(error)) throw error;
-
-          await new Promise(resolve => setTimeout(resolve, 600));
-          return generateNextScene(profileWithInventory, sceneWithMemory, false, 1800, nextSceneCount, savedStory.id, false, abilityCategories);
-        }
-      };
-
-      const { parsed, text } = await generateSceneWithRetry();
+      // Single call — server already handles transparent truncation retry, and
+      // story.ts de-dupes in-flight requests. Surface failures so the catch
+      // block below can reset choiceLoading and show a toast.
+      const { parsed, text } = await generateNextScene(
+        profileWithInventory,
+        sceneWithMemory,
+        false,
+        1800,
+        nextSceneCount,
+        savedStory.id,
+        false,
+        abilityCategories
+      );
       if (!parsed) {
         const errorPreview = text ? text.slice(0, 140) : "No response received";
         throw new Error("Invalid AI response: " + errorPreview);
       }
+
 
       let effectiveInventory = inventory;
       if (choice.consumesItem && choice.requiresItem) {
