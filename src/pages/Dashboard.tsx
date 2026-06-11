@@ -729,10 +729,10 @@ const Dashboard = () => {
           <div className="grid gap-8 tablet-lg:grid-cols-2 lg:grid-cols-2">
             {/* Recent Stories */}
             <section>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="font-heading text-2xl font-bold flex items-center gap-2">
-                  <BookOpen className="h-6 w-6 text-blue-500" />
-                  Recent Stories ({totalStoryCount || recentStories.length + completedStories.length})
+              <div className="flex items-center justify-between gap-2 flex-wrap mb-4">
+                <h2 className="font-heading text-2xl font-bold flex items-center gap-2 min-w-0 flex-1">
+                  <BookOpen className="h-6 w-6 text-blue-500 shrink-0" />
+                  <span className="truncate">Recent Stories ({totalStoryCount || recentStories.length + completedStories.length})</span>
                 </h2>
                 <Button 
                   variant="ghost" 
