@@ -561,35 +561,35 @@ const Dashboard = () => {
               ) : (
                 <>
                   <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
-                    <div className="p-3 bg-muted/30 rounded-lg">
-                      <div className="text-xl md:text-2xl font-bold flex items-center gap-1">
-                        <Crown className="h-5 w-5 md:h-6 md:w-6 text-amber-500" />
-                        {character.level}
+                    <div className="p-3 bg-muted/30 rounded-lg min-w-0">
+                      <div className="text-xl md:text-2xl font-bold flex items-center gap-1 min-w-0">
+                        <Crown className="h-5 w-5 md:h-6 md:w-6 text-amber-500 shrink-0" />
+                        <span className="truncate">{character.level}</span>
                       </div>
                       <div className="text-xs md:text-sm text-muted-foreground">Level</div>
                     </div>
-                    <div className="p-3 bg-muted/30 rounded-lg">
-                      <div className="text-xl md:text-2xl font-bold flex items-center gap-1">
-                        <BookOpen className="h-5 w-5 md:h-6 md:w-6 text-emerald-500" />
-                        {totalStoryCount || progress.totalStories}
+                    <div className="p-3 bg-muted/30 rounded-lg min-w-0">
+                      <div className="text-xl md:text-2xl font-bold flex items-center gap-1 min-w-0">
+                        <BookOpen className="h-5 w-5 md:h-6 md:w-6 text-emerald-500 shrink-0" />
+                        <span className="truncate">{totalStoryCount || progress.totalStories}</span>
                       </div>
                       <div className="text-xs md:text-sm text-muted-foreground">Stories</div>
                     </div>
-                    <div className="p-3 bg-muted/30 rounded-lg">
-                      <div className="text-xl md:text-2xl font-bold flex items-center gap-1">
-                        <Zap className="h-5 w-5 md:h-6 md:w-6 text-blue-500" />
-                        {progress.totalChoices}
+                    <div className="p-3 bg-muted/30 rounded-lg min-w-0">
+                      <div className="text-xl md:text-2xl font-bold flex items-center gap-1 min-w-0">
+                        <Zap className="h-5 w-5 md:h-6 md:w-6 text-blue-500 shrink-0" />
+                        <span className="truncate">{progress.totalChoices}</span>
                       </div>
                       <div className="text-xs md:text-sm text-muted-foreground">Choices</div>
                     </div>
-                    <div className="p-3 bg-muted/30 rounded-lg">
-                      <div className="text-xl md:text-2xl font-bold">{completionRate}%</div>
+                    <div className="p-3 bg-muted/30 rounded-lg min-w-0">
+                      <div className="text-xl md:text-2xl font-bold truncate">{completionRate}%</div>
                       <div className="text-xs md:text-sm text-muted-foreground">Achievements</div>
                     </div>
-                    <div className="p-3 bg-muted/30 rounded-lg">
-                      <div className="text-xl md:text-2xl font-bold flex items-center gap-1">
-                        <Sparkles className="h-5 w-5 md:h-6 md:w-6 text-purple-500" />
-                        {character.titles[character.titles.length - 1] || 'Novice'}
+                    <div className="p-3 bg-muted/30 rounded-lg min-w-0">
+                      <div className="text-xl md:text-2xl font-bold flex items-center gap-1 min-w-0">
+                        <Sparkles className="h-5 w-5 md:h-6 md:w-6 text-purple-500 shrink-0" />
+                        <span className="truncate">{character.titles[character.titles.length - 1] || 'Novice'}</span>
                       </div>
                       <div className="text-xs md:text-sm text-muted-foreground">Title</div>
                     </div>
