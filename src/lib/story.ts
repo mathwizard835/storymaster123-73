@@ -287,14 +287,21 @@ export const markStoryCompleted = async (
 // Simple cache for identical requests (5 minute TTL)
 const sceneCache = new Map<string, { data: { parsed: Scene | null; text: string }, timestamp: number, storyId: string }>();
 
+// In-flight de-dupe: if an identical request is already running, await it
+// instead of firing a parallel Anthropic call. Entries are always removed in
+// a finally block so a rejected promise can never permanently lock a key.
+const inFlightScenes = new Map<string, Promise<{ text: string; parsed: Scene | null; raw: any; deviceFingerprint?: string }>>();
+
 // Track current story session to prevent cross-story cache contamination
 let currentStoryId: string | null = null;
 
 export const clearSceneCache = () => {
   sceneCache.clear();
+  inFlightScenes.clear();
   currentStoryId = null;
   console.log("Scene cache cleared");
 };
+
 
 // Phase 3: Story session recovery function
 export const recoverStorySession = (storyId: string, currentScene: number) => {
