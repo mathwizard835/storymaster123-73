@@ -251,7 +251,7 @@ const Dashboard = () => {
             </div>
           </div>
         )}
-        <div className="container py-4 md:py-8 px-4 md:px-8">
+        <div className="w-full md:container py-4 md:py-8 px-4 md:px-8">
           {/* ======= NATIVE MOBILE LAYOUT ======= */}
           {isPhone && isNative && (
             <div className="space-y-5">
@@ -561,35 +561,35 @@ const Dashboard = () => {
               ) : (
                 <>
                   <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
-                    <div className="p-3 bg-muted/30 rounded-lg">
-                      <div className="text-xl md:text-2xl font-bold flex items-center gap-1">
-                        <Crown className="h-5 w-5 md:h-6 md:w-6 text-amber-500" />
-                        {character.level}
+                    <div className="p-3 bg-muted/30 rounded-lg min-w-0">
+                      <div className="text-xl md:text-2xl font-bold flex items-center gap-1 min-w-0">
+                        <Crown className="h-5 w-5 md:h-6 md:w-6 text-amber-500 shrink-0" />
+                        <span className="truncate">{character.level}</span>
                       </div>
                       <div className="text-xs md:text-sm text-muted-foreground">Level</div>
                     </div>
-                    <div className="p-3 bg-muted/30 rounded-lg">
-                      <div className="text-xl md:text-2xl font-bold flex items-center gap-1">
-                        <BookOpen className="h-5 w-5 md:h-6 md:w-6 text-emerald-500" />
-                        {totalStoryCount || progress.totalStories}
+                    <div className="p-3 bg-muted/30 rounded-lg min-w-0">
+                      <div className="text-xl md:text-2xl font-bold flex items-center gap-1 min-w-0">
+                        <BookOpen className="h-5 w-5 md:h-6 md:w-6 text-emerald-500 shrink-0" />
+                        <span className="truncate">{totalStoryCount || progress.totalStories}</span>
                       </div>
                       <div className="text-xs md:text-sm text-muted-foreground">Stories</div>
                     </div>
-                    <div className="p-3 bg-muted/30 rounded-lg">
-                      <div className="text-xl md:text-2xl font-bold flex items-center gap-1">
-                        <Zap className="h-5 w-5 md:h-6 md:w-6 text-blue-500" />
-                        {progress.totalChoices}
+                    <div className="p-3 bg-muted/30 rounded-lg min-w-0">
+                      <div className="text-xl md:text-2xl font-bold flex items-center gap-1 min-w-0">
+                        <Zap className="h-5 w-5 md:h-6 md:w-6 text-blue-500 shrink-0" />
+                        <span className="truncate">{progress.totalChoices}</span>
                       </div>
                       <div className="text-xs md:text-sm text-muted-foreground">Choices</div>
                     </div>
-                    <div className="p-3 bg-muted/30 rounded-lg">
-                      <div className="text-xl md:text-2xl font-bold">{completionRate}%</div>
+                    <div className="p-3 bg-muted/30 rounded-lg min-w-0">
+                      <div className="text-xl md:text-2xl font-bold truncate">{completionRate}%</div>
                       <div className="text-xs md:text-sm text-muted-foreground">Achievements</div>
                     </div>
-                    <div className="p-3 bg-muted/30 rounded-lg">
-                      <div className="text-xl md:text-2xl font-bold flex items-center gap-1">
-                        <Sparkles className="h-5 w-5 md:h-6 md:w-6 text-purple-500" />
-                        {character.titles[character.titles.length - 1] || 'Novice'}
+                    <div className="p-3 bg-muted/30 rounded-lg min-w-0">
+                      <div className="text-xl md:text-2xl font-bold flex items-center gap-1 min-w-0">
+                        <Sparkles className="h-5 w-5 md:h-6 md:w-6 text-purple-500 shrink-0" />
+                        <span className="truncate">{character.titles[character.titles.length - 1] || 'Novice'}</span>
                       </div>
                       <div className="text-xs md:text-sm text-muted-foreground">Title</div>
                     </div>
@@ -729,10 +729,10 @@ const Dashboard = () => {
           <div className="grid gap-8 tablet-lg:grid-cols-2 lg:grid-cols-2">
             {/* Recent Stories */}
             <section>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="font-heading text-2xl font-bold flex items-center gap-2">
-                  <BookOpen className="h-6 w-6 text-blue-500" />
-                  Recent Stories ({totalStoryCount || recentStories.length + completedStories.length})
+              <div className="flex items-center justify-between gap-2 flex-wrap mb-4">
+                <h2 className="font-heading text-2xl font-bold flex items-center gap-2 min-w-0 flex-1">
+                  <BookOpen className="h-6 w-6 text-blue-500 shrink-0" />
+                  <span className="truncate">Recent Stories ({totalStoryCount || recentStories.length + completedStories.length})</span>
                 </h2>
                 <Button 
                   variant="ghost" 
@@ -797,7 +797,7 @@ const Dashboard = () => {
                           )}
                         </div>
                         <div className="flex justify-between items-center gap-2 min-w-0">
-                          <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground min-w-0">
+                          <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground min-w-0 flex-1">
                             {!isStoryCompleted ? (
                               <span>Scene {story.current_scene_index + 1} of {story.scene_count}</span>
                             ) : (
@@ -862,10 +862,10 @@ const Dashboard = () => {
 
             {/* Recent Achievements */}
             <section>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="font-heading text-2xl font-bold flex items-center gap-2">
-                  <Trophy className="h-6 w-6 text-amber-500" />
-                  Achievements ({unlockedAchievements.length})
+              <div className="flex items-center justify-between gap-2 flex-wrap mb-4">
+                <h2 className="font-heading text-2xl font-bold flex items-center gap-2 min-w-0 flex-1">
+                  <Trophy className="h-6 w-6 text-amber-500 shrink-0" />
+                  <span className="truncate">Achievements ({unlockedAchievements.length})</span>
                 </h2>
                 <Button 
                   variant="ghost" 
