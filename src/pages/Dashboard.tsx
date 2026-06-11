@@ -797,7 +797,7 @@ const Dashboard = () => {
                           )}
                         </div>
                         <div className="flex justify-between items-center gap-2 min-w-0">
-                          <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground min-w-0">
+                          <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground min-w-0 flex-1">
                             {!isStoryCompleted ? (
                               <span>Scene {story.current_scene_index + 1} of {story.scene_count}</span>
                             ) : (
