@@ -572,6 +572,19 @@ export default function Subscription() {
                     onClick={() => {
                       requireParentalGate(async () => {
                         setLoading(true);
+                        // Make sure RevenueCat is initialized AND identified
+                        // with the current Supabase user BEFORE restoring,
+                        // otherwise restore runs against $RCAnonymousID and
+                        // Apple's TRANSFER flow can move the entitlement off
+                        // the anonymous id, yielding "no subscription found"
+                        // even when the receipt is valid.
+                        try {
+                          const { initializeRevenueCat, identifyUser } = await import('@/lib/iapService');
+                          await initializeRevenueCat();
+                          if (user?.id) await identifyUser(user.id);
+                        } catch (e) {
+                          console.warn('RevenueCat pre-restore init failed', e);
+                        }
                         const result = await restorePurchases();
                         if (result.isSubscribed) {
                           // Also activate in Supabase when restoring
@@ -587,8 +600,9 @@ export default function Subscription() {
                           return;
                         } else {
                           toast({
-                            title: "No Passes Found",
-                            description: "No previous Adventure Pass was found for this Apple ID.",
+                            title: "No Active Pass Found",
+                            description:
+                              "If you purchased recently, open Settings → Apple ID → Subscriptions to confirm your StoryMaster pass is active, then tap Restore again.",
                           });
                         }
                         setLoading(false);

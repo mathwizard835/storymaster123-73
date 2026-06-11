@@ -140,14 +140,23 @@ const RequireSubscription = ({ children }: { children: React.ReactNode }) => {
       }
       try {
         const { getUserSubscription } = await import("@/lib/subscription");
-        const { plan } = await getUserSubscription();
+        const { plan } = await getUserSubscription(user.id);
         const active = !!plan && plan.name?.toLowerCase() !== 'free';
 
         // Cold-start race: first check after sign-in can return no rows
-        // before the session is fully propagated. Retry once silently
+        // before the session is fully propagated. Retry twice silently
         // before paywalling a potentially paying user.
         if (!active && allowRetry) {
-          await new Promise(r => setTimeout(r, 800));
+          await new Promise(r => setTimeout(r, 600));
+          if (cancelled) return;
+          const { plan: plan2 } = await getUserSubscription(user.id);
+          const active2 = !!plan2 && plan2.name?.toLowerCase() !== 'free';
+          if (active2) {
+            if (!cancelled) { setHasSub(true); setChecking(false); }
+            writeCachedSub(user.id, true);
+            return;
+          }
+          await new Promise(r => setTimeout(r, 900));
           if (cancelled) return;
           return runCheck(false);
         }

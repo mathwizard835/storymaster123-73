@@ -65,42 +65,56 @@ const isCurrentlyEntitled = (row: any): boolean => {
   return false;
 };
 
-export const getUserSubscription = async (): Promise<{
+export const getUserSubscription = async (preferredUserId?: string): Promise<{
   subscription: UserSubscription | null;
   plan: SubscriptionPlan | null;
 }> => {
   try {
-    const deviceId = await getDeviceId();
+    // Resolve user id with the cheapest path first: caller-provided > local
+    // session > network getUser(). This avoids a network round-trip on cold
+    // start (which can race and cause false paywalls after reinstall).
+    let resolvedUserId: string | null = preferredUserId ?? null;
+    if (!resolvedUserId) {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        resolvedUserId = session?.user?.id ?? null;
+      } catch { /* ignore */ }
+    }
+    if (!resolvedUserId) {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        resolvedUserId = user?.id ?? null;
+      } catch { /* ignore */ }
+    }
 
-    // Fetch the most recent active OR cancelled rows for this device (we'll
-    // pick the first one that's currently entitled, so cancel-at-period-end
-    // and expires_at are honored).
-    let { data: deviceRows, error } = await supabase
-      .from('user_subscriptions')
-      .select(`*, subscription_plans (*)`)
-      .eq('device_id', deviceId)
-      .in('status', ['active', 'cancelled'])
-      .order('created_at', { ascending: false })
-      .limit(5);
+    let data: any = null;
 
-    if (error && error.code !== 'PGRST116') throw error;
+    // 1) Prefer user_id lookup — stable across reinstalls (device_id changes
+    //    when Capacitor Preferences is wiped).
+    if (resolvedUserId) {
+      const { data: userRows, error: userError } = await supabase
+        .from('user_subscriptions')
+        .select(`*, subscription_plans (*)`)
+        .eq('user_id', resolvedUserId)
+        .in('status', ['active', 'cancelled'])
+        .order('created_at', { ascending: false })
+        .limit(5);
+      if (userError && userError.code !== 'PGRST116') throw userError;
+      data = (userRows || []).find(isCurrentlyEntitled) || null;
+    }
 
-    let data = (deviceRows || []).find(isCurrentlyEntitled) || null;
-
-    // Fall back to user_id lookup (cross-device, manual grants, etc.)
+    // 2) Fall back to device_id lookup (anonymous / pre-auth scenarios).
     if (!data) {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: userRows, error: userError } = await supabase
-          .from('user_subscriptions')
-          .select(`*, subscription_plans (*)`)
-          .eq('user_id', user.id)
-          .in('status', ['active', 'cancelled'])
-          .order('created_at', { ascending: false })
-          .limit(5);
-        if (userError && userError.code !== 'PGRST116') throw userError;
-        data = (userRows || []).find(isCurrentlyEntitled) || null;
-      }
+      const deviceId = await getDeviceId();
+      const { data: deviceRows, error } = await supabase
+        .from('user_subscriptions')
+        .select(`*, subscription_plans (*)`)
+        .eq('device_id', deviceId)
+        .in('status', ['active', 'cancelled'])
+        .order('created_at', { ascending: false })
+        .limit(5);
+      if (error && error.code !== 'PGRST116') throw error;
+      data = (deviceRows || []).find(isCurrentlyEntitled) || null;
     }
 
     return {
