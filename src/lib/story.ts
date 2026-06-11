@@ -365,101 +365,102 @@ export const generateNextScene = async (
     return { ...cached.data, raw: null };
   }
 
-  // Smart token calculation. Continuation scenes still need a generous floor
-  // because the JSON envelope (choices/memory/inventory/HUD) — not the prose —
-  // is what blows the budget. Don't shrink the floor for "short" stories.
-  const optimizedTokens = Math.max(maxTokens, sceneCount === 1 ? 2000 : 1600);
+  // Smart token calculation. Continuation scenes use a tighter floor now that
+  // the edge function has its own retry-on-truncation safety net — no need to
+  // pre-pay for output tokens we usually don't emit. First scenes still need
+  // headroom because they include the full setup envelope.
+  const optimizedTokens = Math.max(maxTokens, sceneCount === 1 ? 2000 : 1300);
 
   const { isNativePlatform } = await import("@/lib/platform");
   const platform = isNativePlatform() ? "native" : "web";
 
-  const invokeOnce = async (tokens: number, isRetry: boolean) => {
-    return await supabase.functions.invoke("generate-story", {
-      body: {
-        profile,
-        scene,
-        megastory,
-        max_tokens: tokens,
-        scene_count: sceneCount,
-        abilities: availableAbilities,
-        platform,
-        _retry: isRetry,
-      },
-    });
-  };
+  // In-flight de-dupe: if the same scene is already being generated, return
+  // the existing promise instead of firing a parallel request.
+  const existing = inFlightScenes.get(cacheKey);
+  if (existing) {
+    console.log("⏳ Awaiting in-flight scene generation for identical request");
+    return existing;
+  }
 
-  const isParseFailure = (err: any, data: any) => {
-    const msg = String(err?.message ?? data?.error ?? "");
-    return (
-      data?.retryable === true ||
-      /Failed to parse|Invalid AI response|valid JSON|422/i.test(msg)
-    );
-  };
-
-  try {
-    let { data, error } = await invokeOnce(optimizedTokens, false);
-
-    // Transparent retry on parse-failure responses before surfacing an error.
-    if (error || (!data?.success && !data?.ok)) {
-      if (isParseFailure(error, data)) {
-        console.warn("⚠️ Scene parse failed — retrying once transparently");
-        const retryTokens = Math.min(Math.floor(optimizedTokens * 1.5), 4000);
-        const retry = await invokeOnce(retryTokens, true);
-        data = retry.data;
-        error = retry.error;
-      }
-    }
-
-    if (error) throw error;
-
-    if (!data?.success && !data?.ok) {
-      const errorMsg = data?.error || "Failed to generate scene";
-      const details = data?.details || data?.preview || "";
-      console.error("Edge function error:", errorMsg, details);
-      throw new Error(errorMsg);
-    }
-
-    const text: string = data?.resultText ?? data?.text ?? "";
-    const parsed: Scene | null = data?.result ?? data?.parsed ?? null;
-    const deviceFingerprintResult: string | undefined = data?.deviceFingerprint ?? undefined;
-
-    if (text && !parsed) {
-      console.error("Failed to parse story response. Text length:", text.length);
-      console.error("Text preview:", text.slice(0, 200));
-    }
-
-    const result = { text, parsed, raw: data, deviceFingerprint: deviceFingerprintResult };
-
-    // Only cache SUCCESSFUL parses so a one-off failure can't lock the user
-    // out of retrying with the same inputs.
-    if (parsed) {
-      sceneCache.set(cacheKey, {
-        data: { parsed, text },
-        timestamp: Date.now(),
-        storyId: storyId || currentStoryId || 'unknown'
+  const run = (async () => {
+    try {
+      // Single call. Retry/truncation handling lives server-side now.
+      const { data, error } = await supabase.functions.invoke("generate-story", {
+        body: {
+          profile,
+          scene,
+          megastory,
+          max_tokens: optimizedTokens,
+          scene_count: sceneCount,
+          abilities: availableAbilities,
+          platform,
+          _retry: false,
+        },
       });
 
-      if (sceneCache.size > 10) {
-        const oldestKey = Array.from(sceneCache.keys())[0];
-        sceneCache.delete(oldestKey);
+      if (error) throw error;
+
+      if (!data?.success && !data?.ok) {
+        const errorMsg = data?.error || "Failed to generate scene";
+        const details = data?.details || data?.preview || "";
+        console.error("Edge function error:", errorMsg, details);
+        throw new Error(errorMsg);
       }
+
+      const text: string = data?.resultText ?? data?.text ?? "";
+      const parsed: Scene | null = data?.result ?? data?.parsed ?? null;
+      const deviceFingerprintResult: string | undefined = data?.deviceFingerprint ?? undefined;
+
+      if (text && !parsed) {
+        console.error("Failed to parse story response. Text length:", text.length);
+        console.error("Text preview:", text.slice(0, 200));
+      }
+
+      const result = { text, parsed, raw: data, deviceFingerprint: deviceFingerprintResult };
+
+      // Only cache SUCCESSFUL parses so a one-off failure can't lock the user
+      // out of retrying with the same inputs.
+      if (parsed) {
+        sceneCache.set(cacheKey, {
+          data: { parsed, text },
+          timestamp: Date.now(),
+          storyId: storyId || currentStoryId || 'unknown'
+        });
+
+        if (sceneCache.size > 10) {
+          const oldestKey = Array.from(sceneCache.keys())[0];
+          sceneCache.delete(oldestKey);
+        }
+      }
+
+      return result;
+    } catch (error: any) {
+      console.error("Error in generateNextScene:", error);
+
+      if (error.message?.includes("authentication") || error.message?.includes("Not authenticated")) {
+        throw new Error("Authentication required. Please refresh the page and try again.");
+      }
+
+      if (error.message?.includes("Edge Function")) {
+        throw new Error("Story generation service is temporarily unavailable. Please try again in a moment.");
+      }
+
+      throw error;
     }
+  })();
 
-    return result;
-  } catch (error: any) {
-    console.error("Error in generateNextScene:", error);
-
-    if (error.message?.includes("authentication") || error.message?.includes("Not authenticated")) {
-      throw new Error("Authentication required. Please refresh the page and try again.");
+  inFlightScenes.set(cacheKey, run);
+  // ALWAYS clear the in-flight entry, whether the promise resolved or rejected,
+  // so a failed request can never permanently lock that cache key.
+  run.finally(() => {
+    if (inFlightScenes.get(cacheKey) === run) {
+      inFlightScenes.delete(cacheKey);
     }
+  });
 
-    if (error.message?.includes("Edge Function")) {
-      throw new Error("Story generation service is temporarily unavailable. Please try again in a moment.");
-    }
-
-    throw error;
-  }
+  return run;
 };
+
 
 
 
