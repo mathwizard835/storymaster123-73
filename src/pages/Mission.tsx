@@ -573,7 +573,11 @@ const Mission = () => {
         
         // Phase 3: Use forceNewSession flag for explicit new story, pass abilities
         const abilityCategories = availableAbilities.map(a => a.category);
-        const { parsed, text, deviceFingerprint } = await generateNextScene(profileWithInventory, undefined, false, 1800, 1, newStoryId, true, abilityCategories);
+        setStreamedNarrative("");
+        const { parsed, text, deviceFingerprint } = await generateNextScene(
+          profileWithInventory, undefined, false, 1800, 1, newStoryId, true, abilityCategories,
+          (partial) => setStreamedNarrative(partial)
+        );
         if (!parsed) {
           const errorPreview = text ? text.slice(0, 140) : "No response received";
           throw new Error("Invalid AI response: " + errorPreview);
