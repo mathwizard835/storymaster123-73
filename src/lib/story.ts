@@ -318,7 +318,8 @@ export const generateNextScene = async (
   sceneCount: number = 1,
   storyId?: string,
   forceNewSession: boolean = false,
-  availableAbilities: string[] = []
+  availableAbilities: string[] = [],
+  onNarrativeDelta?: (partialNarrative: string) => void
 ): Promise<{ text: string; parsed: Scene | null; raw: any; deviceFingerprint?: string }> => {
   // Phase 4: Defensive logging
   console.log(`🎬 generateNextScene called:`, {
@@ -327,7 +328,8 @@ export const generateNextScene = async (
     storyId,
     currentStoryId,
     forceNewSession,
-    cacheSize: sceneCache.size
+    cacheSize: sceneCache.size,
+    streaming: !!onNarrativeDelta,
   });
 
   // Phase 1: ONLY clear cache when explicitly requested (forceNewSession)
@@ -341,27 +343,32 @@ export const generateNextScene = async (
     console.log(`📖 Resuming story session: ${storyId}`);
     currentStoryId = storyId;
   }
-  
+
   // Phase 1: CRITICAL - Validate story continuity
   if (sceneCount > 1 && storyId && currentStoryId && storyId !== currentStoryId) {
     console.error(`❌ CRITICAL: Story ID mismatch! Expected: ${currentStoryId}, Got: ${storyId}`);
     throw new Error('Story session corrupted - please start a new adventure');
   }
-  
+
   // Update tracking if story ID provided for first scene
   if (storyId && !currentStoryId) {
     console.log(`📝 Setting current story ID: ${storyId}`);
     currentStoryId = storyId;
   }
-  
+
   // Create cache key that includes story session ID
   const sessionId = storyId || currentStoryId || 'unknown';
   const cacheKey = JSON.stringify({ sessionId, profile, scene, megastory, maxTokens, sceneCount });
   const cached = sceneCache.get(cacheKey);
-  
+
   // Check cache (5 minute TTL) - skip for first scene
   if (cached && Date.now() - cached.timestamp < 300000 && sceneCount > 1) {
     console.log("Using cached scene generation");
+    // Replay the cached narrative through the streaming callback so the UI
+    // stays consistent whether we hit the cache or the network.
+    if (onNarrativeDelta && cached.data.parsed?.narrative) {
+      try { onNarrativeDelta(cached.data.parsed.narrative); } catch { /* ignore */ }
+    }
     return { ...cached.data, raw: null };
   }
 
@@ -382,11 +389,76 @@ export const generateNextScene = async (
     return existing;
   }
 
-  const run = (async () => {
+  // ---- Non-streaming invocation (used by default, and as fallback) ----
+  const invokeNonStreaming = async () => {
+    const { data, error } = await supabase.functions.invoke("generate-story", {
+      body: {
+        profile,
+        scene,
+        megastory,
+        max_tokens: optimizedTokens,
+        scene_count: sceneCount,
+        abilities: availableAbilities,
+        platform,
+        _retry: false,
+      },
+    });
+
+    if (error) throw error;
+
+    if (!data?.success && !data?.ok) {
+      const errorMsg = data?.error || "Failed to generate scene";
+      const details = data?.details || data?.preview || "";
+      console.error("Edge function error:", errorMsg, details);
+      throw new Error(errorMsg);
+    }
+
+    const text: string = data?.resultText ?? data?.text ?? "";
+    const parsed: Scene | null = data?.result ?? data?.parsed ?? null;
+    const deviceFingerprintResult: string | undefined = data?.deviceFingerprint ?? undefined;
+
+    if (text && !parsed) {
+      console.error("Failed to parse story response. Text length:", text.length);
+      console.error("Text preview:", text.slice(0, 200));
+    }
+
+    return { text, parsed, raw: data, deviceFingerprint: deviceFingerprintResult };
+  };
+
+  // ---- Streaming invocation (only when caller provided onNarrativeDelta) ----
+  // Returns the SAME result shape as invokeNonStreaming. On ANY failure
+  // (network drop, malformed SSE, abort, missing session), falls back to
+  // the non-streaming path so the caller is never worse off than before.
+  const invokeStreaming = async (): Promise<{ text: string; parsed: Scene | null; raw: any; deviceFingerprint?: string }> => {
     try {
-      // Single call. Retry/truncation handling lives server-side now.
-      const { data, error } = await supabase.functions.invoke("generate-story", {
-        body: {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+      // Streaming requires an authenticated session; fall back otherwise.
+      if (!accessToken) {
+        console.warn("[stream] No access token, falling back to non-streaming");
+        return invokeNonStreaming();
+      }
+
+      const rawBase = (import.meta as any).env?.VITE_SUPABASE_URL as string | undefined;
+      const anonKey = (import.meta as any).env?.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined;
+      if (!rawBase || !anonKey) {
+        console.warn("[stream] Missing VITE_SUPABASE_URL / VITE_SUPABASE_PUBLISHABLE_KEY, falling back");
+        return invokeNonStreaming();
+      }
+      // Defensive: strip trailing slashes to prevent `//functions/...` paths
+      // that some CDNs reject with a CORS / 404 before the stream handshake.
+      const base = rawBase.replace(/\/+$/, "");
+      const endpoint = `${base}/functions/v1/generate-story`;
+
+      const resp = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${accessToken}`,
+          "apikey": anonKey,
+          "Accept": "text/event-stream",
+        },
+        body: JSON.stringify({
           profile,
           scene,
           megastory,
@@ -395,34 +467,136 @@ export const generateNextScene = async (
           abilities: availableAbilities,
           platform,
           _retry: false,
-        },
+          stream: true,
+        }),
       });
 
-      if (error) throw error;
-
-      if (!data?.success && !data?.ok) {
-        const errorMsg = data?.error || "Failed to generate scene";
-        const details = data?.details || data?.preview || "";
-        console.error("Edge function error:", errorMsg, details);
-        throw new Error(errorMsg);
+      if (!resp.ok || !resp.body) {
+        console.warn(`[stream] HTTP ${resp.status}, falling back`);
+        return invokeNonStreaming();
       }
 
-      const text: string = data?.resultText ?? data?.text ?? "";
-      const parsed: Scene | null = data?.result ?? data?.parsed ?? null;
-      const deviceFingerprintResult: string | undefined = data?.deviceFingerprint ?? undefined;
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = "";
+      let accumulated = "";
+      let lastNarrativeEmit = "";
+      let finalScene: { text: string; parsed: Scene | null; raw: any; deviceFingerprint?: string } | null = null;
+      let streamError: string | null = null;
 
-      if (text && !parsed) {
-        console.error("Failed to parse story response. Text length:", text.length);
-        console.error("Text preview:", text.slice(0, 200));
+      // Regex that captures the in-progress narrative substring even when the
+      // closing `"` hasn't arrived yet. The `(?:\\.|[^"\\])*` body is safe
+      // against chunk-boundary splits: a dangling `\` simply terminates the
+      // match early and gets included on the next chunk after the escape
+      // sequence completes.
+      const narrativeRegex = /"narrative"\s*:\s*"((?:\\.|[^"\\])*)/;
+
+      const unescapeJsonString = (raw: string): string => {
+        // Hand-unescape so we don't fail on incomplete sequences. Anything
+        // unrecognized is left as-is.
+        let out = "";
+        for (let i = 0; i < raw.length; i++) {
+          const ch = raw[i];
+          if (ch === "\\" && i + 1 < raw.length) {
+            const n = raw[i + 1];
+            if (n === "n") { out += "\n"; i++; }
+            else if (n === "t") { out += "\t"; i++; }
+            else if (n === "r") { out += "\r"; i++; }
+            else if (n === '"') { out += '"'; i++; }
+            else if (n === "\\") { out += "\\"; i++; }
+            else if (n === "/") { out += "/"; i++; }
+            else if (n === "u" && i + 5 < raw.length) {
+              const hex = raw.slice(i + 2, i + 6);
+              if (/^[0-9a-fA-F]{4}$/.test(hex)) {
+                out += String.fromCharCode(parseInt(hex, 16));
+                i += 5;
+              } else {
+                out += ch;
+              }
+            } else {
+              // Incomplete escape at end of buffer — leave for next chunk
+              if (i + 1 === raw.length - 0) break;
+              out += ch;
+            }
+          } else {
+            out += ch;
+          }
+        }
+        return out;
+      };
+
+      const flushEvents = () => {
+        let sep: number;
+        while ((sep = buf.indexOf("\n\n")) !== -1) {
+          const block = buf.slice(0, sep);
+          buf = buf.slice(sep + 2);
+          const lines = block.split("\n");
+          let evtName = "message";
+          let dataStr = "";
+          for (const line of lines) {
+            if (line.startsWith("event:")) evtName = line.slice(6).trim();
+            else if (line.startsWith("data:")) dataStr += line.slice(5).trim();
+          }
+          if (!dataStr) continue;
+          let payload: any;
+          try { payload = JSON.parse(dataStr); } catch { continue; }
+
+          if (evtName === "delta" && typeof payload?.text === "string") {
+            accumulated += payload.text;
+            if (onNarrativeDelta) {
+              const m = accumulated.match(narrativeRegex);
+              if (m && m[1] !== undefined) {
+                const partial = unescapeJsonString(m[1]);
+                if (partial !== lastNarrativeEmit) {
+                  lastNarrativeEmit = partial;
+                  try { onNarrativeDelta(partial); } catch { /* ignore */ }
+                }
+              }
+            }
+          } else if (evtName === "scene") {
+            finalScene = {
+              text: payload?.resultText ?? payload?.text ?? accumulated,
+              parsed: (payload?.result ?? payload?.parsed ?? null) as Scene | null,
+              raw: payload,
+              deviceFingerprint: payload?.deviceFingerprint,
+            };
+          } else if (evtName === "error") {
+            streamError = payload?.error || "Stream error";
+          }
+        }
+      };
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        flushEvents();
+        if (finalScene || streamError) break;
       }
+      // Drain any trailing buffered events
+      buf += decoder.decode();
+      flushEvents();
 
-      const result = { text, parsed, raw: data, deviceFingerprint: deviceFingerprintResult };
+      if (finalScene && finalScene.parsed) {
+        return finalScene;
+      }
+      console.warn(`[stream] No valid scene frame (${streamError ?? "no error"}), falling back`);
+      return invokeNonStreaming();
+    } catch (streamErr) {
+      console.warn("[stream] threw, falling back:", streamErr);
+      return invokeNonStreaming();
+    }
+  };
+
+  const run = (async () => {
+    try {
+      const result = onNarrativeDelta ? await invokeStreaming() : await invokeNonStreaming();
 
       // Only cache SUCCESSFUL parses so a one-off failure can't lock the user
       // out of retrying with the same inputs.
-      if (parsed) {
+      if (result.parsed) {
         sceneCache.set(cacheKey, {
-          data: { parsed, text },
+          data: { parsed: result.parsed, text: result.text },
           timestamp: Date.now(),
           storyId: storyId || currentStoryId || 'unknown'
         });
