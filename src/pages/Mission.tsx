@@ -773,6 +773,7 @@ const Mission = () => {
     }
 
     setChoiceLoading(true);
+    setStreamedNarrative("");
 
     // Learning mode challenges are now embedded directly in the AI-generated story
     // rather than using static hardcoded challenges that may be unrelated to the topic
