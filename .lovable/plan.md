@@ -1,88 +1,164 @@
-## Why stories feel slower than before
+## Goal
 
-Looking at `supabase/functions/generate-story/index.ts`, `src/lib/story.ts`, and `src/pages/Mission.tsx` against the live edge-function logs, three regressions are stacking on top of each other:
+Cut perceived story latency from ~15 s to ~1–2 s first paint, with zero change to story quality and zero gameplay regressions. Two coordinated changes:
 
-### 1. Triple-layer retry amplification (biggest offender)
+- **A. Server-side streaming** of the Anthropic response, with a progressive narrative reveal on the client.
+- **B. Schema-overhead trim** in the prompt (NOT narrative length) — fewer JSON wrapper tokens, same prose budget.
 
-A single scene request can now fan out into **up to 6 Anthropic calls**:
+## Quality guarantees (explicit)
 
-```text
-Mission.tsx generateSceneWithRetry()      → 1 retry on !parsed
-  story.ts isParseFailure() retry         → 1 retry on parse failure
-    generate-story server retry           → 1 retry on stop_reason=max_tokens OR shape-invalid
-```
+- Narrative word target stays **215 words max**, same Lexile mapping, same mode/tone instructions, same `SYSTEM_PROMPT`, same protagonist-name rules. Nothing about story craft moves.
+- The final parsed `Scene` object on the client is **byte-identical** to today — same `extractJSON` path, same `isValidSceneShape` validation, same fields. Streaming only changes *how* the bytes arrive, not what they are.
+- All existing safety filters (`BLOCKED_PATTERNS`, profile validation, post-parse warnings) remain in the same order on the assembled full text before it's returned to the client.
 
-The server-side retry (added in `supabase/functions/generate-story/index.ts` lines 1090–1110) already covers truncation and shape-invalid responses. The two client-side layers were written before that existed and now duplicate the work. Logs from today show exactly this: scene 5 was hit at 18:21:18, 18:21:19, and 18:21:28 with a server-side "Retrying scene generation" entry in between — three Sonnet calls (17 s each) for one user choice.
+## Bug-prevention guarantees (explicit)
 
-The `valid=false` retry trigger is also too aggressive: it retries whenever `isValidSceneShape` returns false, which happens for perfectly readable scenes that just don't tick every optional field.
-
-### 2. Every new story burns a full Sonnet 4 call
-
-`generate-story` line 740 hard-defaults non-guest users to `claude-sonnet-4-20250514`, and the Haiku switch only happens after `count >= 20` stories. For users still under 20 stories, every first scene is Sonnet (~15–20 s TTFB). The original design intent (per memory) was Sonnet for quality early on, Haiku once they have history — that's fine in principle, but combined with #1 the perceived cost is multiplied.
-
-### 3. Token budget pushed up
-
-Floor budgets were raised to 1800–2000 tokens (`getOptimalTokens`, `optimizedTokens` in story.ts). Sonnet output time scales roughly linearly with `max_tokens`, so ~+25 % output budget = ~+3–4 s per call. This was added to prevent truncation, but with the server-side retry already handling truncation it's mostly overhead.
-
-### 4. No request de-duplication
-
-`sceneCache` is keyed by inputs but only checked *after* the call resolves. There is no in-flight promise map, so a stray double-trigger (e.g. choice tap while a re-render fires) starts a parallel call instead of awaiting the existing one. `choiceLoading` mostly prevents this on the choice button, but the new-story bootstrap path (`Mission.tsx` line 576) and the `generateSceneWithRetry` wrapper don't share that guard.
+- Streaming is **opt-in via a request flag** (`stream: true`). If the client doesn't set it (e.g. quiz call, any future caller), the function falls back to today's exact non-streaming path. No existing caller breaks.
+- The client wraps the streaming call in a try/catch that **falls back to the existing non-streaming `supabase.functions.invoke` path** on any error (network drop, parse failure, abort). Worst case: same latency as today, never worse.
+- Server-side retry-on-truncation logic is preserved. If the stream ends with `stop_reason === "max_tokens"` or `extractJSON` returns null, the server re-runs the existing non-streaming retry against Anthropic and emits a final `event: scene` frame with the retried result, so the client always gets a valid `Scene` or a clean error.
+- In-flight de-dupe map in `story.ts`, scene cache, story-ID continuity checks, inventory/memory handling in `Mission.tsx` — all untouched.
+- No DB schema changes. No RLS changes. No new secrets. No new dependencies.
 
 ---
 
-## Fix outline
+## A. Streaming implementation
 
-**A. Collapse the retry layers to one (server only).**
+### A1. `supabase/functions/generate-story/index.ts`
 
-- `src/pages/Mission.tsx` lines 818–845: remove `generateSceneWithRetry`; call `generateNextScene` once and surface the error.
-- `src/lib/story.ts` lines 384–404: remove the client `isParseFailure` retry. Keep the `_retry` flag plumbing in case we ever need it, but stop firing it automatically.
-- Server (`supabase/functions/generate-story/index.ts` line ~1092): keep retry, but tighten the trigger to `stop_reason === "max_tokens" || !parsed` only — drop the `!parsedValid` branch so a slightly-off shape doesn't cost a second Anthropic round-trip. Lean on `isValidSceneShape` only for logging/metrics.
+Add a streaming branch *before* `let response = await callAnthropic(...)`:
 
-**B. Add an in-flight de-dupe in `src/lib/story.ts`.**
+```text
+if (body?.stream === true) {
+  // 1. Call Anthropic with `stream: true` (same model, same prompt, same max_tokens).
+  // 2. Return a ReadableStream with `Content-Type: text/event-stream`.
+  // 3. Forward Anthropic's SSE deltas to the client as `event: delta` frames
+  //    (payload = the raw text chunk being appended).
+  // 4. Accumulate the full text server-side as it streams.
+  // 5. On stream completion:
+  //      - run the SAME extractJSON + isValidSceneShape + retry logic
+  //        already at lines 1087–1120
+  //      - run the SAME analytics + profile-validation block
+  //      - emit a final `event: scene` frame with { parsed, text, usage, model }
+  //      - close the stream
+  // 6. On any error mid-stream, emit `event: error` with a retryable flag and close.
+}
+```
 
-- Introduce a `Map<string, Promise<…>>` keyed by the same `cacheKey` already computed at line 352. If a call is in flight, return the existing promise instead of invoking again. Clear the entry in `finally`.
+The non-streaming branch below remains unchanged so quiz generation and any external caller keep working.
 
-**C. Right-size token budgets.**
+### A2. `src/lib/story.ts`
 
-- `src/lib/story.ts` line 364: drop continuation floor from 1600 → 1300 (first scene stays at 2000).
-- `supabase/functions/generate-story/index.ts` `getOptimalTokens` (line 789): continuation 1800 → 1400, new story 2000 → 1800. Retry path already widens to 1.6× so truncation is still covered.
-- &nbsp;
+Extend `generateNextScene` with an optional `onNarrativeDelta?: (partial: string) => void` callback:
 
-&nbsp;
+- If the callback is present, call the function via `fetch()` against the function URL (constructed from `import.meta.env.VITE_SUPABASE_URL` + auth header) with `stream: true`, parse the SSE frames, accumulate `delta` chunks into a buffer, and on every delta run a lightweight regex that extracts the in-progress `"narrative":"..."` substring and forwards the unescaped text to `onNarrativeDelta`.
+- On the final `scene` frame, resolve with the same `{ text, parsed, raw, deviceFingerprint }` shape as today.
+- On any error or unexpected close, **fall back** to a non-streaming `supabase.functions.invoke("generate-story", { body: { ..., stream: false } })` call. The promise either resolves with a valid scene (slow path) or rejects exactly like today.
+- In-flight de-dupe map keys on the same `cacheKey` so a stream + a parallel non-stream request for the same scene collapse to one call.
+- The successful-parse `sceneCache.set(...)` write still happens after the final frame, identical to today.
 
-Quality and Implementation Check: Please run a strict code safety and edge-case audit on the performance optimizations just made across `supabase/functions/generate-story/index.ts`, `src/lib/story.ts`, and `src/pages/Mission.tsx`. 
+### A3. `src/pages/Mission.tsx`
 
-Verify the following 4 guardrails are explicitly in place:
+- Add a `streamedNarrative` state and pass `onNarrativeDelta: setStreamedNarrative` into both `generateNextScene` call sites (line 576 bootstrap and line 821 choice).
+- Render `streamedNarrative` in the existing scene-narrative slot while `choiceLoading` is true. When `parsed` resolves, swap to `parsed.narrative` (identical text, but now fully styled with paragraph breaks). Clear `streamedNarrative` in the same `finally` block that resets `choiceLoading`.
+- HUD, choices, inventory updates, interactive objects, memory writes, `saveCurrentStory` — all run **after** `parsed` resolves, exactly as today. No partial-parse gameplay state.
 
-1. Promise Cache Leak Check (src/lib/story.ts):
+### A4. Failure-mode matrix
 
-   - Ensure every key added to the new `Map<string, Promise<...>>` in-flight map is GUARANTEED to be deleted in a `finally` block or `.catch()` handler. 
 
-   - A failed network request must not leave a rejected promise stuck in the map, which would permanently lock that choice for the user.
+| Failure                                              | Behavior                                                                                                             |
+| ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `stream: true` request times out / aborts mid-stream | Client `fetch` rejects → fallback to `supabase.functions.invoke` non-stream path → identical to today                |
+| Anthropic emits malformed delta                      | Server keeps accumulating; final parse uses existing retry; client never sees broken JSON                            |
+| Final `parsed` is null after retry                   | Server emits `event: error { retryable: true }` → client throws → existing `catch` resets `choiceLoading` and toasts |
+| User taps a second choice while streaming            | Existing `choiceLoading` guard blocks the tap (unchanged)                                                            |
+| Quiz call (`/Mission.tsx` line 1416)                 | Does not set `stream: true` → uses existing path → unchanged                                                         |
 
-2. Retry Conditions (generate-story/index.ts):
 
-   - Confirm the `!parsedValid` / `!isValidSceneShape` condition was completely removed from the server retry triggers.
+---
 
-   - The server must only retry if the JSON is completely unparseable `!parsed`) or cut off `stop_reason === "max_tokens"`).
+## B. Schema-overhead trim (zero narrative impact)
 
-3. UI State Reset (src/pages/Mission.tsx):
+The current schema example in the prompt (line 912) advertises every optional field on every scene, which the model dutifully emits even when empty:
 
-   - Since `generateSceneWithRetry` was removed, ensure that if `generateNextScene` throws a raw error, the UI catches it.
+```json
+"interactiveObjects":[{...}],"itemsFound":[{...}],"memory":{"flags":[],"pastChoices":[]}
+```
 
-   - Confirm a failed request cleanly resets `loading` and `choiceLoading` states so the UI never freezes in an infinite spinner.
+On a continuation scene with no new items and no interactive objects, that's ~150–250 wasted output tokens per scene. Two surgical changes:
 
-4. Token Budget Check:
+### B1. Tell the model to omit empty optional arrays
 
-   - Verify that the lowered token floors (1300 client / 1400 server continuation) play nicely with the server's 1.6x retry multiplier without causing math underflows or errors.
+In `stablePrefix` (line 908), append one line to `SCENE REQUIREMENTS`:
 
-If any edge cases are unhandled, point out the code vulnerability and provide the corrected blocks immediately. If everything is airtight, explain exactly how the code enforces each safeguard.
+```text
+- Omit `interactiveObjects`, `itemsFound`, and `memory.flags` entirely when empty — do NOT emit empty arrays or placeholder objects.
+```
 
-### Expected impact
+Client-side, `Mission.tsx` already guards with `if (parsed.itemsFound && parsed.itemsFound.length > 0)` and `interactiveObjects?` optional chaining, so missing arrays are already safe. No client change needed.
 
-- Worst-case scene generation drops from 3 sequential Sonnet calls (45–60 s) to 1 call with at most one server retry (~17–25 s).
-- Typical happy-path scene drops ~2–4 s from the token-budget trim.
-- Accidental double-fires from the bootstrap path stop costing a second call.
-- If (D) ships, post-warmup users move to Haiku 4.5 within their first session instead of after 20 stories (~8–10 s per scene instead of ~17 s).
+### B2. Compress the schema example itself
 
-No schema, RLS, or auth changes. No UX copy changes. Edge function redeploys automatically.
+Replace the verbose inline example on line 912 with a tighter version that drops the optional sub-fields (`requiresItem`, `consumesItem`, `requiresAbility`, `actions`, sub-types) from the example — they stay valid in the type system, but removing them from the example saves ~80 tokens of input AND signals the model to only emit them when relevant. The full schema is still described in `SYSTEM_PROMPT` (line 305+) so the model knows the optional fields exist.
+
+### B3. What we explicitly do NOT change
+
+- Narrative word target: **stays 215 max**.
+- Lexile vocabulary instructions: **unchanged**.
+- Mode tone blocks (comedy/thrill/mystery/explore/learning): **unchanged**.
+- `SYSTEM_PROMPT`: **unchanged**.
+- Token budgets (`getOptimalTokens`): **unchanged** — the trim reduces actual output, not the cap.
+- Profile-validation warnings: **unchanged**.
+
+Expected savings: ~150–250 output tokens per continuation scene = ~1–2 s shaved off wall time on Haiku 4.5. Combined with A, first-word latency drops to ~1–2 s and full-scene completion to ~10–12 s on continuation scenes.
+
+---
+
+## Verification plan
+
+1. After deploy, generate 3 stories end-to-end on web preview (one each: comedy/thrill/mystery). Confirm:
+  - First narrative word appears within ~2 s of choice tap.
+  - Final rendered narrative matches `parsed.narrative` exactly (no duplication, no missing paragraphs).
+  - Inventory pickups, interactive objects, memory flags, and end-of-story triggers still fire on the right scenes.
+2. Force a streaming failure (temporarily throw inside the SSE handler) and confirm fallback path produces a valid scene.
+3. Inspect `generate-story` logs: `Story generation completed, length:` should drop by ~150–250 chars on continuation scenes; `stop_reason` should stay `end_turn`.
+4. Run the quiz flow (Mission line 1416) once to confirm the non-streaming path is untouched.
+
+## **### Quality and Implementation Audit Check**
+
+Please run a strict cross-file code safety and edge-case audit on the streaming and schema-trim refactor just implemented across `supabase/functions/generate-story/index.ts`, `src/lib/story.ts`, and `src/pages/Mission.tsx`. 
+
+Verify that the following 4 technical guardrails are explicitly handled:
+
+1. SSE Buffer Stream Boundary Guard (src/lib/story.ts):
+
+   - Inspect the lightweight regex / chunk accumulator parsing the incoming text buffer.
+
+   - Verify that if an Anthropic chunk boundary splits a JSON escaped sequence (like breaking `\"` or `\n` across two distinct network packets), the parser does not throw a JSON or syntax exception and freeze the progressive text delivery.
+
+2. Endpoint URL Cleanliness (src/lib/story.ts):
+
+   - Check how the direct fetch URL is constructed using `import.meta.env.VITE_SUPABASE_URL`.
+
+   - Ensure the concatenation is defensive against trailing slashes (e.g., preventing a broken URL route like `https://xyz.supabase.co//functions/v1/generate-story`) which would trigger immediate CORS failures and break the stream handshake.
+
+3. Structural Validation Schema Alignment (generate-story/index.ts):
+
+   - Look at the server-side validator logic. Since the model is now explicitly instructed to OMIT empty arrays `interactiveObjects`, `itemsFound`, `memory.flags`) instead of printing `[]`, verify that the parser/validator treats missing arrays as structurally valid.
+
+   - Ensure that omitting these fields does not accidentally trigger an unwanted server-side truncation or shape-invalid retry iteration loop.
+
+4. UI Text Layout Consistency (src/pages/Mission.tsx):
+
+   - Review the text wrapper swap where `streamedNarrative` gives way to `parsed.narrative`.
+
+   - Confirm that the typography CSS, layout properties, line-heights, and spacing configuration of the streaming view exactly match the final component wrapper to eliminate any visual flickering or abrupt layout text shifts when the stream finalizes.
+
+If any of these specific edge cases are missing or vulnerable to race conditions, point out the code vulnerability and provide the corrected file sections immediately. If everything is airtight, explain exactly how the code enforces each safeguard.
+
+## Files touched
+
+- `supabase/functions/generate-story/index.ts` — add streaming branch (A1) + 2-line prompt tweak (B1, B2).
+- `src/lib/story.ts` — add `onNarrativeDelta` + SSE client + fallback (A2).
+- `src/pages/Mission.tsx` — pass callback, render progressive narrative, clear on finalize (A3).
+
+No other files, no migrations, no new packages.

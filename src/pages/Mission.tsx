@@ -573,7 +573,11 @@ const Mission = () => {
         
         // Phase 3: Use forceNewSession flag for explicit new story, pass abilities
         const abilityCategories = availableAbilities.map(a => a.category);
-        const { parsed, text, deviceFingerprint } = await generateNextScene(profileWithInventory, undefined, false, 1800, 1, newStoryId, true, abilityCategories);
+        setStreamedNarrative("");
+        const { parsed, text, deviceFingerprint } = await generateNextScene(
+          profileWithInventory, undefined, false, 1800, 1, newStoryId, true, abilityCategories,
+          (partial) => setStreamedNarrative(partial)
+        );
         if (!parsed) {
           const errorPreview = text ? text.slice(0, 140) : "No response received";
           throw new Error("Invalid AI response: " + errorPreview);
@@ -652,6 +656,7 @@ const Mission = () => {
   }, [sceneCount]);
 
   const [choiceLoading, setChoiceLoading] = useState(false);
+  const [streamedNarrative, setStreamedNarrative] = useState<string>("");
 
   // ABILITIES DISABLED - Handler to unlock abilities instantly
   // const handleUnlockAbility = () => {
@@ -768,6 +773,7 @@ const Mission = () => {
     }
 
     setChoiceLoading(true);
+    setStreamedNarrative("");
 
     // Learning mode challenges are now embedded directly in the AI-generated story
     // rather than using static hardcoded challenges that may be unrelated to the topic
@@ -826,7 +832,8 @@ const Mission = () => {
         nextSceneCount,
         savedStory.id,
         false,
-        abilityCategories
+        abilityCategories,
+        (partial) => setStreamedNarrative(partial)
       );
       if (!parsed) {
         const errorPreview = text ? text.slice(0, 140) : "No response received";
@@ -979,6 +986,7 @@ const Mission = () => {
       });
     } finally {
       setChoiceLoading(false);
+      setStreamedNarrative("");
     }
   };
 
@@ -1030,8 +1038,8 @@ const Mission = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-[hsl(250,50%,12%)] via-[hsl(230,50%,10%)] to-[hsl(260,50%,8%)] flex items-center justify-center">
-        <div className="text-center space-y-6">
+      <div className="min-h-screen bg-gradient-to-b from-[hsl(250,50%,12%)] via-[hsl(230,50%,10%)] to-[hsl(260,50%,8%)] flex items-center justify-center p-4">
+        <div className="text-center space-y-6 max-w-2xl w-full">
           <div className="relative">
             <div className="w-20 h-20 border-4 border-white/20 border-t-white/60 rounded-full animate-spin mx-auto"></div>
             <div className="absolute inset-0 flex items-center justify-center">
@@ -1045,6 +1053,15 @@ const Mission = () => {
               <p className="text-white/40">🎓 Setting up interactive learning experience...</p>
             )}
           </div>
+          {streamedNarrative && (
+            <div className="prose prose-invert max-w-none tablet:max-w-prose tablet:mx-auto text-left">
+              {streamedNarrative.split('\n\n').map((paragraph, index) => (
+                <p key={index} className="text-white mb-4 leading-relaxed text-lg">
+                  {paragraph}
+                </p>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     );
@@ -1304,13 +1321,16 @@ const Mission = () => {
                   </div>
                 )}
                 <div className="prose prose-invert max-w-none tablet:max-w-prose tablet:mx-auto">
-                  {scene.narrative.split('\n\n').map((paragraph, index) => (
+                  {(choiceLoading && streamedNarrative
+                    ? streamedNarrative
+                    : scene.narrative
+                  ).split('\n\n').map((paragraph, index) => (
                     <motion.p
-                      key={`${sceneCount}-${index}`}
+                      key={`${choiceLoading && streamedNarrative ? 'stream' : sceneCount}-${index}`}
                       className="text-white mb-4 leading-relaxed text-lg"
-                      initial={{ opacity: 0, y: 12 }}
+                      initial={choiceLoading && streamedNarrative ? false : { opacity: 0, y: 12 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.2, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                      transition={{ delay: choiceLoading && streamedNarrative ? 0 : index * 0.2, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
                     >
                       {paragraph}
                     </motion.p>
