@@ -1321,13 +1321,16 @@ const Mission = () => {
                   </div>
                 )}
                 <div className="prose prose-invert max-w-none tablet:max-w-prose tablet:mx-auto">
-                  {scene.narrative.split('\n\n').map((paragraph, index) => (
+                  {(choiceLoading && streamedNarrative
+                    ? streamedNarrative
+                    : scene.narrative
+                  ).split('\n\n').map((paragraph, index) => (
                     <motion.p
-                      key={`${sceneCount}-${index}`}
+                      key={`${choiceLoading && streamedNarrative ? 'stream' : sceneCount}-${index}`}
                       className="text-white mb-4 leading-relaxed text-lg"
-                      initial={{ opacity: 0, y: 12 }}
+                      initial={choiceLoading && streamedNarrative ? false : { opacity: 0, y: 12 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.2, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                      transition={{ delay: choiceLoading && streamedNarrative ? 0 : index * 0.2, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
                     >
                       {paragraph}
                     </motion.p>
