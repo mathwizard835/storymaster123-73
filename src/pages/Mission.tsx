@@ -986,6 +986,7 @@ const Mission = () => {
       });
     } finally {
       setChoiceLoading(false);
+      setStreamedNarrative("");
     }
   };
 
