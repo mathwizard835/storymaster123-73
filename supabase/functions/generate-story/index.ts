@@ -989,6 +989,251 @@ THIS SCENE: ${scene ? "Continue the story naturally from the previous scene." : 
       });
     };
 
+    // ============================================================
+    // STREAMING BRANCH (opt-in via body.stream === true)
+    // ------------------------------------------------------------
+    // Forwards Anthropic SSE deltas as `event: delta` frames so the
+    // client can render the narrative progressively. On stream end,
+    // runs the SAME parse + retry + analytics path as the non-stream
+    // branch and emits a final `event: scene` frame with the parsed
+    // Scene. Any caller that does NOT set stream:true falls through
+    // to the existing non-streaming path below — unchanged.
+    // ============================================================
+    if (body?.stream === true) {
+      const callAnthropicStream = async (tokenBudget: number, extraTail: string) => {
+        return await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: {
+            "x-api-key": ANTHROPIC_API_KEY!,
+            "anthropic-version": "2023-06-01",
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({
+            model: selectedModel,
+            max_tokens: tokenBudget,
+            stream: true,
+            system: [
+              { type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } },
+            ],
+            messages: [
+              {
+                role: "user",
+                content: [
+                  { type: "text", text: stablePrefix, cache_control: { type: "ephemeral" } },
+                  { type: "text", text: dynamicTail + extraTail },
+                ],
+              },
+            ],
+          }),
+        });
+      };
+
+      const anthropicStreamStart = Date.now();
+      const upstream = await callAnthropicStream(max_tokens, "");
+      if (!upstream.ok || !upstream.body) {
+        const errText = await upstream.text().catch(() => "");
+        console.error("Anthropic stream error:", upstream.status, errText);
+        return new Response(JSON.stringify({ error: "Story generation service error" }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const encoder = new TextEncoder();
+      const decoder = new TextDecoder();
+      let accumulated = "";
+      let upstreamStopReason: string | null = null;
+      let usage: any = null;
+      let modelEcho: string | null = null;
+
+      const sseFrame = (event: string, data: unknown) =>
+        encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+
+      const stream = new ReadableStream({
+        async start(controller) {
+          // Open the SSE channel immediately so clients can detect the
+          // handshake even before the first model token arrives.
+          controller.enqueue(sseFrame("open", { ok: true }));
+
+          const reader = upstream.body!.getReader();
+          let buf = "";
+
+          try {
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              buf += decoder.decode(value, { stream: true });
+
+              // Anthropic SSE events are separated by \n\n
+              let sep: number;
+              while ((sep = buf.indexOf("\n\n")) !== -1) {
+                const raw = buf.slice(0, sep);
+                buf = buf.slice(sep + 2);
+                // Each event block has lines like "event: x" and "data: {...}"
+                const dataLine = raw.split("\n").find((l) => l.startsWith("data: "));
+                if (!dataLine) continue;
+                const payload = dataLine.slice(6).trim();
+                if (!payload || payload === "[DONE]") continue;
+                try {
+                  const evt = JSON.parse(payload);
+                  if (evt.type === "content_block_delta" && evt.delta?.type === "text_delta") {
+                    const chunk: string = evt.delta.text ?? "";
+                    if (chunk) {
+                      accumulated += chunk;
+                      controller.enqueue(sseFrame("delta", { text: chunk }));
+                    }
+                  } else if (evt.type === "message_delta") {
+                    if (evt.delta?.stop_reason) upstreamStopReason = evt.delta.stop_reason;
+                    if (evt.usage) usage = { ...(usage || {}), ...evt.usage };
+                  } else if (evt.type === "message_start" && evt.message) {
+                    modelEcho = evt.message.model ?? modelEcho;
+                    if (evt.message.usage) usage = { ...(usage || {}), ...evt.message.usage };
+                  }
+                } catch {
+                  // Ignore malformed SSE frames; keep streaming.
+                }
+              }
+            }
+
+            // ---- Stream complete: parse, retry if needed, emit final scene ----
+            let text = accumulated;
+            let parsed = extractJSON(text);
+            let parsedValid = isValidSceneShape(parsed);
+            const shouldRetry = !isRetry && (upstreamStopReason === "max_tokens" || !parsed);
+
+            if (shouldRetry) {
+              const retryBudget = Math.min(Math.floor(max_tokens * 1.6), 4000);
+              console.warn(
+                `⚠️ [stream] Retrying scene — stop_reason=${upstreamStopReason}, parsed=${!!parsed}, valid=${parsedValid}, newBudget=${retryBudget}`,
+              );
+              const retryTail =
+                "\n\nIMPORTANT: Your previous response was truncated or malformed. Keep the narrative shorter (≤180 words) and ensure the JSON is COMPLETE and well-formed. No markdown fences. Output raw JSON only.";
+              try {
+                const retryResp = await callAnthropic(retryBudget, retryTail);
+                if (retryResp.ok) {
+                  const retryData = await retryResp.json();
+                  const retryText = retryData?.content?.[0]?.text ?? "";
+                  const retryParsed = extractJSON(retryText);
+                  if (retryParsed && isValidSceneShape(retryParsed)) {
+                    text = retryText;
+                    parsed = retryParsed;
+                    parsedValid = true;
+                    usage = retryData?.usage ?? usage;
+                    modelEcho = retryData?.model ?? modelEcho;
+                  }
+                }
+              } catch (retryErr) {
+                console.error("[stream] retry threw:", retryErr);
+              }
+            }
+
+            if (!parsed || !parsedValid) {
+              controller.enqueue(sseFrame("error", { error: "AI response could not be parsed", retryable: true }));
+              controller.close();
+              return;
+            }
+
+            // ---- Analytics (same shape as non-stream path) ----
+            try {
+              const latencyMs = Date.now() - anthropicStreamStart;
+              const sessionToken = `srv_${Date.now().toString(36)}_${crypto.randomUUID().slice(0, 8)}`;
+              const tokensIn = Number(usage?.input_tokens) || 0;
+              const tokensOut = Number(usage?.output_tokens) || 0;
+              const themeCategory = typeof profile?.mode === "string"
+                ? profile.mode.toLowerCase().replace(/[^a-z_-]/g, "").slice(0, 32)
+                : null;
+              const lengthBucket = ["short", "medium", "epic"].includes(profile?.storyLength)
+                ? profile.storyLength
+                : "medium";
+              const rows = [
+                {
+                  event_category: "system",
+                  event_name: "story_generated",
+                  session_token: sessionToken,
+                  meta: {
+                    scene_index_bucket:
+                      sceneCount === 1 ? "first" : sceneCount <= 2 ? "1-2" : sceneCount <= 5 ? "3-5" : sceneCount <= 10 ? "6-10" : "11+",
+                    is_first_scene: sceneCount === 1,
+                    streamed: true,
+                  },
+                },
+                {
+                  event_category: "performance",
+                  event_name: "story_latency",
+                  session_token: sessionToken,
+                  meta: {
+                    latency_ms: Math.min(120000, Math.max(0, latencyMs)),
+                    tokens_in: tokensIn,
+                    tokens_out: tokensOut,
+                    model: typeof modelEcho === "string" ? modelEcho.slice(0, 64) : selectedModel,
+                    streamed: true,
+                  },
+                },
+                {
+                  event_category: "content",
+                  event_name: "story_started",
+                  session_token: sessionToken,
+                  meta: { length_bucket: lengthBucket, age_bucket: ageBucketForHash, theme_category: themeCategory },
+                },
+                {
+                  event_category: "cache",
+                  event_name: "cache_miss",
+                  session_token: sessionToken,
+                  meta: { hit: false, prompt_hash: promptHash },
+                },
+              ];
+              const analyticsPromise = (async () => {
+                try {
+                  await supabaseAdmin.from("analytics_events").insert(rows);
+                  if (promptHash) {
+                    await supabaseAdmin.rpc("bump_prompt_hash", { _hash: promptHash, _hit: false });
+                  }
+                } catch (e) {
+                  console.warn("[stream] analytics deferred write failed:", e);
+                }
+              })();
+              try {
+                // @ts-ignore — EdgeRuntime is provided by Supabase Edge Runtime
+                (globalThis as any).EdgeRuntime?.waitUntil?.(analyticsPromise);
+              } catch { /* ignore */ }
+            } catch (analyticsErr) {
+              console.warn("[stream] analytics write failed:", analyticsErr);
+            }
+
+            controller.enqueue(
+              sseFrame("scene", {
+                success: true,
+                ok: true,
+                model: modelEcho ?? selectedModel,
+                usage: usage ?? null,
+                resultText: text,
+                result: parsed,
+                parsed,
+                text,
+              }),
+            );
+            controller.close();
+          } catch (streamErr) {
+            console.error("[stream] handler threw:", streamErr);
+            try {
+              controller.enqueue(sseFrame("error", { error: "Stream interrupted", retryable: true }));
+              controller.close();
+            } catch { /* already closed */ }
+          }
+        },
+      });
+
+      return new Response(stream, {
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "text/event-stream; charset=utf-8",
+          "Cache-Control": "no-cache, no-transform",
+          "Connection": "keep-alive",
+          "X-Accel-Buffering": "no",
+        },
+      });
+    }
+
     const anthropicStart = Date.now();
     let response = await callAnthropic(max_tokens, "");
     const latencyMs = Date.now() - anthropicStart;
