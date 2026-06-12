@@ -908,15 +908,17 @@ ${profileSummary}
     const stablePrefix = `${profileBlock}
 
 === RESPONSE FORMAT ===
-Return ONLY valid JSON (no markdown, no explanations):
-{"sceneTitle":"...","hud":{"energy":0-100,"time":"...","choicePoints":0-50,"ui":["..."]},"narrative":"...","choices":[{"id":"a","text":"...","type":"standard|item_use|object_interact|secret","createsFlag":"...","requires":[],"requiresItem":"...","consumesItem":true,"requiresAbility":"..."}],"interactiveObjects":[{"id":"...","name":"...","description":"...","actions":["Examine","Search"],"requiresItem":"..."}],"itemsFound":[{"id":"...","name":"...","description":"...","type":"key|tool|consumable|document|weapon|potion","usable":true,"consumable":false}],"memory":{"flags":[],"pastChoices":[]},"end":false}
+Return ONLY valid JSON (no markdown, no explanations). Required fields: sceneTitle, hud{energy,time,choicePoints,ui[]}, narrative, choices[]{id,text,type}, end. Optional fields (OMIT ENTIRELY when not needed — do NOT emit empty arrays, empty objects, or null placeholders): interactiveObjects[], itemsFound[], memory{flags[],pastChoices[]}. Choice optional sub-fields (requiresItem, consumesItem, requiresAbility, createsFlag, requires) — include only when used.
+
+Minimal example:
+{"sceneTitle":"...","hud":{"energy":80,"time":"...","choicePoints":0,"ui":["..."]},"narrative":"...","choices":[{"id":"a","text":"...","type":"standard"}],"end":false}
 
 SCENE REQUIREMENTS:
 - Use the protagonist's name (${profile.name || "the hero"}) naturally in the narrative and address them directly
 - 3-4 compelling choices that matter, each with a distinct personality tone
 - Narrative: 215 words max, formatted in 3-4 paragraphs with \\n\\n breaks
-- Incorporate interactive objects/items when appropriate
-- Include memory flags for meaningful choices
+- Add interactiveObjects / itemsFound ONLY when the scene actually introduces them — never fabricate empty arrays
+- Add memory.flags ONLY for meaningful, lasting choices — never an empty array
 ${profile.mode === "learning" ? "- Embed educational content naturally into the story" : ""}
 - Ensure story reflects ALL profile requirements listed above`;
 
