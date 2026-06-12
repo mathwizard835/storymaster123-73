@@ -652,6 +652,7 @@ const Mission = () => {
   }, [sceneCount]);
 
   const [choiceLoading, setChoiceLoading] = useState(false);
+  const [streamedNarrative, setStreamedNarrative] = useState<string>("");
 
   // ABILITIES DISABLED - Handler to unlock abilities instantly
   // const handleUnlockAbility = () => {
