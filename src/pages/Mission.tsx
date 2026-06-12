@@ -832,7 +832,8 @@ const Mission = () => {
         nextSceneCount,
         savedStory.id,
         false,
-        abilityCategories
+        abilityCategories,
+        (partial) => setStreamedNarrative(partial)
       );
       if (!parsed) {
         const errorPreview = text ? text.slice(0, 140) : "No response received";
