@@ -188,7 +188,30 @@ const TryStory = () => {
   const [hasUsedReadToMe, setHasUsedReadToMe] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
+  // Developer bypass token — picked up from ?devDemo=TOKEN and persisted to
+  // sessionStorage so it survives setup steps within the demo flow. The token
+  // is validated server-side against the DEMO_BYPASS_TOKEN secret; an invalid
+  // value behaves the same as no token (normal fingerprint check applies).
+  const [devBypass, setDevBypass] = useState<string | null>(null);
+
   useEffect(() => {
+    let token: string | null = null;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const fromUrl = params.get("devDemo");
+      if (fromUrl) {
+        token = fromUrl;
+        sessionStorage.setItem("demo_dev_bypass", fromUrl);
+      } else {
+        token = sessionStorage.getItem("demo_dev_bypass");
+      }
+    } catch (_) { /* ignore */ }
+    if (token) {
+      setDevBypass(token);
+      // Bypass active → ignore the prior "used" flag so we can replay locally.
+      try { localStorage.removeItem("demo_story_used"); } catch (_) { /* ignore */ }
+      return;
+    }
     try {
       if (localStorage.getItem("demo_story_used") === "1") setStage("demoUsed");
     } catch (_) { /* ignore */ }
@@ -224,6 +247,8 @@ const TryStory = () => {
   const maxScenes = maxScenesByLength[storyLength] ?? 5;
 
   const markDemoUsed = () => {
+    // Dev bypass: don't lock the local demo flag so the developer can replay.
+    if (devBypass) return;
     try { localStorage.setItem("demo_story_used", "1"); } catch (_) { /* ignore */ }
   };
 
@@ -268,7 +293,7 @@ const TryStory = () => {
         true,
         [],
         (partial) => setStreamedNarrative(partial),
-        { guest: true },
+        { guest: true, ...(devBypass ? { devBypass } : {}) },
       );
       if (!parsed) {
         throw new Error("Invalid AI response: " + (text || "").slice(0, 140));
@@ -342,7 +367,7 @@ const TryStory = () => {
         false,
         [],
         (partial) => setStreamedNarrative(partial),
-        { guest: true },
+        { guest: true, ...(devBypass ? { devBypass } : {}) },
       );
       if (!parsed) {
         throw new Error("Invalid AI response: " + (text || "").slice(0, 140));
