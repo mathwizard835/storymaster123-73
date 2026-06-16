@@ -436,11 +436,6 @@ export const generateNextScene = async (
     try {
       const { data: sessionData } = await supabase.auth.getSession();
       const accessToken = sessionData?.session?.access_token;
-      // Streaming requires an authenticated session; fall back otherwise.
-      if (!accessToken) {
-        console.warn("[stream] No access token, falling back to non-streaming");
-        return invokeNonStreaming();
-      }
 
       const rawBase = (import.meta as any).env?.VITE_SUPABASE_URL as string | undefined;
       const anonKey = (import.meta as any).env?.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined;
@@ -448,16 +443,26 @@ export const generateNextScene = async (
         console.warn("[stream] Missing VITE_SUPABASE_URL / VITE_SUPABASE_PUBLISHABLE_KEY, falling back");
         return invokeNonStreaming();
       }
+
+      // Streaming requires an authenticated session UNLESS in guest mode (anon key auth).
+      if (!accessToken && !isGuest) {
+        console.warn("[stream] No access token, falling back to non-streaming");
+        return invokeNonStreaming();
+      }
+
       // Defensive: strip trailing slashes to prevent `//functions/...` paths
       // that some CDNs reject with a CORS / 404 before the stream handshake.
       const base = rawBase.replace(/\/+$/, "");
       const endpoint = `${base}/functions/v1/generate-story`;
 
+      // For guests, the anon key serves as the bearer token (no session JWT exists).
+      const bearer = accessToken || anonKey;
+
       const resp = await fetch(endpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${accessToken}`,
+          "Authorization": `Bearer ${bearer}`,
           "apikey": anonKey,
           "Accept": "text/event-stream",
         },
@@ -471,6 +476,7 @@ export const generateNextScene = async (
           platform,
           _retry: false,
           stream: true,
+          ...(isGuest ? { guest: true } : {}),
         }),
       });
 
