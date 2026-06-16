@@ -964,6 +964,13 @@ const Mission = () => {
       let errorTitle = "Try that choice again";
       let errorDescription = "The storyteller paused for a moment. Your scene is safe — tap your choice once more.";
 
+      const errMsg: string = error?.message || "";
+      const errCode: string = error?.code || "";
+      const isLimit =
+        errCode === "paywall_required" ||
+        errCode === "limit_reached" ||
+        /story limit|adventure pass|reached \d+ stories|rolling 30-day|paywall|subscription required/i.test(errMsg);
+
       if (error.message?.includes("authentication") || error.message?.includes("Not authenticated")) {
         errorTitle = "Story Error";
         errorDescription = "Authentication error. Please try refreshing the page.";
@@ -973,6 +980,9 @@ const Mission = () => {
       } else if (error.message?.includes("Story session corrupted") || error.message?.includes("Story session lost")) {
         errorTitle = "Story Error";
         errorDescription = "Your story session was interrupted. Please start a new adventure.";
+      } else if (isLimit) {
+        errorTitle = "Story limit reached";
+        errorDescription = errMsg || "You've hit your Adventure Pass limit. Try again later.";
       } else if (error.message?.includes("Edge Function") || error.message?.includes("service")) {
         errorTitle = "Try that choice again";
         errorDescription = "Story service is briefly unavailable. Please try your choice again.";
