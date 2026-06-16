@@ -50,10 +50,24 @@ import {
   BookOpen,
   Crown,
   Home,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
+import { generateNextScene, type Scene, type InventoryItem } from "@/lib/story";
+import { addItemToInventory, useItem, updateProfileInventory } from "@/lib/inventory";
+import { validateChoice } from "@/lib/interactionHandlers";
+import { InventoryPanel } from "@/components/InventoryPanel";
+import { LearningChallengeComponent, type LearningChallenge } from "@/components/LearningChallenge";
+import { ComprehensionQuiz } from "@/components/ComprehensionQuiz";
+import { QuizQuestion } from "@/lib/quizSystem";
+import {
+  LearningSession,
+  generateLearningChallenges,
+  calculateLearningScore,
+} from "@/lib/learningSystem";
 
 // ---------------------------------------------------------------
-// Guest demo: mirrors the real app flow (ProfileSetup → Mission)
+// Guest demo: mirrors the real mobile app gameplay (Mission.tsx)
 // using guest:true mode on generate-story (no auth, no DB writes).
 // After the story ends, the user is invited to sign up.
 // ---------------------------------------------------------------
@@ -75,6 +89,14 @@ const modes = [
   { id: "explore", label: "Explore Mode", icon: Compass },
   { id: "learning", label: "Learning Quest", icon: GraduationCap },
 ];
+
+// Voice IDs used by Mission's Read-to-Me — keep in sync.
+const VOICE_BY_MODE: Record<string, string> = {
+  thrill: "EXAVITQu4vr4xnSDxMaL",
+  comedy: "XB0fDUnXU5powFXDhCwa",
+  mystery: "1UllZlmEKI6fNlrEtCx7",
+  explore: "EXAVITQu4vr4xnSDxMaL",
+};
 
 const getDefaultLexileForAge = (age: number): number => {
   const map: Record<number, number> = { 5: 200, 6: 300, 7: 400, 8: 500, 9: 600, 10: 750, 11: 900, 12: 1000 };
@@ -102,15 +124,6 @@ const getIconForBadge = (badge: string, size = "h-6 w-6") => {
     case "space": return <Rocket className={size} />;
     default: return <Star className={size} />;
   }
-};
-
-type Choice = { id: string; text: string; type?: string; requiresItem?: string };
-type Scene = {
-  sceneTitle?: string;
-  narrative?: string;
-  choices?: Choice[];
-  hud?: { energy?: number; time?: string; choicePoints?: number; ui?: string[] };
-  end?: boolean;
 };
 
 type Stage = "setup" | "loading" | "playing" | "finished" | "error" | "demoUsed";
@@ -148,14 +161,48 @@ const TryStory = () => {
   const [allScenes, setAllScenes] = useState<Scene[]>([]);
   const [sceneCount, setSceneCount] = useState(1);
   const [choiceLoading, setChoiceLoading] = useState(false);
+  const [streamedNarrative, setStreamedNarrative] = useState<string>("");
   const [error, setError] = useState("");
   const startedRef = useRef(false);
+
+  // --- Mission-parity state ---
+  const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [storyMemory, setStoryMemory] = useState<{ flags: string[]; pastChoices: string[] }>({
+    flags: [],
+    pastChoices: [],
+  });
+  const [storyReadyToFinish, setStoryReadyToFinish] = useState(false);
+  const [learningSession, setLearningSession] = useState<LearningSession | null>(null);
+  const [currentChallenge, setCurrentChallenge] = useState<LearningChallenge | null>(null);
+  const [showLearningProgress, setShowLearningProgress] = useState(false);
+
+  // Quiz
+  const [showQuiz, setShowQuiz] = useState(false);
+  const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
+  const [quizLoading, setQuizLoading] = useState(false);
+  const [quizTaken, setQuizTaken] = useState(false);
+
+  // Read-to-Me
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [audioLoading, setAudioLoading] = useState(false);
+  const [hasUsedReadToMe, setHasUsedReadToMe] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     try {
       if (localStorage.getItem("demo_story_used") === "1") setStage("demoUsed");
     } catch (_) { /* ignore */ }
   }, []);
+
+  // Reset Read-to-Me usage flag on scene change
+  useEffect(() => {
+    setHasUsedReadToMe(false);
+    setIsPlaying(false);
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+  }, [sceneCount]);
 
   const wordsRead =
     allScenes.reduce((sum, s) => sum + (s.narrative?.split(/\s+/).length || 0), 0) +
@@ -170,6 +217,7 @@ const TryStory = () => {
     storyLength: storyLength as "short" | "medium" | "epic",
     interests,
     topic,
+    inventory,
   };
 
   const maxScenesByLength: Record<string, number> = { short: 5, medium: 8, epic: 12 };
@@ -178,41 +226,6 @@ const TryStory = () => {
   const markDemoUsed = () => {
     try { localStorage.setItem("demo_story_used", "1"); } catch (_) { /* ignore */ }
   };
-
-  const callGenerate = async (sceneContext: Scene | null, count: number): Promise<Scene> => {
-    const { data, error: invokeError } = await supabase.functions.invoke("generate-story", {
-      body: { guest: true, profile, scene: sceneContext, scene_count: count },
-    });
-    if (invokeError) {
-      const ctx: any = (invokeError as any)?.context;
-      let bodyJson: any = null;
-      try {
-        if (ctx?.json) bodyJson = await ctx.json();
-        else if (ctx?.body) bodyJson = JSON.parse(await new Response(ctx.body).text());
-      } catch (_) { /* ignore */ }
-      if (bodyJson?.error === "demo_used") {
-        const err: any = new Error("demo_used");
-        err.code = "demo_used";
-        throw err;
-      }
-      throw new Error(invokeError.message || "Could not reach the story service");
-    }
-    if (data?.error === "demo_used") {
-      const err: any = new Error("demo_used");
-      err.code = "demo_used";
-      throw err;
-    }
-    if (!data?.success && !data?.ok) {
-      throw new Error(data?.error || "Story generation failed");
-    }
-    const parsed: Scene | null = data?.result ?? data?.parsed ?? null;
-    if (!parsed) throw new Error("The story service returned an unexpected response");
-    return parsed;
-  };
-
-  // --- Setup navigation ---
-  const nextStep = () => { addHapticFeedback("light"); if (step < TOTAL_STEPS) setStep(step + 1); };
-  const prevStep = () => { addHapticFeedback("light"); if (step > 1) setStep(step - 1); };
 
   const handleStart = async () => {
     addHapticFeedback("heavy");
@@ -229,20 +242,66 @@ const TryStory = () => {
     startedRef.current = true;
     setStage("loading");
     setError("");
+    setStreamedNarrative("");
+
+    // Initialize learning session for learning mode (mirrors Mission)
+    if (mode === "learning") {
+      setLearningSession({
+        id: `guest-${Date.now()}`,
+        topic: topic || "general",
+        startedAt: new Date().toISOString(),
+        concepts: [],
+        challenges: generateLearningChallenges(topic || "math", age),
+        totalPoints: 0,
+        completedChallenges: [],
+      });
+    }
+
     try {
-      const first = await callGenerate(null, 1);
-      setScene(first);
+      const { parsed, text } = await generateNextScene(
+        profile,
+        undefined,
+        false,
+        1800,
+        1,
+        undefined,
+        true,
+        [],
+        (partial) => setStreamedNarrative(partial),
+        { guest: true },
+      );
+      if (!parsed) {
+        throw new Error("Invalid AI response: " + (text || "").slice(0, 140));
+      }
+      setScene(parsed);
+      setAllScenes([]);
       setSceneCount(1);
-      const done = !!first.end;
-      setStage(done ? "finished" : "playing");
-      if (done) markDemoUsed();
+      // Pick up any starter items the AI emitted
+      if (parsed.itemsFound?.length) {
+        let inv = inventory;
+        for (const it of parsed.itemsFound) inv = addItemToInventory(it, inv);
+        setInventory(inv);
+      }
+      const done = !!parsed.end;
+      if (done) {
+        setStoryReadyToFinish(true);
+        markDemoUsed();
+      }
+      setStage("playing");
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (e: any) {
       console.error("Demo story start failed:", e);
       startedRef.current = false;
-      if (e?.code === "demo_used") { markDemoUsed(); setStage("demoUsed"); return; }
-      setError(e?.message || "Something went wrong starting your adventure.");
+      const msg = String(e?.message || "");
+      if (msg.includes("demo_used") || e?.code === "demo_used") {
+        markDemoUsed();
+        setStage("demoUsed");
+        return;
+      }
+      setError(msg || "Something went wrong starting your adventure.");
       setStage("error");
+    } finally {
+      setStreamedNarrative("");
     }
   };
 
@@ -250,32 +309,188 @@ const TryStory = () => {
     if (!scene || choiceLoading) return;
     const chosen = scene.choices?.find((c) => c.id === choiceId);
     if (!chosen) return;
+
+    const validation = validateChoice(choiceId, scene, inventory);
+    if (!validation.valid) {
+      toast({
+        title: validation.reason || "Can't pick that yet",
+        description: "Try examining your inventory or the environment for clues.",
+        variant: "destructive",
+        duration: 4000,
+      });
+      return;
+    }
+
     addHapticFeedback("medium");
-    const completed = { ...scene, chosen: chosen.id } as Scene;
-    const nextAllScenes = [...allScenes, completed];
-    setAllScenes(nextAllScenes);
     setChoiceLoading(true);
+    setStreamedNarrative("");
+
+    const nextSceneCount = sceneCount + 1;
+    const nextAllScenes = [...allScenes, scene];
+
     try {
-      const next = await callGenerate(
-        { ...scene, lastChoiceId: chosen.id, lastChoiceText: chosen.text } as any,
-        nextAllScenes.length + 1,
+      const profileWithInventory = updateProfileInventory(profile as any, inventory);
+      const sceneWithMemory = { ...scene, selectedChoiceId: choiceId, memory: storyMemory };
+
+      const { parsed, text } = await generateNextScene(
+        profileWithInventory,
+        sceneWithMemory,
+        false,
+        1800,
+        nextSceneCount,
+        undefined,
+        false,
+        [],
+        (partial) => setStreamedNarrative(partial),
+        { guest: true },
       );
-      setScene(next);
-      setSceneCount(nextAllScenes.length + 1);
-      const isLast = !!next.end || nextAllScenes.length + 1 >= maxScenes;
+      if (!parsed) {
+        throw new Error("Invalid AI response: " + (text || "").slice(0, 140));
+      }
+
+      // Inventory: consume required items, add found items
+      let effectiveInventory = inventory;
+      if (chosen.consumesItem && chosen.requiresItem) {
+        const { item, newInventory } = useItem(chosen.requiresItem, effectiveInventory);
+        if (item) effectiveInventory = newInventory;
+      }
+      if (parsed.itemsFound?.length) {
+        let inv = effectiveInventory;
+        for (const it of parsed.itemsFound) inv = addItemToInventory(it, inv);
+        effectiveInventory = inv;
+        toast({
+          title: "Items discovered!",
+          description: `Found ${parsed.itemsFound.length} new item(s)`,
+          duration: 3500,
+        });
+      }
+      if (effectiveInventory !== inventory) setInventory(effectiveInventory);
+
+      // Story memory
+      if ((parsed as any).memory) {
+        const mem = (parsed as any).memory;
+        setStoryMemory((prev) => ({
+          flags: [...new Set([...prev.flags, ...(mem.flags || [])])].slice(-7),
+          pastChoices: [...prev.pastChoices, ...(mem.pastChoices || [])].slice(-10),
+        }));
+      }
+
+      setScene(parsed);
+      setAllScenes(nextAllScenes);
+      setSceneCount(nextSceneCount);
+
+      const isLast = !!parsed.end || nextSceneCount >= maxScenes;
       if (isLast) {
         markDemoUsed();
-        setStage("finished");
+        setStoryReadyToFinish(true);
       }
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (e: any) {
       console.error("Demo next scene failed:", e);
-      setError(e?.message || "Something went wrong continuing your adventure.");
-      setStage("error");
+      const msg = String(e?.message || "");
+      if (msg.includes("demo_used") || e?.code === "demo_used") {
+        markDemoUsed();
+        setStage("demoUsed");
+        return;
+      }
+      toast({
+        title: "Try that choice again",
+        description: "The storyteller paused for a moment. Tap your choice once more.",
+        variant: "destructive",
+        duration: 4000,
+      });
     } finally {
       setChoiceLoading(false);
+      setStreamedNarrative("");
     }
   };
+
+  const handleChallengeComplete = (correct: boolean) => {
+    setCurrentChallenge(null);
+    toast({
+      title: correct ? "Great work! 🎓" : "Not quite — keep going!",
+      description: correct ? "You earned learning credit." : "You can try again next scene.",
+      duration: 3500,
+    });
+  };
+
+  const handleReadToMe = async () => {
+    if (!scene?.narrative) return;
+    if (hasUsedReadToMe) {
+      toast({ title: "Already used", description: "Read-to-Me runs once per scene.", duration: 3000 });
+      return;
+    }
+    if (audioRef.current && isPlaying) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+      return;
+    }
+
+    setAudioLoading(true);
+    try {
+      const voiceId = VOICE_BY_MODE[profile.mode] || VOICE_BY_MODE.thrill;
+      const { data, error } = await supabase.functions.invoke("text-to-speech", {
+        body: { text: scene.narrative, voiceId, guest: true },
+      });
+      if (error) throw error;
+      if (!data?.audioContent) throw new Error("No audio returned");
+
+      const audio = new Audio(`data:audio/mpeg;base64,${data.audioContent}`);
+      audioRef.current = audio;
+      audio.onended = () => setIsPlaying(false);
+      audio.onpause = () => setIsPlaying(false);
+      await audio.play();
+      setIsPlaying(true);
+      setHasUsedReadToMe(true);
+    } catch (err) {
+      console.error("Read-to-Me error:", err);
+      toast({
+        title: "Audio unavailable",
+        description: "Could not generate narration just now.",
+        variant: "destructive",
+        duration: 3500,
+      });
+    } finally {
+      setAudioLoading(false);
+    }
+  };
+
+  const startQuiz = async () => {
+    setQuizLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-story", {
+        body: {
+          guest: true,
+          profile,
+          previousScene: null,
+          sceneCount: 1,
+          action: "generate-quiz",
+          scenes: [...allScenes, ...(scene ? [scene] : [])],
+        },
+      });
+      if (error) throw error;
+      if (data?.questions && Array.isArray(data.questions) && data.questions.length > 0) {
+        setQuizQuestions(data.questions);
+        setShowQuiz(true);
+      } else {
+        throw new Error("No questions received");
+      }
+    } catch (e) {
+      console.error("Demo quiz generation failed:", e);
+      toast({
+        title: "Quiz unavailable",
+        description: "You can still finish the adventure — sign up to unlock all quizzes.",
+        variant: "destructive",
+        duration: 4000,
+      });
+    } finally {
+      setQuizLoading(false);
+    }
+  };
+
+  // --- Setup navigation ---
+  const nextStep = () => { addHapticFeedback("light"); if (step < TOTAL_STEPS) setStep(step + 1); };
+  const prevStep = () => { addHapticFeedback("light"); if (step > 1) setStep(step - 1); };
 
   // ----------------- SETUP (mirrors ProfileSetup) -----------------
 
@@ -514,31 +729,51 @@ const TryStory = () => {
     </main>
   );
 
-  // ----------------- STORY (mirrors Mission) -----------------
+  // ----------------- STORY (mirrors Mission.tsx) -----------------
 
   const backgroundImage = getBackgroundForBadge(profile.selectedBadges);
 
   const renderLoading = () => (
-    <div className="min-h-[100dvh] bg-cover bg-center bg-no-repeat relative" style={{ backgroundImage: `url(${backgroundImage})` }}>
-      <div className="absolute inset-0 bg-black/60" />
-      <div className="relative z-10 min-h-[100dvh] flex flex-col items-center justify-center px-6 text-center">
-        <Loader2 className="h-12 w-12 animate-spin text-white mb-5" />
-        <h2 className="font-heading text-2xl font-bold text-white mb-1">
-          {sceneCount === 1 ? "Writing your story…" : "Continuing your adventure…"}
-        </h2>
-        <p className="text-white/70 text-sm max-w-sm">
-          Our AI is dreaming up scene {sceneCount} for {name || "you"}. This usually takes 5–15 seconds.
-        </p>
+    <div className="min-h-screen bg-gradient-to-b from-[hsl(250,50%,12%)] via-[hsl(230,50%,10%)] to-[hsl(260,50%,8%)] flex items-center justify-center p-4">
+      <div className="text-center space-y-6 max-w-2xl w-full">
+        <div className="relative">
+          <div className="w-20 h-20 border-4 border-white/20 border-t-white/60 rounded-full animate-spin mx-auto"></div>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Wand2 className="h-8 w-8 text-white/60 animate-pulse" />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-2xl font-bold text-white">Preparing Your Adventure</h2>
+          <p className="text-white/50">StoryMaster Kids is weaving your tale...</p>
+          {profile.mode === "learning" && (
+            <p className="text-white/40">🎓 Setting up interactive learning experience...</p>
+          )}
+        </div>
+        {streamedNarrative && (
+          <div className="prose prose-invert max-w-none tablet:max-w-prose tablet:mx-auto text-left">
+            {streamedNarrative.split("\n\n").map((paragraph, index) => (
+              <p key={index} className="text-white mb-4 leading-relaxed text-lg">
+                {paragraph}
+              </p>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
 
   const renderPlaying = () => {
     if (!scene) return null;
+    const narrativeText = (choiceLoading && streamedNarrative) ? streamedNarrative : scene.narrative;
+    const isStreaming = choiceLoading && !!streamedNarrative;
+
     return (
-      <div className="min-h-[100dvh] bg-cover bg-center bg-no-repeat relative" style={{ backgroundImage: `url(${backgroundImage})` }}>
+      <div
+        className="min-h-screen bg-cover bg-center bg-no-repeat relative"
+        style={{ backgroundImage: `url(${backgroundImage})` }}
+      >
         <div className="absolute inset-0 bg-black/40" />
-        <div className="relative z-10 min-h-[100dvh] flex flex-col">
+        <div className="relative z-10 min-h-screen flex flex-col">
           {/* Header */}
           <div className="bg-black/30 backdrop-blur-sm border-b border-white/20 p-2 md:p-4">
             <div className="max-w-6xl mx-auto flex justify-between items-center gap-2">
@@ -562,6 +797,15 @@ const TryStory = () => {
                 )}
               </div>
               <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
+                {profile.mode === "learning" && learningSession && (
+                  <button
+                    onClick={() => setShowLearningProgress(!showLearningProgress)}
+                    className="hidden md:flex items-center gap-2 bg-blue-600/80 hover:bg-blue-700/80 text-white px-3 py-2 rounded-lg transition-colors"
+                  >
+                    <Trophy className="h-4 w-4" />
+                    Score: {calculateLearningScore(learningSession)}%
+                  </button>
+                )}
                 <div className="text-white font-medium bg-white/10 px-2 py-1 rounded text-xs md:text-sm">
                   Scene {sceneCount}
                 </div>
@@ -571,43 +815,54 @@ const TryStory = () => {
 
           {/* Main content */}
           <div className="flex-1 p-2 md:p-4 overflow-y-auto">
-            <div className="max-w-6xl mx-auto gap-4 md:gap-6 flex flex-col">
-              {/* HUD */}
-              {scene.hud && (
+            <div className="max-w-6xl mx-auto gap-4 md:gap-6 flex flex-col tablet:grid tablet:grid-cols-[2fr_1fr] lg:grid-cols-3">
+              {/* Story Content */}
+              <div className="lg:col-span-2 space-y-6">
+                {currentChallenge && (
+                  <div className="mb-6">
+                    <LearningChallengeComponent
+                      challenge={currentChallenge}
+                      onComplete={handleChallengeComplete}
+                      onSkip={() => setCurrentChallenge(null)}
+                    />
+                  </div>
+                )}
+
+                {/* HUD */}
                 <div className="bg-black/50 backdrop-blur-sm rounded-lg p-4 border border-white/20">
                   <TooltipProvider>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                    <div className="grid grid-cols-2 tablet:grid-cols-4 md:grid-cols-4 gap-4 text-center">
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <div className="flex items-center justify-center space-x-2 cursor-help">
                             <Zap className="h-5 w-5 text-yellow-400" />
-                            <span className="text-white font-semibold">{scene.hud.energy ?? 0}</span>
+                            <span className="text-white font-semibold">{scene.hud?.energy ?? 0}</span>
                           </div>
                         </TooltipTrigger>
-                        <TooltipContent side="bottom" sideOffset={12}>
-                          <p className="max-w-xs">⚡ Experience Points</p>
+                        <TooltipContent side="bottom" sideOffset={12} className="z-[9999] bg-popover/95 backdrop-blur-sm">
+                          <p className="max-w-xs">⚡ Experience Points: Earned through story progression and smart choices.</p>
                         </TooltipContent>
                       </Tooltip>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <div className="flex items-center justify-center space-x-2 cursor-help">
                             <Timer className="h-5 w-5 text-blue-400" />
-                            <span className="text-white font-semibold">{scene.hud.time ?? "—"}</span>
+                            <span className="text-white font-semibold">{scene.hud?.time ?? "—"}</span>
                           </div>
                         </TooltipTrigger>
-                        <TooltipContent side="bottom" sideOffset={12}>
-                          <p className="max-w-xs">⏱️ Time / Energy</p>
+                        <TooltipContent side="bottom" sideOffset={12} className="z-[9999] bg-popover/95 backdrop-blur-sm">
+                          <p className="max-w-xs">⏱️ Time/Energy: Your character's current energy level and story timing.</p>
                         </TooltipContent>
                       </Tooltip>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <div className="flex items-center justify-center space-x-2 cursor-help">
                             <Star className="h-5 w-5 text-purple-400" />
-                            <span className="text-white font-semibold">{scene.hud.choicePoints ?? 0}</span>
+                            <span className="text-white font-semibold">{scene.hud?.choicePoints ?? 0}</span>
                           </div>
                         </TooltipTrigger>
-                        <TooltipContent side="bottom" sideOffset={12}>
-                          <p className="max-w-xs">⭐ Choice Points</p>
+                        <TooltipContent side="bottom" sideOffset={12} className="z-[9999] bg-popover/95 backdrop-blur-sm">
+                          <p className="max-w-xs">⭐ Choice Points: Total meaningful decisions made in your adventure.</p>
                         </TooltipContent>
                       </Tooltip>
                       <Tooltip>
@@ -615,92 +870,230 @@ const TryStory = () => {
                           <div className="flex items-center justify-center space-x-2 cursor-default">
                             <Heart className="h-5 w-5 text-red-400 opacity-70" />
                             <span className="text-white font-semibold text-sm opacity-70">
-                              {scene.hud.ui?.join(" • ") || "Ready"}
+                              {scene.hud?.ui?.join(" • ") || "Ready"}
                             </span>
                           </div>
                         </TooltipTrigger>
-                        <TooltipContent side="bottom" sideOffset={12}>
-                          <p className="max-w-xs">❤️ Status</p>
+                        <TooltipContent side="bottom" sideOffset={12} className="z-[9999] bg-popover/95 backdrop-blur-sm">
+                          <p className="max-w-xs">❤️ Status Display: Shows your current story status.</p>
                         </TooltipContent>
                       </Tooltip>
                     </div>
                   </TooltipProvider>
                 </div>
-              )}
 
-              {/* Narrative */}
-              <div className="bg-white/10 backdrop-blur-md rounded-lg p-6 border border-white/20">
-                <div className="prose prose-invert max-w-none md:max-w-prose md:mx-auto">
-                  {(scene.narrative || "").split("\n\n").map((paragraph, i) => (
-                    <motion.p
-                      key={`${sceneCount}-${i}`}
-                      className="text-white mb-4 leading-relaxed text-lg"
-                      initial={{ opacity: 0, y: 12 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.2, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                    >
-                      {paragraph}
-                    </motion.p>
-                  ))}
+                {/* Narrative + Read-to-Me */}
+                <div className="bg-white/10 backdrop-blur-md rounded-lg p-6 border border-white/20">
+                  {(profile.mode === "comedy" || profile.mode === "mystery" || profile.mode === "explore" || profile.mode === "thrill") && (
+                    <div className="flex justify-end mb-4">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span>
+                              <Button
+                                onClick={handleReadToMe}
+                                disabled={audioLoading || hasUsedReadToMe || isStreaming}
+                                variant="secondary"
+                                size="sm"
+                                className="gap-2"
+                              >
+                                {audioLoading ? (
+                                  <>
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                                    Loading...
+                                  </>
+                                ) : isPlaying ? (
+                                  <>
+                                    <VolumeX className="h-4 w-4" />
+                                    Stop Reading
+                                  </>
+                                ) : (
+                                  <>
+                                    <Volume2 className="h-4 w-4" />
+                                    Read to Me
+                                  </>
+                                )}
+                              </Button>
+                            </span>
+                          </TooltipTrigger>
+                          {hasUsedReadToMe ? (
+                            <TooltipContent>
+                              <p>Already used on this scene</p>
+                            </TooltipContent>
+                          ) : null}
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                  )}
+                  <div className="prose prose-invert max-w-none tablet:max-w-prose tablet:mx-auto">
+                    {narrativeText.split("\n\n").map((paragraph, index) => (
+                      <motion.p
+                        key={`${isStreaming ? "stream" : sceneCount}-${index}`}
+                        className="text-white mb-4 leading-relaxed text-lg"
+                        initial={isStreaming ? false : { opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: isStreaming ? 0 : index * 0.2, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                      >
+                        {paragraph}
+                      </motion.p>
+                    ))}
+                  </div>
+                  <audio ref={audioRef} className="hidden" />
+                </div>
+
+                {/* Choices */}
+                {!storyReadyToFinish && scene.choices && scene.choices.length > 0 && (
+                  <div className="bg-black/50 backdrop-blur-sm rounded-lg p-6 border border-white/20">
+                    <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                      <Target className="h-5 w-5" />
+                      What do you choose?
+                    </h3>
+                    <div className="grid gap-3">
+                      {scene.choices.map((choice, index) => {
+                        const validation = validateChoice(choice.id, scene, inventory);
+                        const isDisabled = !validation.valid || choiceLoading;
+                        return (
+                          <motion.button
+                            key={choice.id}
+                            onClick={() => onChoose(choice.id)}
+                            disabled={isDisabled}
+                            initial={{ opacity: 0, y: 16, scale: 0.97 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            transition={{
+                              delay: ((scene.narrative || "").split("\n\n").length * 0.2) + (index * 0.12),
+                              type: "spring",
+                              stiffness: 300,
+                              damping: 24,
+                            }}
+                            className={cn(
+                              "p-4 rounded-lg text-left transition-all transform hover:scale-[1.02] active:scale-[0.97] relative",
+                              validation.valid && !choiceLoading
+                                ? "bg-white/20 hover:bg-white/30 text-white border-2 border-transparent hover:border-white/30"
+                                : "bg-gray-600/50 text-gray-400 border-2 border-gray-500/50 cursor-not-allowed",
+                              choiceLoading && "opacity-75",
+                            )}
+                          >
+                            {choiceLoading && (
+                              <div className="absolute inset-0 bg-black/20 rounded-lg flex items-center justify-center">
+                                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white" />
+                              </div>
+                            )}
+                            <div className="flex items-start space-x-3">
+                              <span className="bg-purple-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold text-sm flex-shrink-0 mt-1">
+                                {String.fromCharCode(65 + index)}
+                              </span>
+                              <div className="flex-1">
+                                <p className="font-medium">{choice.text}</p>
+                                {choice.requiresItem && (
+                                  <p className="text-sm mt-1 opacity-75">Requires: {choice.requiresItem}</p>
+                                )}
+                                {!validation.valid && !choiceLoading && (
+                                  <p className="text-sm mt-1 text-red-300">{validation.reason}</p>
+                                )}
+                              </div>
+                            </div>
+                          </motion.button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Finish Adventure (story complete) */}
+                {storyReadyToFinish && (
+                  <div className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 backdrop-blur-md rounded-lg p-6 border border-yellow-400/30 space-y-4">
+                    <div className="text-center space-y-4">
+                      <h3 className="text-2xl font-bold text-yellow-200 flex items-center justify-center gap-2">
+                        <Crown className="h-8 w-8 text-yellow-400" />
+                        Adventure Complete!
+                      </h3>
+                      <p className="text-white/90">
+                        🎉 Congratulations! You've reached the end of your epic journey.
+                        {!quizTaken && " Take the comprehension challenge for bonus points, or "}
+                        Ready to see what's next?
+                      </p>
+
+                      {!quizTaken && (
+                        <Button
+                          size="xl"
+                          variant="hero"
+                          onClick={startQuiz}
+                          disabled={quizLoading}
+                          className="w-full max-w-xs mx-auto text-lg font-bold bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                        >
+                          {quizLoading ? (
+                            <>
+                              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                              Generating Quiz...
+                            </>
+                          ) : (
+                            <>
+                              <Trophy className="h-5 w-5 mr-2" />
+                              Do Challenge for Bonus Points
+                            </>
+                          )}
+                        </Button>
+                      )}
+
+                      <Button
+                        size="xl"
+                        variant="hero"
+                        onClick={() => setStage("finished")}
+                        className="w-full max-w-xs mx-auto text-lg font-bold"
+                      >
+                        <Crown className="h-5 w-5 mr-2" />
+                        Finish Adventure
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Demo-specific word counter (preserved) */}
+                <div className="text-center text-xs text-white/60 py-2">
+                  {wordsRead} words read • Free demo
                 </div>
               </div>
 
-              {/* Choices */}
-              {scene.choices && scene.choices.length > 0 && (
-                <div className="bg-black/50 backdrop-blur-sm rounded-lg p-6 border border-white/20">
-                  <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                    <Target className="h-5 w-5" />
-                    What do you choose?
-                  </h3>
-                  <div className="grid gap-3">
-                    {scene.choices.map((choice, index) => (
-                      <motion.button
-                        key={choice.id}
-                        onClick={() => onChoose(choice.id)}
-                        disabled={choiceLoading}
-                        initial={{ opacity: 0, y: 16, scale: 0.97 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        transition={{
-                          delay: ((scene.narrative || "").split("\n\n").length * 0.2) + (index * 0.12),
-                          type: "spring",
-                          stiffness: 300,
-                          damping: 24,
-                        }}
-                        className={cn(
-                          "p-4 rounded-lg text-left transition-all transform hover:scale-[1.02] active:scale-[0.97] relative",
-                          !choiceLoading
-                            ? "bg-white/20 hover:bg-white/30 text-white border-2 border-transparent hover:border-white/30"
-                            : "bg-gray-600/50 text-gray-400 border-2 border-gray-500/50 cursor-not-allowed",
-                        )}
-                      >
-                        {choiceLoading && (
-                          <div className="absolute inset-0 bg-black/20 rounded-lg flex items-center justify-center">
-                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white" />
-                          </div>
-                        )}
-                        <div className="flex items-start space-x-3">
-                          <span className="bg-purple-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold text-sm flex-shrink-0 mt-1">
-                            {String.fromCharCode(65 + index)}
-                          </span>
-                          <div className="flex-1">
-                            <p className="font-medium">{choice.text}</p>
-                            {choice.requiresItem && (
-                              <p className="text-sm mt-1 opacity-75">Requires: {choice.requiresItem}</p>
-                            )}
-                          </div>
-                        </div>
-                      </motion.button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div className="text-center text-xs text-white/60 py-2">
-                {wordsRead} words read • Free demo
+              {/* Sidebar */}
+              <div className="space-y-6">
+                <InventoryPanel
+                  inventory={inventory}
+                  onUseItem={(item) => {
+                    const { item: used, newInventory } = useItem(item.id, inventory);
+                    if (used) {
+                      setInventory(newInventory);
+                      toast({
+                        title: `Used ${used.name}`,
+                        description: "Item consumed from inventory.",
+                        duration: 3000,
+                      });
+                    }
+                  }}
+                />
               </div>
             </div>
           </div>
         </div>
+
+        {/* Comprehension quiz dialog */}
+        {scene && (
+          <ComprehensionQuiz
+            open={showQuiz}
+            onClose={() => setShowQuiz(false)}
+            questions={quizQuestions}
+            storyId={`guest-demo-${Date.now()}`}
+            storyTitle={allScenes[0]?.sceneTitle || scene.sceneTitle || "Demo Adventure"}
+            onComplete={(xp) => {
+              setQuizTaken(true);
+              setShowQuiz(false);
+              toast({
+                title: "Quiz complete!",
+                description: `+${xp} bonus XP earned in the demo.`,
+                duration: 4000,
+              });
+            }}
+          />
+        )}
       </div>
     );
   };
@@ -749,7 +1142,7 @@ const TryStory = () => {
               </p>
               <p className="text-white/70 text-sm">
                 Real StoryMaster adventures are longer, save your progress, level up your hero, unlock new worlds,
-                and include read-to-me narration, learning challenges, and a comprehension quiz.
+                and include unlimited read-to-me narration, learning challenges, and a comprehension quiz.
               </p>
               <div className="pt-2">
                 <Button
