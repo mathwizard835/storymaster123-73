@@ -43,40 +43,67 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
-  // === JWT AUTHENTICATION ===
-  const authHeader = req.headers.get('Authorization');
-  if (!authHeader?.startsWith('Bearer ')) {
+  // Parse body up-front so we can branch on `guest: true` BEFORE enforcing auth.
+  let body: any;
+  try {
+    body = await req.json();
+  } catch (_e) {
     return new Response(
-      JSON.stringify({ error: 'Authentication required' }),
-      { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ error: 'Invalid request body' }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-  const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-  const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
-    global: { headers: { Authorization: authHeader } }
-  });
+  const isGuest = body?.guest === true;
 
-  const token = authHeader.replace('Bearer ', '');
-  const { data: userData, error: userError } = await supabaseAuth.auth.getUser(token);
-  if (userError || !userData?.user) {
-    return new Response(
-      JSON.stringify({ error: 'Invalid or expired token' }),
-      { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+  // === JWT AUTHENTICATION (skipped for guest demo) ===
+  if (!isGuest) {
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(
+        JSON.stringify({ error: 'Authentication required' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: userData, error: userError } = await supabaseAuth.auth.getUser(token);
+    if (userError || !userData?.user) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid or expired token' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const userId = userData.user.id;
+    console.log('Authenticated text-to-speech user:', userId);
+  } else {
+    console.log('Guest text-to-speech request (demo)');
   }
-
-  const userId = userData.user.id;
-  console.log('Authenticated text-to-speech user:', userId);
 
   // Read-to-Me is available to all authenticated users (free + Adventure Pass)
 
   try {
-    const { text, voiceId } = await req.json();
+    const { text, voiceId } = body || {};
 
     if (!text) {
       throw new Error('Text is required');
+    }
+    if (!voiceId || typeof voiceId !== 'string') {
+      throw new Error('voiceId is required');
+    }
+    // Tighter cap for guests to limit abuse.
+    if (isGuest && text.length > 1500) {
+      return new Response(
+        JSON.stringify({ error: 'Guest demo text too long.' }),
+        { status: 413, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     // Apply rate limiting
