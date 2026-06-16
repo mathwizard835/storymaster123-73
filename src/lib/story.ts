@@ -405,6 +405,7 @@ export const generateNextScene = async (
         platform,
         _retry: false,
         ...(isGuest ? { guest: true } : {}),
+        ...(devBypass ? { devBypass } : {}),
       },
     });
 
@@ -478,6 +479,7 @@ export const generateNextScene = async (
           _retry: false,
           stream: true,
           ...(isGuest ? { guest: true } : {}),
+          ...(devBypass ? { devBypass } : {}),
         }),
       });
 
