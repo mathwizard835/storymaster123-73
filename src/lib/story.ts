@@ -647,11 +647,21 @@ export const generateNextScene = async (
     } catch (error: any) {
       console.error("Error in generateNextScene:", error);
 
+      // Preserve known server-side codes (e.g. demo_used, rate_limited) so
+      // callers can branch on them instead of seeing a generic message.
+      const code = error?.code || "";
+      const knownCodes = ["demo_used", "rate_limited", "limit_reached", "invalid_input"];
+      if (code && knownCodes.includes(code)) {
+        throw error;
+      }
+
       if (error.message?.includes("authentication") || error.message?.includes("Not authenticated")) {
         throw new Error("Authentication required. Please refresh the page and try again.");
       }
 
-      if (error.message?.includes("Edge Function")) {
+      // Only fall back to the generic "service unavailable" message for true
+      // edge-runtime failures (no server-side error code parsed).
+      if (!code && error.message?.includes("Edge Function")) {
         throw new Error("Story generation service is temporarily unavailable. Please try again in a moment.");
       }
 
