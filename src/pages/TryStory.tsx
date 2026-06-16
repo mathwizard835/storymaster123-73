@@ -247,6 +247,8 @@ const TryStory = () => {
   const maxScenes = maxScenesByLength[storyLength] ?? 5;
 
   const markDemoUsed = () => {
+    // Dev bypass: don't lock the local demo flag so the developer can replay.
+    if (devBypass) return;
     try { localStorage.setItem("demo_story_used", "1"); } catch (_) { /* ignore */ }
   };
 
@@ -291,7 +293,7 @@ const TryStory = () => {
         true,
         [],
         (partial) => setStreamedNarrative(partial),
-        { guest: true },
+        { guest: true, ...(devBypass ? { devBypass } : {}) },
       );
       if (!parsed) {
         throw new Error("Invalid AI response: " + (text || "").slice(0, 140));
@@ -365,7 +367,7 @@ const TryStory = () => {
         false,
         [],
         (partial) => setStreamedNarrative(partial),
-        { guest: true },
+        { guest: true, ...(devBypass ? { devBypass } : {}) },
       );
       if (!parsed) {
         throw new Error("Invalid AI response: " + (text || "").slice(0, 140));
