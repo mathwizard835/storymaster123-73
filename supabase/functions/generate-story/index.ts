@@ -535,7 +535,7 @@ Return ONLY valid JSON (no markdown, no explanations):
             "content-type": "application/json",
           },
           body: JSON.stringify({
-            model: "claude-sonnet-4-20250514", // Quiz always uses Sonnet for quality
+            model: "claude-sonnet-4-5-20250929", // Quiz always uses Sonnet for quality
             max_tokens: 2000,
             messages: [{ role: "user", content: quizPrompt }],
           }),
@@ -750,7 +750,7 @@ Return ONLY valid JSON (no markdown, no explanations):
     // Guests always get Haiku. Continuation scenes reuse the cached choice
     // (model is stable within a story for a user).
     const isNewStoryForModel = !body?.scene;
-    let selectedModel = isGuest ? "claude-haiku-4-5-20251001" : "claude-sonnet-4-20250514";
+    let selectedModel = isGuest ? "claude-haiku-4-5-20251001" : "claude-sonnet-4-5-20250929";
 
     if (!isGuest) {
       const cachedModel = userModelCache.get(userId);

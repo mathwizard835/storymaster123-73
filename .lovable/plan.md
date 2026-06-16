@@ -1,64 +1,41 @@
-# Mirror the Mobile Story Process in `/try`
+## Root cause
 
-Goal: the guest landing-page demo (`src/pages/TryStory.tsx`) plays a story through the same engine and UI as the real app (`src/pages/Mission.tsx`), end-to-end, with these explicit demo-only carve-outs preserved:
-- Existing 6-step setup wizard at `/try` stays as the entry point.
-- The footer "**N words read • Free demo**" stays under the choices.
-- One full-length story per device (already enforced server-side via `guest_demo_usage`).
-- No DB writes, no auth, no progress/character/streak side-effects.
+Edge function logs for `generate-story` show every Anthropic call is failing:
 
-Everything else — generation, streaming, scene UI, inventory, interactive objects, learning challenges, comprehension quiz, Read-to-Me, transitions, animations — becomes byte-for-byte the same as Mission.
+```
+Anthropic API error: 404 {"type":"not_found_error","message":"model: claude-sonnet-4-20250514"}
+Anthropic stream error: 404 ... model: claude-sonnet-4-20250514
+```
 
----
+The model ID `claude-sonnet-4-20250514` is no longer served by Anthropic. It is hardcoded in three places in `supabase/functions/generate-story/index.ts`:
 
-## What changes
+- Line 538 — quiz generation ("Quiz always uses Sonnet for quality")
+- Line 753 — default story model for non-guest users with <20 stories
+- Line 766 — fallback path
 
-### 1. Extract Mission's gameplay UI into a shared component
-Create `src/components/StoryPlayer.tsx` containing the scene/HUD/choices/inventory/interactive-objects/learning-challenge/quiz/Read-to-Me UI that today lives inline in `Mission.tsx`. It accepts:
-- `profile`, `scene`, `allScenes`, `sceneCount`, `inventory`, `storyMemory`, `learningSession`, `currentChallenge`, `streamedNarrative`, `choiceLoading`, `showQuiz`, `quizQuestions`, etc. as props.
-- Callbacks: `onChoose`, `onGoBack`, `onInteract`, `onChallengeComplete`, `onQuizComplete`, `onReadToMe`, `onHome`.
-- Render flags: `mode: "authenticated" | "guest"` controls the footer (Free-demo word counter vs normal status text) and disables features that need a server account (saving, achievements toasts).
+Because the streaming and non-streaming paths both fall through to the same broken model, every authenticated user under 20 stories gets a 404, which the client surfaces as "Story generation service is temporarily unavailable." This affects web AND mobile equally — mobile isn't special, it's just the platform you tested on.
 
-`Mission.tsx` is refactored to render `<StoryPlayer mode="authenticated" .../>` with its existing state. No behavior change for logged-in users.
+(Note: the same user also tripped the "Premium soft cap reached 40/40" warning earlier in the logs. That's a separate, expected limit — not the cause of the outage.)
 
-### 2. Rewrite `TryStory` playing/finished stages to use `<StoryPlayer>`
-Replace the bespoke `renderPlaying` / `renderFinished` blocks (lines ~536–774) with `<StoryPlayer mode="guest" ... />`. Setup (steps 1–6), loading, error, and `demoUsed` screens remain unchanged.
+## Fix
 
-### 3. Route generation through the real engine (`generateNextScene` from `src/lib/story.ts`)
-Today `TryStory.callGenerate` calls `supabase.functions.invoke('generate-story', { guest: true, ... })` directly. Replace it with `generateNextScene(profile, scene, sceneCount, { guest: true, onNarrativeDelta })` so guests get the same streaming pipeline, in-flight de-dupe, validation, and fallback as Mission.
+In `supabase/functions/generate-story/index.ts`, replace the dead Sonnet ID with the current Anthropic Sonnet 4.5 model on all three lines:
 
-Required tweaks in `src/lib/story.ts`:
-- Add an `options` arg: `{ guest?: boolean; onNarrativeDelta?: ... }`. When `guest: true`, skip the auth-only cache key suffix and pass `body.guest = true` to the edge function.
-- In `invokeStreaming`, when there's no session AND `guest` is true, send `Authorization: Bearer ${VITE_SUPABASE_PUBLISHABLE_KEY}` (anon key) so guests still get the SSE stream instead of falling back. Edge function already accepts anon for guest mode.
-- Surface `demo_used` errors unchanged so `TryStory` can show the `demoUsed` screen.
+- `claude-sonnet-4-20250514` → `claude-sonnet-4-5-20250929`
 
-### 4. Wire feature parity in `TryStory`
-Add the same client-side state Mission owns, but scoped to the guest session (no localStorage/DB writes):
-- `inventory`, `storyMemory`, `learningSession`, `currentChallenge`, `goBacksUsed`, `streamedNarrative`, `showQuiz`, `quizQuestions`, `quizLoading`, audio refs.
-- Reuse Mission's existing helpers verbatim by exporting them from `src/pages/Mission.tsx` into `src/lib/missionHelpers.ts` (pure functions only: `initializeLearningSession`, `addLearningConcept`, `handleChallengeComplete`, `getBackgroundForBadge`, `getIconForBadge`, scene-after-choice merge logic). Both pages import from there.
-- Read-to-Me: call the same `text-to-speech` edge function. For guests it's allowed once per scene (same as Adventure Pass rule the app already enforces client-side); no purchase gating, no usage write.
+Haiku (`claude-haiku-4-5-20251001`) is already correct and stays as-is, so the "switch to Haiku after 20 stories" behavior is preserved.
 
-### 5. Demo-specific footer
-Inside `StoryPlayer`, when `mode="guest"`, render the existing `"{wordsRead} words read • Free demo"` line in the same spot it occupies today. Authenticated mode keeps Mission's current footer.
-
-### 6. End-of-story flow
-On `scene.end === true` (or `sceneCount >= maxScenes`), `StoryPlayer` triggers the same comprehension quiz Mission shows. After the quiz, guest mode shows the existing "Adventure Complete! → Create a free account" CTA from `renderFinished`; authenticated mode keeps Mission's current completion screen.
-
----
-
-## Files touched
-- `src/components/StoryPlayer.tsx` — new, holds the shared in-story UI.
-- `src/lib/missionHelpers.ts` — new, pure helpers extracted from Mission.
-- `src/pages/Mission.tsx` — replace inline gameplay JSX with `<StoryPlayer mode="authenticated" />`; no logic changes.
-- `src/pages/TryStory.tsx` — drop bespoke playing/finished UI; wire `generateNextScene` + `<StoryPlayer mode="guest" />`; keep setup wizard, loading, error, `demoUsed`.
-- `src/lib/story.ts` — add `guest`/`onNarrativeDelta` options, allow anon-key streaming for guests.
-
-No edge function, RLS, or DB changes. No new dependencies.
-
----
+No other code changes needed — request shape, prompts, token limits, streaming, and client-side error handling are all unaffected.
 
 ## Verification
-1. **Authenticated regression:** start a new story on `/mission`, confirm narrative streams, HUD/inventory/interactive objects/learning challenge/quiz/Read-to-Me all behave identically to before.
-2. **Guest parity:** in an incognito window open `/try`, finish setup, confirm: streaming first words within ~2s, HUD renders, choice animations match, inventory/interactive objects appear when the model emits them, learning mode shows challenges, comprehension quiz fires at end, Read-to-Me plays once per scene, footer shows "N words read • Free demo".
-3. **One-shot guard:** after finishing a guest demo, reopening `/try` shows `demoUsed` screen (server-enforced via `guest_demo_usage`).
-4. **Fallback:** simulate a streaming failure (block SSE) → guest seamlessly falls back to non-streaming invoke, no UI break.
-5. **Full-length:** guest can play through the same scene count as the matching `storyLength` in Mission (short/medium/epic), not capped earlier.
+
+1. Re-read `generate-story/index.ts` around lines 538, 753, 766 to confirm only the model string changed.
+2. Call the deployed `generate-story` function once with a real auth token and confirm a scene is returned (HTTP 200, non-empty body) instead of a 404 in the edge logs.
+3. Tail edge function logs to confirm no more `Anthropic API error: 404 ... model:` entries.
+4. From the mobile preview, generate one story end-to-end and confirm the "Adventure interrupted" toast no longer appears.
+
+## Out of scope
+
+- The 40/40 soft cap warning (working as designed).
+- Any change to Haiku routing, prompt content, or client error messages.
+- Any refactor of the model-selection logic itself — only the literal model ID is wrong.
