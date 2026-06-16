@@ -120,7 +120,7 @@ const Index = () => {
               <Button
                 size="xl"
                 variant="hero"
-                onClick={() => navigate(demoUsed ? "/auth" : "/try")}
+                onClick={() => (demoUsed ? navigate("/auth") : goToTry())}
                 className="text-lg px-8 py-4 animate-pulse"
               >
                 {demoUsed ? "✨ Sign Up Free" : "🚀 Try a Story"}
