@@ -1,41 +1,24 @@
-## Root cause
+Based on the latest logs, you should not need to release a whole new App Store version for the original Anthropic model outage. The mobile app calls the same deployed Supabase Edge Function, and backend fixes deploy server-side.
 
-Edge function logs for `generate-story` show every Anthropic call is failing:
+Current signal:
+- The old Anthropic 404 model error stopped after the model ID change.
+- New mobile attempts are now returning 403 because the account in the logs is at the Adventure Pass soft cap: 40/40 stories in the last 30 days.
+- The client is still not treating that server response as a known, user-facing limit, so it can still look like generic story-generation failure.
 
-```
-Anthropic API error: 404 {"type":"not_found_error","message":"model: claude-sonnet-4-20250514"}
-Anthropic stream error: 404 ... model: claude-sonnet-4-20250514
-```
+Plan:
+1. Update client error handling in `src/lib/story.ts`
+   - Preserve all expected server-side generation codes/messages, including `paywall_required` and subscription/limit messages, instead of collapsing them into “service temporarily unavailable”.
 
-The model ID `claude-sonnet-4-20250514` is no longer served by Anthropic. It is hardcoded in three places in `supabase/functions/generate-story/index.ts`:
+2. Update the mission screen error UX in `src/pages/Mission.tsx`
+   - When generation is blocked by paywall or 40/40 soft cap, show a clear message instead of implying the generation service is down.
+   - Keep continuation scenes allowed when the backend allows them; do not change model routing or subscription rules.
 
-- Line 538 — quiz generation ("Quiz always uses Sonnet for quality")
-- Line 753 — default story model for non-guest users with <20 stories
-- Line 766 — fallback path
+3. Verify the deployed function state
+   - Re-check `generate-story` logs after the change.
+   - Confirm there are no remaining `claude-sonnet-4-20250514` references.
+   - Confirm current failures are limits/paywall responses, not Anthropic 404/service outage responses.
 
-Because the streaming and non-streaming paths both fall through to the same broken model, every authenticated user under 20 stories gets a 404, which the client surfaces as "Story generation service is temporarily unavailable." This affects web AND mobile equally — mobile isn't special, it's just the platform you tested on.
-
-(Note: the same user also tripped the "Premium soft cap reached 40/40" warning earlier in the logs. That's a separate, expected limit — not the cause of the outage.)
-
-## Fix
-
-In `supabase/functions/generate-story/index.ts`, replace the dead Sonnet ID with the current Anthropic Sonnet 4.5 model on all three lines:
-
-- `claude-sonnet-4-20250514` → `claude-sonnet-4-5-20250929`
-
-Haiku (`claude-haiku-4-5-20251001`) is already correct and stays as-is, so the "switch to Haiku after 20 stories" behavior is preserved.
-
-No other code changes needed — request shape, prompts, token limits, streaming, and client-side error handling are all unaffected.
-
-## Verification
-
-1. Re-read `generate-story/index.ts` around lines 538, 753, 766 to confirm only the model string changed.
-2. Call the deployed `generate-story` function once with a real auth token and confirm a scene is returned (HTTP 200, non-empty body) instead of a 404 in the edge logs.
-3. Tail edge function logs to confirm no more `Anthropic API error: 404 ... model:` entries.
-4. From the mobile preview, generate one story end-to-end and confirm the "Adventure interrupted" toast no longer appears.
-
-## Out of scope
-
-- The 40/40 soft cap warning (working as designed).
-- Any change to Haiku routing, prompt content, or client error messages.
-- Any refactor of the model-selection logic itself — only the literal model ID is wrong.
+4. Native release guidance
+   - If the installed app is a normal bundled Capacitor release, client UI/error-message fixes require a new app update to reach App Store users.
+   - But the actual story-generation backend/model fix does not require a native release.
+   - If users are only blocked by the 40/40 cap or subscription gate, a native release will not fix that; the account/subscription/limit state must be addressed.
