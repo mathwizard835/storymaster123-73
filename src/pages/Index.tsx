@@ -23,12 +23,38 @@ import {
 const Index = () => {
   const navigate = useNavigate();
   const [demoUsed, setDemoUsed] = useState(false);
+  const [devBypass, setDevBypass] = useState<string | null>(null);
 
   useEffect(() => {
     try {
+      // Pick up developer bypass token from ?devDemo=TOKEN and persist for /try.
+      const params = new URLSearchParams(window.location.search);
+      const fromUrl = params.get("devDemo");
+      let token: string | null = null;
+      if (fromUrl) {
+        token = fromUrl;
+        try { sessionStorage.setItem("demo_dev_bypass", fromUrl); } catch (_) { /* ignore */ }
+      } else {
+        try { token = sessionStorage.getItem("demo_dev_bypass"); } catch (_) { token = null; }
+      }
+      if (token) {
+        setDevBypass(token);
+        // Bypass active → unlock the local "used" gate so CTA goes to /try.
+        try { localStorage.removeItem("demo_story_used"); } catch (_) { /* ignore */ }
+        setDemoUsed(false);
+        return;
+      }
       setDemoUsed(localStorage.getItem("demo_story_used") === "1");
     } catch (_) { /* ignore */ }
   }, []);
+
+  const goToTry = () => {
+    if (devBypass) {
+      navigate(`/try?devDemo=${encodeURIComponent(devBypass)}`);
+    } else {
+      navigate("/try");
+    }
+  };
 
   const content = {
     title: "🌟 Become the Hero of Your Own Epic Adventure!",
@@ -94,7 +120,7 @@ const Index = () => {
               <Button
                 size="xl"
                 variant="hero"
-                onClick={() => navigate(demoUsed ? "/auth" : "/try")}
+                onClick={() => (demoUsed ? navigate("/auth") : goToTry())}
                 className="text-lg px-8 py-4 animate-pulse"
               >
                 {demoUsed ? "✨ Sign Up Free" : "🚀 Try a Story"}

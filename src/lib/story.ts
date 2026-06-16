@@ -409,7 +409,31 @@ export const generateNextScene = async (
       },
     });
 
-    if (error) throw error;
+    if (error) {
+      // FunctionsHttpError carries the raw Response on `context`. Read the body
+      // so we surface real server error codes (e.g. demo_used) instead of the
+      // generic "Edge Function returned a non-2xx status code".
+      let serverCode = "";
+      let serverMsg = "";
+      let status = 0;
+      try {
+        const resp: Response | undefined = (error as any)?.context;
+        if (resp && typeof resp.json === "function") {
+          status = resp.status ?? 0;
+          const body = await resp.clone().json().catch(() => null);
+          if (body) {
+            serverCode = typeof body.error === "string" ? body.error : "";
+            serverMsg = typeof body.message === "string" ? body.message : "";
+          }
+        }
+      } catch { /* ignore parse errors */ }
+      const composed = serverCode || serverMsg || (error as any)?.message || "Edge function error";
+      const wrapped: any = new Error(composed);
+      wrapped.code = serverCode || undefined;
+      wrapped.status = status || undefined;
+      throw wrapped;
+    }
+
 
     if (!data?.success && !data?.ok) {
       const errorMsg = data?.error || "Failed to generate scene";
@@ -484,7 +508,21 @@ export const generateNextScene = async (
       });
 
       if (!resp.ok || !resp.body) {
-        console.warn(`[stream] HTTP ${resp.status}, falling back`);
+        console.warn(`[stream] HTTP ${resp.status}, inspecting body`);
+        // Peek the error body so we can surface real server codes (e.g.
+        // demo_used) instead of silently retrying via non-streaming.
+        try {
+          const body = await resp.clone().json().catch(() => null) as any;
+          const serverCode = typeof body?.error === "string" ? body.error : "";
+          if (serverCode) {
+            const wrapped: any = new Error(serverCode);
+            wrapped.code = serverCode;
+            wrapped.status = resp.status;
+            throw wrapped;
+          }
+        } catch (e: any) {
+          if (e?.code) throw e;
+        }
         return invokeNonStreaming();
       }
 
@@ -594,7 +632,9 @@ export const generateNextScene = async (
       }
       console.warn(`[stream] No valid scene frame (${streamError ?? "no error"}), falling back`);
       return invokeNonStreaming();
-    } catch (streamErr) {
+    } catch (streamErr: any) {
+      // Preserve known server-side codes so the caller can branch on them.
+      if (streamErr?.code) throw streamErr;
       console.warn("[stream] threw, falling back:", streamErr);
       return invokeNonStreaming();
     }
@@ -623,11 +663,21 @@ export const generateNextScene = async (
     } catch (error: any) {
       console.error("Error in generateNextScene:", error);
 
+      // Preserve known server-side codes (e.g. demo_used, rate_limited) so
+      // callers can branch on them instead of seeing a generic message.
+      const code = error?.code || "";
+      const knownCodes = ["demo_used", "rate_limited", "limit_reached", "invalid_input"];
+      if (code && knownCodes.includes(code)) {
+        throw error;
+      }
+
       if (error.message?.includes("authentication") || error.message?.includes("Not authenticated")) {
         throw new Error("Authentication required. Please refresh the page and try again.");
       }
 
-      if (error.message?.includes("Edge Function")) {
+      // Only fall back to the generic "service unavailable" message for true
+      // edge-runtime failures (no server-side error code parsed).
+      if (!code && error.message?.includes("Edge Function")) {
         throw new Error("Story generation service is temporarily unavailable. Please try again in a moment.");
       }
 
