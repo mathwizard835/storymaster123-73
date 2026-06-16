@@ -632,7 +632,9 @@ export const generateNextScene = async (
       }
       console.warn(`[stream] No valid scene frame (${streamError ?? "no error"}), falling back`);
       return invokeNonStreaming();
-    } catch (streamErr) {
+    } catch (streamErr: any) {
+      // Preserve known server-side codes so the caller can branch on them.
+      if (streamErr?.code) throw streamErr;
       console.warn("[stream] threw, falling back:", streamErr);
       return invokeNonStreaming();
     }
