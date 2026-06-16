@@ -409,7 +409,31 @@ export const generateNextScene = async (
       },
     });
 
-    if (error) throw error;
+    if (error) {
+      // FunctionsHttpError carries the raw Response on `context`. Read the body
+      // so we surface real server error codes (e.g. demo_used) instead of the
+      // generic "Edge Function returned a non-2xx status code".
+      let serverCode = "";
+      let serverMsg = "";
+      let status = 0;
+      try {
+        const resp: Response | undefined = (error as any)?.context;
+        if (resp && typeof resp.json === "function") {
+          status = resp.status ?? 0;
+          const body = await resp.clone().json().catch(() => null);
+          if (body) {
+            serverCode = typeof body.error === "string" ? body.error : "";
+            serverMsg = typeof body.message === "string" ? body.message : "";
+          }
+        }
+      } catch { /* ignore parse errors */ }
+      const composed = serverCode || serverMsg || (error as any)?.message || "Edge function error";
+      const wrapped: any = new Error(composed);
+      wrapped.code = serverCode || undefined;
+      wrapped.status = status || undefined;
+      throw wrapped;
+    }
+
 
     if (!data?.success && !data?.ok) {
       const errorMsg = data?.error || "Failed to generate scene";
