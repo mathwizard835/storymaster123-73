@@ -508,7 +508,21 @@ export const generateNextScene = async (
       });
 
       if (!resp.ok || !resp.body) {
-        console.warn(`[stream] HTTP ${resp.status}, falling back`);
+        console.warn(`[stream] HTTP ${resp.status}, inspecting body`);
+        // Peek the error body so we can surface real server codes (e.g.
+        // demo_used) instead of silently retrying via non-streaming.
+        try {
+          const body = await resp.clone().json().catch(() => null) as any;
+          const serverCode = typeof body?.error === "string" ? body.error : "";
+          if (serverCode) {
+            const wrapped: any = new Error(serverCode);
+            wrapped.code = serverCode;
+            wrapped.status = resp.status;
+            throw wrapped;
+          }
+        } catch (e: any) {
+          if (e?.code) throw e;
+        }
         return invokeNonStreaming();
       }
 
