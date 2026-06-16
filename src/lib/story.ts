@@ -139,7 +139,7 @@ export const checkStoryLimit = async (): Promise<{ canPlay: boolean; completedCo
       if (bonusStories > 0) {
         reason += ` (${bonusStories} bonus stories included)`;
       }
-      reason += " Upgrade to Adventure Pass for 40 stories every 30 days, or wait for your oldest story to roll off.";
+      reason += " Upgrade to Adventure Pass for unlimited stories, or wait for your oldest story to roll off.";
 
       return { canPlay: false, completedCount: storiesUsedThisMonth, reason };
     }
