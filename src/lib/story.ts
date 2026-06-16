@@ -403,6 +403,7 @@ export const generateNextScene = async (
         abilities: availableAbilities,
         platform,
         _retry: false,
+        ...(isGuest ? { guest: true } : {}),
       },
     });
 
