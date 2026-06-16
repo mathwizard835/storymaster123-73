@@ -700,7 +700,6 @@ Return ONLY valid JSON (no markdown, no explanations):
 
       const FREE_STORY_LIMIT_WEB = 3;
       const FREE_STORY_LIMIT_NATIVE = 0; // Hard paywall on native — subscription required to generate.
-      const PREMIUM_SOFT_CAP = 40;
 
       if (!activeSub && isNativeClient && lifetimeStoryCount >= FREE_STORY_LIMIT_NATIVE) {
         console.warn(`Native paywall: user ${userId} has ${lifetimeStoryCount} lifetime stories (subscription required)`);
@@ -716,13 +715,7 @@ Return ONLY valid JSON (no markdown, no explanations):
           { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
-      if (activeSub && userStoryCount >= PREMIUM_SOFT_CAP) {
-        console.warn(`Premium soft cap reached for user ${userId}: ${userStoryCount}/${PREMIUM_SOFT_CAP}`);
-        return new Response(
-          JSON.stringify({ error: `You've reached ${PREMIUM_SOFT_CAP} stories in the last 30 days. Take a break and come back tomorrow — your stories reset on a rolling 30-day basis.` }),
-          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-        );
-      }
+      // Adventure Pass subscribers: unlimited stories (no soft cap).
 
       if (!activeSub) {
         const deviceTotal = deviceCountRes.count ?? 0;
