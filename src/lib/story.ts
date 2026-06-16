@@ -319,8 +319,10 @@ export const generateNextScene = async (
   storyId?: string,
   forceNewSession: boolean = false,
   availableAbilities: string[] = [],
-  onNarrativeDelta?: (partialNarrative: string) => void
+  onNarrativeDelta?: (partialNarrative: string) => void,
+  opts?: { guest?: boolean }
 ): Promise<{ text: string; parsed: Scene | null; raw: any; deviceFingerprint?: string }> => {
+  const isGuest = opts?.guest === true;
   // Phase 4: Defensive logging
   console.log(`🎬 generateNextScene called:`, {
     sceneCount,
