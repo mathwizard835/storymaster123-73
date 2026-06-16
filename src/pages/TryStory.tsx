@@ -318,7 +318,20 @@ const TryStory = () => {
       console.error("Demo story start failed:", e);
       startedRef.current = false;
       const msg = String(e?.message || "");
-      if (msg.includes("demo_used") || e?.code === "demo_used") {
+      const code = e?.code || "";
+      const isDemoUsed = code === "demo_used" || msg.includes("demo_used");
+      if (isDemoUsed) {
+        if (devBypass) {
+          toast({
+            title: "Developer bypass rejected",
+            description: "Your devDemo token doesn't match DEMO_BYPASS_TOKEN on the server.",
+            variant: "destructive",
+            duration: 6000,
+          });
+          setError("Developer bypass token was rejected by the server.");
+          setStage("error");
+          return;
+        }
         markDemoUsed();
         setStage("demoUsed");
         return;
