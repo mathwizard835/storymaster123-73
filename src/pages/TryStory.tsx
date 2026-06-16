@@ -247,10 +247,13 @@ const TryStory = () => {
     // Initialize learning session for learning mode (mirrors Mission)
     if (mode === "learning") {
       setLearningSession({
+        id: `guest-${Date.now()}`,
         topic: topic || "general",
         startedAt: new Date().toISOString(),
         concepts: [],
         challenges: generateLearningChallenges(topic || "math", age),
+        totalPoints: 0,
+        completedChallenges: [],
       });
     }
 
