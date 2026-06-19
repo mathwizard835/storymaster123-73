@@ -648,8 +648,29 @@ Return ONLY valid JSON (no markdown, no explanations):
     }
 
     if (isNewStory && !isGuest) {
-      // Detect mobile/native client — hard paywall after 1 free story applies to native only
-      const isNativeClient = body?.platform === "native" || body?.platform === "ios" || body?.platform === "android";
+      // Detect mobile/native client — hard paywall applies to native only.
+      // Multiple signals are OR'd together so legacy app builds that predate
+      // the body.platform field still get enforced via Origin/UA fallbacks.
+      const reqOrigin = req.headers.get("origin") || "";
+      const reqReferer = req.headers.get("referer") || "";
+      const reqUserAgent = req.headers.get("user-agent") || "";
+      // Capacitor's iOS/Android webview origins. Browsers NEVER send these.
+      const isNativeByOrigin =
+        reqOrigin.startsWith("capacitor://") ||
+        reqOrigin.startsWith("ionic://") ||
+        reqReferer.startsWith("capacitor://") ||
+        reqReferer.startsWith("ionic://");
+      // Secondary signal: Capacitor WKWebView UA on iOS lacks the "Safari/" token
+      // that Mobile Safari always includes. Used only when Origin is missing.
+      const looksLikeIOSApp =
+        /iPhone|iPad|iPod/.test(reqUserAgent) && !/Safari\//.test(reqUserAgent);
+      const isNativeClient =
+        body?.platform === "native" ||
+        body?.platform === "ios" ||
+        body?.platform === "android" ||
+        isNativeByOrigin ||
+        looksLikeIOSApp;
+
 
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
