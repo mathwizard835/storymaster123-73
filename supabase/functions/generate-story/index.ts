@@ -725,9 +725,10 @@ Return ONLY valid JSON (no markdown, no explanations):
       if (!activeSub && isNativeClient && lifetimeStoryCount >= FREE_STORY_LIMIT_NATIVE) {
         console.warn(`Native paywall: user ${userId} has ${lifetimeStoryCount} lifetime stories (subscription required)`);
         return new Response(
-          JSON.stringify({ error: "paywall_required", message: "Adventure Pass required to start a new story." }),
+          JSON.stringify({ error: "paywall_required", message: "An Adventure Pass is required to keep creating stories. Tap Subscribe to unlock unlimited adventures, or update StoryMaster Kids in the App Store for the latest version." }),
           { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
+
       }
       if (!activeSub && !isNativeClient && userStoryCount >= FREE_STORY_LIMIT_WEB) {
         console.warn(`Web story limit reached for user ${userId}: ${userStoryCount}/${FREE_STORY_LIMIT_WEB}`);
