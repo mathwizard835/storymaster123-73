@@ -18,6 +18,7 @@ import { NativeOnboarding, hasSeenOnboarding } from "@/components/NativeOnboardi
 import ErrorBoundary from "./components/ErrorBoundary";
 import { trackFunnelStep } from "@/lib/analytics";
 import { isNativePlatform } from "@/lib/platform";
+import { startForegroundTracking, stopForegroundTracking } from "@/lib/sessionTracker";
 
 // Eager: landing + auth (critical path)
 import Index from "./pages/Index";
@@ -255,6 +256,19 @@ const DeepLinkInitializer = () => {
   return null;
 };
 
+// Starts/stops the real foreground session timer whenever the auth user changes.
+const ForegroundSessionTracker = () => {
+  const { user } = useAuth();
+  useEffect(() => {
+    if (!user?.id) return;
+    startForegroundTracking(user.id);
+    return () => {
+      stopForegroundTracking();
+    };
+  }, [user?.id]);
+  return null;
+};
+
 const LazyFallback = () => <NativeLoadingScreen />;
 
 const AnimatedRoutes = () => {
@@ -347,6 +361,7 @@ const App = () => {
             <Sonner />
             <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
               <DeepLinkInitializer />
+              <ForegroundSessionTracker />
               <AnimatedRoutes />
               <MobileBottomNav />
             </BrowserRouter>
