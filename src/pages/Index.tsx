@@ -223,15 +223,15 @@ const Index = () => {
             That adds up to <strong className="text-foreground">nearly 100 hours of reading a year</strong> — all from screen time kids actually want.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-3xl mx-auto">
-            <div className="bg-background/60 backdrop-blur-sm rounded-xl p-5 border border-primary/20">
+            <div className="bg-background/60 backdrop-blur-sm rounded-xl p-5 border border-[hsl(var(--brand-2)/0.25)]">
               <div className="text-3xl font-extrabold text-primary mb-1">2,500+</div>
               <p className="text-sm text-muted-foreground">Words per epic story</p>
             </div>
-            <div className="bg-background/60 backdrop-blur-sm rounded-xl p-5 border border-primary/20">
+            <div className="bg-background/60 backdrop-blur-sm rounded-xl p-5 border border-[hsl(var(--brand-2)/0.25)]">
               <div className="text-3xl font-extrabold text-primary mb-1">12</div>
               <p className="text-sm text-muted-foreground">Scenes per adventure</p>
             </div>
-            <div className="bg-background/60 backdrop-blur-sm rounded-xl p-5 border border-primary/20">
+            <div className="bg-background/60 backdrop-blur-sm rounded-xl p-5 border border-[hsl(var(--brand-2)/0.25)]">
               <div className="text-3xl font-extrabold text-primary mb-1">100%</div>
               <p className="text-sm text-muted-foreground">Age-appropriate content</p>
             </div>
