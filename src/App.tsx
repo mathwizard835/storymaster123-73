@@ -256,6 +256,19 @@ const DeepLinkInitializer = () => {
   return null;
 };
 
+// Starts/stops the real foreground session timer whenever the auth user changes.
+const ForegroundSessionTracker = () => {
+  const { user } = useAuth();
+  useEffect(() => {
+    if (!user?.id) return;
+    startForegroundTracking(user.id);
+    return () => {
+      stopForegroundTracking();
+    };
+  }, [user?.id]);
+  return null;
+};
+
 const LazyFallback = () => <NativeLoadingScreen />;
 
 const AnimatedRoutes = () => {
