@@ -18,6 +18,7 @@ import { NativeOnboarding, hasSeenOnboarding } from "@/components/NativeOnboardi
 import ErrorBoundary from "./components/ErrorBoundary";
 import { trackFunnelStep } from "@/lib/analytics";
 import { isNativePlatform } from "@/lib/platform";
+import { startForegroundTracking, stopForegroundTracking } from "@/lib/sessionTracker";
 
 // Eager: landing + auth (critical path)
 import Index from "./pages/Index";
