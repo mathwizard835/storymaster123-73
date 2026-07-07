@@ -209,6 +209,36 @@ const Index = () => {
         </div>
       </section>
 
+      {/* Prominent Reading Time Stat */}
+      <section className="py-16 px-6 bg-gradient-to-br from-primary/20 via-accent/20 to-primary/10 border-y border-primary/20">
+        <div className="max-w-5xl mx-auto text-center">
+          <div className="inline-flex items-center gap-2 bg-background/60 backdrop-blur-sm rounded-full px-4 py-2 mb-6 border border-primary/20">
+            <BookOpen className="h-5 w-5 text-primary" />
+            <span className="text-sm font-semibold text-foreground">Real Reading, Real Results</span>
+          </div>
+          <h2 className="text-4xl sm:text-5xl md:text-6xl font-extrabold mb-4">
+            <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">8+ Hours</span> of Reading Monthly
+          </h2>
+          <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-3xl mx-auto">
+            That adds up to <strong className="text-foreground">nearly 100 hours of reading a year</strong> — all from screen time kids actually want.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-3xl mx-auto">
+            <div className="bg-background/60 backdrop-blur-sm rounded-xl p-5 border border-primary/20">
+              <div className="text-3xl font-extrabold text-primary mb-1">2,500+</div>
+              <p className="text-sm text-muted-foreground">Words per epic story</p>
+            </div>
+            <div className="bg-background/60 backdrop-blur-sm rounded-xl p-5 border border-primary/20">
+              <div className="text-3xl font-extrabold text-primary mb-1">12</div>
+              <p className="text-sm text-muted-foreground">Scenes per adventure</p>
+            </div>
+            <div className="bg-background/60 backdrop-blur-sm rounded-xl p-5 border border-primary/20">
+              <div className="text-3xl font-extrabold text-primary mb-1">100%</div>
+              <p className="text-sm text-muted-foreground">Age-appropriate content</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* What Makes Us Special */}
       <section id="learn-more" className="py-20 px-6 bg-background">
         <div className="max-w-6xl mx-auto">
