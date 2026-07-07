@@ -210,9 +210,9 @@ const Index = () => {
       </section>
 
       {/* Prominent Reading Time Stat */}
-      <section className="py-16 px-6 bg-gradient-to-br from-primary/20 via-accent/20 to-primary/10 border-y border-primary/20">
+      <section className="py-16 px-6 bg-gradient-to-br from-[hsl(var(--brand-2)/0.18)] via-[hsl(var(--brand-2)/0.08)] to-[hsl(var(--brand-2)/0.14)] border-y border-[hsl(var(--brand-2)/0.25)]">
         <div className="max-w-5xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 bg-background/60 backdrop-blur-sm rounded-full px-4 py-2 mb-6 border border-primary/20">
+          <div className="inline-flex items-center gap-2 bg-background/60 backdrop-blur-sm rounded-full px-4 py-2 mb-6 border border-[hsl(var(--brand-2)/0.25)]">
             <BookOpen className="h-5 w-5 text-primary" />
             <span className="text-sm font-semibold text-foreground">Real Reading, Real Results</span>
           </div>
@@ -223,15 +223,15 @@ const Index = () => {
             That adds up to <strong className="text-foreground">nearly 100 hours of reading a year</strong> — all from screen time kids actually want.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-3xl mx-auto">
-            <div className="bg-background/60 backdrop-blur-sm rounded-xl p-5 border border-primary/20">
+            <div className="bg-background/60 backdrop-blur-sm rounded-xl p-5 border border-[hsl(var(--brand-2)/0.25)]">
               <div className="text-3xl font-extrabold text-primary mb-1">2,500+</div>
               <p className="text-sm text-muted-foreground">Words per epic story</p>
             </div>
-            <div className="bg-background/60 backdrop-blur-sm rounded-xl p-5 border border-primary/20">
+            <div className="bg-background/60 backdrop-blur-sm rounded-xl p-5 border border-[hsl(var(--brand-2)/0.25)]">
               <div className="text-3xl font-extrabold text-primary mb-1">12</div>
               <p className="text-sm text-muted-foreground">Scenes per adventure</p>
             </div>
-            <div className="bg-background/60 backdrop-blur-sm rounded-xl p-5 border border-primary/20">
+            <div className="bg-background/60 backdrop-blur-sm rounded-xl p-5 border border-[hsl(var(--brand-2)/0.25)]">
               <div className="text-3xl font-extrabold text-primary mb-1">100%</div>
               <p className="text-sm text-muted-foreground">Age-appropriate content</p>
             </div>
