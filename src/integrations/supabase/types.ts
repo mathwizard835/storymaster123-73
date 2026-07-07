@@ -68,6 +68,42 @@ export type Database = {
         }
         Relationships: []
       }
+      app_sessions: {
+        Row: {
+          active_seconds: number
+          created_at: string
+          ended_at: string | null
+          id: string
+          last_heartbeat_at: string
+          platform: string | null
+          route: string | null
+          started_at: string
+          user_id: string
+        }
+        Insert: {
+          active_seconds?: number
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          last_heartbeat_at?: string
+          platform?: string | null
+          route?: string | null
+          started_at?: string
+          user_id: string
+        }
+        Update: {
+          active_seconds?: number
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          last_heartbeat_at?: string
+          platform?: string | null
+          route?: string | null
+          started_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       banned_users: {
         Row: {
           banned_at: string
