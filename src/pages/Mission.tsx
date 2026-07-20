@@ -962,7 +962,7 @@ const Mission = () => {
       
       // Determine specific error message
       let errorTitle = "Try that choice again";
-      let errorDescription = "The storyteller paused for a moment. Your scene is safe — tap your choice once more.";
+      let errorDescription = "The storyteller hiccupped for a second. Your progress is safe — tap the same choice once more.";
 
       const errMsg: string = error?.message || "";
       const errCode: string = error?.code || "";
