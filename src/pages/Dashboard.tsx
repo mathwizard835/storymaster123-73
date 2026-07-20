@@ -758,11 +758,12 @@ const Dashboard = () => {
                 <div className="space-y-4">
                   {/* Show database stories (both in-progress and completed) */}
                   {recentStories.slice(0, 3).map((story) => {
+                    // Trust only the DB completion flags. The old scene-count
+                    // heuristic falsely marked every paused story as completed
+                    // because current_scene_index + 1 always equals scene_count
+                    // right after a scene is generated.
                     const isStoryCompleted =
-                      story.status === 'completed' ||
-                      !!story.completed_at ||
-                      ((story.scene_count || 0) > 0 &&
-                        (story.current_scene_index || 0) + 1 >= (story.scene_count || 0));
+                      story.status === 'completed' || !!story.completed_at;
                     return (
                     <Card key={story.id} className="glass-panel border-0 min-w-0 max-w-full overflow-hidden">
                       <CardContent className="p-4 min-w-0">
