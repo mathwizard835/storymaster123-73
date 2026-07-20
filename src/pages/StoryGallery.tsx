@@ -211,10 +211,7 @@ const StoryGallery = () => {
               {stories.map((story) => {
                 const profile = story.profile as any;
                 const isCompleted =
-                  story.status === 'completed' ||
-                  !!story.completed_at ||
-                  ((story.scene_count || 0) > 0 &&
-                    (story.current_scene_index || 0) + 1 >= (story.scene_count || 0));
+                  story.status === 'completed' || !!story.completed_at;
                 return (
                   <Card key={story.id} className={`glass-panel border-0 min-w-0 ${!isCompleted ? 'ring-1 ring-primary/30' : ''}`}>
                     <CardHeader className="min-w-0">
