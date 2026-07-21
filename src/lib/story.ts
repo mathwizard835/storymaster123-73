@@ -288,9 +288,19 @@ export const markStoryCompleted = async (
 const sceneCache = new Map<string, { data: { parsed: Scene | null; text: string }, timestamp: number, storyId: string }>();
 
 // In-flight de-dupe: if an identical request is already running, await it
-// instead of firing a parallel Anthropic call. Entries are always removed in
-// a finally block so a rejected promise can never permanently lock a key.
-const inFlightScenes = new Map<string, Promise<{ text: string; parsed: Scene | null; raw: any; deviceFingerprint?: string }>>();
+// instead of firing a parallel Anthropic call. Entries are removed on both
+// resolve and reject so a failed promise can never lock a key.
+type SceneGenerationResult = { text: string; parsed: Scene | null; raw: any; deviceFingerprint?: string };
+type GenerateSceneOptions = {
+  guest?: boolean;
+  devBypass?: string;
+  stream?: boolean;
+  streamFallback?: boolean;
+  turnId?: string;
+  signal?: AbortSignal;
+};
+
+const inFlightScenes = new Map<string, Promise<SceneGenerationResult>>();
 
 // Track current story session to prevent cross-story cache contamination
 let currentStoryId: string | null = null;
@@ -320,10 +330,14 @@ export const generateNextScene = async (
   forceNewSession: boolean = false,
   availableAbilities: string[] = [],
   onNarrativeDelta?: (partialNarrative: string) => void,
-  opts?: { guest?: boolean; devBypass?: string }
-): Promise<{ text: string; parsed: Scene | null; raw: any; deviceFingerprint?: string }> => {
+  opts?: GenerateSceneOptions
+): Promise<SceneGenerationResult> => {
   const isGuest = opts?.guest === true;
   const devBypass = opts?.devBypass;
+  const shouldStream = opts?.stream !== false && !!onNarrativeDelta;
+  const allowStreamFallback = opts?.streamFallback !== false;
+  const turnId = opts?.turnId;
+  const abortSignal = opts?.signal;
   // Phase 4: Defensive logging
   console.log(`🎬 generateNextScene called:`, {
     sceneCount,
@@ -332,7 +346,8 @@ export const generateNextScene = async (
     currentStoryId,
     forceNewSession,
     cacheSize: sceneCache.size,
-    streaming: !!onNarrativeDelta,
+    streaming: shouldStream,
+    hasTurnId: !!turnId,
   });
 
   // Phase 1: ONLY clear cache when explicitly requested (forceNewSession)
@@ -394,7 +409,7 @@ export const generateNextScene = async (
 
   // ---- Non-streaming invocation (used by default, and as fallback) ----
   const invokeNonStreaming = async () => {
-    const { data, error } = await supabase.functions.invoke("generate-story", {
+    const { data, error } = await (supabase.functions as any).invoke("generate-story", {
       body: {
         profile,
         scene,
@@ -406,7 +421,9 @@ export const generateNextScene = async (
         _retry: false,
         ...(isGuest ? { guest: true } : {}),
         ...(devBypass ? { devBypass } : {}),
+        ...(turnId ? { turnId } : {}),
       },
+      ...(abortSignal ? { signal: abortSignal } : {}),
     });
 
     if (error) {
@@ -458,7 +475,7 @@ export const generateNextScene = async (
   // Returns the SAME result shape as invokeNonStreaming. On ANY failure
   // (network drop, malformed SSE, abort, missing session), falls back to
   // the non-streaming path so the caller is never worse off than before.
-  const invokeStreaming = async (): Promise<{ text: string; parsed: Scene | null; raw: any; deviceFingerprint?: string }> => {
+  const invokeStreaming = async (): Promise<SceneGenerationResult> => {
     try {
       const { data: sessionData } = await supabase.auth.getSession();
       const accessToken = sessionData?.session?.access_token;
@@ -467,12 +484,23 @@ export const generateNextScene = async (
       const anonKey = (import.meta as any).env?.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined;
       if (!rawBase || !anonKey) {
         console.warn("[stream] Missing VITE_SUPABASE_URL / VITE_SUPABASE_PUBLISHABLE_KEY, falling back");
+        if (!allowStreamFallback) {
+          const wrapped: any = new Error("Stream interrupted");
+          wrapped.code = "stream_interrupted";
+          throw wrapped;
+        }
         return invokeNonStreaming();
       }
 
       // Streaming requires an authenticated session UNLESS in guest mode (anon key auth).
       if (!accessToken && !isGuest) {
         console.warn("[stream] No access token, falling back to non-streaming");
+        if (!allowStreamFallback) {
+          const wrapped: any = new Error("Authentication required. Please refresh the page and try again.");
+          wrapped.code = "authentication_required";
+          wrapped.status = 401;
+          throw wrapped;
+        }
         return invokeNonStreaming();
       }
 
@@ -504,7 +532,9 @@ export const generateNextScene = async (
           stream: true,
           ...(isGuest ? { guest: true } : {}),
           ...(devBypass ? { devBypass } : {}),
+          ...(turnId ? { turnId } : {}),
         }),
+        signal: abortSignal,
       });
 
       if (!resp.ok || !resp.body) {
@@ -522,6 +552,12 @@ export const generateNextScene = async (
           }
         } catch (e: any) {
           if (e?.code) throw e;
+        }
+        if (!allowStreamFallback) {
+          const wrapped: any = new Error("Stream interrupted");
+          wrapped.code = "stream_interrupted";
+          wrapped.status = resp.status;
+          throw wrapped;
         }
         return invokeNonStreaming();
       }
@@ -631,18 +667,30 @@ export const generateNextScene = async (
         return finalScene;
       }
       console.warn(`[stream] No valid scene frame (${streamError ?? "no error"}), falling back`);
+      if (!allowStreamFallback) {
+        const wrapped: any = new Error(streamError || "Stream interrupted");
+        wrapped.code = streamError ? "stream_scene_invalid" : "stream_interrupted";
+        wrapped.status = 422;
+        throw wrapped;
+      }
       return invokeNonStreaming();
     } catch (streamErr: any) {
       // Preserve known server-side codes so the caller can branch on them.
       if (streamErr?.code) throw streamErr;
       console.warn("[stream] threw, falling back:", streamErr);
+      if (!allowStreamFallback) {
+        const wrapped: any = new Error(streamErr?.message || "Stream interrupted");
+        wrapped.code = "stream_interrupted";
+        wrapped.status = streamErr?.status;
+        throw wrapped;
+      }
       return invokeNonStreaming();
     }
   };
 
   const run = (async () => {
     try {
-      const result = onNarrativeDelta ? await invokeStreaming() : await invokeNonStreaming();
+      const result = shouldStream ? await invokeStreaming() : await invokeNonStreaming();
 
       // Only cache SUCCESSFUL parses so a one-off failure can't lock the user
       // out of retrying with the same inputs.
@@ -661,6 +709,10 @@ export const generateNextScene = async (
 
       return result;
     } catch (error: any) {
+      if (inFlightScenes.get(cacheKey) === run) {
+        inFlightScenes.delete(cacheKey);
+      }
+
       console.error("Error in generateNextScene:", error);
 
       // Preserve known server-side codes (e.g. demo_used, rate_limited,
@@ -704,7 +756,11 @@ export const generateNextScene = async (
   inFlightScenes.set(cacheKey, run);
   // ALWAYS clear the in-flight entry, whether the promise resolved or rejected,
   // so a failed request can never permanently lock that cache key.
-  run.finally(() => {
+  run.then(() => {
+    if (inFlightScenes.get(cacheKey) === run) {
+      inFlightScenes.delete(cacheKey);
+    }
+  }, () => {
     if (inFlightScenes.get(cacheKey) === run) {
       inFlightScenes.delete(cacheKey);
     }
