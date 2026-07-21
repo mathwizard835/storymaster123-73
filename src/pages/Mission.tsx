@@ -657,6 +657,31 @@ const Mission = () => {
 
   const [choiceLoading, setChoiceLoading] = useState(false);
   const [streamedNarrative, setStreamedNarrative] = useState<string>("");
+  const [choiceRetrying, setChoiceRetrying] = useState(false);
+
+  const isTransientStoryGenerationError = (error: any) => {
+    const message = String(error?.message || "");
+    const code = String(error?.code || "");
+    const status = Number(error?.status || 0);
+
+    if (
+      code === "paywall_required" ||
+      code === "limit_reached" ||
+      code === "rate_limited" ||
+      code === "demo_used" ||
+      code === "invalid_input" ||
+      /authentication|not authenticated|invalid or expired token|story session corrupted|story session lost|rate limit|paywall|subscription required|story limit|adventure pass/i.test(message)
+    ) {
+      return false;
+    }
+
+    return (
+      status === 422 ||
+      code === "stream_interrupted" ||
+      code === "stream_scene_invalid" ||
+      /AI response could not be parsed|Invalid AI response|Stream interrupted|Story generation service|temporarily unavailable|service error|Edge Function|Failed to generate scene/i.test(message)
+    );
+  };
 
   // ABILITIES DISABLED - Handler to unlock abilities instantly
   // const handleUnlockAbility = () => {
@@ -821,23 +846,47 @@ const Mission = () => {
       const abilityCategories = availableAbilities.map(a => a.category);
       const sceneWithMemory = { ...scene, selectedChoiceId: choiceId, memory: storyMemory };
 
-      // Single call — server already handles transparent truncation retry, and
-      // story.ts de-dupes in-flight requests. Surface failures so the catch
-      // block below can reset choiceLoading and show a toast.
-      const { parsed, text } = await generateNextScene(
-        profileWithInventory,
-        sceneWithMemory,
-        false,
-        1800,
-        nextSceneCount,
-        savedStory.id,
-        false,
-        abilityCategories,
-        (partial) => setStreamedNarrative(partial)
-      );
-      if (!parsed) {
-        const errorPreview = text ? text.slice(0, 140) : "No response received";
-        throw new Error("Invalid AI response: " + errorPreview);
+      const turnId = crypto.randomUUID();
+      const generateChoiceScene = async (useStreaming: boolean) => {
+        const { parsed, text } = await generateNextScene(
+          profileWithInventory,
+          sceneWithMemory,
+          false,
+          1800,
+          nextSceneCount,
+          savedStory.id,
+          false,
+          abilityCategories,
+          useStreaming ? (partial) => setStreamedNarrative(partial) : undefined,
+          {
+            stream: useStreaming,
+            streamFallback: false,
+            turnId,
+          }
+        );
+
+        if (!parsed) {
+          const errorPreview = text ? text.slice(0, 140) : "No response received";
+          const invalidResponseError: any = new Error("Invalid AI response: " + errorPreview);
+          invalidResponseError.code = "stream_scene_invalid";
+          invalidResponseError.status = 422;
+          throw invalidResponseError;
+        }
+
+        return { parsed, text };
+      };
+
+      let parsed: Scene;
+      try {
+        ({ parsed } = await generateChoiceScene(true));
+      } catch (firstError: any) {
+        if (!isTransientStoryGenerationError(firstError)) {
+          throw firstError;
+        }
+
+        console.warn("Story generation stream failed; silently retrying non-streaming", firstError);
+        setChoiceRetrying(true);
+        ({ parsed } = await generateChoiceScene(false));
       }
 
 
@@ -996,6 +1045,7 @@ const Mission = () => {
       });
     } finally {
       setChoiceLoading(false);
+      setChoiceRetrying(false);
       setStreamedNarrative("");
     }
   };
