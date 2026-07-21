@@ -487,7 +487,6 @@ export const generateNextScene = async (
         if (!allowStreamFallback) {
           const wrapped: any = new Error("Stream interrupted");
           wrapped.code = "stream_interrupted";
-          wrapped.status = resp.status;
           throw wrapped;
         }
         return invokeNonStreaming();
@@ -496,6 +495,12 @@ export const generateNextScene = async (
       // Streaming requires an authenticated session UNLESS in guest mode (anon key auth).
       if (!accessToken && !isGuest) {
         console.warn("[stream] No access token, falling back to non-streaming");
+        if (!allowStreamFallback) {
+          const wrapped: any = new Error("Authentication required. Please refresh the page and try again.");
+          wrapped.code = "authentication_required";
+          wrapped.status = 401;
+          throw wrapped;
+        }
         return invokeNonStreaming();
       }
 
