@@ -657,7 +657,6 @@ const Mission = () => {
 
   const [choiceLoading, setChoiceLoading] = useState(false);
   const [streamedNarrative, setStreamedNarrative] = useState<string>("");
-  const [choiceRetrying, setChoiceRetrying] = useState(false);
 
   const isTransientStoryGenerationError = (error: any) => {
     const message = String(error?.message || "");
@@ -885,7 +884,7 @@ const Mission = () => {
         }
 
         console.warn("Story generation stream failed; silently retrying non-streaming", firstError);
-        setChoiceRetrying(true);
+        setStreamedNarrative("");
         ({ parsed } = await generateChoiceScene(false));
       }
 
@@ -1045,7 +1044,6 @@ const Mission = () => {
       });
     } finally {
       setChoiceLoading(false);
-      setChoiceRetrying(false);
       setStreamedNarrative("");
     }
   };

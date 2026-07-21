@@ -288,8 +288,8 @@ export const markStoryCompleted = async (
 const sceneCache = new Map<string, { data: { parsed: Scene | null; text: string }, timestamp: number, storyId: string }>();
 
 // In-flight de-dupe: if an identical request is already running, await it
-// instead of firing a parallel Anthropic call. Entries are always removed in
-// a finally block so a rejected promise can never permanently lock a key.
+// instead of firing a parallel Anthropic call. Entries are removed on both
+// resolve and reject so a failed promise can never lock a key.
 type SceneGenerationResult = { text: string; parsed: Scene | null; raw: any; deviceFingerprint?: string };
 type GenerateSceneOptions = {
   guest?: boolean;
@@ -552,6 +552,12 @@ export const generateNextScene = async (
           }
         } catch (e: any) {
           if (e?.code) throw e;
+        }
+        if (!allowStreamFallback) {
+          const wrapped: any = new Error("Stream interrupted");
+          wrapped.code = "stream_interrupted";
+          wrapped.status = resp.status;
+          throw wrapped;
         }
         return invokeNonStreaming();
       }
