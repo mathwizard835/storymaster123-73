@@ -288,8 +288,21 @@ function repairTruncatedJSON(text: string): string | null {
 function isValidSceneShape(value: unknown): boolean {
   if (!value || typeof value !== "object") return false;
   const v = value as Record<string, unknown>;
+  if (typeof v.sceneTitle !== "string" || v.sceneTitle.trim().length < 2) return false;
+  if (!v.hud || typeof v.hud !== "object") return false;
   if (typeof v.narrative !== "string" || v.narrative.length < 20) return false;
-  if (!Array.isArray(v.choices) || v.choices.length < 2) return false;
+  const isEnding = v.end === true;
+  if (!isEnding) {
+    if (!Array.isArray(v.choices) || v.choices.length !== 3) return false;
+    for (const choice of v.choices) {
+      if (!choice || typeof choice !== "object") return false;
+      const c = choice as Record<string, unknown>;
+      if (typeof c.id !== "string" || c.id.trim().length < 1) return false;
+      if (typeof c.text !== "string" || c.text.trim().length < 3) return false;
+    }
+  } else if ("choices" in v && !Array.isArray(v.choices)) {
+    return false;
+  }
   return true;
 }
 
@@ -936,14 +949,14 @@ ${profileSummary}
     const stablePrefix = `${profileBlock}
 
 === RESPONSE FORMAT ===
-Return ONLY valid JSON (no markdown, no explanations). Required fields: sceneTitle, hud{energy,time,choicePoints,ui[]}, narrative, choices[]{id,text,type}, end. Optional fields (OMIT ENTIRELY when not needed — do NOT emit empty arrays, empty objects, or null placeholders): interactiveObjects[], itemsFound[], memory{flags[],pastChoices[]}. Choice optional sub-fields (requiresItem, consumesItem, requiresAbility, createsFlag, requires) — include only when used.
+Return ONLY valid JSON (no markdown, no explanations). Required fields: sceneTitle, hud{energy,time,choicePoints,ui[]}, narrative, choices[]{id,text,type}, end. Every non-ending scene MUST include exactly 3 choices. Optional fields (OMIT ENTIRELY when not needed — do NOT emit empty arrays, empty objects, or null placeholders): interactiveObjects[], itemsFound[], memory{flags[],pastChoices[]}. Choice optional sub-fields (requiresItem, consumesItem, requiresAbility, createsFlag, requires) — include only when used.
 
 Minimal example:
-{"sceneTitle":"...","hud":{"energy":80,"time":"...","choicePoints":0,"ui":["..."]},"narrative":"...","choices":[{"id":"a","text":"...","type":"standard"}],"end":false}
+{"sceneTitle":"...","hud":{"energy":80,"time":"...","choicePoints":0,"ui":["..."]},"narrative":"...","choices":[{"id":"a","text":"...","type":"standard"},{"id":"b","text":"...","type":"standard"},{"id":"c","text":"...","type":"standard"}],"end":false}
 
 SCENE REQUIREMENTS:
 - Use the protagonist's name (${profile.name || "the hero"}) naturally in the narrative and address them directly
-- 3-4 compelling choices that matter, each with a distinct personality tone
+- Exactly 3 compelling choices that matter, each with a distinct personality tone
 - Narrative: 215 words max, formatted in 3-4 paragraphs with \\n\\n breaks
 - Add interactiveObjects / itemsFound ONLY when the scene actually introduces them — never fabricate empty arrays
 - Add memory.flags ONLY for meaningful, lasting choices — never an empty array
@@ -1127,15 +1140,15 @@ THIS SCENE: ${scene ? "Continue the story naturally from the previous scene." : 
             let text = accumulated;
             let parsed = extractJSON(text);
             let parsedValid = isValidSceneShape(parsed);
-            const shouldRetry = !isRetry && (upstreamStopReason === "max_tokens" || !parsed);
+            const shouldRetry = !isRetry && (upstreamStopReason === "max_tokens" || !parsedValid);
 
             if (shouldRetry) {
-              const retryBudget = Math.min(Math.floor(max_tokens * 1.6), 4000);
+              const retryBudget = Math.min(max_tokens, sceneCount === 1 ? 1600 : 1200);
               console.warn(
                 `⚠️ [stream] Retrying scene — stop_reason=${upstreamStopReason}, parsed=${!!parsed}, valid=${parsedValid}, newBudget=${retryBudget}`,
               );
               const retryTail =
-                "\n\nIMPORTANT: Your previous response was truncated or malformed. Keep the narrative shorter (≤180 words) and ensure the JSON is COMPLETE and well-formed. No markdown fences. Output raw JSON only.";
+                "\n\nIMPORTANT: Your previous response was truncated, malformed, or missing required game fields. Keep the narrative shorter (≤180 words) and output COMPLETE raw JSON with sceneTitle, hud, narrative, exactly 3 choices for non-ending scenes, and end. No markdown fences.";
               try {
                 const retryResp = await callAnthropic(retryBudget, retryTail);
                 if (retryResp.ok) {
@@ -1363,21 +1376,20 @@ THIS SCENE: ${scene ? "Continue the story naturally from the previous scene." : 
     let parsed = extractJSON(text);
     let parsedValid = isValidSceneShape(parsed);
 
-    // Server-side single retry ONLY on hard failures: truncation or unparseable
-    // JSON. We deliberately do NOT retry on `!parsedValid` (shape mismatch) —
-    // a slightly-off shape is still readable, and a second ~17s Anthropic call
-    // is far worse for UX than a minor optional-field gap. `parsedValid` is
-    // kept below for logging/metrics only.
+    // Server-side single retry ONLY on game-breaking failures: truncation,
+    // unparseable JSON, or malformed scene shape such as missing choices.
+    // Missing choices leaves the game with narrative but no actionable buttons,
+    // so repair it before the client receives the scene.
     const shouldRetry =
-      !isRetry && (data?.stop_reason === "max_tokens" || !parsed);
+      !isRetry && (data?.stop_reason === "max_tokens" || !parsedValid);
 
     if (shouldRetry) {
-      const retryBudget = Math.min(Math.floor(max_tokens * 1.6), 4000);
+      const retryBudget = Math.min(max_tokens, sceneCount === 1 ? 1600 : 1200);
       console.warn(
         `⚠️ Retrying scene generation — stop_reason=${data?.stop_reason}, parsed=${!!parsed}, valid=${parsedValid}, newBudget=${retryBudget}`,
       );
       const retryTail =
-        "\n\nIMPORTANT: Your previous response was truncated or malformed. Keep the narrative shorter (≤180 words) and ensure the JSON is COMPLETE and well-formed. No markdown fences. Output raw JSON only.";
+        "\n\nIMPORTANT: Your previous response was truncated, malformed, or missing required game fields. Keep the narrative shorter (≤180 words) and output COMPLETE raw JSON with sceneTitle, hud, narrative, exactly 3 choices for non-ending scenes, and end. No markdown fences.";
       try {
         const retryResp = await callAnthropic(retryBudget, retryTail);
         if (retryResp.ok) {
