@@ -295,6 +295,7 @@ type GenerateSceneOptions = {
   guest?: boolean;
   devBypass?: string;
   stream?: boolean;
+  streamFallback?: boolean;
   turnId?: string;
   signal?: AbortSignal;
 };
@@ -334,6 +335,7 @@ export const generateNextScene = async (
   const isGuest = opts?.guest === true;
   const devBypass = opts?.devBypass;
   const shouldStream = opts?.stream !== false && !!onNarrativeDelta;
+  const allowStreamFallback = opts?.streamFallback !== false;
   const turnId = opts?.turnId;
   const abortSignal = opts?.signal;
   // Phase 4: Defensive logging
@@ -407,7 +409,7 @@ export const generateNextScene = async (
 
   // ---- Non-streaming invocation (used by default, and as fallback) ----
   const invokeNonStreaming = async () => {
-    const { data, error } = await supabase.functions.invoke("generate-story", {
+    const { data, error } = await (supabase.functions as any).invoke("generate-story", {
       body: {
         profile,
         scene,
@@ -482,6 +484,12 @@ export const generateNextScene = async (
       const anonKey = (import.meta as any).env?.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined;
       if (!rawBase || !anonKey) {
         console.warn("[stream] Missing VITE_SUPABASE_URL / VITE_SUPABASE_PUBLISHABLE_KEY, falling back");
+        if (!allowStreamFallback) {
+          const wrapped: any = new Error("Stream interrupted");
+          wrapped.code = "stream_interrupted";
+          wrapped.status = resp.status;
+          throw wrapped;
+        }
         return invokeNonStreaming();
       }
 
@@ -648,11 +656,23 @@ export const generateNextScene = async (
         return finalScene;
       }
       console.warn(`[stream] No valid scene frame (${streamError ?? "no error"}), falling back`);
+      if (!allowStreamFallback) {
+        const wrapped: any = new Error(streamError || "Stream interrupted");
+        wrapped.code = streamError ? "stream_scene_invalid" : "stream_interrupted";
+        wrapped.status = 422;
+        throw wrapped;
+      }
       return invokeNonStreaming();
     } catch (streamErr: any) {
       // Preserve known server-side codes so the caller can branch on them.
       if (streamErr?.code) throw streamErr;
       console.warn("[stream] threw, falling back:", streamErr);
+      if (!allowStreamFallback) {
+        const wrapped: any = new Error(streamErr?.message || "Stream interrupted");
+        wrapped.code = "stream_interrupted";
+        wrapped.status = streamErr?.status;
+        throw wrapped;
+      }
       return invokeNonStreaming();
     }
   };
@@ -725,7 +745,11 @@ export const generateNextScene = async (
   inFlightScenes.set(cacheKey, run);
   // ALWAYS clear the in-flight entry, whether the promise resolved or rejected,
   // so a failed request can never permanently lock that cache key.
-  run.finally(() => {
+  run.then(() => {
+    if (inFlightScenes.get(cacheKey) === run) {
+      inFlightScenes.delete(cacheKey);
+    }
+  }, () => {
     if (inFlightScenes.get(cacheKey) === run) {
       inFlightScenes.delete(cacheKey);
     }
