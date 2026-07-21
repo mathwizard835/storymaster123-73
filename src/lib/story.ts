@@ -290,7 +290,16 @@ const sceneCache = new Map<string, { data: { parsed: Scene | null; text: string 
 // In-flight de-dupe: if an identical request is already running, await it
 // instead of firing a parallel Anthropic call. Entries are always removed in
 // a finally block so a rejected promise can never permanently lock a key.
-const inFlightScenes = new Map<string, Promise<{ text: string; parsed: Scene | null; raw: any; deviceFingerprint?: string }>>();
+type SceneGenerationResult = { text: string; parsed: Scene | null; raw: any; deviceFingerprint?: string };
+type GenerateSceneOptions = {
+  guest?: boolean;
+  devBypass?: string;
+  stream?: boolean;
+  turnId?: string;
+  signal?: AbortSignal;
+};
+
+const inFlightScenes = new Map<string, Promise<SceneGenerationResult>>();
 
 // Track current story session to prevent cross-story cache contamination
 let currentStoryId: string | null = null;
@@ -320,10 +329,13 @@ export const generateNextScene = async (
   forceNewSession: boolean = false,
   availableAbilities: string[] = [],
   onNarrativeDelta?: (partialNarrative: string) => void,
-  opts?: { guest?: boolean; devBypass?: string }
-): Promise<{ text: string; parsed: Scene | null; raw: any; deviceFingerprint?: string }> => {
+  opts?: GenerateSceneOptions
+): Promise<SceneGenerationResult> => {
   const isGuest = opts?.guest === true;
   const devBypass = opts?.devBypass;
+  const shouldStream = opts?.stream !== false && !!onNarrativeDelta;
+  const turnId = opts?.turnId;
+  const abortSignal = opts?.signal;
   // Phase 4: Defensive logging
   console.log(`🎬 generateNextScene called:`, {
     sceneCount,
@@ -332,7 +344,8 @@ export const generateNextScene = async (
     currentStoryId,
     forceNewSession,
     cacheSize: sceneCache.size,
-    streaming: !!onNarrativeDelta,
+    streaming: shouldStream,
+    hasTurnId: !!turnId,
   });
 
   // Phase 1: ONLY clear cache when explicitly requested (forceNewSession)
@@ -406,7 +419,9 @@ export const generateNextScene = async (
         _retry: false,
         ...(isGuest ? { guest: true } : {}),
         ...(devBypass ? { devBypass } : {}),
+        ...(turnId ? { turnId } : {}),
       },
+      ...(abortSignal ? { signal: abortSignal } : {}),
     });
 
     if (error) {
@@ -458,7 +473,7 @@ export const generateNextScene = async (
   // Returns the SAME result shape as invokeNonStreaming. On ANY failure
   // (network drop, malformed SSE, abort, missing session), falls back to
   // the non-streaming path so the caller is never worse off than before.
-  const invokeStreaming = async (): Promise<{ text: string; parsed: Scene | null; raw: any; deviceFingerprint?: string }> => {
+  const invokeStreaming = async (): Promise<SceneGenerationResult> => {
     try {
       const { data: sessionData } = await supabase.auth.getSession();
       const accessToken = sessionData?.session?.access_token;
@@ -504,7 +519,9 @@ export const generateNextScene = async (
           stream: true,
           ...(isGuest ? { guest: true } : {}),
           ...(devBypass ? { devBypass } : {}),
+          ...(turnId ? { turnId } : {}),
         }),
+        signal: abortSignal,
       });
 
       if (!resp.ok || !resp.body) {
@@ -642,7 +659,7 @@ export const generateNextScene = async (
 
   const run = (async () => {
     try {
-      const result = onNarrativeDelta ? await invokeStreaming() : await invokeNonStreaming();
+      const result = shouldStream ? await invokeStreaming() : await invokeNonStreaming();
 
       // Only cache SUCCESSFUL parses so a one-off failure can't lock the user
       // out of retrying with the same inputs.
@@ -661,6 +678,10 @@ export const generateNextScene = async (
 
       return result;
     } catch (error: any) {
+      if (inFlightScenes.get(cacheKey) === run) {
+        inFlightScenes.delete(cacheKey);
+      }
+
       console.error("Error in generateNextScene:", error);
 
       // Preserve known server-side codes (e.g. demo_used, rate_limited,
