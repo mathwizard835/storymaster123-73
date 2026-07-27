@@ -22,7 +22,7 @@ const StoryGallery = () => {
   const { isPhone, isNative } = useDevice();
   const backPath = isNative ? '/dashboard' : '/';
   const { user } = useAuth();
-  const [stories, setStories] = useState<DatabaseStory[]>([]);
+  const [stories, setStories] = useState<StoryListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [offline, setOffline] = useState(false);
   const mainRef = useRef<HTMLDivElement>(null);
