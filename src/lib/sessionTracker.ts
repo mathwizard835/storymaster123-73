@@ -22,10 +22,10 @@ import { isNativePlatform } from "@/lib/platform";
 // Cast to any because `app_sessions` is not yet in the generated types.
 const supabase = supabaseClient as any;
 
-const HEARTBEAT_MS = 15_000; // 15s
+const HEARTBEAT_MS = 60_000; // 60s
 // If the last heartbeat is older than this on resume, we don't retro-credit
 // the gap — we finalize the previous session and open a new one.
-const MAX_GAP_MS = 30_000;
+const MAX_GAP_MS = 90_000;
 
 type ActiveSession = {
   id: string;
