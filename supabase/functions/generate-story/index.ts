@@ -1437,19 +1437,22 @@ THIS SCENE: ${scene ? "Continue the story naturally from the previous scene." : 
       );
     }
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        ok: true,
-        model: data?.model,
-        usage: data?.usage ?? null,
-        resultText: text,
-        result: parsed,
-        parsed: parsed,
-        text: text,
-      }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
+    const responseBody = JSON.stringify({
+      success: true,
+      ok: true,
+      model: data?.model,
+      usage: data?.usage ?? null,
+      resultText: text,
+      result: parsed,
+      parsed: parsed,
+      text: text,
+    });
+
+    console.log('Generated story response_chars:', responseBody.length, 'text_chars:', text.length, 'latency_ms:', latencyMs);
+
+    return new Response(responseBody, {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (error) {
     console.error("generate-story error:", error);
     return new Response(JSON.stringify({ error: String(error) }), {
