@@ -37,10 +37,9 @@ const StoryGallery = () => {
       // Try online first, fall back to offline cache
       if (isOnline()) {
         try {
-          const allStories = await loadAllUserStoriesFromDatabase();
+          // Load lightweight list for the gallery cards (no heavy `scenes` JSONB).
+          const allStories = await loadAllUserStoriesListFromDatabase();
 
-          // Self-heal: any story that has reached the last scene or has completed_at
-          // but is not yet flagged completed should be marked completed in DB.
           // Self-heal: only stories explicitly stamped with completed_at but missing
           // 'completed' status. The scene-count heuristic was too eager and would
           // auto-complete stories the user had reached the end of but hadn't clicked
@@ -56,16 +55,16 @@ const StoryGallery = () => {
             );
             for (const s of allStories) {
               if (toHeal.find((h) => h.id === s.id)) {
-                (s as DatabaseStory).status = 'completed';
-                if (!s.completed_at) (s as DatabaseStory).completed_at = new Date().toISOString();
+                s.status = 'completed';
+                if (!s.completed_at) s.completed_at = new Date().toISOString();
               }
             }
           }
 
           setStories(allStories);
-          // Cache completed stories for offline use
-          const completed = allStories.filter(s => s.status === 'completed');
-          await cacheStoriesOffline(completed);
+          // Cache completed stories for offline use (full payload required).
+          const completedStories = await loadCompletedStoriesFromDatabase();
+          await cacheStoriesOffline(completedStories);
         } catch (e) {
           console.error('Failed to load gallery stories:', e);
           // Fall back to offline cache
