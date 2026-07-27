@@ -2,7 +2,7 @@ import { Capacitor } from '@capacitor/core';
 import { Browser } from '@capacitor/browser';
 import { supabase } from '@/integrations/supabase/client';
 import { getDeviceId } from '@/lib/story';
-import { getUserSubscription } from '@/lib/subscription';
+import { getUserSubscription, invalidateSubscriptionCache } from '@/lib/subscription';
 
 /**
  * Native Payment Flow for iOS
