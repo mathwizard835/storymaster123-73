@@ -3,7 +3,7 @@ import { Seo } from "@/components/Seo";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { loadAllUserStoriesFromDatabase, markStoryCompletedInDatabase, type DatabaseStory } from "@/lib/databaseStory";
+import { loadAllUserStoriesListFromDatabase, loadCompletedStoriesFromDatabase, markStoryCompletedInDatabase, type StoryListItem } from "@/lib/databaseStory";
 import { cacheStoriesOffline, loadOfflineStories, isOnline } from "@/lib/offlineStories";
 import { Clock, Star, ArrowLeft, BookOpen, Play, Loader2, WifiOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -22,7 +22,7 @@ const StoryGallery = () => {
   const { isPhone, isNative } = useDevice();
   const backPath = isNative ? '/dashboard' : '/';
   const { user } = useAuth();
-  const [stories, setStories] = useState<DatabaseStory[]>([]);
+  const [stories, setStories] = useState<StoryListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [offline, setOffline] = useState(false);
   const mainRef = useRef<HTMLDivElement>(null);
@@ -37,10 +37,9 @@ const StoryGallery = () => {
       // Try online first, fall back to offline cache
       if (isOnline()) {
         try {
-          const allStories = await loadAllUserStoriesFromDatabase();
+          // Load lightweight list for the gallery cards (no heavy `scenes` JSONB).
+          const allStories = await loadAllUserStoriesListFromDatabase();
 
-          // Self-heal: any story that has reached the last scene or has completed_at
-          // but is not yet flagged completed should be marked completed in DB.
           // Self-heal: only stories explicitly stamped with completed_at but missing
           // 'completed' status. The scene-count heuristic was too eager and would
           // auto-complete stories the user had reached the end of but hadn't clicked
@@ -56,16 +55,16 @@ const StoryGallery = () => {
             );
             for (const s of allStories) {
               if (toHeal.find((h) => h.id === s.id)) {
-                (s as DatabaseStory).status = 'completed';
-                if (!s.completed_at) (s as DatabaseStory).completed_at = new Date().toISOString();
+                s.status = 'completed';
+                if (!s.completed_at) s.completed_at = new Date().toISOString();
               }
             }
           }
 
           setStories(allStories);
-          // Cache completed stories for offline use
-          const completed = allStories.filter(s => s.status === 'completed');
-          await cacheStoriesOffline(completed);
+          // Cache completed stories for offline use (full payload required).
+          const completedStories = await loadCompletedStoriesFromDatabase();
+          await cacheStoriesOffline(completedStories);
         } catch (e) {
           console.error('Failed to load gallery stories:', e);
           // Fall back to offline cache

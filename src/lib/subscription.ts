@@ -1,6 +1,27 @@
 import { supabase } from "@/integrations/supabase/client";
 import { getDeviceId } from "@/lib/story";
 
+// Client-side short-lived cache for subscription status. This reduces repeated
+// Supabase reads across Dashboard, Mission, Settings, and the paywall without
+// affecting server-side entitlement checks.
+const CACHE_TTL_MS = 30_000;
+
+type CachedSubResult = {
+  result: { subscription: UserSubscription | null; plan: SubscriptionPlan | null };
+  userId: string | null;
+  at: number;
+};
+
+let subscriptionCache: CachedSubResult | null = null;
+
+export const invalidateSubscriptionCache = (userId?: string) => {
+  if (!userId || subscriptionCache?.userId === userId) {
+    subscriptionCache = null;
+  }
+};
+
+const cacheKey = (userId: string | null) => userId || "device";
+
 export type SubscriptionPlan = {
   id: string;
   name: string;
@@ -87,6 +108,12 @@ export const getUserSubscription = async (preferredUserId?: string): Promise<{
       } catch { /* ignore */ }
     }
 
+    // Short-lived client cache to reduce repeated entitlement reads across the UI.
+    const key = cacheKey(resolvedUserId);
+    if (subscriptionCache && subscriptionCache.userId === key && Date.now() - subscriptionCache.at < CACHE_TTL_MS) {
+      return subscriptionCache.result;
+    }
+
     let data: any = null;
 
     // 1) Prefer user_id lookup — stable across reinstalls (device_id changes
@@ -117,7 +144,7 @@ export const getUserSubscription = async (preferredUserId?: string): Promise<{
       data = (deviceRows || []).find(isCurrentlyEntitled) || null;
     }
 
-    return {
+    const result = {
       subscription: data ? {
         ...data,
         status: data.status as 'active' | 'cancelled' | 'expired'
@@ -127,6 +154,9 @@ export const getUserSubscription = async (preferredUserId?: string): Promise<{
         features: data.subscription_plans.features as SubscriptionPlan['features']
       } : null
     };
+
+    subscriptionCache = { result, userId: key, at: Date.now() };
+    return result;
   } catch (e) {
     console.error("Failed to fetch user subscription", e);
     return { subscription: null, plan: null };

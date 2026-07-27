@@ -174,7 +174,7 @@ serve(async (req) => {
     }
     const base64Audio = btoa(binary);
 
-    console.log('Successfully generated audio, size:', arrayBuffer.byteLength);
+    console.log('Successfully generated audio, size:', arrayBuffer.byteLength, 'response_chars:', base64Audio.length);
 
     return new Response(
       JSON.stringify({ audioContent: base64Audio }),

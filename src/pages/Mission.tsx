@@ -43,6 +43,7 @@ import { motion } from "framer-motion";
 // import { AbilityToast } from "@/components/AbilityToast";
 // import { AbilityProgressIndicator } from "@/components/AbilityProgressIndicator";
 import { getUserSubscription } from "@/lib/subscription";
+import { fetchAudioWithCache } from "@/lib/ttsCache";
 import { trackFunnelStep } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 
@@ -180,45 +181,30 @@ const Mission = () => {
 
     setAudioLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('text-to-speech', {
-        body: { 
-          text: scene.narrative,
-          voiceId: getVoiceId()
-        }
-      });
+      const audioContent = await fetchAudioWithCache(
+        scene.narrative,
+        getVoiceId()
+      );
 
-      if (error) {
-        console.error('Text-to-speech function error:', error);
-        throw new Error(error.message || 'Failed to generate audio');
-      }
+      // Mark as used ONLY after successful audio generation
+      setHasUsedReadToMe(true);
 
-      if (data?.error) {
-        throw new Error(data.error);
-      }
+      // Convert base64 to audio
+      const audioBlob = new Blob(
+        [Uint8Array.from(atob(audioContent), c => c.charCodeAt(0))],
+        { type: 'audio/mpeg' }
+      );
+      const audioUrl = URL.createObjectURL(audioBlob);
 
-      if (data?.audioContent) {
-        // Mark as used ONLY after successful audio generation
-        setHasUsedReadToMe(true);
-        
-        // Convert base64 to audio
-        const audioBlob = new Blob(
-          [Uint8Array.from(atob(data.audioContent), c => c.charCodeAt(0))],
-          { type: 'audio/mpeg' }
-        );
-        const audioUrl = URL.createObjectURL(audioBlob);
-        
-        if (audioRef.current) {
-          audioRef.current.src = audioUrl;
-          audioRef.current.play();
-          setIsPlaying(true);
-          
-          audioRef.current.onended = () => {
-            setIsPlaying(false);
-            URL.revokeObjectURL(audioUrl);
-          };
-        }
-      } else {
-        throw new Error('No audio content returned');
+      if (audioRef.current) {
+        audioRef.current.src = audioUrl;
+        audioRef.current.play();
+        setIsPlaying(true);
+
+        audioRef.current.onended = () => {
+          setIsPlaying(false);
+          URL.revokeObjectURL(audioUrl);
+        };
       }
     } catch (error: any) {
       console.error('Text-to-speech error:', error);

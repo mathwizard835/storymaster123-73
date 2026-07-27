@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { CheckCircle, Sparkles, Loader2, Volume2, BookOpen, Star, Headphones } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { getUserSubscription } from "@/lib/subscription";
+import { getUserSubscription, invalidateSubscriptionCache } from "@/lib/subscription";
 import { supabase } from "@/integrations/supabase/client";
 import ParentalGateDialog from "@/components/ParentalGateDialog";
 
@@ -39,6 +39,7 @@ export default function SubscriptionSuccess() {
         if (data.success) {
           await new Promise(resolve => setTimeout(resolve, 1500));
           
+          invalidateSubscriptionCache();
           const { subscription } = await getUserSubscription();
           
           if (subscription?.status === 'active') {

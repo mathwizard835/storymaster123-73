@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle, BookOpen, Sparkles, Crown, ArrowLeft, Apple, CreditCard, RotateCcw, Volume2, LogOut } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { cancelSubscription, getUserSubscription, type SubscriptionPlan } from "@/lib/subscription";
+import { cancelSubscription, getUserSubscription, invalidateSubscriptionCache, type SubscriptionPlan } from "@/lib/subscription";
 import { 
   isNativePlatform, 
   isIOSPlatform,
@@ -166,6 +166,7 @@ export default function Subscription() {
           title: "Subscription Cancelled",
           description: `You'll keep access until ${untilStr}. Stripe will not bill you again.`,
         });
+        invalidateSubscriptionCache();
         window.dispatchEvent(new Event('subscription-refreshed'));
         await loadCurrentPlan();
       } else {
@@ -193,7 +194,7 @@ export default function Subscription() {
         description: "Please wait while we confirm your subscription",
       });
 
-      const hasSubscription = await pollForSubscriptionUpdate(10, 2000, (status) => {
+      const hasSubscription = await pollForSubscriptionUpdate(10, (status) => {
         if (status) {
           window.dispatchEvent(new Event('subscription-refreshed'));
           toast({
