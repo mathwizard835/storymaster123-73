@@ -178,7 +178,11 @@ export const refreshSubscriptionStatus = async (): Promise<{
 }> => {
   try {
     const { plan } = await getUserSubscription();
-    
+
+    if (plan) {
+      invalidateSubscriptionCache();
+    }
+
     return {
       hasSubscription: !!plan,
       planName: plan?.name,
