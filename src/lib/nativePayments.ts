@@ -97,26 +97,51 @@ export const addBrowserCloseListener = (callback: () => void): (() => void) => {
   };
 };
 
+let activePollTimeout: ReturnType<typeof setTimeout> | null = null;
+let activePollResolve: ((value: boolean) => void) | null = null;
+
 /**
- * Poll for subscription status updates after payment
- * This is used when the user returns from Safari checkout
+ * Stop any active subscription polling. Useful when the user leaves the
+ * paywall before Stripe completes the checkout.
+ */
+export const stopSubscriptionPolling = (): void => {
+  if (activePollTimeout) {
+    clearTimeout(activePollTimeout);
+    activePollTimeout = null;
+  }
+  if (activePollResolve) {
+    activePollResolve(false);
+    activePollResolve = null;
+  }
+};
+
+/**
+ * Poll for subscription status updates after payment.
+ * Uses exponential backoff to reduce database reads (1s, 2s, 4s, 8s, ...)
+ * while still updating quickly when the webhook lands.
  */
 export const pollForSubscriptionUpdate = async (
   maxAttempts: number = 10,
-  intervalMs: number = 2000,
   onStatusChange?: (hasSubscription: boolean) => void
 ): Promise<boolean> => {
   let attempts = 0;
+  let intervalMs = 1000;
+
+  // Ensure only one poll runs at a time.
+  stopSubscriptionPolling();
 
   return new Promise((resolve) => {
+    activePollResolve = resolve;
+
     const checkSubscription = async () => {
       attempts++;
-      
+
       try {
         const { plan } = await getUserSubscription();
-        
+
         if (plan) {
           // Subscription found!
+          activePollResolve = null;
           onStatusChange?.(true);
           resolve(true);
           return;
@@ -126,13 +151,15 @@ export const pollForSubscriptionUpdate = async (
       }
 
       if (attempts >= maxAttempts) {
+        activePollResolve = null;
         onStatusChange?.(false);
         resolve(false);
         return;
       }
 
-      // Continue polling
-      setTimeout(checkSubscription, intervalMs);
+      // Exponential backoff, capped at 8 seconds.
+      intervalMs = Math.min(intervalMs * 2, 8000);
+      activePollTimeout = setTimeout(checkSubscription, intervalMs);
     };
 
     checkSubscription();

@@ -10,7 +10,7 @@ import { loadAchievements, ALL_ACHIEVEMENTS } from "@/lib/achievements";
 import { loadCharacter } from "@/lib/character";
 // ABILITIES DISABLED - Uncomment to re-enable
 // import { loadAbilities } from "@/lib/abilities";
-import { loadRecentStoriesFromDatabase, loadCurrentStoryFromDatabase, loadInProgressStoriesFromDatabase, pauseStoryInDatabase, getTotalStoryCountFromDatabase, DatabaseStory } from "@/lib/databaseStory";
+import { loadStoriesListFromDatabase, loadCurrentStoryFromDatabase, loadInProgressStoriesListFromDatabase, pauseStoryInDatabase, getTotalStoryCountFromDatabase, StoryListItem } from "@/lib/databaseStory";
 import { ArrowLeft, Trophy, BookOpen, Star, Crown, Zap, Plus, TrendingUp, Play, Sparkles, Heart, Home, Settings, Loader2 } from "lucide-react";
 import { addHapticFeedback } from "@/lib/mobileFeatures";
 import { useState, useEffect, useRef, useCallback } from "react";
@@ -35,9 +35,9 @@ const Dashboard = () => {
   // const [abilities, setAbilities] = useState(loadAbilities());
   const abilities = { abilities: [], totalAbilitiesEarned: 0, abilitiesUsed: 0 }; // Placeholder
   const completedStories = getCompletedStories();
-  const [recentStories, setRecentStories] = useState<DatabaseStory[]>([]);
+  const [recentStories, setRecentStories] = useState<StoryListItem[]>([]);
   const [totalStoryCount, setTotalStoryCount] = useState(0);
-  const [inProgressStories, setInProgressStories] = useState<DatabaseStory[]>([]);
+  const [inProgressStories, setInProgressStories] = useState<StoryListItem[]>([]);
   const [hasActiveStory, setHasActiveStory] = useState(false);
   const [showNewStoryDialog, setShowNewStoryDialog] = useState(false);
   const [showStoryPickerDialog, setShowStoryPickerDialog] = useState(false);
@@ -72,13 +72,13 @@ const Dashboard = () => {
         const { plan } = await safeLoad('subscription', { subscription: null, plan: null }, getUserSubscription);
         setIsPremium(plan?.name === "premium" || plan?.name?.includes("premium"));
         
-        const stories = await safeLoad('recent stories', [], loadRecentStoriesFromDatabase);
+        const stories = await safeLoad('recent stories', [], loadStoriesListFromDatabase);
         setRecentStories(stories);
         
         const totalCount = await safeLoad('story count', 0, getTotalStoryCountFromDatabase);
         setTotalStoryCount(totalCount);
         
-        const inProgress = await safeLoad('in-progress stories', [], loadInProgressStoriesFromDatabase);
+        const inProgress = await safeLoad('in-progress stories', [], loadInProgressStoriesListFromDatabase);
         setInProgressStories(inProgress);
         
         const activeStory = await safeLoad('active story', null, loadCurrentStoryFromDatabase);

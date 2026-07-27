@@ -193,7 +193,7 @@ export default function Subscription() {
         description: "Please wait while we confirm your subscription",
       });
 
-      const hasSubscription = await pollForSubscriptionUpdate(10, 2000, (status) => {
+      const hasSubscription = await pollForSubscriptionUpdate(10, (status) => {
         if (status) {
           window.dispatchEvent(new Event('subscription-refreshed'));
           toast({

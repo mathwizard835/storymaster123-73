@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Seo } from "@/components/Seo";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchAudioWithCache } from "@/lib/ttsCache";
 import { addHapticFeedback } from "@/lib/mobileFeatures";
 import { cn } from "@/lib/utils";
 import mysticMageBg from "@/assets/mystic-mage-bg.jpg";
@@ -467,13 +468,13 @@ const TryStory = () => {
     setAudioLoading(true);
     try {
       const voiceId = VOICE_BY_MODE[profile.mode] || VOICE_BY_MODE.thrill;
-      const { data, error } = await supabase.functions.invoke("text-to-speech", {
-        body: { text: scene.narrative, voiceId, guest: true },
-      });
-      if (error) throw error;
-      if (!data?.audioContent) throw new Error("No audio returned");
+      const audioContent = await fetchAudioWithCache(
+        scene.narrative,
+        voiceId,
+        true
+      );
 
-      const audio = new Audio(`data:audio/mpeg;base64,${data.audioContent}`);
+      const audio = new Audio(`data:audio/mpeg;base64,${audioContent}`);
       audioRef.current = audio;
       audio.onended = () => setIsPlaying(false);
       audio.onpause = () => setIsPlaying(false);

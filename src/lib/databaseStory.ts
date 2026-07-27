@@ -16,6 +16,25 @@ export interface DatabaseStory {
   title?: string;
 }
 
+// Lightweight list item: excludes the potentially-large `scenes` JSONB column.
+export type StoryListItem = Omit<DatabaseStory, 'scenes'>;
+
+// Columns used in dashboard/gallery list cards only. Selecting the full `scenes`
+// JSONB for every list card is a major source of egress.
+const STORY_LIST_COLUMNS = `
+  id,
+  user_id,
+  profile,
+  current_scene_index,
+  started_at,
+  last_played_at,
+  completed_at,
+  scene_count,
+  choices_made,
+  status,
+  title
+`;
+
 // Phase 1: Pause ALL active stories for the current user (not complete, so they can resume)
 export const pauseAllActiveStoriesForUser = async (): Promise<number> => {
   const { data: { user } } = await supabase.auth.getUser();
@@ -238,7 +257,7 @@ export const loadStoryByIdFromDatabase = async (storyId: string): Promise<SavedS
   };
 };
 
-// Get all in-progress stories for the current user
+// Get all in-progress stories for the current user (full payload)
 export const loadInProgressStoriesFromDatabase = async (): Promise<DatabaseStory[]> => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return [];
@@ -252,6 +271,26 @@ export const loadInProgressStoriesFromDatabase = async (): Promise<DatabaseStory
 
   if (error) {
     console.error('Error loading in-progress stories:', error);
+    return [];
+  }
+
+  return data || [];
+};
+
+// Lightweight in-progress list for dashboard cards (no scenes payload).
+export const loadInProgressStoriesListFromDatabase = async (): Promise<StoryListItem[]> => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data, error } = await (supabase as any)
+    .from('user_stories')
+    .select(STORY_LIST_COLUMNS)
+    .eq('user_id', user.id)
+    .in('status', ['active', 'paused'])
+    .order('last_played_at', { ascending: false });
+
+  if (error) {
+    console.error('Error loading in-progress stories list:', error);
     return [];
   }
 
@@ -315,6 +354,28 @@ export const loadRecentStoriesFromDatabase = async (limit: number = 10): Promise
 
   if (error) {
     console.error('Error loading recent stories:', error);
+    return [];
+  }
+
+  return data || [];
+};
+
+// Load all recent stories for list views without the full scenes payload.
+// This is the preferred path for Dashboard, Gallery, and any other list card.
+export const loadStoriesListFromDatabase = async (limit: number = 10): Promise<StoryListItem[]> => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data, error } = await (supabase as any)
+    .from('user_stories')
+    .select(STORY_LIST_COLUMNS)
+    .eq('user_id', user.id)
+    .in('status', ['active', 'paused', 'completed'])
+    .order('last_played_at', { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    console.error('Error loading stories list:', error);
     return [];
   }
 
