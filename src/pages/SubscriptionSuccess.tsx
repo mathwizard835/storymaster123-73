@@ -39,6 +39,7 @@ export default function SubscriptionSuccess() {
         if (data.success) {
           await new Promise(resolve => setTimeout(resolve, 1500));
           
+          invalidateSubscriptionCache();
           const { subscription } = await getUserSubscription();
           
           if (subscription?.status === 'active') {
