@@ -402,6 +402,27 @@ export const loadAllUserStoriesFromDatabase = async (): Promise<DatabaseStory[]>
   return data || [];
 };
 
+// Lightweight gallery list: same rows as loadAllUserStoriesFromDatabase but
+// without the `scenes` JSONB payload. Use this for the gallery card grid.
+export const loadAllUserStoriesListFromDatabase = async (): Promise<StoryListItem[]> => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data, error } = await (supabase as any)
+    .from('user_stories')
+    .select(STORY_LIST_COLUMNS)
+    .eq('user_id', user.id)
+    .in('status', ['active', 'paused', 'completed'])
+    .order('last_played_at', { ascending: false });
+
+  if (error) {
+    console.error('Error loading all user stories list:', error);
+    return [];
+  }
+
+  return data || [];
+};
+
 // Load completed stories from database
 export const loadCompletedStoriesFromDatabase = async (): Promise<DatabaseStory[]> => {
   const { data: { user } } = await supabase.auth.getUser();
