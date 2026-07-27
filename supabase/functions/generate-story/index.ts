@@ -1240,18 +1240,19 @@ THIS SCENE: ${scene ? "Continue the story naturally from the previous scene." : 
               console.warn("[stream] analytics write failed:", analyticsErr);
             }
 
-            controller.enqueue(
-              sseFrame("scene", {
-                success: true,
-                ok: true,
-                model: modelEcho ?? selectedModel,
-                usage: usage ?? null,
-                resultText: text,
-                result: parsed,
-                parsed,
-                text,
-              }),
-            );
+            const streamBody = sseFrame("scene", {
+              success: true,
+              ok: true,
+              model: modelEcho ?? selectedModel,
+              usage: usage ?? null,
+              resultText: text,
+              result: parsed,
+              parsed,
+              text,
+            });
+            console.log('Generated streamed scene response_chars:', streamBody.length, 'text_chars:', text.length, 'latency_ms:', (Date.now() - anthropicStreamStart));
+
+            controller.enqueue(streamBody);
             controller.close();
           } catch (streamErr) {
             console.error("[stream] handler threw:", streamErr);
