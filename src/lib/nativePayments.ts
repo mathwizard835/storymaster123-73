@@ -140,7 +140,9 @@ export const pollForSubscriptionUpdate = async (
         const { plan } = await getUserSubscription();
 
         if (plan) {
-          // Subscription found!
+          // Subscription found! Clear the client cache so other pages refresh
+          // with the latest status immediately.
+          invalidateSubscriptionCache();
           activePollResolve = null;
           onStatusChange?.(true);
           resolve(true);
