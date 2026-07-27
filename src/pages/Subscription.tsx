@@ -166,6 +166,7 @@ export default function Subscription() {
           title: "Subscription Cancelled",
           description: `You'll keep access until ${untilStr}. Stripe will not bill you again.`,
         });
+        invalidateSubscriptionCache();
         window.dispatchEvent(new Event('subscription-refreshed'));
         await loadCurrentPlan();
       } else {
