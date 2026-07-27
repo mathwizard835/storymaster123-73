@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { CheckCircle, Sparkles, Loader2, Volume2, BookOpen, Star, Headphones } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { getUserSubscription } from "@/lib/subscription";
+import { getUserSubscription, invalidateSubscriptionCache } from "@/lib/subscription";
 import { supabase } from "@/integrations/supabase/client";
 import ParentalGateDialog from "@/components/ParentalGateDialog";
 
