@@ -26,6 +26,7 @@ import {
   FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { SupportModal } from "@/components/SupportModal";
 
 export default function Settings() {
   const navigate = useNavigate();
@@ -41,6 +42,9 @@ export default function Settings() {
   const [currentTheme, setCurrentTheme] = useState(() => {
     return localStorage.getItem("premium-theme") || "default";
   });
+
+  const [supportOpen, setSupportOpen] = useState(false);
+
 
   const handleSignOut = async () => {
     addHapticFeedback("medium");
