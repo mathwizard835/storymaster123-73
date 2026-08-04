@@ -19,6 +19,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { trackFunnelStep } from "@/lib/analytics";
 import { isNativePlatform } from "@/lib/platform";
 import { startForegroundTracking, stopForegroundTracking } from "@/lib/sessionTracker";
+import { UpdateAvailableBanner } from "@/components/UpdateAvailableBanner";
 
 // Eager: landing + auth (critical path)
 import Index from "./pages/Index";
