@@ -642,6 +642,9 @@ const Mission = () => {
   }, [sceneCount]);
 
   const [choiceLoading, setChoiceLoading] = useState(false);
+  // Synchronous duplicate-submission guard (state updates are async, so rapid
+  // double taps could previously fire two generations for the same choice).
+  const choiceInFlightRef = useRef(false);
   const [streamedNarrative, setStreamedNarrative] = useState<string>("");
 
   const isTransientStoryGenerationError = (error: any) => {
