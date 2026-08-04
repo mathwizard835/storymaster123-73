@@ -119,8 +119,8 @@ export default function Settings() {
         {
           icon: HelpCircle,
           label: "Help & Support",
-          description: "Get help with the app",
-          action: () => { addHapticFeedback("light"); navigate("/support"); },
+          description: "Contact our team directly",
+          action: () => { addHapticFeedback("light"); setSupportOpen(true); },
           chevron: true,
         },
         {
