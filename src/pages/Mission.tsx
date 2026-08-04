@@ -1058,6 +1058,7 @@ const Mission = () => {
         duration: 5000,
       });
     } finally {
+      choiceInFlightRef.current = false;
       setChoiceLoading(false);
       setStreamedNarrative("");
     }
