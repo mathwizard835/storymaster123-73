@@ -770,7 +770,7 @@ const Mission = () => {
   const handleUnlockAbility = () => {}; // Placeholder for disabled abilities
 
   const onChoose = async (choiceId: string) => {
-    if (!profile || !scene || !savedStory || choiceLoading) return;
+    if (!profile || !scene || !savedStory || choiceLoading || choiceInFlightRef.current) return;
 
     // Phase 5: Validate story ID hasn't changed unexpectedly
     if (initialStoryId && savedStory.id !== initialStoryId) {
