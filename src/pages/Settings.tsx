@@ -250,6 +250,8 @@ export default function Settings() {
           StoryMaster Kids v1.0.0
         </p>
       </div>
+
+      <SupportModal open={supportOpen} onOpenChange={setSupportOpen} />
     </div>
   );
 }
