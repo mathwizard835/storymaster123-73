@@ -1049,6 +1049,19 @@ const TryStory = () => {
                       <Target className="h-5 w-5" />
                       What do you choose?
                     </h3>
+
+                    {choiceError && !choiceLoading && (
+                      <div className="mb-4 rounded-lg border border-amber-400/40 bg-amber-500/10 p-4 text-amber-100">
+                        <p className="text-sm leading-relaxed mb-3">{choiceError.message}</p>
+                        <button
+                          onClick={() => onChoose(choiceError.choiceId)}
+                          className="inline-flex items-center gap-2 rounded-lg bg-amber-400 px-4 py-2 text-sm font-semibold text-amber-950 hover:bg-amber-300 transition-colors"
+                        >
+                          Retry this choice
+                        </button>
+                      </div>
+                    )}
+
                     <div className="grid gap-3">
                       {scene.choices.map((choice, index) => {
                         const validation = validateChoice(choice.id, scene, inventory);
