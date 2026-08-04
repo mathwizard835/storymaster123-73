@@ -19,6 +19,7 @@ import {
   ChevronDown,
   Rocket,
   GraduationCap,
+  LifeBuoy,
 } from "lucide-react";
 
 const Index = () => {
