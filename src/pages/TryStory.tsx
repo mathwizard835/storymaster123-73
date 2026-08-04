@@ -162,6 +162,8 @@ const TryStory = () => {
   const [allScenes, setAllScenes] = useState<Scene[]>([]);
   const [sceneCount, setSceneCount] = useState(1);
   const [choiceLoading, setChoiceLoading] = useState(false);
+  const [choiceError, setChoiceError] = useState<{ choiceId: string; message: string } | null>(null);
+  const choiceInFlightRef = useRef(false);
   const [streamedNarrative, setStreamedNarrative] = useState<string>("");
   const [error, setError] = useState("");
   const startedRef = useRef(false);
