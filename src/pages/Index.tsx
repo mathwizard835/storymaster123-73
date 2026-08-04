@@ -25,6 +25,7 @@ const Index = () => {
   const navigate = useNavigate();
   const [demoUsed, setDemoUsed] = useState(false);
   const [devBypass, setDevBypass] = useState<string | null>(null);
+  const [supportOpen, setSupportOpen] = useState(false);
 
   useEffect(() => {
     try {
