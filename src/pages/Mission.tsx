@@ -785,6 +785,7 @@ const Mission = () => {
       return;
     }
 
+    choiceInFlightRef.current = true;
     setChoiceLoading(true);
     setStreamedNarrative("");
 
