@@ -344,8 +344,34 @@ const TryStory = () => {
     }
   };
 
+  const isTransientDemoError = (e: any) => {
+    const message = String(e?.message || "");
+    const code = String(e?.code || "");
+    const status = Number(e?.status || 0);
+
+    if (
+      code === "demo_used" ||
+      code === "paywall_required" ||
+      code === "limit_reached" ||
+      code === "rate_limited" ||
+      code === "invalid_input" ||
+      /demo_used|rate limit|paywall|subscription required|story limit/i.test(message)
+    ) {
+      return false;
+    }
+
+    return (
+      status === 422 ||
+      code === "stream_interrupted" ||
+      code === "stream_scene_invalid" ||
+      /AI response could not be parsed|Invalid AI response|Stream interrupted|Story generation service|temporarily unavailable|service error|Edge Function|Failed to generate scene|network|timeout|fetch/i.test(
+        message
+      )
+    );
+  };
+
   const onChoose = async (choiceId: string) => {
-    if (!scene || choiceLoading) return;
+    if (!scene || choiceLoading || choiceInFlightRef.current) return;
     const chosen = scene.choices?.find((c) => c.id === choiceId);
     if (!chosen) return;
 
@@ -361,6 +387,8 @@ const TryStory = () => {
     }
 
     addHapticFeedback("medium");
+    choiceInFlightRef.current = true;
+    setChoiceError(null);
     setChoiceLoading(true);
     setStreamedNarrative("");
 
@@ -371,20 +399,49 @@ const TryStory = () => {
       const profileWithInventory = updateProfileInventory(profile as any, inventory);
       const sceneWithMemory = { ...scene, selectedChoiceId: choiceId, memory: storyMemory };
 
-      const { parsed, text } = await generateNextScene(
-        profileWithInventory,
-        sceneWithMemory,
-        false,
-        1800,
-        nextSceneCount,
-        undefined,
-        false,
-        [],
-        (partial) => setStreamedNarrative(partial),
-        { guest: true, ...(devBypass ? { devBypass } : {}) },
-      );
-      if (!parsed) {
-        throw new Error("Invalid AI response: " + (text || "").slice(0, 140));
+      const generateScene = async (useStreaming: boolean) => {
+        const { parsed, text } = await generateNextScene(
+          profileWithInventory,
+          sceneWithMemory,
+          false,
+          1800,
+          nextSceneCount,
+          undefined,
+          false,
+          [],
+          useStreaming ? (partial: string) => setStreamedNarrative(partial) : undefined,
+          { guest: true, stream: useStreaming, ...(devBypass ? { devBypass } : {}) },
+        );
+        if (!parsed) {
+          const invalid: any = new Error("Invalid AI response: " + (text || "").slice(0, 140));
+          invalid.code = "stream_scene_invalid";
+          invalid.status = 422;
+          throw invalid;
+        }
+        return parsed;
+      };
+
+      // Resolve on the first tap where possible: stream → non-stream → delayed non-stream.
+      let parsed: any;
+      const attempts: Array<{ streaming: boolean; delayMs: number }> = [
+        { streaming: true, delayMs: 0 },
+        { streaming: false, delayMs: 0 },
+        { streaming: false, delayMs: 900 },
+      ];
+
+      for (let i = 0; i < attempts.length; i++) {
+        try {
+          if (attempts[i].delayMs > 0) {
+            await new Promise((resolve) => setTimeout(resolve, attempts[i].delayMs));
+          }
+          parsed = await generateScene(attempts[i].streaming);
+          break;
+        } catch (attemptError: any) {
+          const isLast = i === attempts.length - 1;
+          if (isLast || !isTransientDemoError(attemptError)) throw attemptError;
+          console.warn(`Demo scene attempt ${i + 1} failed; retrying automatically`, attemptError);
+          setStreamedNarrative("");
+        }
       }
 
       // Inventory: consume required items, add found items
@@ -417,6 +474,7 @@ const TryStory = () => {
       setScene(parsed);
       setAllScenes(nextAllScenes);
       setSceneCount(nextSceneCount);
+      setChoiceError(null);
 
       const isLast = !!parsed.end || nextSceneCount >= maxScenes;
       if (isLast) {
@@ -432,17 +490,19 @@ const TryStory = () => {
         setStage("demoUsed");
         return;
       }
-      toast({
-        title: "Try that choice again",
-        description: "The storyteller paused for a moment. Tap your choice once more.",
-        variant: "destructive",
-        duration: 4000,
+      // Soft failure: keep the whole story session intact and offer a retry.
+      setChoiceError({
+        choiceId,
+        message:
+          "The storyteller lost its train of thought for a second. Your adventure is safe — retry this choice to keep going.",
       });
     } finally {
+      choiceInFlightRef.current = false;
       setChoiceLoading(false);
       setStreamedNarrative("");
     }
   };
+
 
   const handleChallengeComplete = (correct: boolean) => {
     setCurrentChallenge(null);
