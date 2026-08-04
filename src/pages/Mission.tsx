@@ -804,6 +804,7 @@ const Mission = () => {
           variant: "destructive",
           duration: 4000,
         });
+        choiceInFlightRef.current = false;
         setChoiceLoading(false);
         return;
       }
