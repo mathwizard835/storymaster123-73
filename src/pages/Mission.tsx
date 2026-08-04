@@ -642,6 +642,9 @@ const Mission = () => {
   }, [sceneCount]);
 
   const [choiceLoading, setChoiceLoading] = useState(false);
+  // Synchronous duplicate-submission guard (state updates are async, so rapid
+  // double taps could previously fire two generations for the same choice).
+  const choiceInFlightRef = useRef(false);
   const [streamedNarrative, setStreamedNarrative] = useState<string>("");
 
   const isTransientStoryGenerationError = (error: any) => {
@@ -767,7 +770,7 @@ const Mission = () => {
   const handleUnlockAbility = () => {}; // Placeholder for disabled abilities
 
   const onChoose = async (choiceId: string) => {
-    if (!profile || !scene || !savedStory || choiceLoading) return;
+    if (!profile || !scene || !savedStory || choiceLoading || choiceInFlightRef.current) return;
 
     // Phase 5: Validate story ID hasn't changed unexpectedly
     if (initialStoryId && savedStory.id !== initialStoryId) {
@@ -782,6 +785,7 @@ const Mission = () => {
       return;
     }
 
+    choiceInFlightRef.current = true;
     setChoiceLoading(true);
     setStreamedNarrative("");
 
@@ -800,6 +804,7 @@ const Mission = () => {
           variant: "destructive",
           duration: 4000,
         });
+        choiceInFlightRef.current = false;
         setChoiceLoading(false);
         return;
       }
@@ -861,18 +866,42 @@ const Mission = () => {
         return { parsed, text };
       };
 
-      let parsed: Scene;
-      try {
-        ({ parsed } = await generateChoiceScene(true));
-      } catch (firstError: any) {
-        if (!isTransientStoryGenerationError(firstError)) {
-          throw firstError;
-        }
+      // Resolve the choice on the first tap: try streaming, then silently fall
+      // back to non-streaming, then one final delayed non-streaming attempt.
+      // Only transient generation failures are retried — real errors (paywall,
+      // auth, limits) still surface immediately.
+      let parsed: Scene | undefined;
+      const attempts: Array<{ streaming: boolean; delayMs: number }> = [
+        { streaming: true, delayMs: 0 },
+        { streaming: false, delayMs: 0 },
+        { streaming: false, delayMs: 900 },
+      ];
 
-        console.warn("Story generation stream failed; silently retrying non-streaming", firstError);
-        setStreamedNarrative("");
-        ({ parsed } = await generateChoiceScene(false));
+      for (let i = 0; i < attempts.length; i++) {
+        const attempt = attempts[i];
+        try {
+          if (attempt.delayMs > 0) {
+            await new Promise((resolve) => setTimeout(resolve, attempt.delayMs));
+          }
+          ({ parsed } = await generateChoiceScene(attempt.streaming));
+          break;
+        } catch (attemptError: any) {
+          const isLastAttempt = i === attempts.length - 1;
+          if (isLastAttempt || !isTransientStoryGenerationError(attemptError)) {
+            throw attemptError;
+          }
+          console.warn(
+            `Story generation attempt ${i + 1} failed; retrying automatically`,
+            attemptError
+          );
+          setStreamedNarrative("");
+        }
       }
+
+      if (!parsed) {
+        throw new Error("Failed to generate scene");
+      }
+
 
 
       let effectiveInventory = inventory;
@@ -1029,6 +1058,7 @@ const Mission = () => {
         duration: 5000,
       });
     } finally {
+      choiceInFlightRef.current = false;
       setChoiceLoading(false);
       setStreamedNarrative("");
     }

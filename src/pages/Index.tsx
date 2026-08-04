@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Seo } from "@/components/Seo";
+import { SupportModal } from "@/components/SupportModal";
 import heroParentTrust from "@/assets/hero-parent-trust.jpg";
 import familyReading from "@/assets/family-reading.jpg";
 import storyGenres from "@/assets/story-genres.jpg";
@@ -18,12 +19,14 @@ import {
   ChevronDown,
   Rocket,
   GraduationCap,
+  LifeBuoy,
 } from "lucide-react";
 
 const Index = () => {
   const navigate = useNavigate();
   const [demoUsed, setDemoUsed] = useState(false);
   const [devBypass, setDevBypass] = useState<string | null>(null);
+  const [supportOpen, setSupportOpen] = useState(false);
 
   useEffect(() => {
     try {
@@ -647,6 +650,12 @@ const Index = () => {
             <p className="text-sm text-muted-foreground mb-4 italic">
               Built with ❤️ by a 14-year-old who's turning screen time into reading time
             </p>
+            <div className="mb-4 flex justify-center">
+              <Button variant="outline" size="sm" onClick={() => setSupportOpen(true)}>
+                <LifeBuoy className="h-4 w-4 mr-2" />
+                Help &amp; Support
+              </Button>
+            </div>
             <div className="flex flex-wrap justify-center gap-6 text-sm text-muted-foreground">
               <a href="/privacy" className="hover:text-foreground transition-colors">
                 Privacy Policy
@@ -665,7 +674,10 @@ const Index = () => {
           </footer>
         </div>
       </section>
+
+      <SupportModal open={supportOpen} onOpenChange={setSupportOpen} />
     </>
+
   );
 };
 

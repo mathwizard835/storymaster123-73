@@ -26,6 +26,7 @@ import {
   FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { SupportModal } from "@/components/SupportModal";
 
 export default function Settings() {
   const navigate = useNavigate();
@@ -41,6 +42,9 @@ export default function Settings() {
   const [currentTheme, setCurrentTheme] = useState(() => {
     return localStorage.getItem("premium-theme") || "default";
   });
+
+  const [supportOpen, setSupportOpen] = useState(false);
+
 
   const handleSignOut = async () => {
     addHapticFeedback("medium");
@@ -119,8 +123,8 @@ export default function Settings() {
         {
           icon: HelpCircle,
           label: "Help & Support",
-          description: "Get help with the app",
-          action: () => { addHapticFeedback("light"); navigate("/support"); },
+          description: "Contact our team directly",
+          action: () => { addHapticFeedback("light"); setSupportOpen(true); },
           chevron: true,
         },
         {
@@ -246,6 +250,8 @@ export default function Settings() {
           StoryMaster Kids v1.0.0
         </p>
       </div>
+
+      <SupportModal open={supportOpen} onOpenChange={setSupportOpen} />
     </div>
   );
 }
