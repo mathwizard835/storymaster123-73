@@ -467,6 +467,42 @@ export type Database = {
         }
         Relationships: []
       }
+      support_requests: {
+        Row: {
+          app_version: string | null
+          created_at: string
+          device_info: string | null
+          email: string
+          id: string
+          message: string
+          name: string
+          page: string | null
+          user_id: string | null
+        }
+        Insert: {
+          app_version?: string | null
+          created_at?: string
+          device_info?: string | null
+          email: string
+          id?: string
+          message: string
+          name: string
+          page?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          app_version?: string | null
+          created_at?: string
+          device_info?: string | null
+          email?: string
+          id?: string
+          message?: string
+          name?: string
+          page?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null
