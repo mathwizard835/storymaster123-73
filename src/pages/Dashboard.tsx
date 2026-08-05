@@ -975,7 +975,10 @@ const Dashboard = () => {
           </div>
         </div>
       </main>
-      
+
+      <SupportModal open={supportOpen} onOpenChange={setSupportOpen} />
+
+
       {/* New Story Confirmation Dialog */}
       <Dialog open={showNewStoryDialog} onOpenChange={setShowNewStoryDialog}>
         <DialogContent className="max-w-md">
