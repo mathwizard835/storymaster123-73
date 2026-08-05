@@ -650,12 +650,6 @@ const Index = () => {
             <p className="text-sm text-muted-foreground mb-4 italic">
               Built with ❤️ by a 14-year-old who's turning screen time into reading time
             </p>
-            <div className="mb-4 flex justify-center">
-              <Button variant="outline" size="sm" onClick={() => setSupportOpen(true)}>
-                <LifeBuoy className="h-4 w-4 mr-2" />
-                Help &amp; Support
-              </Button>
-            </div>
             <div className="flex flex-wrap justify-center gap-6 text-sm text-muted-foreground">
               <a href="/privacy" className="hover:text-foreground transition-colors">
                 Privacy Policy
