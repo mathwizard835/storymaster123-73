@@ -377,17 +377,32 @@ const Dashboard = () => {
                     </Badge>
                   )}
                 </div>
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => {
-                    addHapticFeedback('light');
-                    navigate("/subscription");
-                  }}
-                  className="p-2"
-                >
-                  <Crown className="h-5 w-5 text-amber-500" />
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    aria-label="Help and support"
+                    onClick={() => {
+                      addHapticFeedback('light');
+                      setSupportOpen(true);
+                    }}
+                    className="p-2 min-h-[44px] min-w-[44px]"
+                  >
+                    <LifeBuoy className="h-5 w-5 text-muted-foreground" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    aria-label="Subscription"
+                    onClick={() => {
+                      addHapticFeedback('light');
+                      navigate("/subscription");
+                    }}
+                    className="p-2 min-h-[44px] min-w-[44px]"
+                  >
+                    <Crown className="h-5 w-5 text-amber-500" />
+                  </Button>
+                </div>
               </div>
               
               {/* Mobile Action Buttons */}
