@@ -23,6 +23,7 @@ import { NativeNavigationHeader } from "@/components/NativeNavigationHeader";
 import { SkeletonDashboard } from "@/components/SkeletonCard";
 import { useProgressSync } from "@/hooks/useProgressSync";
 import { supabase } from "@/integrations/supabase/client";
+import { SupportModal } from "@/components/SupportModal";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -44,6 +45,7 @@ const Dashboard = () => {
   const [isPremium, setIsPremium] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isCheckingLimit, setIsCheckingLimit] = useState(false);
+  const [supportOpen, setSupportOpen] = useState(false);
   const pullStartY = useRef(0);
   const mainRef = useRef<HTMLDivElement>(null);
 
