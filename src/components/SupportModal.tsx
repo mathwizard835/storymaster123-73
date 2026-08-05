@@ -98,7 +98,7 @@ export const SupportModal = ({ open, onOpenChange }: SupportModalProps) => {
     if (!result.success) {
       toast({
         title: "Check your details",
-        description: result.error.errors[0]?.message,
+        description: result.error.issues[0]?.message,
         variant: "destructive",
       });
       return;
