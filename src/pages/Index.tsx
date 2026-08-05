@@ -659,9 +659,13 @@ const Index = () => {
                 Terms of Service
               </a>
               <span>•</span>
-              <a href="/support" className="hover:text-foreground transition-colors">
+              <button
+                type="button"
+                onClick={() => setSupportOpen(true)}
+                className="hover:text-foreground transition-colors"
+              >
                 Support
-              </a>
+              </button>
               <span>•</span>
               <span>© 2025 StoryMaster Kids</span>
             </div>
