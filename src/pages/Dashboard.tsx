@@ -11,7 +11,7 @@ import { loadCharacter } from "@/lib/character";
 // ABILITIES DISABLED - Uncomment to re-enable
 // import { loadAbilities } from "@/lib/abilities";
 import { loadStoriesListFromDatabase, loadCurrentStoryFromDatabase, loadInProgressStoriesListFromDatabase, pauseStoryInDatabase, getTotalStoryCountFromDatabase, StoryListItem } from "@/lib/databaseStory";
-import { ArrowLeft, Trophy, BookOpen, Star, Crown, Zap, Plus, TrendingUp, Play, Sparkles, Heart, Home, Settings, Loader2 } from "lucide-react";
+import { ArrowLeft, Trophy, BookOpen, Star, Crown, Zap, Plus, TrendingUp, Play, Sparkles, Heart, Home, Settings, Loader2, LifeBuoy } from "lucide-react";
 import { addHapticFeedback } from "@/lib/mobileFeatures";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -23,6 +23,7 @@ import { NativeNavigationHeader } from "@/components/NativeNavigationHeader";
 import { SkeletonDashboard } from "@/components/SkeletonCard";
 import { useProgressSync } from "@/hooks/useProgressSync";
 import { supabase } from "@/integrations/supabase/client";
+import { SupportModal } from "@/components/SupportModal";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -44,6 +45,7 @@ const Dashboard = () => {
   const [isPremium, setIsPremium] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isCheckingLimit, setIsCheckingLimit] = useState(false);
+  const [supportOpen, setSupportOpen] = useState(false);
   const pullStartY = useRef(0);
   const mainRef = useRef<HTMLDivElement>(null);
 
@@ -237,9 +239,22 @@ const Dashboard = () => {
             subtitle={isPremium ? '✨ Premium Active' : undefined}
             scrollRef={mainRef as React.RefObject<HTMLDivElement>}
             rightAction={
-              <button onClick={() => { addHapticFeedback('light'); navigate("/settings"); }} className="p-1">
-                <Settings className="h-5 w-5 text-muted-foreground" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => { addHapticFeedback('light'); setSupportOpen(true); }}
+                  aria-label="Help and support"
+                  className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl active:bg-muted/50"
+                >
+                  <LifeBuoy className="h-5 w-5 text-muted-foreground" />
+                </button>
+                <button
+                  onClick={() => { addHapticFeedback('light'); navigate("/settings"); }}
+                  aria-label="Settings"
+                  className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl active:bg-muted/50"
+                >
+                  <Settings className="h-5 w-5 text-muted-foreground" />
+                </button>
+              </div>
             }
           />
         )}
@@ -362,17 +377,32 @@ const Dashboard = () => {
                     </Badge>
                   )}
                 </div>
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => {
-                    addHapticFeedback('light');
-                    navigate("/subscription");
-                  }}
-                  className="p-2"
-                >
-                  <Crown className="h-5 w-5 text-amber-500" />
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    aria-label="Help and support"
+                    onClick={() => {
+                      addHapticFeedback('light');
+                      setSupportOpen(true);
+                    }}
+                    className="p-2 min-h-[44px] min-w-[44px]"
+                  >
+                    <LifeBuoy className="h-5 w-5 text-muted-foreground" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    aria-label="Subscription"
+                    onClick={() => {
+                      addHapticFeedback('light');
+                      navigate("/subscription");
+                    }}
+                    className="p-2 min-h-[44px] min-w-[44px]"
+                  >
+                    <Crown className="h-5 w-5 text-amber-500" />
+                  </Button>
+                </div>
               </div>
               
               {/* Mobile Action Buttons */}
@@ -945,7 +975,10 @@ const Dashboard = () => {
           </div>
         </div>
       </main>
-      
+
+      <SupportModal open={supportOpen} onOpenChange={setSupportOpen} />
+
+
       {/* New Story Confirmation Dialog */}
       <Dialog open={showNewStoryDialog} onOpenChange={setShowNewStoryDialog}>
         <DialogContent className="max-w-md">

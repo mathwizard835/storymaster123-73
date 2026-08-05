@@ -650,12 +650,6 @@ const Index = () => {
             <p className="text-sm text-muted-foreground mb-4 italic">
               Built with ❤️ by a 14-year-old who's turning screen time into reading time
             </p>
-            <div className="mb-4 flex justify-center">
-              <Button variant="outline" size="sm" onClick={() => setSupportOpen(true)}>
-                <LifeBuoy className="h-4 w-4 mr-2" />
-                Help &amp; Support
-              </Button>
-            </div>
             <div className="flex flex-wrap justify-center gap-6 text-sm text-muted-foreground">
               <a href="/privacy" className="hover:text-foreground transition-colors">
                 Privacy Policy
@@ -665,15 +659,30 @@ const Index = () => {
                 Terms of Service
               </a>
               <span>•</span>
-              <a href="/support" className="hover:text-foreground transition-colors">
+              <button
+                type="button"
+                onClick={() => setSupportOpen(true)}
+                className="hover:text-foreground transition-colors"
+              >
                 Support
-              </a>
+              </button>
               <span>•</span>
               <span>© 2025 StoryMaster Kids</span>
             </div>
           </footer>
         </div>
       </section>
+
+      {/* Subtle floating support button — bottom right, stays clear of hero CTAs */}
+      <button
+        type="button"
+        onClick={() => setSupportOpen(true)}
+        aria-label="Open help and support"
+        className="fixed bottom-5 right-5 z-40 inline-flex items-center gap-2 rounded-full border border-border/60 bg-background/70 backdrop-blur-md px-4 py-3 text-sm font-medium text-muted-foreground shadow-lg transition-colors hover:text-foreground hover:bg-background/90"
+      >
+        <LifeBuoy className="h-4 w-4" />
+        <span className="hidden sm:inline">Help</span>
+      </button>
 
       <SupportModal open={supportOpen} onOpenChange={setSupportOpen} />
     </>
