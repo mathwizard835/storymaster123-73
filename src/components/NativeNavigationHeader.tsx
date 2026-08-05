@@ -55,7 +55,7 @@ export function NativeNavigationHeader({
         >
           {title}
         </motion.span>
-        <div className="w-20 flex justify-end">{rightAction}</div>
+        <div className="min-w-20 flex justify-end">{rightAction}</div>
       </div>
 
       {/* Large title */}

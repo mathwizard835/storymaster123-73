@@ -239,9 +239,22 @@ const Dashboard = () => {
             subtitle={isPremium ? '✨ Premium Active' : undefined}
             scrollRef={mainRef as React.RefObject<HTMLDivElement>}
             rightAction={
-              <button onClick={() => { addHapticFeedback('light'); navigate("/settings"); }} className="p-1">
-                <Settings className="h-5 w-5 text-muted-foreground" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => { addHapticFeedback('light'); setSupportOpen(true); }}
+                  aria-label="Help and support"
+                  className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl active:bg-muted/50"
+                >
+                  <LifeBuoy className="h-5 w-5 text-muted-foreground" />
+                </button>
+                <button
+                  onClick={() => { addHapticFeedback('light'); navigate("/settings"); }}
+                  aria-label="Settings"
+                  className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl active:bg-muted/50"
+                >
+                  <Settings className="h-5 w-5 text-muted-foreground" />
+                </button>
+              </div>
             }
           />
         )}
