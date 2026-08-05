@@ -669,6 +669,17 @@ const Index = () => {
         </div>
       </section>
 
+      {/* Subtle floating support button — bottom right, stays clear of hero CTAs */}
+      <button
+        type="button"
+        onClick={() => setSupportOpen(true)}
+        aria-label="Open help and support"
+        className="fixed bottom-5 right-5 z-40 inline-flex items-center gap-2 rounded-full border border-border/60 bg-background/70 backdrop-blur-md px-4 py-3 text-sm font-medium text-muted-foreground shadow-lg transition-colors hover:text-foreground hover:bg-background/90"
+      >
+        <LifeBuoy className="h-4 w-4" />
+        <span className="hidden sm:inline">Help</span>
+      </button>
+
       <SupportModal open={supportOpen} onOpenChange={setSupportOpen} />
     </>
 
