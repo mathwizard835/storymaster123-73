@@ -43,6 +43,7 @@ const Subscription = lazy(() => import("./pages/Subscription"));
 const SubscriptionSuccess = lazy(() => import("./pages/SubscriptionSuccess"));
 const Settings = lazy(() => import("./pages/Settings"));
 const AdminAnalytics = lazy(() => import("./pages/AdminAnalytics"));
+const AdminSupport = lazy(() => import("./pages/AdminSupport"));
 const TryStory = lazy(() => import("./pages/TryStory"));
 
 const queryClient = new QueryClient();
@@ -298,6 +299,7 @@ const AnimatedRoutes = () => {
           <Route path="/settings" element={<ProtectedRoute><PageTransition><Settings /></PageTransition></ProtectedRoute>} />
           
           <Route path="/admin/analytics" element={<NativeAppRoute><PageTransition><AdminAnalytics /></PageTransition></NativeAppRoute>} />
+          <Route path="/admin/support" element={<NativeAppRoute><PageTransition><AdminSupport /></PageTransition></NativeAppRoute>} />
           <Route path="/try" element={<PageTransition><TryStory /></PageTransition>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

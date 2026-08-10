@@ -469,6 +469,7 @@ export type Database = {
       }
       support_requests: {
         Row: {
+          admin_notes: string | null
           app_version: string | null
           created_at: string
           device_info: string | null
@@ -477,9 +478,13 @@ export type Database = {
           message: string
           name: string
           page: string | null
+          replied_at: string | null
+          status: string
+          updated_at: string
           user_id: string | null
         }
         Insert: {
+          admin_notes?: string | null
           app_version?: string | null
           created_at?: string
           device_info?: string | null
@@ -488,9 +493,13 @@ export type Database = {
           message: string
           name: string
           page?: string | null
+          replied_at?: string | null
+          status?: string
+          updated_at?: string
           user_id?: string | null
         }
         Update: {
+          admin_notes?: string | null
           app_version?: string | null
           created_at?: string
           device_info?: string | null
@@ -499,6 +508,9 @@ export type Database = {
           message?: string
           name?: string
           page?: string | null
+          replied_at?: string | null
+          status?: string
+          updated_at?: string
           user_id?: string | null
         }
         Relationships: []
