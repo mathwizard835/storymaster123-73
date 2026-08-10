@@ -143,7 +143,10 @@ export default function AdminAnalytics() {
             Aggregate, anonymized metrics only. No per-child behavior or identifiers are stored.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/admin/support">Support Inbox</Link>
+          </Button>
           {DAY_OPTIONS.map((d) => (
             <Button
               key={d}
