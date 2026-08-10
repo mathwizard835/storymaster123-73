@@ -1,24 +1,37 @@
-# Plan: Move Help & Support to Top of Landing Page and Make It a Standalone In-App Button
+# Plan: In-App Support Inbox for Admins
 
 ## Goal
-Make the support channel impossible to miss on the landing page and clearly accessible from the main app without requiring users to open Settings first.
+Let admins read, triage, and respond to support messages from inside the app instead of running SQL in Supabase.
 
-## What we will change
+## What we will build
 
-### 1. Landing page (`src/pages/Index.tsx`)
-- Add a visible, top-aligned "Help & Support" button above the hero content (e.g., in a small top bar or pinned to the top-right of the hero section).
-- Remove the current footer-only placement so the button is not buried at the bottom.
-- Keep the existing `SupportModal` behavior and the `supportOpen` state; reuse the same mailto modal.
+### 1. Database changes
+Add to the existing `support_requests` table:
+- `status` — one of New, In progress, Resolved (defaults to New)
+- `admin_notes` — internal notes / a record of the reply text sent
+- `replied_at` and `updated_at` timestamps
 
-### 2. In-app Dashboard (`src/pages/Dashboard.tsx`)
-- Add a standalone LifeBuoy support icon in the native navigation header, next to the existing Settings gear icon.
-- For web/mobile-web layouts, add an equivalent support icon/button in the Dashboard top bar so it is visible regardless of platform.
-- Tapping it opens `SupportModal` directly from the Dashboard.
+Access rules:
+- Anyone can still submit a support request (unchanged).
+- Only users with the admin role can view requests or change status/notes.
 
-### 3. Settings (`src/pages/Settings.tsx`)
-- Keep the existing "Help & Support" row, but it becomes a secondary/backup path rather than the primary way to reach support.
+### 2. New page: Support Inbox (`/admin/support`)
+- Admin-only, gated the same way the existing analytics admin page is (checks the admin role, shows an access-denied state otherwise).
+- List of requests, newest first, showing: name, email, message preview, date, and a status badge.
+- Filter tabs: All / New / In progress / Resolved, with a count of open (New) requests.
+- Clicking a request opens a detail panel with the full message plus the auto-captured debug metadata (app version, user ID, device info, page).
 
-## Guardrails
-- The new buttons will not overlap existing CTAs, hero content, or the native bottom navigation.
-- Existing haptics and routing behavior remain unchanged.
-- The support icon will use the same `LifeBuoy` icon and `support@storymaster.app` mailto link already present in `SupportModal`.
+### 3. Replying
+- A "Reply" button opens the admin's mail app with the recipient, subject (`Re: StoryMaster support`), and the original message quoted underneath.
+- A text box next to it lets the admin paste/save what they replied; saving stores it in `admin_notes`, stamps `replied_at`, and moves status to In progress (or Resolved if the admin picks that).
+- Status can also be changed directly from the list.
+
+### 4. Entry point
+- Add a "Support Inbox" link on the existing admin analytics page, and a route in `App.tsx`. The page is not shown in normal user navigation.
+
+## Technical notes
+- New page `src/pages/AdminSupport.tsx`, lazy-loaded, route `/admin/support` behind the same protected route wrapper used by `/admin/analytics`.
+- Admin check reuses the `user_roles` + `has_role` pattern already in the project; RLS policies use `public.has_role(auth.uid(), 'admin')` so no data leaks to non-admins.
+- Grants: `SELECT, UPDATE` on `support_requests` to `authenticated` (RLS restricts to admins); insert grants stay as-is.
+- `updated_at` maintained by the existing `update_updated_at_column()` trigger function.
+- No email service added — replies go through the admin's mail client per your choice.
