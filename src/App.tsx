@@ -43,6 +43,7 @@ const Subscription = lazy(() => import("./pages/Subscription"));
 const SubscriptionSuccess = lazy(() => import("./pages/SubscriptionSuccess"));
 const Settings = lazy(() => import("./pages/Settings"));
 const AdminAnalytics = lazy(() => import("./pages/AdminAnalytics"));
+const AdminSupport = lazy(() => import("./pages/AdminSupport"));
 const TryStory = lazy(() => import("./pages/TryStory"));
 
 const queryClient = new QueryClient();
