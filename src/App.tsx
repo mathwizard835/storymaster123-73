@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useAdmin } from "@/hooks/useAdmin";
 import { useEffect, lazy, Suspense, useState } from "react";
 import { initializeRevenueCat } from "@/lib/iapService";
 import { initDeepLinkHandler } from "@/lib/deepLinkHandler";
