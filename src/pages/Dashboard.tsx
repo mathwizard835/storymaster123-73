@@ -11,11 +11,12 @@ import { loadCharacter } from "@/lib/character";
 // ABILITIES DISABLED - Uncomment to re-enable
 // import { loadAbilities } from "@/lib/abilities";
 import { loadStoriesListFromDatabase, loadCurrentStoryFromDatabase, loadInProgressStoriesListFromDatabase, pauseStoryInDatabase, getTotalStoryCountFromDatabase, StoryListItem } from "@/lib/databaseStory";
-import { ArrowLeft, Trophy, BookOpen, Star, Crown, Zap, Plus, TrendingUp, Play, Sparkles, Heart, Home, Settings, Loader2, LifeBuoy } from "lucide-react";
+import { ArrowLeft, Trophy, BookOpen, Star, Crown, Zap, Plus, TrendingUp, Play, Sparkles, Heart, Home, Settings, Loader2, LifeBuoy, Shield } from "lucide-react";
 import { addHapticFeedback } from "@/lib/mobileFeatures";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { useAdmin } from "@/hooks/useAdmin";
 import { useDevice } from "@/contexts/DeviceContext";
 import { PremiumThemeSelector } from "@/components/PremiumThemeSelector";
 import { getUserSubscription, getStoriesRemaining } from "@/lib/subscription";
@@ -29,6 +30,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
+  const { isAdmin } = useAdmin();
   const [progress, setProgress] = useState(loadAchievements());
   const [character, setCharacter] = useState(loadCharacter());
   const [isSyncing, setIsSyncing] = useState(true);
@@ -240,6 +242,15 @@ const Dashboard = () => {
             scrollRef={mainRef as React.RefObject<HTMLDivElement>}
             rightAction={
               <div className="flex items-center gap-2">
+                {isAdmin && (
+                  <button
+                    onClick={() => { addHapticFeedback('light'); navigate("/admin/analytics"); }}
+                    aria-label="Admin dashboard"
+                    className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl active:bg-muted/50"
+                  >
+                    <Shield className="h-5 w-5 text-muted-foreground" />
+                  </button>
+                )}
                 <button
                   onClick={() => { addHapticFeedback('light'); setSupportOpen(true); }}
                   aria-label="Help and support"
@@ -489,6 +500,16 @@ const Dashboard = () => {
                   </Button>
                 </div>
                 <div className="flex flex-wrap gap-2">
+                  {isAdmin && (
+                    <Button
+                      onClick={() => navigate("/admin/analytics")}
+                      variant="outline"
+                      className="flex items-center gap-2"
+                    >
+                      <Shield className="h-4 w-4" />
+                      Admin
+                    </Button>
+                  )}
                   <Button 
                     onClick={() => navigate("/parent-dashboard")}
                     variant="outline"

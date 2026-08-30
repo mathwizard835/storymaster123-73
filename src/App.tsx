@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useAdmin } from "@/hooks/useAdmin";
 import { useEffect, lazy, Suspense, useState } from "react";
 import { initializeRevenueCat } from "@/lib/iapService";
 import { initDeepLinkHandler } from "@/lib/deepLinkHandler";
@@ -80,6 +81,27 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
   if (!user) {
     return <Navigate to={isNativePlatform() ? "/auth" : "/"} replace />;
+  }
+
+  return <>{children}</>;
+};
+
+// AdminRoute: requires auth + admin role, but no native subscription gate.
+// This ensures admin pages are reachable on web without an active Adventure Pass.
+const AdminRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, loading: authLoading } = useAuth();
+  const { isAdmin, isLoading: adminLoading } = useAdmin();
+
+  if (authLoading || adminLoading) {
+    return <NativeLoadingScreen />;
+  }
+
+  if (!user) {
+    return <Navigate to={isNativePlatform() ? "/auth" : "/"} replace />;
+  }
+
+  if (!isAdmin) {
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <>{children}</>;
@@ -298,8 +320,8 @@ const AnimatedRoutes = () => {
           <Route path="/parent-dashboard" element={<NativeAppRoute><PageTransition><ParentDashboard /></PageTransition></NativeAppRoute>} />
           <Route path="/settings" element={<ProtectedRoute><PageTransition><Settings /></PageTransition></ProtectedRoute>} />
           
-          <Route path="/admin/analytics" element={<NativeAppRoute><PageTransition><AdminAnalytics /></PageTransition></NativeAppRoute>} />
-          <Route path="/admin/support" element={<NativeAppRoute><PageTransition><AdminSupport /></PageTransition></NativeAppRoute>} />
+          <Route path="/admin/analytics" element={<AdminRoute><PageTransition><AdminAnalytics /></PageTransition></AdminRoute>} />
+          <Route path="/admin/support" element={<AdminRoute><PageTransition><AdminSupport /></PageTransition></AdminRoute>} />
           <Route path="/try" element={<PageTransition><TryStory /></PageTransition>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

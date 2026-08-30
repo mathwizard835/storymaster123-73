@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useAdmin } from "@/hooks/useAdmin";
 import { useDevice } from "@/contexts/DeviceContext";
 import { NativeNavigationHeader } from "@/components/NativeNavigationHeader";
 import { SwipeBackIndicator } from "@/components/SwipeBackIndicator";
@@ -24,6 +25,8 @@ import {
   Mail,
   HelpCircle,
   FileText,
+  BarChart3,
+  LifeBuoy,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SupportModal } from "@/components/SupportModal";
@@ -31,6 +34,7 @@ import { SupportModal } from "@/components/SupportModal";
 export default function Settings() {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
+  const { isAdmin } = useAdmin();
   const { isPhone, isNative } = useDevice();
   const scrollRef = useRef<HTMLDivElement>(null);
   const { swipeProgress } = useSwipeBack();
@@ -58,7 +62,7 @@ export default function Settings() {
     localStorage.setItem("notifications-enabled", String(enabled));
   };
 
-  const settingsSections = [
+  const baseSections = [
     {
       title: "Account",
       items: [
@@ -142,6 +146,30 @@ export default function Settings() {
       ],
     },
   ];
+
+  const adminSection = {
+    title: "Admin",
+    items: [
+      {
+        icon: BarChart3,
+        label: "System Analytics",
+        description: "View app metrics and performance",
+        action: () => { addHapticFeedback("light"); navigate("/admin/analytics"); },
+        chevron: true,
+      },
+      {
+        icon: LifeBuoy,
+        label: "Support Inbox",
+        description: "View and reply to support requests",
+        action: () => { addHapticFeedback("light"); navigate("/admin/support"); },
+        chevron: true,
+      },
+    ],
+  };
+
+  const settingsSections = isAdmin
+    ? [...baseSections.slice(0, 3), adminSection, baseSections[3]]
+    : baseSections;
 
   return (
     <div
