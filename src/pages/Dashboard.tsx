@@ -16,6 +16,7 @@ import { addHapticFeedback } from "@/lib/mobileFeatures";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { useAdmin } from "@/hooks/useAdmin";
 import { useDevice } from "@/contexts/DeviceContext";
 import { PremiumThemeSelector } from "@/components/PremiumThemeSelector";
 import { getUserSubscription, getStoriesRemaining } from "@/lib/subscription";
@@ -240,6 +241,15 @@ const Dashboard = () => {
             scrollRef={mainRef as React.RefObject<HTMLDivElement>}
             rightAction={
               <div className="flex items-center gap-2">
+                {isAdmin && (
+                  <button
+                    onClick={() => { addHapticFeedback('light'); navigate("/admin/analytics"); }}
+                    aria-label="Admin dashboard"
+                    className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl active:bg-muted/50"
+                  >
+                    <Shield className="h-5 w-5 text-muted-foreground" />
+                  </button>
+                )}
                 <button
                   onClick={() => { addHapticFeedback('light'); setSupportOpen(true); }}
                   aria-label="Help and support"
