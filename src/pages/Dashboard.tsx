@@ -30,6 +30,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
+  const { isAdmin } = useAdmin();
   const [progress, setProgress] = useState(loadAchievements());
   const [character, setCharacter] = useState(loadCharacter());
   const [isSyncing, setIsSyncing] = useState(true);
