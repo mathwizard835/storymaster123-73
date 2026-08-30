@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useAdmin } from "@/hooks/useAdmin";
 import { useDevice } from "@/contexts/DeviceContext";
 import { NativeNavigationHeader } from "@/components/NativeNavigationHeader";
 import { SwipeBackIndicator } from "@/components/SwipeBackIndicator";
