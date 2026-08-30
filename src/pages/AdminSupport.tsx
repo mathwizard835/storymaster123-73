@@ -26,6 +26,18 @@ type SupportRequest = {
   created_at: string;
 };
 
+type SupportReply = {
+  id: string;
+  request_id: string;
+  to_email: string;
+  subject: string;
+  body: string;
+  delivery_status: string;
+  error_message: string | null;
+  sent_at: string;
+};
+
+
 const STATUSES = [
   { value: "new", label: "New" },
   { value: "in_progress", label: "In progress" },
