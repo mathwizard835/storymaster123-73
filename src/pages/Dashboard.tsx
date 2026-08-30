@@ -500,6 +500,16 @@ const Dashboard = () => {
                   </Button>
                 </div>
                 <div className="flex flex-wrap gap-2">
+                  {isAdmin && (
+                    <Button
+                      onClick={() => navigate("/admin/analytics")}
+                      variant="outline"
+                      className="flex items-center gap-2"
+                    >
+                      <Shield className="h-4 w-4" />
+                      Admin
+                    </Button>
+                  )}
                   <Button 
                     onClick={() => navigate("/parent-dashboard")}
                     variant="outline"
