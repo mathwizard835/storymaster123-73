@@ -24,6 +24,8 @@ import {
   Mail,
   HelpCircle,
   FileText,
+  BarChart3,
+  LifeBuoy,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SupportModal } from "@/components/SupportModal";
@@ -31,6 +33,7 @@ import { SupportModal } from "@/components/SupportModal";
 export default function Settings() {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
+  const { isAdmin } = useAdmin();
   const { isPhone, isNative } = useDevice();
   const scrollRef = useRef<HTMLDivElement>(null);
   const { swipeProgress } = useSwipeBack();
