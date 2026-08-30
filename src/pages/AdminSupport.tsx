@@ -132,10 +132,24 @@ export default function AdminSupport() {
     [requests, selectedId],
   );
 
+  const loadReplies = async (requestId: string) => {
+    const { data, error: err } = await supabase
+      .from("support_replies")
+      .select("id, request_id, to_email, subject, body, delivery_status, error_message, sent_at")
+      .eq("request_id", requestId)
+      .order("sent_at", { ascending: true });
+    if (!err) {
+      setReplies((prev) => ({ ...prev, [requestId]: (data ?? []) as SupportReply[] }));
+    }
+  };
+
   const openRequest = (r: SupportRequest) => {
     setSelectedId(r.id);
     setNoteDraft(r.admin_notes ?? "");
+    setReplyDraft("");
+    loadReplies(r.id);
   };
+
 
   const patchRequest = async (id: string, patch: Partial<SupportRequest>) => {
     setSaving(true);
