@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Seo } from "@/components/Seo";
 import { useToast } from "@/hooks/use-toast";
-import { Mail, RefreshCw, BarChart3 } from "lucide-react";
+import { Mail, RefreshCw, BarChart3, Send, Loader2 } from "lucide-react";
 
 type SupportRequest = {
   id: string;
