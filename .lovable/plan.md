@@ -5,7 +5,7 @@ Admin pages (`/admin/analytics` and `/admin/support`) exist but are hard to disc
 - Typing the URL directly.
 - Clicking a small link inside `/admin/analytics` after you already got there.
 
-Users also report that typing `/admin/support` directly returns a 404 even when logged in as an admin. The admin routes are currently wrapped in `NativeAppRoute`, which was designed for native subscription gating; on web this adds an unnecessary dependency on the subscription check and can interfere with direct navigation.
+You also reported that typing `/admin/support` directly returns a 404 even when logged in as an admin. The admin routes are currently wrapped in `NativeAppRoute`, which was designed for native subscription gating; on web this adds an unnecessary dependency on the subscription check and can interfere with direct navigation.
 
 ## Goal
 Give admin users a clear, reliable way to open the admin dashboard from inside the app, and make the admin routes work correctly on web.
@@ -31,6 +31,13 @@ Give admin users a clear, reliable way to open the admin dashboard from inside t
 
 ### 4. Verify direct URL access
 - After the route wrapper change, confirm that navigating directly to `/admin/analytics` and `/admin/support` works on both the preview and published URLs when logged in as an admin.
+
+## Local development access (optional)
+If you want to test the admin dashboard from another device on your network while running the app locally:
+```bash
+npm run dev -- --host
+```
+Then open `http://YOUR_MAC_IP:8080/admin/analytics` from that device. This is only for local testing; the published fix will make the production URLs work.
 
 ## Files to change
 - `src/App.tsx` — replace `NativeAppRoute` with a new `AdminRoute` for `/admin/analytics` and `/admin/support`.
