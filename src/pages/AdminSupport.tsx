@@ -356,10 +356,6 @@ export default function AdminSupport() {
                     </div>
 
                     <div className="flex flex-wrap gap-2">
-                      <Button size="sm" onClick={() => handleReply(r)}>
-                        <Mail className="h-4 w-4 mr-2" />
-                        Reply by email
-                      </Button>
                       {STATUSES.map((s) => (
                         <Button
                           key={s.value}
@@ -373,14 +369,76 @@ export default function AdminSupport() {
                       ))}
                     </div>
 
+                    {(replies[r.id]?.length ?? 0) > 0 && (
+                      <div className="space-y-2">
+                        <p className="text-xs font-medium text-muted-foreground">Replies sent</p>
+                        {replies[r.id].map((rep) => (
+                          <div key={rep.id} className="rounded-md border p-3 text-sm">
+                            <div className="flex items-center justify-between gap-2 mb-1">
+                              <span className="text-xs text-muted-foreground">
+                                {formatDate(rep.sent_at)} → {rep.to_email}
+                              </span>
+                              <Badge variant={rep.delivery_status === "sent" ? "outline" : "destructive"}>
+                                {rep.delivery_status}
+                              </Badge>
+                            </div>
+                            <p className="whitespace-pre-wrap break-words">{rep.body}</p>
+                            {rep.error_message && (
+                              <p className="text-xs text-destructive mt-1 break-words">{rep.error_message}</p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
                     <div className="space-y-2">
+                      <p className="text-xs font-medium text-muted-foreground">
+                        Reply to {r.email} (sent from support@storymaster.app)
+                      </p>
+                      <Textarea
+                        value={replyDraft}
+                        onChange={(e) => setReplyDraft(e.target.value)}
+                        placeholder="Write your reply — this is emailed to the user."
+                        rows={5}
+                        maxLength={10000}
+                        disabled={sending}
+                      />
+                      <div className="flex flex-wrap gap-2">
+                        <Button size="sm" disabled={sending} onClick={() => sendReply(r, false)}>
+                          {sending ? (
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          ) : (
+                            <Send className="h-4 w-4 mr-2" />
+                          )}
+                          Send reply
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          disabled={sending}
+                          onClick={() => sendReply(r, true)}
+                        >
+                          Send & mark resolved
+                        </Button>
+                        <Button size="sm" variant="ghost" asChild>
+                          <a href={buildMailto(r)}>
+                            <Mail className="h-4 w-4 mr-2" />
+                            Open in mail app
+                          </a>
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <p className="text-xs font-medium text-muted-foreground">Internal notes (not emailed)</p>
                       <Textarea
                         value={noteDraft}
                         onChange={(e) => setNoteDraft(e.target.value)}
-                        placeholder="Paste the reply you sent, or add internal notes…"
-                        rows={4}
+                        placeholder="Internal notes for your team…"
+                        rows={3}
                         maxLength={4000}
                       />
+
                       <div className="flex flex-wrap gap-2">
                         <Button size="sm" variant="outline" disabled={saving} onClick={() => saveNotes(r, false)}>
                           Save notes
