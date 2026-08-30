@@ -180,10 +180,65 @@ export default function AdminSupport() {
     return `mailto:${encodeURIComponent(r.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   };
 
-  const handleReply = (r: SupportRequest) => {
-    window.location.href = buildMailto(r);
-    if (r.status === "new") patchRequest(r.id, { status: "in_progress" });
+  const sendReply = async (r: SupportRequest, markResolved: boolean) => {
+    const body = replyDraft.trim();
+    if (body.length < 2) {
+      toast({
+        title: "Write a reply first",
+        description: "The message can't be empty.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSending(true);
+    try {
+      const { data, error: err } = await supabase.functions.invoke("send-support-reply", {
+        body: { requestId: r.id, body },
+      });
+
+      if (err) {
+        let details = err.message;
+        try {
+          const ctx = (err as any).context;
+          if (ctx && typeof ctx.text === "function") {
+            const raw = await ctx.text();
+            const parsed = JSON.parse(raw);
+            details = parsed?.details || parsed?.error || raw;
+          }
+        } catch {
+          /* keep default message */
+        }
+        throw new Error(details);
+      }
+
+      if (data && (data as any).error) throw new Error((data as any).error);
+
+      toast({ title: "Reply sent", description: `Emailed ${r.email}.` });
+      setReplyDraft("");
+      await loadReplies(r.id);
+
+      const nextStatus = markResolved ? "resolved" : r.status === "new" ? "in_progress" : r.status;
+      setRequests((prev) =>
+        prev.map((x) =>
+          x.id === r.id ? { ...x, status: nextStatus, replied_at: new Date().toISOString() } : x,
+        ),
+      );
+      if (markResolved && r.status !== "resolved") {
+        await patchRequest(r.id, { status: "resolved" });
+      }
+    } catch (e: any) {
+      toast({
+        title: "Reply not sent",
+        description: e?.message ?? "Email delivery failed. Try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setSending(false);
+    }
   };
+
+
 
   const saveNotes = async (r: SupportRequest, markResolved: boolean) => {
     const ok = await patchRequest(r.id, {
