@@ -68,7 +68,11 @@ export default function AdminSupport() {
   const [filter, setFilter] = useState<string>("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [noteDraft, setNoteDraft] = useState("");
+  const [replyDraft, setReplyDraft] = useState("");
+  const [sending, setSending] = useState(false);
+  const [replies, setReplies] = useState<Record<string, SupportReply[]>>({});
   const [saving, setSaving] = useState(false);
+
 
   // Admin gate (same pattern as /admin/analytics)
   useEffect(() => {
