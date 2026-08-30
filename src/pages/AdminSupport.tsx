@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Seo } from "@/components/Seo";
 import { useToast } from "@/hooks/use-toast";
-import { Mail, RefreshCw, BarChart3 } from "lucide-react";
+import { Mail, RefreshCw, BarChart3, Send, Loader2 } from "lucide-react";
 
 type SupportRequest = {
   id: string;
@@ -25,6 +25,18 @@ type SupportRequest = {
   replied_at: string | null;
   created_at: string;
 };
+
+type SupportReply = {
+  id: string;
+  request_id: string;
+  to_email: string;
+  subject: string;
+  body: string;
+  delivery_status: string;
+  error_message: string | null;
+  sent_at: string;
+};
+
 
 const STATUSES = [
   { value: "new", label: "New" },
@@ -56,7 +68,11 @@ export default function AdminSupport() {
   const [filter, setFilter] = useState<string>("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [noteDraft, setNoteDraft] = useState("");
+  const [replyDraft, setReplyDraft] = useState("");
+  const [sending, setSending] = useState(false);
+  const [replies, setReplies] = useState<Record<string, SupportReply[]>>({});
   const [saving, setSaving] = useState(false);
+
 
   // Admin gate (same pattern as /admin/analytics)
   useEffect(() => {
@@ -116,10 +132,24 @@ export default function AdminSupport() {
     [requests, selectedId],
   );
 
+  const loadReplies = async (requestId: string) => {
+    const { data, error: err } = await supabase
+      .from("support_replies")
+      .select("id, request_id, to_email, subject, body, delivery_status, error_message, sent_at")
+      .eq("request_id", requestId)
+      .order("sent_at", { ascending: true });
+    if (!err) {
+      setReplies((prev) => ({ ...prev, [requestId]: (data ?? []) as SupportReply[] }));
+    }
+  };
+
   const openRequest = (r: SupportRequest) => {
     setSelectedId(r.id);
     setNoteDraft(r.admin_notes ?? "");
+    setReplyDraft("");
+    loadReplies(r.id);
   };
+
 
   const patchRequest = async (id: string, patch: Partial<SupportRequest>) => {
     setSaving(true);
@@ -150,10 +180,65 @@ export default function AdminSupport() {
     return `mailto:${encodeURIComponent(r.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   };
 
-  const handleReply = (r: SupportRequest) => {
-    window.location.href = buildMailto(r);
-    if (r.status === "new") patchRequest(r.id, { status: "in_progress" });
+  const sendReply = async (r: SupportRequest, markResolved: boolean) => {
+    const body = replyDraft.trim();
+    if (body.length < 2) {
+      toast({
+        title: "Write a reply first",
+        description: "The message can't be empty.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSending(true);
+    try {
+      const { data, error: err } = await supabase.functions.invoke("send-support-reply", {
+        body: { requestId: r.id, body },
+      });
+
+      if (err) {
+        let details = err.message;
+        try {
+          const ctx = (err as any).context;
+          if (ctx && typeof ctx.text === "function") {
+            const raw = await ctx.text();
+            const parsed = JSON.parse(raw);
+            details = parsed?.details || parsed?.error || raw;
+          }
+        } catch {
+          /* keep default message */
+        }
+        throw new Error(details);
+      }
+
+      if (data && (data as any).error) throw new Error((data as any).error);
+
+      toast({ title: "Reply sent", description: `Emailed ${r.email}.` });
+      setReplyDraft("");
+      await loadReplies(r.id);
+
+      const nextStatus = markResolved ? "resolved" : r.status === "new" ? "in_progress" : r.status;
+      setRequests((prev) =>
+        prev.map((x) =>
+          x.id === r.id ? { ...x, status: nextStatus, replied_at: new Date().toISOString() } : x,
+        ),
+      );
+      if (markResolved && r.status !== "resolved") {
+        await patchRequest(r.id, { status: "resolved" });
+      }
+    } catch (e: any) {
+      toast({
+        title: "Reply not sent",
+        description: e?.message ?? "Email delivery failed. Try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setSending(false);
+    }
   };
+
+
 
   const saveNotes = async (r: SupportRequest, markResolved: boolean) => {
     const ok = await patchRequest(r.id, {
@@ -271,10 +356,6 @@ export default function AdminSupport() {
                     </div>
 
                     <div className="flex flex-wrap gap-2">
-                      <Button size="sm" onClick={() => handleReply(r)}>
-                        <Mail className="h-4 w-4 mr-2" />
-                        Reply by email
-                      </Button>
                       {STATUSES.map((s) => (
                         <Button
                           key={s.value}
@@ -288,21 +369,84 @@ export default function AdminSupport() {
                       ))}
                     </div>
 
+                    {(replies[r.id]?.length ?? 0) > 0 && (
+                      <div className="space-y-2">
+                        <p className="text-xs font-medium text-muted-foreground">Replies sent</p>
+                        {replies[r.id].map((rep) => (
+                          <div key={rep.id} className="rounded-md border p-3 text-sm">
+                            <div className="flex items-center justify-between gap-2 mb-1">
+                              <span className="text-xs text-muted-foreground">
+                                {formatDate(rep.sent_at)} → {rep.to_email}
+                              </span>
+                              <Badge variant={rep.delivery_status === "sent" ? "outline" : "destructive"}>
+                                {rep.delivery_status}
+                              </Badge>
+                            </div>
+                            <p className="whitespace-pre-wrap break-words">{rep.body}</p>
+                            {rep.error_message && (
+                              <p className="text-xs text-destructive mt-1 break-words">{rep.error_message}</p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
                     <div className="space-y-2">
+                      <p className="text-xs font-medium text-muted-foreground">
+                        Reply to {r.email} (sent from support@storymaster.app)
+                      </p>
+                      <Textarea
+                        value={replyDraft}
+                        onChange={(e) => setReplyDraft(e.target.value)}
+                        placeholder="Write your reply — this is emailed to the user."
+                        rows={5}
+                        maxLength={10000}
+                        disabled={sending}
+                      />
+                      <div className="flex flex-wrap gap-2">
+                        <Button size="sm" disabled={sending} onClick={() => sendReply(r, false)}>
+                          {sending ? (
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          ) : (
+                            <Send className="h-4 w-4 mr-2" />
+                          )}
+                          Send reply
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          disabled={sending}
+                          onClick={() => sendReply(r, true)}
+                        >
+                          Send & mark resolved
+                        </Button>
+                        <Button size="sm" variant="ghost" asChild>
+                          <a href={buildMailto(r)}>
+                            <Mail className="h-4 w-4 mr-2" />
+                            Open in mail app
+                          </a>
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <p className="text-xs font-medium text-muted-foreground">Internal notes (not emailed)</p>
                       <Textarea
                         value={noteDraft}
                         onChange={(e) => setNoteDraft(e.target.value)}
-                        placeholder="Paste the reply you sent, or add internal notes…"
-                        rows={4}
+                        placeholder="Internal notes for your team…"
+                        rows={3}
                         maxLength={4000}
                       />
+
                       <div className="flex flex-wrap gap-2">
                         <Button size="sm" variant="outline" disabled={saving} onClick={() => saveNotes(r, false)}>
                           Save notes
                         </Button>
-                        <Button size="sm" disabled={saving} onClick={() => saveNotes(r, true)}>
-                          Save & mark resolved
+                        <Button size="sm" variant="outline" disabled={saving} onClick={() => saveNotes(r, true)}>
+                          Save notes & resolve
                         </Button>
+
                       </div>
                       {r.replied_at && (
                         <p className="text-xs text-muted-foreground">
