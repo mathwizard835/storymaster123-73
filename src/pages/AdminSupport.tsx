@@ -443,9 +443,10 @@ export default function AdminSupport() {
                         <Button size="sm" variant="outline" disabled={saving} onClick={() => saveNotes(r, false)}>
                           Save notes
                         </Button>
-                        <Button size="sm" disabled={saving} onClick={() => saveNotes(r, true)}>
-                          Save & mark resolved
+                        <Button size="sm" variant="outline" disabled={saving} onClick={() => saveNotes(r, true)}>
+                          Save notes & resolve
                         </Button>
+
                       </div>
                       {r.replied_at && (
                         <p className="text-xs text-muted-foreground">
