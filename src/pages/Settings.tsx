@@ -62,7 +62,7 @@ export default function Settings() {
     localStorage.setItem("notifications-enabled", String(enabled));
   };
 
-  const settingsSections = [
+  const baseSections = [
     {
       title: "Account",
       items: [
@@ -146,6 +146,30 @@ export default function Settings() {
       ],
     },
   ];
+
+  const adminSection = {
+    title: "Admin",
+    items: [
+      {
+        icon: BarChart3,
+        label: "System Analytics",
+        description: "View app metrics and performance",
+        action: () => { addHapticFeedback("light"); navigate("/admin/analytics"); },
+        chevron: true,
+      },
+      {
+        icon: LifeBuoy,
+        label: "Support Inbox",
+        description: "View and reply to support requests",
+        action: () => { addHapticFeedback("light"); navigate("/admin/support"); },
+        chevron: true,
+      },
+    ],
+  };
+
+  const settingsSections = isAdmin
+    ? [...baseSections.slice(0, 3), adminSection, baseSections[3]]
+    : baseSections;
 
   return (
     <div
