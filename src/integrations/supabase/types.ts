@@ -467,6 +467,56 @@ export type Database = {
         }
         Relationships: []
       }
+      support_replies: {
+        Row: {
+          admin_id: string | null
+          body: string
+          created_at: string
+          delivery_status: string
+          error_message: string | null
+          id: string
+          provider_message_id: string | null
+          request_id: string
+          sent_at: string
+          subject: string
+          to_email: string
+        }
+        Insert: {
+          admin_id?: string | null
+          body: string
+          created_at?: string
+          delivery_status?: string
+          error_message?: string | null
+          id?: string
+          provider_message_id?: string | null
+          request_id: string
+          sent_at?: string
+          subject: string
+          to_email: string
+        }
+        Update: {
+          admin_id?: string | null
+          body?: string
+          created_at?: string
+          delivery_status?: string
+          error_message?: string | null
+          id?: string
+          provider_message_id?: string | null
+          request_id?: string
+          sent_at?: string
+          subject?: string
+          to_email?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_replies_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "support_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       support_requests: {
         Row: {
           admin_notes: string | null
