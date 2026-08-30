@@ -86,6 +86,27 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+// AdminRoute: requires auth + admin role, but no native subscription gate.
+// This ensures admin pages are reachable on web without an active Adventure Pass.
+const AdminRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, loading: authLoading } = useAuth();
+  const { isAdmin, isLoading: adminLoading } = useAdmin();
+
+  if (authLoading || adminLoading) {
+    return <NativeLoadingScreen />;
+  }
+
+  if (!user) {
+    return <Navigate to={isNativePlatform() ? "/auth" : "/"} replace />;
+  }
+
+  if (!isAdmin) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <>{children}</>;
+};
+
 // Native subscription gate: after auth, users without an active subscription are
 // hard-routed to /subscription?required=true. Allowed routes: /subscription itself,
 // /settings (so they can log out), /profile (initial setup), /support.
