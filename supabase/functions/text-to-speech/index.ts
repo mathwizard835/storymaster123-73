@@ -9,6 +9,16 @@ const corsHeaders = {
 const getErrorMessage = (error: unknown) =>
   error instanceof Error ? error.message : 'An unknown error occurred';
 
+// Server-side allowlist of narration voices the app is allowed to use.
+const ALLOWED_VOICE_IDS = new Set<string>([
+  'EXAVITQu4vr4xnSDxMaL',
+  'XB0fDUnXU5powFXDhCwa',
+  '1UllZlmEKI6fNlrEtCx7',
+  'oXo2A4ac7KxEZkQ69ZxG',
+  'XGEkEAwj53E5iuoRDhFu',
+  'OyKUKANp9Wm5JOBO2Tw3',
+]);
+
 // Rate limiting for text-to-speech
 const rateLimit = (() => {
   const ipRequestLog = new Map<string, number[]>();
@@ -92,11 +102,19 @@ serve(async (req) => {
   try {
     const { text, voiceId } = body || {};
 
-    if (!text) {
+    if (!text || typeof text !== 'string') {
       throw new Error('Text is required');
     }
     if (!voiceId || typeof voiceId !== 'string') {
       throw new Error('voiceId is required');
+    }
+    // Only allow known narration voices — never forward arbitrary caller input
+    // into the ElevenLabs API path.
+    if (!/^[A-Za-z0-9]{20,24}$/.test(voiceId) || !ALLOWED_VOICE_IDS.has(voiceId)) {
+      return new Response(
+        JSON.stringify({ error: 'Unsupported voice.' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
     // Tighter cap for guests to limit abuse.
     if (isGuest && text.length > 1500) {
