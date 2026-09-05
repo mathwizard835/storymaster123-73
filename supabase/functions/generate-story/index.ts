@@ -1456,7 +1456,7 @@ THIS SCENE: ${scene ? "Continue the story naturally from the previous scene." : 
     });
   } catch (error) {
     console.error("generate-story error:", error);
-    return new Response(JSON.stringify({ error: String(error) }), {
+    return new Response(JSON.stringify({ error: "Story generation failed. Please try again." }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
