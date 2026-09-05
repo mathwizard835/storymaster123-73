@@ -9,6 +9,16 @@ const corsHeaders = {
 const getErrorMessage = (error: unknown) =>
   error instanceof Error ? error.message : 'An unknown error occurred';
 
+// Server-side allowlist of narration voices the app is allowed to use.
+const ALLOWED_VOICE_IDS = new Set<string>([
+  'EXAVITQu4vr4xnSDxMaL',
+  'XB0fDUnXU5powFXDhCwa',
+  '1UllZlmEKI6fNlrEtCx7',
+  'oXo2A4ac7KxEZkQ69ZxG',
+  'XGEkEAwj53E5iuoRDhFu',
+  'OyKUKANp9Wm5JOBO2Tw3',
+]);
+
 // Rate limiting for text-to-speech
 const rateLimit = (() => {
   const ipRequestLog = new Map<string, number[]>();
