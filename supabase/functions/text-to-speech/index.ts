@@ -102,11 +102,19 @@ serve(async (req) => {
   try {
     const { text, voiceId } = body || {};
 
-    if (!text) {
+    if (!text || typeof text !== 'string') {
       throw new Error('Text is required');
     }
     if (!voiceId || typeof voiceId !== 'string') {
       throw new Error('voiceId is required');
+    }
+    // Only allow known narration voices — never forward arbitrary caller input
+    // into the ElevenLabs API path.
+    if (!/^[A-Za-z0-9]{20,24}$/.test(voiceId) || !ALLOWED_VOICE_IDS.has(voiceId)) {
+      return new Response(
+        JSON.stringify({ error: 'Unsupported voice.' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
     // Tighter cap for guests to limit abuse.
     if (isGuest && text.length > 1500) {
