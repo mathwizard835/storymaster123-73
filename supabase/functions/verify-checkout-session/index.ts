@@ -16,6 +16,29 @@ serve(async (req) => {
   }
 
   try {
+    // === Require an authenticated caller ===
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(
+        JSON.stringify({ error: 'Authentication required' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      );
+    }
+
+    const supabaseAuth = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+    );
+    const token = authHeader.replace('Bearer ', '');
+    const { data: authData, error: authError } = await supabaseAuth.auth.getUser(token);
+    const caller = authData?.user;
+    if (authError || !caller) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid or expired token' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      );
+    }
+
     const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
       apiVersion: '2023-10-16',
     });
@@ -27,14 +50,23 @@ serve(async (req) => {
 
     const { sessionId } = await req.json();
     
-    if (!sessionId) {
+    if (!sessionId || typeof sessionId !== 'string') {
       throw new Error('Missing sessionId');
     }
 
-    console.log('Verifying checkout session:', sessionId);
+    console.log('Verifying checkout session for user:', caller.id);
 
     // Retrieve the session from Stripe
     const session = await stripe.checkout.sessions.retrieve(sessionId);
+
+    // The session must belong to the authenticated caller.
+    const sessionUserId = session.metadata?.user_id || null;
+    if (sessionUserId && sessionUserId !== caller.id) {
+      return new Response(
+        JSON.stringify({ error: 'This checkout session does not belong to you' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
+      );
+    }
     
     if (session.payment_status !== 'paid') {
       console.log('Payment not completed:', session.payment_status);
@@ -46,7 +78,7 @@ serve(async (req) => {
 
     const deviceId = session.metadata?.device_id;
     const planType = session.metadata?.plan_type;
-    const userId = session.metadata?.user_id;
+    const userId = sessionUserId || caller.id;
 
     if (!deviceId || !planType) {
       console.error('Missing metadata in session');
