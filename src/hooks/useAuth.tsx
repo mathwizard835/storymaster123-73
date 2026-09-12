@@ -49,45 +49,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     };
 
-    // Safety net for password-reset links: if Supabase falls back to the Site
-    // URL (e.g. /reset-password is not in the redirect allow-list), the user
-    // lands signed in on the wrong page and never sees the "set new password"
-    // form. Detect the recovery token and send them to /reset-password,
-    // preserving the hash/query so the page can read the token.
-    const redirectRecoveryLink = () => {
-      if (window.location.pathname === '/reset-password') return false;
-
-      const hashParams = new URLSearchParams(window.location.hash.substring(1));
-      const urlParams = new URLSearchParams(window.location.search);
-      const isRecovery =
-        hashParams.get('type') === 'recovery' || urlParams.get('type') === 'recovery';
-
-      if (!isRecovery) return false;
-
-      window.location.replace(
-        `/reset-password${window.location.search}${window.location.hash}`
-      );
-      return true;
-    };
-
-    if (redirectRecoveryLink()) {
-      clearTimeout(authTimeout);
-      return () => clearTimeout(authTimeout);
-    }
-
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         clearTimeout(authTimeout);
-
-        // Supabase emits PASSWORD_RECOVERY after consuming a recovery link.
-        if (event === 'PASSWORD_RECOVERY' && window.location.pathname !== '/reset-password') {
-          setSession(session);
-          setUser(session?.user ?? null);
-          setLoading(false);
-          window.location.replace('/reset-password');
-          return;
-        }
-        
         
         // Handle email verification events
         if (event === 'SIGNED_IN' && session?.user?.email_confirmed_at) {
