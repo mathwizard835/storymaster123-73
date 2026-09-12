@@ -37,9 +37,9 @@ const EMAIL_TEMPLATES: Record<string, React.ComponentType<any>> = {
 
 // Configuration
 const SITE_NAME = "StoryMaster"
-const SENDER_DOMAIN = "notify.storymaster.app"
+const SENDER_DOMAIN = "storymaster.app"
 const ROOT_DOMAIN = "storymaster.app"
-const FROM_DOMAIN = "storymaster.app" // Domain shown in From address (may be root or sender subdomain)
+const FROM_DOMAIN = "storymaster.app" // Domain shown in From address (must match sender domain for DMARC alignment)
 
 // Sample data for preview mode ONLY (not used in actual email sending).
 // URLs are baked in at scaffold time from the project's real data.
