@@ -19,10 +19,15 @@ All four values above are verified against live DNS, so we can recreate anything
 
 Do not change the DMARC policy yet. First we prove the sender-domain fix works:
 
-1. On the published site (storymaster.app), request a password-reset email to a Gmail address.
+1. Request a password-reset email to a Gmail address. On the published site, go directly to **https://storymaster.app/auth?mode=login** — the "Forgot password?" link only appears on the Log In tab, and the page opens on Sign Up, which is why it looked unavailable. (Verified live: the link is present and working there.) Triggering it from the mobile app works equally well for this test.
 2. In Gmail, open the email → three-dot menu → **Show original**.
 3. Send me a screenshot or copy the lines for `SPF:`, `DKIM:`, `DMARC:`.
 4. If all three show **PASS**, the fix is working and tightening DMARC is safe. If DKIM or DMARC shows FAIL, we stop here and fix that first — tightening DMARC while failing alignment would make spam flagging *worse*.
+
+### Optional follow-up (not required for the email fix)
+
+The "Forgot password?" link being hidden behind the Log In tab is a discoverability papercut. If you want, I can surface it on the Sign Up tab too, or link it from the landing page. Say the word and I'll add it as a separate small change.
+
 
 ## Step 2 — Apply the DMARC change and restore the service records (you, ~5 min in IONOS)
 
