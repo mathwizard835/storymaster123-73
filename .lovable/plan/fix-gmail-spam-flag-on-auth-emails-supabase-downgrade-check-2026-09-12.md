@@ -1,25 +1,35 @@
 # Fix Gmail Spam Flag on Auth Emails + Supabase Downgrade Check
 
 ## Deployment note (answered before implementation)
-No Xcode build or App Store release is required. The spam fix is mostly DNS changes that take effect immediately. The only code change is updating the web auth redirect URL, which affects only the web frontend and requires a normal Lovable **Publish → Update**; native iOS auth uses the unchanged `storymasterquest://` scheme.
+No Xcode build or App Store release is required. The spam fix is DNS + one edge-function constant change. The only web-frontend change is updating the auth redirect URL, which requires a normal Lovable **Publish → Update**; native iOS auth continues using the unchanged `storymasterquest://` scheme.
 
 
 ## Problem 1: Password-reset emails flagged as spam / "dangerous"
 
-**Root cause found (verified via live DNS):** The sender domain `notify.storymaster.app` sends through Mailgun and has an SPF record, but **no DKIM record exists at all** (checked all common selectors: mailo, s1, s2, smtp, k1, pic, mg — all empty). Since Gmail's 2024 sender requirements, mail without DKIM fails DMARC alignment and gets spam-foldered or red-flagged. DMARC is also set to the weakest policy (`p=none`).
+### What is actually happening
+Auth emails are sent by `supabase/functions/auth-email-hook` with:
+- **Visible `From`:** `StoryMaster <noreply@storymaster.app>`
+- **Envelope sender domain:** `notify.storymaster.app`
+
+`storymaster.app` has a Resend DKIM record (`resend._domainkey.storymaster.app`) and DMARC, but `notify.storymaster.app` is a Lovable-delegated subdomain that currently only has a Mailgun SPF record and **no DKIM record at all**. Gmail sees mail coming from `notify.storymaster.app` while the From header claims `storymaster.app`; the two domains do not authenticate together, so the message fails alignment and is flagged as spam / "dangerous".
+
+Support replies are already sent directly through Resend (`send-support-reply`), but auth emails are not — yet.
 
 ### Fix steps
-1. **Add the missing DKIM record (user action, ~5 min):**
-   - Log into Mailgun dashboard → Sending → Domains → `notify.storymaster.app` → DNS records.
-   - Copy the DKIM TXT record Mailgun shows (usually `mailo._domainkey.notify.storymaster.app`).
-   - Add it as a TXT record at the DNS provider for storymaster.app (appears to be IONOS, based on the existing SPF record).
-   - Click "Verify" in Mailgun once added.
-2. **Tighten DMARC** (user action at DNS provider): change `_dmarc.storymaster.app` from `p=none` to `p=quarantine` once DKIM verifies. I'll confirm the exact record value to paste in.
-3. **Align the links inside the emails (I can do this in code):** auth emails currently link back to `storymaster123-73.lovable.app` while sending from `storymaster.app`. Mismatched link domains hurt spam scoring. I'll update the auth redirect config to use the custom domain `https://storymaster.app` so sender domain and link domain match.
-4. **Verify the fix:** after DNS propagates, I'll send a test password-reset and confirm SPF + DKIM + DMARC all pass in the received email headers ("Show original" in Gmail).
+1. **Switch auth email sending to the Resend-verified root domain (code change I can deploy):**
+   - In `supabase/functions/auth-email-hook/index.ts`, change `SENDER_DOMAIN` from `"notify.storymaster.app"` to `"storymaster.app"` so the envelope sender matches the `From` domain.
+   - This makes auth emails use the same verified `storymaster.app` domain that already has Resend DKIM.
+2. **Verify `storymaster.app` is active in Resend (user action, ~2 min):**
+   - Open Resend dashboard → Domains.
+   - Confirm `storymaster.app` is verified and has the DKIM TXT record `resend._domainkey.storymaster.app`.
+   - If it is not verified, add the record Resend provides and verify it.
+3. **Tighten DMARC** (user action at DNS provider): keep `_dmarc.storymaster.app` but change policy from `p=none` to `p=quarantine` once auth emails are confirmed aligned.
+4. **Align the links inside the emails (code change I can deploy):** auth email templates currently link back to `storymaster123-73.lovable.app`. Mismatched link domains hurt spam scoring. Update `src/lib/authRedirect.ts` so web auth redirects use `https://storymaster.app`.
+5. **Verify the fix:** after DNS propagates, send a test password-reset and confirm SPF + DKIM + DMARC all pass in the received email headers ("Show original" in Gmail).
 
 ### Why emails were "dangerous" specifically
-Gmail shows the red banner when a message fails authentication *and* contains links/buttons. With no DKIM signature and only `p=none` DMARC, every auth email fails alignment — the fix above removes all three causes.
+Gmail shows the red banner when a message fails authentication *and* contains links/buttons. With the envelope sender (`notify.storymaster.app`) lacking DKIM and the visible From domain (`storymaster.app`) only weakly protected by `p=none` DMARC, every auth email fails alignment. Matching the sender domain to the From domain removes the mismatch.
+
 
 ## Problem 2: Downgrading Supabase Pro → Free
 
@@ -37,7 +47,8 @@ Gmail shows the red banner when a message fails authentication *and* contains li
 
 **Verdict:** downgrading will not delete or break the project — worst case is feature loss (backups) or throttling if egress exceeds the free allowance again. Safe path: check the Usage page first; if egress is near the free cap, stay on Pro or reduce audio/story payload egress further before switching.
 
+
 ## Technical details
-- Files touched: `src/lib/authRedirect.ts` (point web auth redirects at `https://storymaster.app`), plus confirmation that Supabase Auth "Site URL" / redirect allow-list includes the custom domain (dashboard setting — I'll flag it if a config change is needed).
-- DNS changes are made by the user at IONOS and in the Mailgun dashboard; I'll supply exact record values.
+- Files touched: `supabase/functions/auth-email-hook/index.ts` (change `SENDER_DOMAIN` to `storymaster.app`) and `src/lib/authRedirect.ts` (point web auth redirects at `https://storymaster.app`).
+- DNS changes are made by the user at IONOS and in the Resend dashboard; I'll supply exact record values.
 - No changes to story logic, payments, or email templates.
