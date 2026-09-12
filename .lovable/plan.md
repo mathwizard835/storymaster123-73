@@ -1,5 +1,9 @@
 # Fix Gmail Spam Flag on Auth Emails + Supabase Downgrade Check
 
+## Deployment note (answered before implementation)
+No Xcode build or App Store release is required. The spam fix is mostly DNS changes that take effect immediately. The only code change is updating the web auth redirect URL, which affects only the web frontend and requires a normal Lovable **Publish → Update**; native iOS auth uses the unchanged `storymasterquest://` scheme.
+
+
 ## Problem 1: Password-reset emails flagged as spam / "dangerous"
 
 **Root cause found (verified via live DNS):** The sender domain `notify.storymaster.app` sends through Mailgun and has an SPF record, but **no DKIM record exists at all** (checked all common selectors: mailo, s1, s2, smtp, k1, pic, mg — all empty). Since Gmail's 2024 sender requirements, mail without DKIM fails DMARC alignment and gets spam-foldered or red-flagged. DMARC is also set to the weakest policy (`p=none`).
