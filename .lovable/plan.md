@@ -1,64 +1,74 @@
-# Safely Update DMARC Without Breaking Lovable Email
+# Fix Password Reset: Spam Flag, Default Template, and the Link That Just Logs You In
 
-## What the IONOS warning actually means
+The Gmail screenshot changed the diagnosis. Two problems are now confirmed, and they share one root cause area — the branded email system we built is not actually being used.
 
-IONOS groups four records into a managed "Lovable" service:
+## What is actually happening
 
-| Type | Host | Value | Purpose |
-|------|------|-------|---------|
-| TXT | `_dmarc` | `v=DMARC1; p=none; pct=100; rua=mailto:dmarcreports@lovable.dev` | DMARC policy (currently weak `p=none`) |
-| NS | `notify` | `ns3.lovable.cloud` | Delegation that lets Lovable send your auth emails |
-| NS | `notify` | `ns4.lovable.cloud` | Same |
-| TXT | `_lovable-email` | `lovable_email_verify=5748e51f525ab9399ecff34be95d0711c5fa5c405c913b48ab44d1cb3221becb` | Domain ownership verification |
+**Confirmed by the email-domain check:** this project runs on your own Supabase instance, so Lovable reports *"Auth emails not managed — Not a managed Supabase project."* Lovable's `auth-email-hook` (with the six branded templates) is **not wired into your Supabase auth**.
 
-Editing `_dmarc` conflicts with the service definition, so IONOS offers to **disable the whole service**. Confirming blindly would remove the `notify` delegation — the mechanism Lovable uses to send your password-reset/signup emails. That risk is why we do this in a controlled order.
+**Confirmed by your Gmail screenshot:** the email you received is Supabase's stock template — plain "Follow this link to reset the password for your user" with a bare link, no StoryMaster branding. That is what a default template looks like. The `From` reads `StoryMaster <noreply@storymaster.app>` because custom SMTP is set in the Supabase dashboard, but the *template* and the *sending path* are Supabase's own.
 
-All four values above are verified against live DNS, so we can recreate anything that gets disabled.
+So the `SENDER_DOMAIN` change we deployed to `auth-email-hook` had no effect on this email — that function is never called.
 
-## Step 1 — Verify alignment BEFORE touching DMARC (you + me)
+This also explains the spam flag better than DNS alone: a bare, unbranded, link-only message from a domain with weak DMARC (`p=none`) is close to a textbook phishing signature.
 
-Do not change the DMARC policy yet. First we prove the sender-domain fix works:
+**Second problem — the link logs you in instead of asking for a new password.** The app is not at fault: `src/pages/ResetPassword.tsx` correctly reads the recovery token and shows a "Set New Password" form, and `/reset-password` is correctly a public route. The likely cause is that the `redirectTo` value the app sends (`https://storymaster.app/reset-password`) is **not in Supabase's redirect allow-list**. When a redirect target is not allow-listed, Supabase silently falls back to the Site URL — so you land on `/` with a valid session, i.e. logged in, never seeing the form. This is the most probable cause given the evidence; Step 1 confirms it before we change anything else.
 
-1. Request a password-reset email to a Gmail address. On the published site, go directly to **https://storymaster.app/auth?mode=login** — the "Forgot password?" link only appears on the Log In tab, and the page opens on Sign Up, which is why it looked unavailable. (Verified live: the link is present and working there.) Triggering it from the mobile app works equally well for this test.
-2. In Gmail, open the email → three-dot menu → **Show original**.
-3. Send me a screenshot or copy the lines for `SPF:`, `DKIM:`, `DMARC:`.
-4. If all three show **PASS**, the fix is working and tightening DMARC is safe. If DKIM or DMARC shows FAIL, we stop here and fix that first — tightening DMARC while failing alignment would make spam flagging *worse*.
+## Step 1 — Fix the redirect allow-list (you, 2 min — do this first)
 
-### Optional follow-up (not required for the email fix)
+In **Supabase Dashboard → Authentication → URL Configuration**:
 
-The "Forgot password?" link being hidden behind the Log In tab is a discoverability papercut. If you want, I can surface it on the Sign Up tab too, or link it from the landing page. Say the word and I'll add it as a separate small change.
+1. Set **Site URL** to `https://storymaster.app`
+2. Add these to **Redirect URLs**:
+   - `https://storymaster.app/**`
+   - `https://storymaster123-73.lovable.app/**`
+   - `storymasterquest://**`
+3. Save, then request a new reset email and click the link.
 
+If you now land on the "Set New Password" form, the diagnosis is confirmed and the second problem is fixed. If you still get logged straight in, tell me and I will trace the actual redirect chain before proposing anything further.
 
-## Step 2 — Apply the DMARC change and restore the service records (you, ~5 min in IONOS)
+## Step 2 — Decide how branded auth emails should be sent
 
-Only after Step 1 passes:
+Because your Supabase is self-managed, there are two realistic routes. This is the one decision I need from you:
 
-1. Confirm the IONOS dialog (the service will be disabled — expected).
-2. Save the new `_dmarc` TXT record:
-   - Host: `_dmarc`
-   - Value: `v=DMARC1; p=quarantine; pct=100; rua=mailto:dmarcreports@lovable.dev`
-   - TTL: 30 minutes (fine)
-3. **Immediately re-add the three other records manually** (same screen → Add record):
-   - NS record, host `notify`, value `ns3.lovable.cloud`
-   - NS record, host `notify`, value `ns4.lovable.cloud`
-   - TXT record, host `_lovable-email`, value `lovable_email_verify=5748e51f525ab9399ecff34be95d0711c5fa5c405c913b48ab44d1cb3221becb`
+**Option A — Point Supabase at the branded templates (recommended).**
+Configure Supabase's "Send Email" auth hook to call the deployed `auth-email-hook` function. Supabase then stops using its stock templates and every auth email becomes the branded StoryMaster design already sitting in `supabase/functions/_shared/email-templates/`. This is dashboard configuration plus verification on my side; no new code.
 
-The email-sending outage window is only the few minutes between disable and re-add (plus short propagation).
+**Option B — Edit Supabase's built-in templates.**
+Paste branded HTML directly into Supabase Dashboard → Authentication → Email Templates. Simpler and no hook involved, but the templates then live in the dashboard instead of in your codebase, and the six templates must be maintained by hand.
 
-## Step 3 — Verify (me)
+Either option removes the bare-link phishing signature, which is the largest single contributor to the spam classification.
 
-After you confirm the records are re-added, I will:
+## Step 3 — DMARC hardening (the IONOS warning)
 
-1. Re-check live DNS: `_dmarc` shows `p=quarantine`, both `notify` NS records present, `_lovable-email` TXT intact.
-2. Check the project's email-domain health status via Lovable's tooling to confirm the delegation still verifies.
-3. Have you send one more password-reset email and confirm it arrives in the Gmail inbox (not spam) with the red warning gone.
+Only worth doing after Steps 1 and 2, and only if mail still lands in spam.
 
-## Fallback
+IONOS groups four records into a managed "Lovable" service, all verified live:
 
-If re-adding the NS records in IONOS proves impossible (some registrars refuse NS records on subdomains that conflict with service entries), we revert `_dmarc` to `p=none` and keep the status quo: once Step 1 confirms SPF/DKIM/DMARC alignment passes, `p=none` is usually already enough to remove Gmail's "dangerous" banner — `p=quarantine` is hardening, not a requirement.
+| Type | Host | Value |
+|------|------|-------|
+| TXT | `_dmarc` | `v=DMARC1; p=none; pct=100; rua=mailto:dmarcreports@lovable.dev` |
+| NS | `notify` | `ns3.lovable.cloud` |
+| NS | `notify` | `ns4.lovable.cloud` |
+| TXT | `_lovable-email` | `lovable_email_verify=5748e51f525ab9399ecff34be95d0711c5fa5c405c913b48ab44d1cb3221becb` |
+
+Editing `_dmarc` makes IONOS offer to disable the whole service — including the `notify` nameserver delegation. **Do not confirm that dialog casually.** If you proceed, immediately re-add the other three records by hand using the exact values above.
+
+Given that the branded-template fix is likely sufficient, my recommendation is to **leave DMARC at `p=none` for now** and revisit only if spam persists. Tightening DMARC while the underlying content problem is unfixed will not help.
+
+## Step 4 — Verify (me)
+
+1. You send one test reset email after Steps 1 and 2.
+2. Confirm it renders branded, lands in the inbox, and the red banner is gone.
+3. Confirm the link opens the "Set New Password" form rather than logging you in.
+4. In Gmail → Show original, confirm SPF, DKIM, and DMARC all show PASS.
+
+## Also worth knowing
+
+The "Forgot password?" link on the published site is only visible on the **Log In** tab; the page opens on Sign Up, which is why it looked unavailable. Direct link: `https://storymaster.app/auth?mode=login` (verified live). I can surface it more prominently as a small separate change if you want.
 
 ## Technical details
 
-- No code changes in this plan. All work is DNS in IONOS plus verification.
-- Current root SPF (`v=spf1 include:_spf-us.ionos.com ~all`) does not include the email sender, so DMARC alignment relies on DKIM — which is exactly what Step 1 verifies before we touch anything.
-- The Resend DKIM key on `resend._domainkey.storymaster.app` is live and unchanged; support-reply emails are unaffected by all of this.
+- No code changes proposed. `src/pages/ResetPassword.tsx` and `src/lib/authRedirect.ts` are already correct; the gaps are in Supabase dashboard configuration.
+- `auth-email-hook` and the six templates are deployed and ready — Option A simply connects them.
+- Root SPF is `v=spf1 include:_spf-us.ionos.com ~all`; DKIM for `storymaster.app` exists at `resend._domainkey.storymaster.app`. Support-reply emails go through Resend directly and are unaffected by all of this.
