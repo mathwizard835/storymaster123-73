@@ -85,6 +85,33 @@ export default function Subscription() {
     }
   }, [cancelled, toast]);
 
+  // After Apple/RevenueCat confirms a purchase or restore: grant a short local
+  // grace period, clear the stale subscription cache, and wait for the server
+  // (RevenueCat webhook) to record the subscription before leaving the paywall.
+  const finishIapActivation = async (title: string, description: string) => {
+    const { setIapGrace } = await import("@/lib/iapService");
+    setIapGrace(user?.id);
+    const ok = await activateSubscriptionAfterPurchase('premium');
+    if (!ok) console.warn('[Subscription] client-side activation skipped; waiting for RevenueCat webhook');
+    invalidateSubscriptionCache();
+    toast({ title: "Activating your Adventure Pass…", description: "This only takes a few seconds." });
+    const { pollForSubscriptionUpdate } = await import("@/lib/nativePayments");
+    const confirmed = await pollForSubscriptionUpdate(6);
+    invalidateSubscriptionCache();
+    window.dispatchEvent(new Event('subscription-refreshed'));
+    if (confirmed) {
+      toast({ title, description });
+    } else {
+      toast({
+        title: "Still confirming your purchase",
+        description: "You're in! If anything looks locked later, tap Restore Purchases.",
+      });
+    }
+    await loadCurrentPlan();
+    setLoading(false);
+    navigate('/dashboard', { replace: true });
+  };
+
   const loadCurrentPlan = async () => {
     try {
       const { plan } = await getUserSubscription();
@@ -538,17 +565,7 @@ export default function Subscription() {
                         trackFunnelStep("subscription_started");
                         const result = await purchasePackage(planType);
                         if (result.success) {
-                          // Activate subscription directly in Supabase
-                          await activateSubscriptionAfterPurchase(planType);
-                          // Notify gates (RequireSubscription) to re-check immediately
-                          window.dispatchEvent(new Event('subscription-refreshed'));
-                          toast({
-                            title: "🎉 Adventure Pass Activated!",
-                            description: "Your child's reading journey begins now!",
-                          });
-                          await loadCurrentPlan();
-                          setLoading(false);
-                          navigate('/dashboard', { replace: true });
+                          await finishIapActivation("🎉 Adventure Pass Activated!", "Your child's reading journey begins now!");
                           return;
                         } else if (result.error !== 'cancelled') {
                           toast({
@@ -588,16 +605,7 @@ export default function Subscription() {
                         }
                         const result = await restorePurchases();
                         if (result.isSubscribed) {
-                          // Also activate in Supabase when restoring
-                          await activateSubscriptionAfterPurchase('premium');
-                          window.dispatchEvent(new Event('subscription-refreshed'));
-                          toast({
-                            title: "✅ Adventure Pass Restored!",
-                            description: "Your child's stories are ready to continue.",
-                          });
-                          await loadCurrentPlan();
-                          setLoading(false);
-                          navigate('/dashboard', { replace: true });
+                          await finishIapActivation("✅ Adventure Pass Restored!", "Your child's stories are ready to continue.");
                           return;
                         } else {
                           toast({

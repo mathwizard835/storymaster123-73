@@ -293,3 +293,24 @@ export const restorePurchases = async (): Promise<{
     return { success: false, isSubscribed: false };
   }
 };
+
+/**
+ * Short-lived local grace flag: set when Apple/RevenueCat confirms an active
+ * entitlement on-device, so the subscription gate doesn't paywall a paying
+ * user while the server-side RevenueCat webhook is still landing.
+ */
+const IAP_GRACE_PREFIX = 'sm_iap_grace_';
+const IAP_GRACE_TTL_MS = 10 * 60 * 1000;
+
+export const setIapGrace = (userId: string | null | undefined): void => {
+  if (!userId) return;
+  try { localStorage.setItem(IAP_GRACE_PREFIX + userId, String(Date.now())); } catch { /* ignore */ }
+};
+
+export const hasIapGrace = (userId: string | null | undefined): boolean => {
+  if (!userId) return false;
+  try {
+    const at = Number(localStorage.getItem(IAP_GRACE_PREFIX + userId));
+    return Number.isFinite(at) && at > 0 && Date.now() - at < IAP_GRACE_TTL_MS;
+  } catch { return false; }
+};
