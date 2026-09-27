@@ -137,6 +137,8 @@ export const pollForSubscriptionUpdate = async (
       attempts++;
 
       try {
+        // Bypass the 30s client cache — polling must see fresh server state.
+        invalidateSubscriptionCache();
         const { plan } = await getUserSubscription();
 
         if (plan) {
