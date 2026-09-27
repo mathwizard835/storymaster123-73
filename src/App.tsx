@@ -164,6 +164,13 @@ const RequireSubscription = ({ children }: { children: React.ReactNode }) => {
         return;
       }
       try {
+        // Apple/RevenueCat just confirmed a purchase on-device — let the user
+        // in while the server-side webhook catches up.
+        const { hasIapGrace } = await import("@/lib/iapService");
+        if (hasIapGrace(user.id)) {
+          if (!cancelled) { setHasSub(true); setChecking(false); }
+          return;
+        }
         const { getUserSubscription } = await import("@/lib/subscription");
         const { plan } = await getUserSubscription(user.id);
         const active = !!plan && plan.name?.toLowerCase() !== 'free';
@@ -216,7 +223,12 @@ const RequireSubscription = ({ children }: { children: React.ReactNode }) => {
     runCheck();
 
     // Listen for purchase / cancel events and visibility changes
-    const onRefresh = () => { runCheck(); };
+    const onRefresh = () => {
+      import("@/lib/subscription").then(({ invalidateSubscriptionCache }) => {
+        invalidateSubscriptionCache();
+        runCheck();
+      });
+    };
     const onVisibility = () => {
       if (document.visibilityState === 'visible') runCheck();
     };
