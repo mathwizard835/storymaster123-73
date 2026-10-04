@@ -30,3 +30,17 @@ Checked and fine: route protection, the admin role check (roles kept in their ow
 
 ## You still need to check in Supabase
 - Authentication → URL Configuration includes `https://storymaster.app/**` and `storymasterquest://**`.
+
+## Which fixes need a new App Store version
+The iPhone app carries its own copy of the app code and has no live-update tool, so iPhone code changes only reach families through a new App Store version.
+
+- **No App Store update needed (live right away):**
+  - Fix 1: website sign-in.
+  - Fix 3: saving age and consent. This is a database change and works for iPhone sign-ups too.
+  - Every website part of fixes 2, 4, 5 and 6.
+- **Need a new App Store version to reach iPhone users:**
+  - The iPhone side of fix 2 (stop logging links).
+  - Fix 4 (sign-in page timing).
+  - Fix 5 (reset page).
+  - Fix 6 (error messages).
+  - These are lower-risk polish items. The iPhone app works today without them, so they can ship in your next normal release.
