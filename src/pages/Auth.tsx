@@ -33,6 +33,24 @@ const buildNativeAuthUrl = (params: Record<string, string | null | undefined>) =
   return query ? `${NATIVE_AUTH_URL}?${query}` : NATIVE_AUTH_URL;
 };
 
+// iPhone/iPad web browser (incl. iPadOS reporting as Mac with touch).
+const isIOSBrowser = (): boolean => {
+  if (typeof navigator === 'undefined') return false;
+  const ua = navigator.userAgent || '';
+  return /iPhone|iPad|iPod/i.test(ua) || (/Macintosh/i.test(ua) && navigator.maxTouchPoints > 1);
+};
+
+const friendlyAuthError = (message: string = ''): string => {
+  const m = message.toLowerCase();
+  if (m.includes('invalid login credentials')) return 'Invalid email or password. Please check and try again.';
+  if (m.includes('email not confirmed')) return 'Please confirm your email first — check your inbox (and spam) for the link.';
+  if (m.includes('already registered') || m.includes('already been registered')) return 'An account with this email already exists. Please sign in instead.';
+  if (m.includes('rate limit') || m.includes('too many') || m.includes('seconds')) return 'Too many attempts. Please wait a minute and try again.';
+  if (m.includes('password')) return 'That password doesn\'t meet the requirements. Please choose a stronger one.';
+  if (m.includes('network') || m.includes('fetch')) return 'Connection problem. Please check your internet and try again.';
+  return 'Something went wrong. Please try again in a moment.';
+};
+
 type SignupStep = 'credentials' | 'age-gate' | 'parental-gate' | 'parental-consent';
 type CallbackState = null | 'verifying' | 'success' | 'error';
 
@@ -157,12 +175,12 @@ const Auth = () => {
             description: "Please set your password to complete your account setup.",
           });
           navigate('/reset-password?type=invite');
-          return;
+          return true;
         }
 
         if (type === 'recovery') {
           navigate('/reset-password');
-          return;
+          return true;
         }
 
         // Show success screen briefly so the user clearly sees confirmation
@@ -176,7 +194,7 @@ const Auth = () => {
           navigate('/dashboard');
         }, 1200);
       } catch (callbackError: any) {
-        console.error('[Auth] Failed to process auth callback:', callbackError);
+        console.error('[Auth] Failed to process auth callback:', callbackError?.message);
         setCallbackError(
           callbackError?.message?.includes('expired')
             ? "This verification link has expired. Please request a new one below."
@@ -187,10 +205,13 @@ const Auth = () => {
           window.history.replaceState({}, '', window.location.pathname);
         } catch {}
       }
+      return true;
     };
 
-    checkUser();
-    handleAuthCallback();
+    // Handle an email link first; only check for an existing session otherwise.
+    handleAuthCallback().then((handled) => {
+      if (!handled) checkUser();
+    });
   }, [navigate, toast]);
 
   const handleResendVerification = async () => {
