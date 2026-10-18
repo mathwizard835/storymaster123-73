@@ -88,22 +88,12 @@ const Auth = () => {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        if (!isNativeApp()) {
-          const handoffUrl = buildNativeAuthUrl({
-            access_token: session.access_token,
-            refresh_token: session.refresh_token,
-            type: 'magiclink',
-          });
-          setAppHandoffUrl(handoffUrl);
-          window.location.href = handoffUrl;
-          return;
-        }
-
         navigate('/dashboard');
       }
     };
     
-    const handleAuthCallback = async () => {
+    // Returns true when the URL contained an auth callback (handled here).
+    const handleAuthCallback = async (): Promise<boolean> => {
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
       const queryParams = new URLSearchParams(window.location.search);
 
@@ -118,19 +108,18 @@ const Auth = () => {
         !!value && supportedOtpTypes.includes(value as EmailOtpType);
 
       if (!(accessToken && refreshToken) && !(tokenHash && isSupportedOtpType(type)) && !code) {
-        return;
+        return false;
       }
 
-      const isInNativeApp = isNativeApp();
+      // Legacy App Store build compatibility: when an email link opens in an
+      // iPhone/iPad browser instead of the app, offer the handoff to the app.
+      // Prefer one-time token_hash/code; only pass tokens when nothing else exists.
+      if (!isNativeApp() && isIOSBrowser()) {
+        const handoffUrl = (tokenHash || code)
+          ? buildNativeAuthUrl({ token_hash: tokenHash, type, code })
+          : buildNativeAuthUrl({ access_token: accessToken, refresh_token: refreshToken, type });
 
-      // Try handing off auth callback to native app first for browser-opened email links.
-      if (!isInNativeApp) {
-        const handoffUrl = buildNativeAuthUrl({ access_token: accessToken, refresh_token: refreshToken, token_hash: tokenHash, type, code });
-
-        // Surface a tap-to-open button so the user can manually launch the app
-        // if the browser blocks automatic custom-scheme redirects.
         setAppHandoffUrl(handoffUrl);
-
         window.location.href = handoffUrl;
 
         // Give the OS a moment to switch to native app before running browser fallback.
@@ -302,29 +291,12 @@ const Auth = () => {
       });
 
       if (signUpError) {
-        if (signUpError.message.includes('User already registered')) {
-          setError('An account with this email already exists. Please sign in instead.');
-        } else if (signUpError.message.includes('rate limit')) {
-          setError('Too many signup attempts. Please wait a few minutes before trying again.');
-        } else {
-          setError(`Signup failed: ${signUpError.message}`);
-        }
+        setError(friendlyAuthError(signUpError.message));
         return;
       }
 
-      // Update profile with consent info
-      if (data?.user) {
-        await supabase
-          .from('profiles')
-          .update({
-            child_age: age,
-            parent_email: parentEmail,
-            parental_consent_given: age < 13,
-            parental_consent_at: age < 13 ? new Date().toISOString() : null,
-            parental_consent_method: age < 13 ? 'email_verification' : null,
-          })
-          .eq('id', data.user.id);
-      }
+      // Age and consent are saved to the profile by the database at account
+      // creation (the session doesn't exist yet when email confirmation is on).
 
       if (data?.user && !data.session) {
         toast({
@@ -334,17 +306,6 @@ const Auth = () => {
         });
         setSignupStep('credentials');
       } else if (data?.session) {
-        if (!isNativeApp()) {
-          const handoffUrl = buildNativeAuthUrl({
-            access_token: data.session.access_token,
-            refresh_token: data.session.refresh_token,
-            type: 'signup',
-          });
-          setAppHandoffUrl(handoffUrl);
-          window.location.href = handoffUrl;
-          return;
-        }
-
         toast({
           title: "Account created successfully!",
           description: "You can now start your adventure.",
@@ -385,29 +346,14 @@ const Auth = () => {
       });
 
       if (error) {
-        if (error.message.includes('Invalid login credentials')) {
-          setError('Invalid email or password. Please check your credentials.');
-        } else {
-          setError(error.message);
-        }
+        setError(friendlyAuthError(error.message));
       } else {
         toast({
           title: "Welcome back!",
-          description: isNativeApp() ? "You've successfully signed in." : "Opening StoryMaster Kids...",
+          description: "You've successfully signed in.",
         });
 
-        if (!isNativeApp() && data.session) {
-          const handoffUrl = buildNativeAuthUrl({
-            access_token: data.session.access_token,
-            refresh_token: data.session.refresh_token,
-            type: 'magiclink',
-          });
-          setAppHandoffUrl(handoffUrl);
-          window.location.href = handoffUrl;
-          return;
-        }
-
-        // Native: decide destination based on subscription so paying users
+        // Decide destination based on subscription so paying users
         // don't flash the paywall via RequireSubscription's first check.
         try {
           const { getUserSubscription } = await import('@/lib/subscription');
