@@ -57,18 +57,54 @@ const ResetPassword = () => {
       console.log('Valid password recovery token in query params');
       return;
     }
-    
-    // Check if user is already authenticated (came from a valid link)
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session && !accessToken) {
-        toast({
-          title: "Invalid or expired link",
-          description: "Please request a new password reset link.",
-          variant: "destructive",
-        });
-        navigate('/auth');
-      }
+
+    let cancelled = false;
+    let recovered = false;
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session && (event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN')) recovered = true;
     });
+
+    const failInvalid = () => {
+      if (cancelled || recovered) return;
+      toast({
+        title: "Invalid or expired link",
+        description: "Please request a new password reset link.",
+        variant: "destructive",
+      });
+      navigate('/auth');
+    };
+
+    const verify = async () => {
+      // Newer links arrive as ?code=… — exchange it for a session first.
+      const code = urlParams.get('code');
+      if (code) {
+        const { data: existing } = await supabase.auth.getSession();
+        if (!existing.session) {
+          const { error } = await supabase.auth.exchangeCodeForSession(code);
+          if (error && !recovered) {
+            // The client may have already consumed the code automatically.
+            const { data } = await supabase.auth.getSession();
+            if (!data.session) return failInvalid();
+          }
+        }
+        try { window.history.replaceState({}, '', window.location.pathname); } catch {}
+        return;
+      }
+
+      // Give the client a moment to finish processing any link before deciding.
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session || accessToken) return;
+      await new Promise((r) => setTimeout(r, 1500));
+      const { data: retry } = await supabase.auth.getSession();
+      if (!retry.session) failInvalid();
+    };
+
+    verify();
+
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
   }, [navigate, toast]);
 
   const handleResetPassword = async (e: React.FormEvent) => {

@@ -21,12 +21,12 @@ function navigateAfterAuth(type: string | null, navigate: (path: string) => void
 
 async function handleDeepLinkUrl(urlString: string, navigate: (path: string) => void) {
   if (processedDeepLinkUrls.has(urlString)) {
-    console.log('[DeepLink] Skipping already processed URL:', urlString);
+    console.log('[DeepLink] Skipping already processed URL');
     return;
   }
 
   processedDeepLinkUrls.add(urlString);
-  console.log('[DeepLink] Processing URL:', urlString);
+  console.log('[DeepLink] Processing incoming link');
 
   const url = new URL(urlString);
   const hashParams = new URLSearchParams(url.hash.substring(1));
