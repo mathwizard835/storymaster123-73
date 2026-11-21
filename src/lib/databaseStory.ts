@@ -224,6 +224,36 @@ export const loadCurrentStoryFromDatabase = async (): Promise<SavedStory | null>
   };
 };
 
+// Load the newest unfinished story (active OR paused) touched in the last 24h.
+// Used for crash recovery: a story mid-save during an iOS crash may be 'paused'.
+export const loadRecoverableStoryFromDatabase = async (): Promise<SavedStory | null> => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+  const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const { data, error } = await (supabase as any)
+    .from('user_stories')
+    .select('*')
+    .eq('user_id', user.id)
+    .in('status', ['active', 'paused'])
+    .gte('last_played_at', since)
+    .order('last_played_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error || !data) return null;
+  return {
+    id: data.id,
+    profile: data.profile,
+    scenes: data.scenes,
+    currentSceneIndex: data.current_scene_index,
+    startedAt: data.started_at,
+    lastPlayedAt: data.last_played_at,
+    completed: data.status === 'completed',
+    choicesMade: 0,
+    quizTaken: (data.profile as any)?.quizTaken ?? false,
+    quizScore: (data.profile as any)?.quizScore ?? undefined,
+  };
+};
+
 // Load a specific story by ID from database
 export const loadStoryByIdFromDatabase = async (storyId: string): Promise<SavedStory | null> => {
   const { data: { user } } = await supabase.auth.getUser();

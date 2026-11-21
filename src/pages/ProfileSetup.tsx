@@ -173,7 +173,8 @@ const ProfileSetup = () => {
       }
     }
 
-    navigate(forceNew ? "/mission?new=true" : "/mission");
+    // No story in progress: always start fresh explicitly (bare /mission now resumes).
+    navigate("/mission?new=true");
   };
 
   const progressPercent = (step / TOTAL_STEPS) * 100;

@@ -1,0 +1,1 @@
+- Story crash recovery lives in src/lib/storyRecovery.ts (localStorage checkpoint + crash-loop breaker); bare /mission resumes, new stories must use /mission?new=true. Why: iOS kills the web view without warning.

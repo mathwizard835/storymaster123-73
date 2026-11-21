@@ -11,7 +11,8 @@ import { useDevice } from "@/contexts/DeviceContext";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useEffect, useState, useRef } from "react";
 import { generateNextScene, loadProfile, checkStoryLimit, markStoryCompleted, type Scene, saveCurrentStory, loadCurrentStory, clearCurrentStory, saveCompletedStory, getCompletedStories, type SavedStory, type InventoryItem, saveProfileToLocal, clearSceneCache, recoverStorySession } from "@/lib/story";
-import { saveStoryToDatabase, loadCurrentStoryFromDatabase, loadStoryByIdFromDatabase, clearCurrentStoryInDatabase, clearAllActiveStoriesForUser, verifyStoryIsActive, pauseStoryInDatabase } from "@/lib/databaseStory";
+import { saveStoryToDatabase, loadCurrentStoryFromDatabase, loadStoryByIdFromDatabase, clearCurrentStoryInDatabase, clearAllActiveStoriesForUser, verifyStoryIsActive, pauseStoryInDatabase, loadRecoverableStoryFromDatabase } from "@/lib/databaseStory";
+import { loadCheckpoint, saveCheckpoint, savePendingChoice, clearCheckpoint, isCheckpointFresh, registerBoot, markStable, mergeWithCheckpoint, createThrottle } from "@/lib/storyRecovery";
 import { loadInventory, saveInventory, addItemToInventory, useItem, clearInventory, updateProfileInventory } from "@/lib/inventory";
 import { 
   LearningSession, 
@@ -130,15 +131,31 @@ const Mission = () => {
     }
   }, []);
 
+  // Only one narration clip may live in memory at a time. Leaked audio blobs
+  // were filling iOS memory and getting the app killed mid-story.
+  const audioUrlRef = useRef<string | null>(null);
+  const releaseAudio = () => {
+    const el = audioRef.current;
+    if (el) {
+      el.onended = null;
+      el.pause();
+      el.removeAttribute('src');
+      try { el.load(); } catch { /* ignore */ }
+    }
+    if (audioUrlRef.current) {
+      URL.revokeObjectURL(audioUrlRef.current);
+      audioUrlRef.current = null;
+    }
+    setIsPlaying(false);
+  };
+
+  useEffect(() => () => releaseAudio(), []);
+
   // Reset Read-To-Me usage when scene changes
   useEffect(() => {
     setHasUsedReadToMe(false);
-    // Stop any playing audio when scene changes
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-      setIsPlaying(false);
-    }
+    // Stop and free any audio when scene changes
+    releaseAudio();
   }, [scene]);
 
 
@@ -194,7 +211,9 @@ const Mission = () => {
         [Uint8Array.from(atob(audioContent), c => c.charCodeAt(0))],
         { type: 'audio/mpeg' }
       );
+      releaseAudio();
       const audioUrl = URL.createObjectURL(audioBlob);
+      audioUrlRef.current = audioUrl;
 
       if (audioRef.current) {
         audioRef.current.src = audioUrl;
@@ -202,9 +221,10 @@ const Mission = () => {
         setIsPlaying(true);
 
         audioRef.current.onended = () => {
-          setIsPlaying(false);
-          URL.revokeObjectURL(audioUrl);
+          releaseAudio();
         };
+      } else {
+        releaseAudio();
       }
     } catch (error: any) {
       console.error('Text-to-speech error:', error);
@@ -317,17 +337,61 @@ const Mission = () => {
 
   // Phase 5: Monitor for unexpected story ID changes
   useEffect(() => {
+    // Self-heal instead of kicking the child out to a new story.
     if (savedStory && initialStoryId && savedStory.id !== initialStoryId) {
-      console.error(`🚨 ALERT: Story ID changed unexpectedly! Initial: ${initialStoryId}, Current: ${savedStory.id}`);
-      toast({
-        title: "Story Corruption Detected",
-        description: "Redirecting to start a fresh adventure...",
-        variant: "destructive",
-        duration: 3000,
-      });
-      setTimeout(() => navigate('/profile?new=true'), 2000);
+      console.warn(`Story id resynced: ${initialStoryId} -> ${savedStory.id}`);
+      setInitialStoryId(savedStory.id);
     }
-  }, [savedStory?.id, initialStoryId, navigate, toast]);
+  }, [savedStory?.id, initialStoryId]);
+
+  // Synchronous on-device checkpoint on every scene, so an instant iOS kill
+  // never loses progress. Finished stories clear it.
+  useEffect(() => {
+    if (!savedStory?.id) return;
+    if (savedStory.completed) { clearCheckpoint(); return; }
+    saveCheckpoint(user?.id ?? null, savedStory);
+  }, [savedStory, user?.id]);
+
+  // Reset the crash counter only after the scene has stayed alive a while.
+  useEffect(() => {
+    if (!savedStory?.id) return;
+    const id = savedStory.id;
+    const t = setTimeout(() => markStable(user?.id ?? null, id), 8000);
+    return () => clearTimeout(t);
+  }, [savedStory?.id, scene, user?.id]);
+
+  // Leaving the screen normally is not a crash: reset the counter on unmount.
+  const stableIdRef = useRef<{ userId: string | null; storyId: string | null }>({ userId: null, storyId: null });
+  stableIdRef.current = { userId: user?.id ?? null, storyId: savedStory?.id ?? null };
+  useEffect(() => () => {
+    const { userId, storyId } = stableIdRef.current;
+    if (storyId) markStable(userId, storyId);
+  }, []);
+
+  // Returns true when this story keeps crashing and auto-resume was aborted.
+  const tripCrashBreaker = async (storyId: string): Promise<boolean> => {
+    if (!registerBoot(user?.id ?? null, storyId)) return false;
+    console.warn('story_crash_loop_aborted', { storyId });
+    clearCheckpoint();
+    try { await pauseStoryInDatabase(storyId); } catch { /* ignore */ }
+    toast({
+      title: "Let's take a breather",
+      description: "That story had trouble loading. You can continue it later from your stories.",
+    });
+    navigate('/profile');
+    return true;
+  };
+
+  // Use the on-device copy if it is ahead of the saved copy, and sync it back up.
+  const reconcileWithCheckpoint = (story: SavedStory): SavedStory => {
+    const cp = loadCheckpoint(user?.id ?? null);
+    const { story: merged, localAhead } = mergeWithCheckpoint(story, cp);
+    if (localAhead && merged) {
+      console.info('story_resumed_after_crash', { storyId: merged.id, sceneIndex: merged.currentSceneIndex, attemptCount: cp?.bootAttempts });
+      saveStoryToDatabase(merged).catch((e) => console.error('Checkpoint sync failed', e));
+    }
+    return merged ?? story;
+  };
 
   useEffect(() => {
     // Phase 5: Prevent reinitialization if story already loaded
@@ -378,11 +442,13 @@ const Mission = () => {
         // In new tabs, localStorage may not have the profile, but the database story does
         if (!forceNew && resumeStoryId) {
           console.log(`🎯 [Resume Priority] Loading specific story: ${resumeStoryId}`);
-          const existingStory = await loadStoryByIdFromDatabase(resumeStoryId);
+          let existingStory = await loadStoryByIdFromDatabase(resumeStoryId);
           
           if (existingStory && existingStory.scenes.length > 0) {
             const isActive = await verifyStoryIsActive(existingStory.id);
             if (isActive) {
+              if (await tripCrashBreaker(existingStory.id)) return;
+              existingStory = reconcileWithCheckpoint(existingStory);
               console.log(`📖 [Resume Priority] Story found and active: ${existingStory.id}`);
               console.log(`👤 [Resume Priority] Using embedded profile from story`);
               
@@ -457,12 +523,21 @@ const Mission = () => {
         
         // Skip loading existing story if forcing new story
         if (!forceNew) {
-          // Load the most recent active story (no resume param at this point)
-          const existingStory = await loadCurrentStoryFromDatabase();
+          // Crash recovery: prefer the on-device checkpoint's story, then the newest
+          // unfinished (active or paused, last 24h) story.
+          let existingStory: SavedStory | null = null;
+          const cp = loadCheckpoint(user?.id ?? null);
+          if (cp && isCheckpointFresh(cp)) {
+            const s = await loadStoryByIdFromDatabase(cp.storyId);
+            if (s && !s.completed) existingStory = s;
+          }
+          if (!existingStory) existingStory = await loadRecoverableStoryFromDatabase();
           
           if (existingStory && existingStory.scenes.length > 0) {
             const isActive = await verifyStoryIsActive(existingStory.id);
             if (isActive) {
+              if (await tripCrashBreaker(existingStory.id)) return;
+              existingStory = reconcileWithCheckpoint(existingStory);
               console.log(`📖 Resuming most recent story: ${existingStory.id}`);
               recoverStorySession(existingStory.id, existingStory.scenes.length);
               setSavedStory(existingStory);
@@ -510,6 +585,9 @@ const Mission = () => {
           }
         }
         
+        // Starting fresh: drop the old checkpoint and crash counter.
+        clearCheckpoint();
+
         // CRITICAL FIX: ALWAYS clear ALL active stories before creating a new one
         // This prevents duplicate active story errors from the unique constraint
         console.log('🧹 Preparing to create new story - clearing all existing active stories');
@@ -645,7 +723,14 @@ const Mission = () => {
   // Synchronous duplicate-submission guard (state updates are async, so rapid
   // double taps could previously fire two generations for the same choice).
   const choiceInFlightRef = useRef(false);
-  const [streamedNarrative, setStreamedNarrative] = useState<string>("");
+  const [streamedNarrative, setStreamedNarrativeRaw] = useState<string>("");
+  // Streaming deltas arrive many times per second; render at most every 80ms.
+  const throttledNarrativeRef = useRef(createThrottle<string>((v) => setStreamedNarrativeRaw(v), 80));
+  const setStreamedNarrative = (v: string) => {
+    if (v === "") { throttledNarrativeRef.current.cancel(); setStreamedNarrativeRaw(""); return; }
+    throttledNarrativeRef.current(v);
+  };
+  useEffect(() => () => throttledNarrativeRef.current.cancel(), []);
 
   const isTransientStoryGenerationError = (error: any) => {
     const message = String(error?.message || "");
@@ -774,16 +859,13 @@ const Mission = () => {
 
     // Phase 5: Validate story ID hasn't changed unexpectedly
     if (initialStoryId && savedStory.id !== initialStoryId) {
-      console.error(`❌ Story ID corruption detected! Initial: ${initialStoryId}, Current: ${savedStory.id}`);
-      toast({
-        title: "Story Error",
-        description: "Story session corrupted. Redirecting to start a new adventure...",
-        variant: "destructive",
-        duration: 3000,
-      });
-      setTimeout(() => navigate('/profile?new=true'), 2000);
-      return;
+      console.warn(`Story id resynced before choice: ${initialStoryId} -> ${savedStory.id}`);
+      setInitialStoryId(savedStory.id);
     }
+
+    releaseAudio();
+    savePendingChoice(user?.id ?? null, savedStory.id, choiceId);
+    markStable(user?.id ?? null, savedStory.id);
 
     choiceInFlightRef.current = true;
     setChoiceLoading(true);
