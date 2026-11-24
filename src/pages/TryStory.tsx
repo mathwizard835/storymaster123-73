@@ -527,14 +527,17 @@ const TryStory = () => {
       return;
     }
 
+    // Narration uses a paid voice service, so it requires a signed-in account.
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      toast({ title: "Sign up to hear it", description: "Create a free account to unlock Read-to-Me narration.", duration: 3500 });
+      return;
+    }
+
     setAudioLoading(true);
     try {
       const voiceId = VOICE_BY_MODE[profile.mode] || VOICE_BY_MODE.thrill;
-      const audioContent = await fetchAudioWithCache(
-        scene.narrative,
-        voiceId,
-        true
-      );
+      const audioContent = await fetchAudioWithCache(scene.narrative, voiceId);
 
       const audio = new Audio(`data:audio/mpeg;base64,${audioContent}`);
       audioRef.current = audio;

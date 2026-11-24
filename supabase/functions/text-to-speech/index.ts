@@ -53,7 +53,7 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
-  // Parse body up-front so we can branch on `guest: true` BEFORE enforcing auth.
+  // Narration is billed per character, so every request must be authenticated.
   let body: any;
   try {
     body = await req.json();
@@ -64,10 +64,8 @@ serve(async (req) => {
     );
   }
 
-  const isGuest = body?.guest === true;
-
-  // === JWT AUTHENTICATION (skipped for guest demo) ===
-  if (!isGuest) {
+  // === JWT AUTHENTICATION (required for every request) ===
+  {
     const authHeader = req.headers.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) {
       return new Response(
@@ -93,8 +91,6 @@ serve(async (req) => {
 
     const userId = userData.user.id;
     console.log('Authenticated text-to-speech user:', userId);
-  } else {
-    console.log('Guest text-to-speech request (demo)');
   }
 
   // Read-to-Me is available to all authenticated users (free + Adventure Pass)
@@ -116,14 +112,6 @@ serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-    // Tighter cap for guests to limit abuse.
-    if (isGuest && text.length > 1500) {
-      return new Response(
-        JSON.stringify({ error: 'Guest demo text too long.' }),
-        { status: 413, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
     // Apply rate limiting
     const ipAddress = req.headers.get('x-forwarded-for')?.split(',')[0] || 
                       req.headers.get('x-real-ip') || 
