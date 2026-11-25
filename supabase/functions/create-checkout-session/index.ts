@@ -10,6 +10,15 @@ const corsHeaders = {
 const getErrorMessage = (error: unknown) =>
   error instanceof Error ? error.message : 'An unknown error occurred';
 
+const ALLOWED_ORIGINS = new Set([
+  'https://storymaster.app',
+  'https://www.storymaster.app',
+  'https://storymaster123-73.lovable.app',
+  'https://id-preview--2809bfa0-b669-424e-9eb0-6511e3cb6327.lovable.app',
+]);
+const DEFAULT_ORIGIN = 'https://storymaster.app';
+const safeOrigin = (o: string | null) => (o && ALLOWED_ORIGINS.has(o) ? o : DEFAULT_ORIGIN);
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -35,7 +44,14 @@ serve(async (req) => {
       userId = user?.id || null;
     }
 
-    if (!planType || !deviceId) {
+    if (!userId) {
+      return new Response(
+        JSON.stringify({ error: 'Authentication required' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      );
+    }
+
+    if (!planType || !deviceId || typeof deviceId !== 'string' || deviceId.length > 200) {
       throw new Error('Missing required parameters: planType and deviceId');
     }
 
@@ -53,7 +69,7 @@ serve(async (req) => {
     // Get the origin from request - for native apps, use the published URL
     const requestOrigin = req.headers.get('origin');
     // Use published URL for native platforms or fallback to request origin
-    const origin = requestOrigin || 'https://storymaster123-73.lovable.app';
+    const origin = safeOrigin(requestOrigin);
     
     // For native apps, use the published website URL for success/cancel
     // This ensures users land on the web page after payment

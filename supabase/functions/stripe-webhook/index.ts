@@ -74,17 +74,13 @@ serve(async (req) => {
         const planId = planIds[planType as keyof typeof planIds];
 
         // Cancel any existing active subscriptions for this device or user
+        // Only replace subscriptions owned by the paying account — never by device ID,
+        // which is caller-supplied and could target someone else's subscription.
         if (userId) {
           await supabaseClient
             .from('user_subscriptions')
             .update({ status: 'cancelled' })
-            .or(`device_id.eq.${deviceId},user_id.eq.${userId}`)
-            .eq('status', 'active');
-        } else {
-          await supabaseClient
-            .from('user_subscriptions')
-            .update({ status: 'cancelled' })
-            .eq('device_id', deviceId)
+            .eq('user_id', userId)
             .eq('status', 'active');
         }
 

@@ -711,9 +711,10 @@ Return ONLY valid JSON (no markdown, no explanations):
           : Promise.resolve({ count: null, error: null } as any),
         supabaseAdmin
           .from("user_subscriptions")
-          .select("id, status, plan_id")
+          .select("id, status, plan_id, expires_at")
           .eq("user_id", userId)
           .eq("status", "active")
+          .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
           .limit(1)
           .maybeSingle(),
         supabaseAdmin

@@ -7,6 +7,15 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const ALLOWED_ORIGINS = new Set([
+  'https://storymaster.app',
+  'https://www.storymaster.app',
+  'https://storymaster123-73.lovable.app',
+  'https://id-preview--2809bfa0-b669-424e-9eb0-6511e3cb6327.lovable.app',
+]);
+const DEFAULT_ORIGIN = 'https://storymaster.app';
+const safeOrigin = (o: string | null) => (o && ALLOWED_ORIGINS.has(o) ? o : DEFAULT_ORIGIN);
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -52,7 +61,7 @@ serve(async (req) => {
       );
     }
 
-    const origin = req.headers.get('origin') || 'https://storymaster123-73.lovable.app';
+    const origin = safeOrigin(req.headers.get('origin'));
 
     const session = await stripe.billingPortal.sessions.create({
       customer: customerId,

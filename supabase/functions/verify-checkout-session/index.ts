@@ -61,7 +61,7 @@ serve(async (req) => {
 
     // The session must belong to the authenticated caller.
     const sessionUserId = session.metadata?.user_id || null;
-    if (sessionUserId && sessionUserId !== caller.id) {
+    if (sessionUserId !== caller.id) {
       return new Response(
         JSON.stringify({ error: 'This checkout session does not belong to you' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
@@ -78,7 +78,7 @@ serve(async (req) => {
 
     const deviceId = session.metadata?.device_id;
     const planType = session.metadata?.plan_type;
-    const userId = sessionUserId || caller.id;
+    const userId = caller.id;
 
     if (!deviceId || !planType) {
       console.error('Missing metadata in session');
@@ -98,7 +98,7 @@ serve(async (req) => {
     const { data: existingSub } = await supabaseClient
       .from('user_subscriptions')
       .select('*')
-      .eq('device_id', deviceId)
+      .eq('user_id', userId)
       .eq('status', 'active')
       .order('created_at', { ascending: false })
       .limit(1)
@@ -118,11 +118,7 @@ serve(async (req) => {
       .update({ status: 'cancelled' })
       .eq('status', 'active');
 
-    if (userId) {
-      await cancelQuery.or(`device_id.eq.${deviceId},user_id.eq.${userId}`);
-    } else {
-      await cancelQuery.eq('device_id', deviceId);
-    }
+    await cancelQuery.eq('user_id', userId);
 
     // Create new subscription
     const { data: newSub, error } = await supabaseClient
