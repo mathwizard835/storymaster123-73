@@ -36,13 +36,27 @@ export default function SubscriptionSuccess() {
           throw error;
         }
 
-        if (data.success) {
-          await new Promise(resolve => setTimeout(resolve, 1500));
-          
-          invalidateSubscriptionCache();
-          const { subscription } = await getUserSubscription();
-          
-          if (subscription?.status === 'active') {
+        if (data?.success) {
+          // Remember the confirmed purchase so the paywall gate never flashes
+          // while the database read catches up, then tell every open screen.
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.user?.id) {
+            try {
+              localStorage.setItem('smq.sub.known.' + session.user.id, JSON.stringify({ active: true, at: Date.now() }));
+            } catch { /* ignore */ }
+            const { setIapGrace } = await import("@/lib/iapService");
+            setIapGrace(session.user.id);
+          }
+
+          let subscription = null;
+          for (let attempt = 0; attempt < 5 && !subscription; attempt++) {
+            if (attempt > 0) await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+            invalidateSubscriptionCache();
+            ({ subscription } = await getUserSubscription());
+          }
+          window.dispatchEvent(new Event('subscription-refreshed'));
+
+          if (subscription) {
             setSubscriptionActive(true);
             setIsVerifying(false);
             toast({
@@ -70,6 +84,10 @@ export default function SubscriptionSuccess() {
       }
     };
 
+    if (!sessionId) {
+      setIsVerifying(false);
+      return;
+    }
     verifyAndActivate();
   }, [sessionId, toast]);
 
@@ -144,7 +162,7 @@ export default function SubscriptionSuccess() {
 
           <div className="flex flex-col sm:flex-row gap-3">
             <Button 
-              onClick={() => navigate('/dashboard')}
+              onClick={() => navigate('/dashboard', { replace: true })}
               className="flex-1"
               size="lg"
               disabled={isVerifying}

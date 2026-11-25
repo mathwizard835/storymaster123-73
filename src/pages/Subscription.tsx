@@ -210,6 +210,20 @@ export default function Subscription() {
     }
   };
 
+  // Web: Stripe checkout opens in a new tab. When the parent comes back to
+  // this tab, re-read the plan so the paywall swaps to "Adventure Pass Active".
+  useEffect(() => {
+    if (isNativePlatform()) return;
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') {
+        invalidateSubscriptionCache();
+        void loadCurrentPlan();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, []);
+
   // Set up listener for when user returns from Safari checkout
   useEffect(() => {
     if (!isNativePlatform()) return;
